@@ -4,6 +4,8 @@ import { EditorView } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
 import { redo, undo } from '@codemirror/commands'
 import Outline from './components/Outline'
+import FileTree, { type TreeMenuRequest } from './components/FileTree'
+import TreeMenu, { type TreeMenuItem } from './components/TreeMenu'
 import MenuBar, { type MenuDef } from './components/MenuBar'
 import { CloseIcon, MaximizeIcon, MinimizeIcon, MoonIcon, PanelIcon, SunIcon } from './components/Icons'
 import { createExtensions, reconfigureTheme } from './editor/setup'
@@ -148,6 +150,12 @@ export default function App(): React.JSX.Element {
   const [activePos, setActivePos] = useState<number | null>(null)
   const [showOutline, setShowOutline] = useState(true)
   const [isFullScreen, setIsFullScreen] = useState(false)
+  // Folder workspace: when set, the sidebar can show the markdown file tree
+  // and switch between it and the current file's outline.
+  const [folderPath, setFolderPath] = useState<string | null>(null)
+  const [folderTree, setFolderTree] = useState<DirNode[]>([])
+  const [sidebarMode, setSidebarMode] = useState<'outline' | 'files'>('outline')
+  const [treeMenu, setTreeMenu] = useState<TreeMenuRequest | null>(null)
 
   const syncAppState = useCallback((path: string | null, isDirty: boolean) => {
     filePathRef.current = path
@@ -248,7 +256,136 @@ export default function App(): React.JSX.Element {
     if (!result) return
     livePreviewConfig.baseDir = result.filePath.replace(/[\\/][^\\/]*$/, '')
     loadContent(result.content, result.filePath)
+    // Single-file open always focuses the outline; an open folder (if any)
+    // stays reachable via the sidebar back button.
+    setSidebarMode('outline')
   }, [confirmDiscard, loadContent])
+
+  // Load a folder workspace: sidebar switches to the markdown file tree.
+  // The editor keeps its current document until a file is picked. Subscribing
+  // the watcher delivers the initial tree and every subsequent refresh.
+  const loadFolder = useCallback(async (dirPath: string) => {
+    setFolderPath(dirPath)
+    setSidebarMode('files')
+    setShowOutline(true)
+    await window.api.watchFolder(dirPath)
+  }, [])
+
+  const openFolder = useCallback(async () => {
+    const result = await window.api.openFolder()
+    if (!result) return
+    await loadFolder(result.folderPath)
+  }, [loadFolder])
+
+  // Open a file picked from the folder tree — switches the sidebar to outline.
+  const openFileFromTree = useCallback(
+    async (path: string) => {
+      if (filePathRef.current === path) {
+        setSidebarMode('outline')
+        return
+      }
+      if (!confirmDiscard()) return
+      const content = await window.api.readFile(path)
+      livePreviewConfig.baseDir = path.replace(/[\\/][^\\/]*$/, '')
+      loadContent(content, path)
+      setSidebarMode('outline')
+    },
+    [confirmDiscard, loadContent]
+  )
+
+  // ---- folder tree operations (new / rename / delete) ------------------------
+  // Tree refresh after each op comes from the watcher's folder:tree push —
+  // no manual rescan here.
+
+  const joinPath = useCallback((dir: string, name: string): string => {
+    const sep = window.api.platform === 'win32' ? '\\' : '/'
+    return dir.replace(/[\\/]+$/, '') + sep + name
+  }, [])
+
+  const treeNewFile = useCallback(
+    async (dirPath: string) => {
+      const name = window.prompt('New file name:')
+      if (!name) return
+      if (/[/\\]/.test(name) || name === '.' || name === '..') {
+        window.alert('Invalid file name.')
+        return
+      }
+      const fileName = /\.[^./\\]+$/.test(name) ? name : `${name}.md`
+      try {
+        await window.api.createFile(joinPath(dirPath, fileName))
+      } catch (err) {
+        window.alert(`Could not create file: ${err instanceof Error ? err.message : err}`)
+      }
+    },
+    [joinPath]
+  )
+
+  const treeRename = useCallback(
+    async (node: DirNode) => {
+      const name = window.prompt(node.isDir ? 'Rename folder:' : 'Rename file:', node.name)
+      if (!name || name === node.name) return
+      if (/[/\\]/.test(name) || name === '.' || name === '..') {
+        window.alert('Invalid name.')
+        return
+      }
+      // sibling path: swap the last segment, keeping the original separator
+      const newPath = node.path.slice(0, node.path.length - node.name.length) + name
+      try {
+        await window.api.renamePath(node.path, newPath)
+      } catch (err) {
+        window.alert(`Could not rename: ${err instanceof Error ? err.message : err}`)
+        return
+      }
+      // keep the open editor attached when its file (or an ancestor folder) moves
+      const current = filePathRef.current
+      if (current === node.path) {
+        setFilePath(newPath)
+        syncAppState(newPath, dirty)
+      } else if (node.isDir && current && current.startsWith(node.path + (window.api.platform === 'win32' ? '\\' : '/'))) {
+        const moved = newPath + current.slice(node.path.length)
+        setFilePath(moved)
+        syncAppState(moved, dirty)
+      }
+    },
+    [dirty, syncAppState]
+  )
+
+  const treeDelete = useCallback(
+    async (node: DirNode) => {
+      const what = node.isDir ? 'folder' : 'file'
+      if (!window.confirm(`Delete ${what} "${node.name}"? This cannot be undone.`)) return
+      try {
+        await window.api.deletePath(node.path)
+      } catch (err) {
+        window.alert(`Could not delete: ${err instanceof Error ? err.message : err}`)
+        return
+      }
+      // if the open file is gone, detach it (buffer keeps its content → Save As)
+      const current = filePathRef.current
+      const sep = window.api.platform === 'win32' ? '\\' : '/'
+      if (current === node.path || (node.isDir && current?.startsWith(node.path + sep))) {
+        setFilePath(null)
+        syncAppState(null, dirty)
+      }
+    },
+    [dirty, syncAppState]
+  )
+
+  const treeMenuItems: TreeMenuItem[] = useMemo(() => {
+    if (!treeMenu) return []
+    const { node } = treeMenu
+    if (node.isDir) {
+      return [
+        { label: 'New File', action: () => void treeNewFile(node.path) },
+        { label: 'Rename', action: () => void treeRename(node) },
+        { label: 'Delete', danger: true, action: () => void treeDelete(node) }
+      ]
+    }
+    return [
+      { label: 'Rename', action: () => void treeRename(node) },
+      { label: 'Delete', danger: true, action: () => void treeDelete(node) }
+    ]
+  }, [treeMenu, treeNewFile, treeRename, treeDelete])
 
   // Finder "Open With" / double-clicking a registered file (macOS open-file).
   const openFromSystem = useCallback(
@@ -258,8 +395,17 @@ export default function App(): React.JSX.Element {
       const content = await window.api.readFile(path)
       livePreviewConfig.baseDir = path.replace(/[\\/][^\\/]*$/, '')
       loadContent(content, path)
+      setSidebarMode('outline')
     },
     [confirmDiscard, loadContent]
+  )
+
+  // Finder "Open" on a folder (macOS open-file with a directory path).
+  const openFolderFromSystem = useCallback(
+    (path: string) => {
+      void loadFolder(path)
+    },
+    [loadFolder]
   )
 
   const saveFileAs = useCallback(async (): Promise<boolean> => {
@@ -305,10 +451,13 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     const offs = [
       window.api.onOpenPath((path) => void openFromSystem(path)),
+      window.api.onOpenFolder((path) => openFolderFromSystem(path)),
+      window.api.onFolderTree((tree) => setFolderTree(tree)),
       window.api.onFullScreen((full) => setIsFullScreen(full)),
       window.api.onMenu('menu:toggleOutline', () => setShowOutline((v) => !v)),
       window.api.onMenu('menu:newFile', () => newFile()),
       window.api.onMenu('menu:openFile', () => void openFile()),
+      window.api.onMenu('menu:openFolder', () => void openFolder()),
       window.api.onMenu('menu:saveFile', () => void saveFile()),
       window.api.onMenu('menu:saveFileAs', () => void saveFileAs()),
       window.api.onMenu('menu:toggleTheme', () =>
@@ -323,7 +472,7 @@ export default function App(): React.JSX.Element {
       })
     ]
     return () => offs.forEach((off) => off())
-  }, [openFromSystem, newFile, openFile, saveFile, saveFileAs, applyTheme, loadContent, theme])
+  }, [openFromSystem, openFolderFromSystem, newFile, openFile, openFolder, saveFile, saveFileAs, applyTheme, loadContent, theme])
 
   // ---- outline navigation ---------------------------------------------------
   const goToHeading = useCallback((pos: number) => {
@@ -389,6 +538,7 @@ export default function App(): React.JSX.Element {
         items: [
           { label: 'New', shortcut: fmtShortcut('Ctrl+N'), action: () => newFile() },
           { label: 'Open…', shortcut: fmtShortcut('Ctrl+O'), action: () => void openFile() },
+          { label: 'Open Folder…', shortcut: fmtShortcut('Ctrl+Shift+O'), action: () => void openFolder() },
           { separator: true },
           { label: 'Save', shortcut: fmtShortcut('Ctrl+S'), action: () => void saveFile() },
           { label: 'Save As…', shortcut: fmtShortcut('Ctrl+Shift+S'), action: () => void saveFileAs() }
@@ -431,7 +581,7 @@ export default function App(): React.JSX.Element {
         items: [{ label: 'Markdown Syntax Reference', action: () => loadContent(HELP_MD, null) }]
       }
     ],
-    [fmtShortcut, newFile, openFile, saveFile, saveFileAs, editCut, editCopy, editPaste, editSelectAll, toggleTheme, loadContent]
+    [fmtShortcut, newFile, openFile, openFolder, saveFile, saveFileAs, editCut, editCopy, editPaste, editSelectAll, toggleTheme, loadContent]
   )
 
   // ---- global shortcuts (native accelerators are gone with the native menu) --
@@ -445,6 +595,9 @@ export default function App(): React.JSX.Element {
       } else if (e.shiftKey && k === 's') {
         e.preventDefault()
         void saveFileAs()
+      } else if (e.shiftKey && k === 'o') {
+        e.preventDefault()
+        void openFolder()
       } else if (k === 'o') {
         e.preventDefault()
         void openFile()
@@ -458,9 +611,10 @@ export default function App(): React.JSX.Element {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [toggleTheme, openFile, saveFile, saveFileAs, newFile])
+  }, [toggleTheme, openFile, openFolder, saveFile, saveFileAs, newFile])
 
   const fileName = filePath ? filePath.replace(/^.*[\\/]/, '') : 'Untitled'
+  const folderName = folderPath ? folderPath.replace(/^.*[\\/]/, '') || folderPath : null
 
   return (
     <div
@@ -520,8 +674,50 @@ export default function App(): React.JSX.Element {
       <div className="main">
         {showOutline && (
           <aside className="sidebar">
-            <div className="sidebar-header">Outline</div>
-            <Outline items={outline} activePos={activePos} onSelect={goToHeading} />
+            {sidebarMode === 'files' && folderPath ? (
+              <>
+                <div className="sidebar-header" title={folderPath}>
+                  <span className="sidebar-title">{folderName}</span>
+                  <button
+                    className="sidebar-action"
+                    onClick={() => void treeNewFile(folderPath)}
+                    title="New file"
+                  >
+                    +
+                  </button>
+                </div>
+                <FileTree
+                  nodes={folderTree}
+                  activePath={filePath}
+                  onOpen={(path) => void openFileFromTree(path)}
+                  onContextMenu={setTreeMenu}
+                />
+                {treeMenu && (
+                  <TreeMenu
+                    x={treeMenu.x}
+                    y={treeMenu.y}
+                    items={treeMenuItems}
+                    onClose={() => setTreeMenu(null)}
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                <div className="sidebar-header">
+                  {folderPath && (
+                    <button
+                      className="sidebar-back"
+                      onClick={() => setSidebarMode('files')}
+                      title="Back to file list"
+                    >
+                      ‹ Files
+                    </button>
+                  )}
+                  <span>Outline</span>
+                </div>
+                <Outline items={outline} activePos={activePos} onSelect={goToHeading} />
+              </>
+            )}
           </aside>
         )}
         <div className="editor-host" ref={hostRef} />

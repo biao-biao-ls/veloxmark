@@ -5,9 +5,24 @@ interface OpenFileResult {
   content: string
 }
 
+interface DirNode {
+  name: string
+  path: string
+  isDir: boolean
+  children?: DirNode[]
+}
+
 interface RendererApi {
   platform: string
   openFile(): Promise<OpenFileResult | null>
+  openFolder(): Promise<{ folderPath: string } | null>
+  listDirectory(dirPath: string): Promise<DirNode[]>
+  watchFolder(dirPath: string): Promise<boolean>
+  unwatchFolder(): Promise<boolean>
+  createFile(filePath: string): Promise<boolean>
+  deletePath(targetPath: string): Promise<boolean>
+  renamePath(oldPath: string, newPath: string): Promise<boolean>
+  onFolderTree(callback: (tree: DirNode[]) => void): () => void
   showSaveDialog(
     defaultPath?: string,
     filters?: { name: string; extensions: string[] }[]
@@ -25,6 +40,7 @@ interface RendererApi {
   clipboardWrite(text: string): Promise<void>
   rendererReady(): void
   onOpenPath(callback: (filePath: string) => void): () => void
+  onOpenFolder(callback: (folderPath: string) => void): () => void
   onFullScreen(callback: (fullScreen: boolean) => void): () => void
   onMenu(channel: string, callback: () => void): () => void
 }

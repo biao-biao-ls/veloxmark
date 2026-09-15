@@ -73,3 +73,19 @@ export function CloseIcon({ size = 14, ...rest }: IconProps) {
     </Svg>
   )
 }
+
+export function ChevronRightIcon({ size = 14, ...rest }: IconProps) {
+  return (
+    <Svg size={size} {...rest}>
+      <path d="M9 6l6 6-6 6" />
+    </Svg>
+  )
+}
+
+export function ChevronDownIcon({ size = 14, ...rest }: IconProps) {
+  return (
+    <Svg size={size} {...rest}>
+      <path d="M6 9l6 6 6-6" />
+    </Svg>
+  )
+}
