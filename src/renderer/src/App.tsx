@@ -285,10 +285,14 @@ export default function App(): React.JSX.Element {
         return
       }
       if (!confirmDiscard()) return
-      const content = await window.api.readFile(path)
-      livePreviewConfig.baseDir = path.replace(/[\\/][^\\/]*$/, '')
-      loadContent(content, path)
-      setSidebarMode('outline')
+      try {
+        const content = await window.api.readFile(path)
+        livePreviewConfig.baseDir = path.replace(/[\\/][^\\/]*$/, '')
+        loadContent(content, path)
+        setSidebarMode('outline')
+      } catch (err) {
+        window.alert(`Could not open file: ${err instanceof Error ? err.message : err}`)
+      }
     },
     [confirmDiscard, loadContent]
   )
@@ -338,13 +342,18 @@ export default function App(): React.JSX.Element {
       }
       // keep the open editor attached when its file (or an ancestor folder) moves
       const current = filePathRef.current
+      const sep = window.api.platform === 'win32' ? '\\' : '/'
+      let movedTo: string | null = null
       if (current === node.path) {
-        setFilePath(newPath)
-        syncAppState(newPath, dirty)
-      } else if (node.isDir && current && current.startsWith(node.path + (window.api.platform === 'win32' ? '\\' : '/'))) {
-        const moved = newPath + current.slice(node.path.length)
-        setFilePath(moved)
-        syncAppState(moved, dirty)
+        movedTo = newPath
+      } else if (node.isDir && current && current.startsWith(node.path + sep)) {
+        movedTo = newPath + current.slice(node.path.length)
+      }
+      if (movedTo) {
+        setFilePath(movedTo)
+        syncAppState(movedTo, dirty)
+        // relative image paths resolve against the file's directory — follow the move
+        livePreviewConfig.baseDir = movedTo.replace(/[\\/][^\\/]*$/, '')
       }
     },
     [dirty, syncAppState]
@@ -392,10 +401,14 @@ export default function App(): React.JSX.Element {
     async (path: string) => {
       if (!viewRef.current) return
       if (!confirmDiscard()) return
-      const content = await window.api.readFile(path)
-      livePreviewConfig.baseDir = path.replace(/[\\/][^\\/]*$/, '')
-      loadContent(content, path)
-      setSidebarMode('outline')
+      try {
+        const content = await window.api.readFile(path)
+        livePreviewConfig.baseDir = path.replace(/[\\/][^\\/]*$/, '')
+        loadContent(content, path)
+        setSidebarMode('outline')
+      } catch (err) {
+        window.alert(`Could not open file: ${err instanceof Error ? err.message : err}`)
+      }
     },
     [confirmDiscard, loadContent]
   )
@@ -408,34 +421,43 @@ export default function App(): React.JSX.Element {
     [loadFolder]
   )
 
-  const saveFileAs = useCallback(async (): Promise<boolean> => {
+  // Write the buffer to `target`. Handles the main-process conflict report
+  // (file changed on disk since we opened it) by asking before overwriting.
+  const writeBufferTo = useCallback(async (target: string): Promise<boolean> => {
     const view = viewRef.current
     if (!view) return false
-    const target = await window.api.showSaveDialog(filePathRef.current ?? 'untitled.md')
-    if (!target) return false
     const content = view.state.doc.toString()
-    await window.api.writeFile(target, content)
+    let result = await window.api.writeFile(target, content)
+    if (!result.ok && result.conflict) {
+      const overwrite = window.confirm(
+        `"${target.replace(/^.*[\\/]/, '')}" was changed on disk since it was opened. Overwrite those changes?`
+      )
+      if (!overwrite) return false
+      result = await window.api.writeFile(target, content, { force: true })
+    }
+    if (!result.ok) {
+      window.alert(`Could not save: ${result.error ?? 'unknown error'}`)
+      return false
+    }
     savedContentRef.current = content
     livePreviewConfig.baseDir = target.replace(/[\\/][^\\/]*$/, '')
-    setFilePath(target)
     setDirty(false)
     syncAppState(target, false)
     return true
   }, [syncAppState])
 
-  const saveFile = useCallback(async () => {
-    const view = viewRef.current
-    if (!view) return
-    if (!filePathRef.current) {
-      await saveFileAs()
-      return
-    }
-    const content = view.state.doc.toString()
-    await window.api.writeFile(filePathRef.current, content)
-    savedContentRef.current = content
-    setDirty(false)
-    syncAppState(filePathRef.current, false)
-  }, [saveFileAs, syncAppState])
+  const saveFileAs = useCallback(async (): Promise<boolean> => {
+    const target = await window.api.showSaveDialog(filePathRef.current ?? 'untitled.md')
+    if (!target) return false
+    const ok = await writeBufferTo(target)
+    if (ok) setFilePath(target)
+    return ok
+  }, [writeBufferTo])
+
+  const saveFile = useCallback(async (): Promise<boolean> => {
+    if (!filePathRef.current) return saveFileAs()
+    return writeBufferTo(filePathRef.current)
+  }, [saveFileAs, writeBufferTo])
 
   // ---- theme ----------------------------------------------------------------
   const applyTheme = useCallback((next: ThemeName) => {
@@ -468,11 +490,18 @@ export default function App(): React.JSX.Element {
         if (view) openSearchPanel(view)
       }),
       window.api.onMenu('menu:showHelp', () => {
+        // Help replaces the current buffer — never drop unsaved changes silently.
+        if (!confirmDiscard()) return
         loadContent(HELP_MD, null)
+      }),
+      // Main intercepted a window close because the buffer is dirty: save (or
+      // abort if the user cancels Save As), then report so main can finish.
+      window.api.onRequestSaveThenClose(() => {
+        void saveFile().then((ok) => window.api.saveThenCloseResult(ok))
       })
     ]
     return () => offs.forEach((off) => off())
-  }, [openFromSystem, openFolderFromSystem, newFile, openFile, openFolder, saveFile, saveFileAs, applyTheme, loadContent, theme])
+  }, [openFromSystem, openFolderFromSystem, newFile, openFile, openFolder, saveFile, saveFileAs, applyTheme, loadContent, theme, confirmDiscard])
 
   // ---- outline navigation ---------------------------------------------------
   const goToHeading = useCallback((pos: number) => {
@@ -578,10 +607,18 @@ export default function App(): React.JSX.Element {
       },
       {
         label: 'Help',
-        items: [{ label: 'Markdown Syntax Reference', action: () => loadContent(HELP_MD, null) }]
+        items: [
+          {
+            label: 'Markdown Syntax Reference',
+            action: () => {
+              if (!confirmDiscard()) return
+              loadContent(HELP_MD, null)
+            }
+          }
+        ]
       }
     ],
-    [fmtShortcut, newFile, openFile, openFolder, saveFile, saveFileAs, editCut, editCopy, editPaste, editSelectAll, toggleTheme, loadContent]
+    [fmtShortcut, newFile, openFile, openFolder, saveFile, saveFileAs, editCut, editCopy, editPaste, editSelectAll, toggleTheme, loadContent, confirmDiscard]
   )
 
   // ---- global shortcuts (native accelerators are gone with the native menu) --

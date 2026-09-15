@@ -69,7 +69,10 @@ async function exportSvg(svgEl: SVGSVGElement): Promise<void> {
     { name: 'All Files', extensions: ['*'] }
   ])
   if (!target) return
-  await window.api.writeFile(target, content)
+  const result = await window.api.writeFile(target, content)
+  if (!result.ok) {
+    window.alert(`Could not export SVG: ${result.error ?? 'unknown error'}`)
+  }
 }
 
 // ---- widgets ----------------------------------------------------------------

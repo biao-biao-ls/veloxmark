@@ -12,6 +12,13 @@ export interface DirNode {
   children?: DirNode[]
 }
 
+export interface WriteResult {
+  ok: boolean
+  /** The file changed on disk since it was opened; pass force to overwrite. */
+  conflict?: boolean
+  error?: string
+}
+
 const api = {
   platform: process.platform,
   openFile: (): Promise<OpenFileResult | null> => ipcRenderer.invoke('dialog:openFile'),
@@ -38,8 +45,8 @@ const api = {
     filters?: { name: string; extensions: string[] }[]
   ): Promise<string | null> => ipcRenderer.invoke('dialog:saveFile', defaultPath, filters),
   readFile: (filePath: string): Promise<string> => ipcRenderer.invoke('file:read', filePath),
-  writeFile: (filePath: string, content: string): Promise<boolean> =>
-    ipcRenderer.invoke('file:write', filePath, content),
+  writeFile: (filePath: string, content: string, opts?: { force?: boolean }): Promise<WriteResult> =>
+    ipcRenderer.invoke('file:write', filePath, content, opts),
   setAppState: (state: { filePath: string | null; dirty: boolean }): Promise<void> =>
     ipcRenderer.invoke('app:setState', state),
   resolveImageSrc: (dir: string, src: string): Promise<string> =>
@@ -76,7 +83,16 @@ const api = {
     const listener = (): void => callback()
     ipcRenderer.on(channel, listener)
     return () => ipcRenderer.removeListener(channel, listener)
-  }
+  },
+  // Main asks the renderer to save the buffer, then report success/failure
+  // so the close flow can continue (or abort on a cancelled Save As).
+  onRequestSaveThenClose: (callback: () => void): (() => void) => {
+    const listener = (): void => callback()
+    ipcRenderer.on('app:requestSaveThenClose', listener)
+    return () => ipcRenderer.removeListener('app:requestSaveThenClose', listener)
+  },
+  saveThenCloseResult: (ok: boolean): void =>
+    ipcRenderer.send('app:saveThenCloseResult', ok)
 }
 
 contextBridge.exposeInMainWorld('api', api)

@@ -12,6 +12,13 @@ interface DirNode {
   children?: DirNode[]
 }
 
+interface WriteResult {
+  ok: boolean
+  /** The file changed on disk since it was opened; pass force to overwrite. */
+  conflict?: boolean
+  error?: string
+}
+
 interface RendererApi {
   platform: string
   openFile(): Promise<OpenFileResult | null>
@@ -28,7 +35,7 @@ interface RendererApi {
     filters?: { name: string; extensions: string[] }[]
   ): Promise<string | null>
   readFile(filePath: string): Promise<string>
-  writeFile(filePath: string, content: string): Promise<boolean>
+  writeFile(filePath: string, content: string, opts?: { force?: boolean }): Promise<WriteResult>
   setAppState(state: { filePath: string | null; dirty: boolean }): Promise<void>
   resolveImageSrc(dir: string, src: string): Promise<string>
   windowMinimize(): void
@@ -43,6 +50,8 @@ interface RendererApi {
   onOpenFolder(callback: (folderPath: string) => void): () => void
   onFullScreen(callback: (fullScreen: boolean) => void): () => void
   onMenu(channel: string, callback: () => void): () => void
+  onRequestSaveThenClose(callback: () => void): () => void
+  saveThenCloseResult(ok: boolean): void
 }
 
 interface Window {

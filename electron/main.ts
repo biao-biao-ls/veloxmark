@@ -60,6 +60,26 @@ protocol.registerSchemesAsPrivileged([
 
 let mainWindow: BrowserWindow | null = null
 
+// Renderer pushes dirty state via app:setState; the close handler uses it to
+// decide whether a save prompt is needed. forceClose bypasses the prompt once
+// the user chose "Don't Save" or after a successful save-then-close.
+let appStateDirty = false
+let forceClose = false
+
+// mtime+size of the file the editor currently has open, recorded on every
+// read/write. Compared at save time to detect modifications made outside
+// the app (git checkout, sync tools, another editor) before overwriting.
+let openFileStamp: { path: string; mtimeMs: number; size: number } | null = null
+
+async function stampFile(filePath: string): Promise<void> {
+  try {
+    const s = await stat(filePath)
+    openFileStamp = { path: filePath, mtimeMs: s.mtimeMs, size: s.size }
+  } catch {
+    openFileStamp = null
+  }
+}
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -84,7 +104,7 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: true
     }
   })
 
@@ -92,6 +112,33 @@ function createWindow(): void {
   mainWindow.on('closed', () => {
     mainWindow = null
     rendererLoaded = false // a new window will signal ready again
+  })
+
+  // Unsaved-changes guard: intercept close and ask the user. "Save" hands the
+  // buffer back to the renderer (it owns the editor); it reports the outcome
+  // via app:saveThenCloseResult so a cancelled Save As keeps the window open.
+  forceClose = false
+  mainWindow.on('close', (e) => {
+    if (forceClose || !appStateDirty) return
+    e.preventDefault()
+    void (async () => {
+      const win = mainWindow
+      if (!win || win.isDestroyed()) return
+      const { response } = await dialog.showMessageBox(win, {
+        type: 'warning',
+        buttons: ['Save', "Don't Save", 'Cancel'],
+        defaultId: 0,
+        cancelId: 2,
+        message: 'Do you want to save the changes you made to this file?',
+        detail: 'Your changes will be lost if you don’t save them.'
+      })
+      if (response === 0) {
+        win.webContents.send('app:requestSaveThenClose')
+      } else if (response === 1) {
+        forceClose = true
+        win.close()
+      }
+    })()
   })
 
   // Fullscreen toggles whether the titlebar reserves space for the traffic
@@ -110,8 +157,24 @@ function createWindow(): void {
     })
   }
 
+  // The renderer is a local editor, never a browser: block all in-window
+  // navigation. Without this, a link inside rendered content (e.g. a mermaid
+  // SVG anchor) could navigate the window to a remote origin — and the preload
+  // bridge would then hand file IPC to that remote page.
+  mainWindow.webContents.on('will-navigate', (e) => e.preventDefault())
+
+  // Only web/mail links may leave the app, and only via the OS handler.
+  // Never open file:// or custom-protocol URLs — on some platforms that
+  // launches an executable.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url)
+    try {
+      const { protocol } = new URL(url)
+      if (protocol === 'https:' || protocol === 'http:' || protocol === 'mailto:') {
+        void shell.openExternal(url)
+      }
+    } catch {
+      // malformed URL — refuse silently
+    }
     return { action: 'deny' }
   })
 
@@ -138,6 +201,7 @@ ipcMain.handle('dialog:openFile', async () => {
   if (result.canceled || result.filePaths.length === 0) return null
   const filePath = result.filePaths[0]
   const content = await readFile(filePath, 'utf-8')
+  await stampFile(filePath)
   return { filePath, content }
 })
 
@@ -164,13 +228,49 @@ ipcMain.handle('dialog:openFolder', async () => {
 })
 
 ipcMain.handle('file:read', async (_e, filePath: string) => {
-  return readFile(filePath, 'utf-8')
+  const content = await readFile(filePath, 'utf-8')
+  await stampFile(filePath)
+  return content
 })
 
-ipcMain.handle('file:write', async (_e, filePath: string, content: string) => {
-  await writeFile(filePath, content, 'utf-8')
-  return true
-})
+// Atomic write: write a temp sibling then rename over the target, so a crash
+// mid-write can never leave a truncated file. Before overwriting, compare the
+// recorded stamp against the on-disk stat — if another program modified the
+// file since we read it, report a conflict and let the renderer ask the user
+// (pass force:true to overwrite anyway). Temp names start with '.' so the
+// folder watcher already ignores them.
+ipcMain.handle(
+  'file:write',
+  async (_e, filePath: string, content: string, opts?: { force?: boolean }) => {
+    try {
+      if (opts?.force !== true && openFileStamp?.path === filePath) {
+        try {
+          const s = await stat(filePath)
+          if (s.mtimeMs !== openFileStamp.mtimeMs || s.size !== openFileStamp.size) {
+            return { ok: false, conflict: true }
+          }
+        } catch {
+          // deleted externally — fall through and recreate it
+        }
+      }
+      const tmp = join(
+        dirname(filePath),
+        `.${basename(filePath)}.${process.pid}.${Date.now().toString(36)}.tmp`
+      )
+      try {
+        await writeFile(tmp, content, 'utf-8')
+        await rename(tmp, filePath)
+      } catch (err) {
+        await rm(tmp, { force: true }).catch(() => undefined)
+        throw err
+      }
+      await stampFile(filePath)
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  }
+)
 
 // ---- folder listing ---------------------------------------------------------
 
@@ -355,9 +455,20 @@ ipcMain.on('app:rendererReady', () => {
 // ---- renderer -> main state sync (window title) ----------------------------
 
 ipcMain.handle('app:setState', (_e, state: { filePath: string | null; dirty: boolean }) => {
+  appStateDirty = state.dirty
   if (mainWindow) {
     const name = state.filePath ? basename(state.filePath) : 'Untitled'
     mainWindow.setTitle(`${state.dirty ? '• ' : ''}${name} - VeloxMark`)
+  }
+})
+
+// Renderer finished (or aborted) the close-triggered save. Only a confirmed
+// success closes the window; a cancelled Save As or a failed write keeps it
+// open so the buffer is never dropped silently.
+ipcMain.on('app:saveThenCloseResult', (_e, ok: boolean) => {
+  if (ok) {
+    forceClose = true
+    mainWindow?.close()
   }
 })
 
