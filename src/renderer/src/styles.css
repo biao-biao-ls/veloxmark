@@ -82,9 +82,11 @@ body {
   border: 1px solid transparent;
   color: var(--fg);
   border-radius: 4px;
-  padding: 4px 10px;
-  font-size: 13px;
+  padding: 4px 8px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tb-btn:hover {
@@ -199,7 +201,6 @@ body {
   background: transparent;
   border: none;
   color: var(--fg);
-  font-size: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -213,6 +214,31 @@ body {
 .wc-close:hover {
   background: #e81123;
   color: #ffffff;
+}
+
+/* macOS: native traffic lights (titleBarStyle hiddenInset) replace the custom
+   buttons, and the app logo is hidden like other native titlebars. The in-app
+   menubar is hidden too — the system menu bar owns File/Edit/View/Help there.
+   Content is padded right of the lights (trafficLightPosition x=14, ~52px). */
+.platform-mac .window-controls {
+  display: none;
+}
+
+.platform-mac .tb-logo {
+  display: none;
+}
+
+.platform-mac .menubar {
+  display: none;
+}
+
+.platform-mac .titlebar {
+  padding-left: 84px;
+}
+
+/* Fullscreen: traffic lights auto-hide, so don't reserve their space. */
+.platform-mac.is-fullscreen .titlebar {
+  padding-left: 8px;
 }
 
 /* ---- layout ---------------------------------------------------------------- */
@@ -233,11 +259,60 @@ body {
 }
 
 .sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--fg-dim);
   padding: 4px 16px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-back {
+  background: transparent;
+  border: none;
+  color: var(--fg-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  margin-left: -6px;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sidebar-back:hover {
+  color: var(--accent);
+  background: var(--code-bg);
+}
+
+.sidebar-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-action {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--fg-dim);
+  font-size: 14px;
+  line-height: 1;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sidebar-action:hover {
+  color: var(--accent);
+  background: var(--code-bg);
 }
 
 .outline-empty {
@@ -274,6 +349,88 @@ body {
 
 .outline-l1 {
   font-weight: 600;
+}
+
+/* ---- folder file tree ------------------------------------------------------- */
+
+.filetree-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 2px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 0;
+}
+
+.filetree-item:hover {
+  background: var(--code-bg);
+}
+
+.filetree-item.filetree-active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.filetree-dir-label {
+  color: var(--fg-dim);
+  user-select: none;
+}
+
+.filetree-dir-label svg {
+  flex-shrink: 0;
+}
+
+.filetree-dir-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- tree context menu ------------------------------------------------------ */
+
+.tree-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 140px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.tree-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.tree-menu-item:hover {
+  background: var(--code-bg);
+}
+
+.tree-menu-danger {
+  color: #d1242f;
+}
+
+.theme-dark .tree-menu-danger {
+  color: #f85149;
 }
 
 .editor-host {

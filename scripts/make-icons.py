@@ -8,6 +8,8 @@ sub-pixel anti-aliasing straight from the source, no morphology needed.
 
 from PIL import Image, ImageFilter
 import os
+import shutil
+import subprocess
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'new-logo.jpg')
@@ -67,9 +69,16 @@ src_box = (max(0, crop_box[0]), max(0, crop_box[1]),
            min(w, crop_box[2]), min(h, crop_box[3]))
 master.paste(rgba.crop(src_box), (src_box[0] - crop_box[0], src_box[1] - crop_box[1]))
 
-os.makedirs(OUT_DIR, exist_ok=True)
+# macOS 网格规范：1024 画布上内容只占 824（≈80.5%），四周各留 100px 透明边。
+# 系统不缩放图标，满幅导出的图标在 Dock 里会比其它应用明显大一圈。
 ICON = 1024
-master.resize((ICON, ICON), Image.LANCZOS).save(os.path.join(OUT_DIR, 'logo.png'))
+CANVAS_CONTENT = 824
+scaled = master.resize((CANVAS_CONTENT, CANVAS_CONTENT), Image.LANCZOS)
+master = Image.new('RGBA', (ICON, ICON), (0, 0, 0, 0))
+master.paste(scaled, ((ICON - CANVAS_CONTENT) // 2,) * 2)
+
+os.makedirs(OUT_DIR, exist_ok=True)
+master.save(os.path.join(OUT_DIR, 'logo.png'))
 
 sizes = [16, 24, 32, 48, 64, 128, 256, 512]
 imgs = [master.resize((s, s), Image.LANCZOS) for s in sizes]
@@ -85,6 +94,27 @@ for s in (256, 128, 64, 32):
 pub = os.path.join(ROOT, 'src', 'renderer', 'public')
 imgs[sizes.index(32)].save(os.path.join(pub, 'favicon.png'))
 imgs[sizes.index(256)].save(os.path.join(pub, 'icon.png'))
+
+# macOS .icns: iconutil wants an .iconset of the power-of-two sizes incl. @2x.
+# Skipped off-macOS (e.g. on the Windows packaging box) — build/icon.icns is
+# committed, so packaging still finds it.
+if shutil.which('iconutil'):
+    iconset = os.path.join(OUT_DIR, 'icon.iconset')
+    if os.path.isdir(iconset):
+        shutil.rmtree(iconset)
+    os.makedirs(iconset)
+    for s in (16, 32, 128, 256, 512):
+        master.resize((s, s), Image.LANCZOS).save(
+            os.path.join(iconset, f'icon_{s}x{s}.png'))
+        master.resize((s * 2, s * 2), Image.LANCZOS).save(
+            os.path.join(iconset, f'icon_{s}x{s}@2x.png'))
+    tmp_icns = os.path.join(OUT_DIR, 'icon.tmp.icns')  # iconutil requires .icns ext
+    subprocess.check_call(
+        ['iconutil', '-c', 'icns', iconset, '-o', tmp_icns])
+    os.replace(tmp_icns, os.path.join(OUT_DIR, 'icon.icns'))
+    shutil.rmtree(iconset)
+else:
+    print('iconutil not found; skipped build/icon.icns (run on macOS)')
 
 print('bbox:', bbox, '-> canvas', canvas_side)
 print('written:', sorted(os.listdir(OUT_DIR)))

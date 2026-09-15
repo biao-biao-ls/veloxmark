@@ -1,9 +1,53 @@
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, net, protocol, shell } from 'electron'
 
 // NOTE: window uses frameless mode; all menus live in the renderer titlebar.
-import { readFile, writeFile } from 'node:fs/promises'
+// Exception: macOS keeps the native menu bar (see buildDarwinMenu) and native
+// traffic lights via titleBarStyle: 'hiddenInset'.
+import { watch, type FSWatcher } from 'node:fs'
+import { readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, normalize } from 'node:path'
 import { pathToFileURL } from 'node:url'
+
+// In dev the process lives inside Electron.app's bundle, so macOS would show
+// "Electron" in the menu bar; packaged builds get the name from CFBundleName.
+// Must run before ready so the About panel and app menu pick it up.
+if (process.platform === 'darwin') {
+  app.setName('VeloxMark')
+  app.setAboutPanelOptions({
+    applicationName: 'VeloxMark',
+    applicationVersion: app.getVersion(),
+    copyright: 'Copyright © 2026 VeloxMark contributors',
+    // Packaged apps already embed the icns; dev needs an explicit path.
+    ...(app.isPackaged ? {} : { iconPath: join(__dirname, '../../build/icon.png') })
+  })
+}
+
+// macOS "open with" / double-clicking a .md in Finder while the app is running.
+// Events can arrive before the renderer is up, so queue until it signals ready.
+// A path may point at a directory (Finder "Open" on a folder) — deliver those
+// on a separate channel so the renderer opens them as a folder workspace.
+const queuedOpens: { path: string; isDir: boolean }[] = []
+let rendererLoaded = false
+
+async function deliverOpenPath(filePath: string): Promise<void> {
+  let isDir = false
+  try {
+    isDir = (await stat(filePath)).isDirectory()
+  } catch {
+    // unreadable path — still attempt to open it as a file
+  }
+  const channel = isDir ? 'app:openFolder' : 'app:openPath'
+  if (rendererLoaded && mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(channel, filePath)
+  } else {
+    queuedOpens.push({ path: filePath, isDir })
+  }
+}
+
+app.on('open-file', (event, filePath) => {
+  event.preventDefault()
+  void deliverOpenPath(filePath)
+})
 
 // Custom protocol so relative images inside a .md file can be displayed even
 // when the renderer origin is http://localhost (dev) or file:// (prod).
@@ -23,7 +67,15 @@ function createWindow(): void {
     minWidth: 640,
     minHeight: 400,
     show: false,
-    frame: false, // custom titlebar + in-app menu (follows app theme)
+    // Windows/Linux: frameless + custom titlebar. macOS: hidden titlebar but
+    // keep the native traffic lights (min/max/close interop, Option-click,
+    // hover glyphs, green = fullscreen) with them inset into our titlebar.
+    ...(process.platform === 'darwin'
+      ? {
+          titleBarStyle: 'hiddenInset' as const,
+          trafficLightPosition: { x: 14, y: 14 }
+        }
+      : { frame: false }),
     backgroundColor: '#ffffff',
     // Dev/preview: load from build/. Packaged apps get the icon embedded by
     // electron-builder (build/icon.ico / build/icon.png are its defaults).
@@ -39,7 +91,18 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => mainWindow?.show())
   mainWindow.on('closed', () => {
     mainWindow = null
+    rendererLoaded = false // a new window will signal ready again
   })
+
+  // Fullscreen toggles whether the titlebar reserves space for the traffic
+  // lights (they auto-hide in fullscreen) — keep the renderer in sync.
+  const notifyFullScreen = (): void => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('app:fullScreen', mainWindow.isFullScreen())
+    }
+  }
+  mainWindow.on('enter-full-screen', notifyFullScreen)
+  mainWindow.on('leave-full-screen', notifyFullScreen)
 
   if (!app.isPackaged) {
     mainWindow.webContents.on('console-message', (_e, level, message) => {
@@ -91,12 +154,161 @@ ipcMain.handle(
   }
 )
 
+ipcMain.handle('dialog:openFolder', async () => {
+  if (!mainWindow) return null
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory']
+  })
+  if (result.canceled || result.filePaths.length === 0) return null
+  return { folderPath: result.filePaths[0] }
+})
+
 ipcMain.handle('file:read', async (_e, filePath: string) => {
   return readFile(filePath, 'utf-8')
 })
 
 ipcMain.handle('file:write', async (_e, filePath: string, content: string) => {
   await writeFile(filePath, content, 'utf-8')
+  return true
+})
+
+// ---- folder listing ---------------------------------------------------------
+
+export interface DirNode {
+  name: string
+  path: string
+  isDir: boolean
+  children?: DirNode[]
+}
+
+const MD_EXT = /\.(md|markdown|mdown|txt)$/i
+// Common noise that never contains a user's notes; keeps deep scans fast.
+const SKIP_DIRS = new Set(['node_modules', '.git', '.svn', '.hg', 'dist', 'out', 'build'])
+const MAX_SCAN_DEPTH = 8
+
+async function listMarkdownTree(dirPath: string, depth = 0): Promise<DirNode[]> {
+  if (depth > MAX_SCAN_DEPTH) return []
+  let entries
+  try {
+    entries = await readdir(dirPath, { withFileTypes: true })
+  } catch {
+    return [] // unreadable directory — treat as empty rather than failing the scan
+  }
+  const dirs: DirNode[] = []
+  const files: DirNode[] = []
+  for (const entry of entries) {
+    if (entry.name.startsWith('.')) continue
+    const full = join(dirPath, entry.name)
+    if (entry.isDirectory()) {
+      if (SKIP_DIRS.has(entry.name)) continue
+      const children = await listMarkdownTree(full, depth + 1)
+      // keep a folder only when it (recursively) holds markdown files
+      if (children.length > 0) dirs.push({ name: entry.name, path: full, isDir: true, children })
+    } else if (entry.isFile() && MD_EXT.test(entry.name)) {
+      files.push({ name: entry.name, path: full, isDir: false })
+    }
+  }
+  const byName = (a: DirNode, b: DirNode): number => a.name.localeCompare(b.name)
+  dirs.sort(byName)
+  files.sort(byName)
+  return [...dirs, ...files]
+}
+
+ipcMain.handle('folder:list', async (_e, dirPath: string): Promise<DirNode[]> => {
+  return listMarkdownTree(dirPath)
+})
+
+// ---- folder watching --------------------------------------------------------
+// One recursive watcher per opened folder. FS events are debounced and turned
+// into a full tree rescan pushed to the renderer — simple and robust versus
+// replaying incremental rename/change events (editors write via temp+rename).
+
+let folderWatcher: FSWatcher | null = null
+let watchedFolder: string | null = null
+let watchRefreshTimer: NodeJS.Timeout | null = null
+
+async function pushFolderTree(): Promise<void> {
+  if (!watchedFolder) return
+  const tree = await listMarkdownTree(watchedFolder)
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('folder:tree', tree)
+  }
+}
+
+function stopFolderWatcher(): void {
+  if (watchRefreshTimer) {
+    clearTimeout(watchRefreshTimer)
+    watchRefreshTimer = null
+  }
+  folderWatcher?.close()
+  folderWatcher = null
+  watchedFolder = null
+}
+
+ipcMain.handle('folder:watch', async (e, dirPath: string) => {
+  // A window owns exactly one watched folder; replace any previous watcher.
+  stopFolderWatcher()
+  watchedFolder = dirPath
+  try {
+    folderWatcher = watch(dirPath, { recursive: true }, (_event, changedPath) => {
+      // Ignore editor temp files (vim/emacs swap, atomic-save .tmp siblings).
+      const name = basename(changedPath ?? '')
+      if (name.startsWith('.') || name.endsWith('~') || name.endsWith('.swp')) return
+      if (watchRefreshTimer) clearTimeout(watchRefreshTimer)
+      watchRefreshTimer = setTimeout(() => {
+        watchRefreshTimer = null
+        void pushFolderTree()
+      }, 200)
+    })
+    folderWatcher.on('error', () => {
+      // Root deleted or became unreadable — surface an empty tree, keep the
+      // session alive so the user can reopen another folder.
+      stopFolderWatcher()
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('folder:tree', [])
+      }
+    })
+  } catch {
+    // recursive watch unsupported — degraded: tree won't auto-refresh
+    folderWatcher = null
+  }
+  // Send the current tree immediately so the renderer doesn't need a separate
+  // list call when (re)subscribing.
+  e.sender.send('folder:tree', await listMarkdownTree(dirPath))
+  return true
+})
+
+ipcMain.handle('folder:unwatch', () => {
+  stopFolderWatcher()
+  return true
+})
+
+// Renderer-owned lifetime: closing the window drops the OS watch handle.
+app.on('before-quit', stopFolderWatcher)
+app.on('window-all-closed', stopFolderWatcher)
+
+// ---- tree file operations ---------------------------------------------------
+
+ipcMain.handle('file:create', async (_e, filePath: string) => {
+  // 'wx' fails if the path exists — never clobber an existing file.
+  await writeFile(filePath, '', { encoding: 'utf-8', flag: 'wx' })
+  return true
+})
+
+ipcMain.handle('file:delete', async (_e, targetPath: string) => {
+  await rm(targetPath, { recursive: true, force: false })
+  return true
+})
+
+ipcMain.handle('file:rename', async (_e, oldPath: string, newPath: string) => {
+  if (oldPath === newPath) return true
+  await stat(newPath).then(
+    () => {
+      throw new Error(`"${basename(newPath)}" already exists`)
+    },
+    () => undefined // target free
+  )
+  await rename(oldPath, newPath)
   return true
 })
 
@@ -108,6 +320,12 @@ ipcMain.handle('file:resolveImageSrc', (_e, dir: string, src: string) => {
 
 // ---- window controls (custom frameless titlebar) ---------------------------
 
+function zoomBy(delta: number | 'reset'): void {
+  const contents = mainWindow?.webContents
+  if (!contents) return
+  contents.setZoomLevel(delta === 'reset' ? 0 : contents.getZoomLevel() + delta)
+}
+
 ipcMain.on('window:minimize', () => mainWindow?.minimize())
 ipcMain.on('window:maximize-restore', () => {
   if (!mainWindow) return
@@ -116,14 +334,23 @@ ipcMain.on('window:maximize-restore', () => {
 ipcMain.on('window:close', () => mainWindow?.close())
 ipcMain.on('window:toggleDevTools', () => mainWindow?.webContents.toggleDevTools())
 ipcMain.on('window:zoom', (_e, action: 'in' | 'out' | 'reset') => {
-  if (!mainWindow) return
-  const contents = mainWindow.webContents
-  if (action === 'reset') contents.setZoomLevel(0)
-  else contents.setZoomLevel(contents.getZoomLevel() + (action === 'in' ? 0.5 : -0.5))
+  if (action === 'reset') zoomBy('reset')
+  else zoomBy(action === 'in' ? 0.5 : -0.5)
 })
 
 ipcMain.handle('clipboard:read', () => clipboard.readText())
 ipcMain.handle('clipboard:write', (_e, text: string) => clipboard.writeText(text))
+
+// Renderer pings once the editor is mounted; only then can openPath be applied.
+ipcMain.on('app:rendererReady', () => {
+  rendererLoaded = true
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('app:fullScreen', mainWindow.isFullScreen())
+  }
+  for (const { path, isDir } of queuedOpens.splice(0)) {
+    mainWindow?.webContents.send(isDir ? 'app:openFolder' : 'app:openPath', path)
+  }
+})
 
 // ---- renderer -> main state sync (window title) ----------------------------
 
@@ -134,8 +361,120 @@ ipcMain.handle('app:setState', (_e, state: { filePath: string | null; dirty: boo
   }
 })
 
+// ---- application menu ------------------------------------------------------
+// Windows/Linux keep Menu.setApplicationMenu(null) — the renderer titlebar owns
+// all menus there. macOS is different: the menu bar is platform chrome, and a
+// null menu strips the system shortcuts (Cmd+Q/H/W/M, Edit roles like copy and
+// paste in plain <input>s). App-specific items forward to the channels the
+// renderer already listens on (see preload `onMenu`).
+function sendMenu(channel: string): void {
+  mainWindow?.webContents.send(channel)
+}
+
+function buildDarwinMenu(): Menu {
+  return Menu.buildFromTemplate([
+    {
+      label: 'VeloxMark',
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    },
+    {
+      label: 'File',
+      submenu: [
+        { label: 'New', accelerator: 'Cmd+N', click: () => sendMenu('menu:newFile') },
+        { label: 'Open…', accelerator: 'Cmd+O', click: () => sendMenu('menu:openFile') },
+        {
+          label: 'Open Folder…',
+          accelerator: 'Cmd+Shift+O',
+          click: () => sendMenu('menu:openFolder')
+        },
+        { type: 'separator' },
+        { label: 'Save', accelerator: 'Cmd+S', click: () => sendMenu('menu:saveFile') },
+        {
+          label: 'Save As…',
+          accelerator: 'Cmd+Shift+S',
+          click: () => sendMenu('menu:saveFileAs')
+        },
+        { type: 'separator' },
+        { role: 'close' }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        // No undo/redo roles on purpose: a menu accelerator would intercept
+        // Cmd+Z/Y before CodeMirror sees them, and native undo fights CM6's
+        // transaction history. CM6's own keymap handles them in the editor.
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'pasteAndMatchStyle' },
+        { role: 'delete' },
+        { role: 'selectAll' }
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { label: 'Toggle Outline', click: () => sendMenu('menu:toggleOutline') },
+        { type: 'separator' },
+        { label: 'Zoom In', accelerator: 'Cmd+Plus', click: () => zoomBy(0.5) },
+        { label: 'Zoom Out', accelerator: 'Cmd+-', click: () => zoomBy(-0.5) },
+        { label: 'Reset Zoom', accelerator: 'Cmd+0', click: () => zoomBy('reset') },
+        { type: 'separator' },
+        {
+          label: 'Toggle Developer Tools',
+          accelerator: 'Alt+Cmd+I',
+          click: () => mainWindow?.webContents.toggleDevTools()
+        },
+        { type: 'separator' },
+        { label: 'Toggle Theme', accelerator: 'Cmd+Shift+T', click: () => sendMenu('menu:toggleTheme') }
+      ]
+    },
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
+        { type: 'separator' },
+        { role: 'front' }
+      ]
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'Markdown Syntax Reference',
+          click: () => sendMenu('menu:showHelp')
+        }
+      ]
+    }
+  ])
+}
+
 app.whenReady().then(() => {
-  Menu.setApplicationMenu(null)
+  if (process.platform === 'darwin') {
+    Menu.setApplicationMenu(buildDarwinMenu())
+  } else {
+    Menu.setApplicationMenu(null)
+  }
+
+  // macOS ignores the BrowserWindow `icon` option — the Dock icon comes from
+  // the bundle icns when packaged, and from Electron's default in dev.
+  if (process.platform === 'darwin' && !app.isPackaged) {
+    app.dock.setIcon(join(__dirname, '../../build/icon.png'))
+  }
 
   protocol.handle('mdres', async (request) => {
     try {
