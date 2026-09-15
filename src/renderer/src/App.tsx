@@ -5,6 +5,7 @@ import { EditorState } from '@codemirror/state'
 import { redo, undo } from '@codemirror/commands'
 import Outline from './components/Outline'
 import MenuBar, { type MenuDef } from './components/MenuBar'
+import { CloseIcon, MaximizeIcon, MinimizeIcon, MoonIcon, PanelIcon, SunIcon } from './components/Icons'
 import { createExtensions, reconfigureTheme } from './editor/setup'
 import { livePreviewConfig } from './editor/livePreview'
 import type { ThemeName } from './editor/theme'
@@ -487,10 +488,10 @@ export default function App(): React.JSX.Element {
           onClick={() => setShowOutline((v) => !v)}
           title="Toggle outline"
         >
-          ☰
+          <PanelIcon />
         </button>
         <button className="tb-btn" onClick={toggleTheme} title={`Toggle theme (${fmtShortcut('Ctrl+Shift+T')})`}>
-          {theme === 'dark' ? '☀' : '☾'}
+          {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
         </button>
         <div className="window-controls">
           <button
@@ -498,21 +499,21 @@ export default function App(): React.JSX.Element {
             onClick={() => window.api.windowMinimize()}
             title="Minimize"
           >
-            ─
+            <MinimizeIcon />
           </button>
           <button
             className="wc-btn"
             onClick={() => window.api.windowMaximizeRestore()}
             title="Maximize / Restore"
           >
-            ❐
+            <MaximizeIcon />
           </button>
           <button
             className="wc-btn wc-close"
             onClick={() => window.api.windowClose()}
             title="Close"
           >
-            ✕
+            <CloseIcon />
           </button>
         </div>
       </div>
