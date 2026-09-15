@@ -216,6 +216,9 @@ export default function App(): React.JSX.Element {
 
     // Editor is mounted — main may now deliver queued system open-file paths.
     window.api.rendererReady()
+    // Push the initial clean state so main's dirty-close guard starts accurate
+    // (it also sets the window title for the welcome document).
+    syncAppState(null, false)
 
     return () => {
       view.destroy()

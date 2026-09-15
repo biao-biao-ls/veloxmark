@@ -118,6 +118,7 @@ function createWindow(): void {
   // buffer back to the renderer (it owns the editor); it reports the outcome
   // via app:saveThenCloseResult so a cancelled Save As keeps the window open.
   forceClose = false
+  appStateDirty = false // fresh window starts clean; renderer re-pushes state
   mainWindow.on('close', (e) => {
     if (forceClose || !appStateDirty) return
     e.preventDefault()
