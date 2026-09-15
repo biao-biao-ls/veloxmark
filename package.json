@@ -6,10 +6,12 @@
   "author": "dev",
   "license": "MIT",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "node scripts/patch-dev-electron-name.mjs && electron-vite dev",
     "build": "electron-vite build",
-    "preview": "electron-vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json"
+    "preview": "node scripts/patch-dev-electron-name.mjs && electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json",
+    "build:mac": "electron-vite build && electron-builder --mac",
+    "build:mac:dir": "electron-vite build && electron-builder --mac --dir"
   },
   "dependencies": {
     "@codemirror/commands": "^6.8.0",
@@ -29,6 +31,7 @@
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
     "electron": "^34.3.0",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^3.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

@@ -6,6 +6,7 @@ interface OpenFileResult {
 }
 
 interface RendererApi {
+  platform: string
   openFile(): Promise<OpenFileResult | null>
   showSaveDialog(
     defaultPath?: string,
@@ -22,6 +23,9 @@ interface RendererApi {
   windowZoom(action: 'in' | 'out' | 'reset'): void
   clipboardRead(): Promise<string>
   clipboardWrite(text: string): Promise<void>
+  rendererReady(): void
+  onOpenPath(callback: (filePath: string) => void): () => void
+  onFullScreen(callback: (fullScreen: boolean) => void): () => void
   onMenu(channel: string, callback: () => void): () => void
 }
 

@@ -215,6 +215,31 @@ body {
   color: #ffffff;
 }
 
+/* macOS: native traffic lights (titleBarStyle hiddenInset) replace the custom
+   buttons, and the app logo is hidden like other native titlebars. The in-app
+   menubar is hidden too — the system menu bar owns File/Edit/View/Help there.
+   Content is padded right of the lights (trafficLightPosition x=14, ~52px). */
+.platform-mac .window-controls {
+  display: none;
+}
+
+.platform-mac .tb-logo {
+  display: none;
+}
+
+.platform-mac .menubar {
+  display: none;
+}
+
+.platform-mac .titlebar {
+  padding-left: 84px;
+}
+
+/* Fullscreen: traffic lights auto-hide, so don't reserve their space. */
+.platform-mac.is-fullscreen .titlebar {
+  padding-left: 8px;
+}
+
 /* ---- layout ---------------------------------------------------------------- */
 
 .main {

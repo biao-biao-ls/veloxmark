@@ -136,12 +136,17 @@ export default function App(): React.JSX.Element {
   const filePathRef = useRef<string | null>(null)
   const savedContentRef = useRef<string>(WELCOME_MD)
 
+  // macOS uses the native traffic lights (hiddenInset) and menu-bar shortcuts;
+  // Windows/Linux keep the custom titlebar buttons.
+  const isMac = window.api.platform === 'darwin'
+
   const [theme, setTheme] = useState<ThemeName>(readStoredTheme)
   const [filePath, setFilePath] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
   const [outline, setOutline] = useState<OutlineItem[]>([])
   const [activePos, setActivePos] = useState<number | null>(null)
   const [showOutline, setShowOutline] = useState(true)
+  const [isFullScreen, setIsFullScreen] = useState(false)
 
   const syncAppState = useCallback((path: string | null, isDirty: boolean) => {
     filePathRef.current = path
@@ -200,6 +205,9 @@ export default function App(): React.JSX.Element {
     viewRef.current = view
     updateOutline()
 
+    // Editor is mounted — main may now deliver queued system open-file paths.
+    window.api.rendererReady()
+
     return () => {
       view.destroy()
       viewRef.current = null
@@ -240,6 +248,18 @@ export default function App(): React.JSX.Element {
     livePreviewConfig.baseDir = result.filePath.replace(/[\\/][^\\/]*$/, '')
     loadContent(result.content, result.filePath)
   }, [confirmDiscard, loadContent])
+
+  // Finder "Open With" / double-clicking a registered file (macOS open-file).
+  const openFromSystem = useCallback(
+    async (path: string) => {
+      if (!viewRef.current) return
+      if (!confirmDiscard()) return
+      const content = await window.api.readFile(path)
+      livePreviewConfig.baseDir = path.replace(/[\\/][^\\/]*$/, '')
+      loadContent(content, path)
+    },
+    [confirmDiscard, loadContent]
+  )
 
   const saveFileAs = useCallback(async (): Promise<boolean> => {
     const view = viewRef.current
@@ -283,6 +303,9 @@ export default function App(): React.JSX.Element {
   // ---- menu wiring ----------------------------------------------------------
   useEffect(() => {
     const offs = [
+      window.api.onOpenPath((path) => void openFromSystem(path)),
+      window.api.onFullScreen((full) => setIsFullScreen(full)),
+      window.api.onMenu('menu:toggleOutline', () => setShowOutline((v) => !v)),
       window.api.onMenu('menu:newFile', () => newFile()),
       window.api.onMenu('menu:openFile', () => void openFile()),
       window.api.onMenu('menu:saveFile', () => void saveFile()),
@@ -299,7 +322,7 @@ export default function App(): React.JSX.Element {
       })
     ]
     return () => offs.forEach((off) => off())
-  }, [newFile, openFile, saveFile, saveFileAs, applyTheme, loadContent, theme])
+  }, [openFromSystem, newFile, openFile, saveFile, saveFileAs, applyTheme, loadContent, theme])
 
   // ---- outline navigation ---------------------------------------------------
   const goToHeading = useCallback((pos: number) => {
@@ -348,32 +371,42 @@ export default function App(): React.JSX.Element {
   }, [applyTheme, theme])
 
   // ---- in-app menu (replaces the native menu; follows app theme) ------------
+  // macOS shows the same shortcuts with ⌘/⇧ glyphs; the native menu bar owns
+  // the real accelerators there, this menu stays as themed UI on all platforms.
+  const fmtShortcut = useCallback(
+    (s: string): string =>
+      isMac
+        ? s.replace('Ctrl+', '⌘').replace('Shift+', '⇧').replace('Alt+', '⌥').replaceAll('+', '')
+        : s,
+    [isMac]
+  )
+
   const menus: MenuDef[] = useMemo(
     () => [
       {
         label: 'File',
         items: [
-          { label: 'New', shortcut: 'Ctrl+N', action: () => newFile() },
-          { label: 'Open…', shortcut: 'Ctrl+O', action: () => void openFile() },
+          { label: 'New', shortcut: fmtShortcut('Ctrl+N'), action: () => newFile() },
+          { label: 'Open…', shortcut: fmtShortcut('Ctrl+O'), action: () => void openFile() },
           { separator: true },
-          { label: 'Save', shortcut: 'Ctrl+S', action: () => void saveFile() },
-          { label: 'Save As…', shortcut: 'Ctrl+Shift+S', action: () => void saveFileAs() }
+          { label: 'Save', shortcut: fmtShortcut('Ctrl+S'), action: () => void saveFile() },
+          { label: 'Save As…', shortcut: fmtShortcut('Ctrl+Shift+S'), action: () => void saveFileAs() }
         ]
       },
       {
         label: 'Edit',
         items: [
-          { label: 'Undo', shortcut: 'Ctrl+Z', action: () => viewRef.current && undo(viewRef.current) },
-          { label: 'Redo', shortcut: 'Ctrl+Y', action: () => viewRef.current && redo(viewRef.current) },
+          { label: 'Undo', shortcut: fmtShortcut('Ctrl+Z'), action: () => viewRef.current && undo(viewRef.current) },
+          { label: 'Redo', shortcut: fmtShortcut('Ctrl+Y'), action: () => viewRef.current && redo(viewRef.current) },
           { separator: true },
-          { label: 'Cut', shortcut: 'Ctrl+X', action: () => editCut() },
-          { label: 'Copy', shortcut: 'Ctrl+C', action: () => editCopy() },
-          { label: 'Paste', shortcut: 'Ctrl+V', action: () => void editPaste() },
-          { label: 'Select All', shortcut: 'Ctrl+A', action: () => editSelectAll() },
+          { label: 'Cut', shortcut: fmtShortcut('Ctrl+X'), action: () => editCut() },
+          { label: 'Copy', shortcut: fmtShortcut('Ctrl+C'), action: () => editCopy() },
+          { label: 'Paste', shortcut: fmtShortcut('Ctrl+V'), action: () => void editPaste() },
+          { label: 'Select All', shortcut: fmtShortcut('Ctrl+A'), action: () => editSelectAll() },
           { separator: true },
           {
             label: 'Find',
-            shortcut: 'Ctrl+F',
+            shortcut: fmtShortcut('Ctrl+F'),
             action: () => viewRef.current && openSearchPanel(viewRef.current)
           }
         ]
@@ -389,7 +422,7 @@ export default function App(): React.JSX.Element {
           { separator: true },
           { label: 'Toggle Developer Tools', action: () => window.api.windowToggleDevTools() },
           { separator: true },
-          { label: 'Toggle Theme', shortcut: 'Ctrl+Shift+T', action: () => toggleTheme() }
+          { label: 'Toggle Theme', shortcut: fmtShortcut('Ctrl+Shift+T'), action: () => toggleTheme() }
         ]
       },
       {
@@ -397,7 +430,7 @@ export default function App(): React.JSX.Element {
         items: [{ label: 'Markdown Syntax Reference', action: () => loadContent(HELP_MD, null) }]
       }
     ],
-    [newFile, openFile, saveFile, saveFileAs, editCut, editCopy, editPaste, editSelectAll, toggleTheme, loadContent]
+    [fmtShortcut, newFile, openFile, saveFile, saveFileAs, editCut, editCopy, editPaste, editSelectAll, toggleTheme, loadContent]
   )
 
   // ---- global shortcuts (native accelerators are gone with the native menu) --
@@ -429,7 +462,11 @@ export default function App(): React.JSX.Element {
   const fileName = filePath ? filePath.replace(/^.*[\\/]/, '') : 'Untitled'
 
   return (
-    <div className={`app theme-${theme}`}>
+    <div
+      className={`app theme-${theme}${isMac ? ' platform-mac' : ''}${
+        isFullScreen ? ' is-fullscreen' : ''
+      }`}
+    >
       <div
         className="titlebar"
         onDoubleClick={(e) => {
@@ -452,7 +489,7 @@ export default function App(): React.JSX.Element {
         >
           ☰
         </button>
-        <button className="tb-btn" onClick={toggleTheme} title="Toggle theme (Ctrl+Shift+T)">
+        <button className="tb-btn" onClick={toggleTheme} title={`Toggle theme (${fmtShortcut('Ctrl+Shift+T')})`}>
           {theme === 'dark' ? '☀' : '☾'}
         </button>
         <div className="window-controls">
