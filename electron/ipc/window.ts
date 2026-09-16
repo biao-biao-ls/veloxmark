@@ -25,6 +25,9 @@ export function registerWindowIpc(getWindow: GetWindow): void {
 
   ipcMain.handle('clipboard:read', () => clipboard.readText())
   ipcMain.handle('clipboard:write', (_e, text: string) => clipboard.writeText(text))
+  // P05: cheap bitmap probe so the menu Paste path can skip the image flow
+  // (and any Save As prompt) when the clipboard only holds text.
+  ipcMain.handle('clipboard:hasImage', () => !clipboard.readImage().isEmpty())
 
   // Renderer -> main state sync so the OS window title tracks the document.
   ipcMain.handle('app:setState', (_e, state: AppWindowState) => {

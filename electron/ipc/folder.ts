@@ -1,8 +1,9 @@
 import { ipcMain } from 'electron'
 import { watch, type FSWatcher } from 'node:fs'
 import { readdir } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { basename, isAbsolute, join } from 'node:path'
 import type { DirNode } from '../shared/api'
+import { IMAGE_FILE_EXT, queueImageChange, stopImageChangeBroadcast } from './image'
 import type { GetWindow } from './index'
 
 const MD_EXT = /\.(md|markdown|mdown|txt)$/i
@@ -52,6 +53,7 @@ export function stopFolderWatcher(): void {
     clearTimeout(watchRefreshTimer)
     watchRefreshTimer = null
   }
+  stopImageChangeBroadcast()
   folderWatcher?.close()
   folderWatcher = null
   watchedFolder = null
@@ -80,6 +82,11 @@ export function registerFolderIpc(getWindow: GetWindow): void {
         // Ignore editor temp files (vim/emacs swap, atomic-save .tmp siblings).
         const name = basename(changedPath ?? '')
         if (name.startsWith('.') || name.endsWith('~') || name.endsWith('.swp')) return
+        // P05: image files never appear in the markdown tree — broadcast them
+        // on their own channel so the editor can invalidate its image cache.
+        if (changedPath && IMAGE_FILE_EXT.test(name)) {
+          queueImageChange(getWindow, isAbsolute(changedPath) ? changedPath : join(dirPath, changedPath))
+        }
         if (watchRefreshTimer) clearTimeout(watchRefreshTimer)
         watchRefreshTimer = setTimeout(() => {
           watchRefreshTimer = null

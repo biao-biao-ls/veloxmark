@@ -1,5 +1,10 @@
 import { useEffect, useRef } from 'react'
-import { clearRecentFiles, setPreferences, type ThemeMode } from '../preferences/store'
+import {
+  clearRecentFiles,
+  setPreferences,
+  type ImageRenameMode,
+  type ThemeMode
+} from '../preferences/store'
 import { usePreferences } from '../preferences/useStore'
 
 /**
@@ -145,6 +150,49 @@ export default function Preferences({ open, onClose }: Props): React.JSX.Element
               onChange={(e) => setPreferences({ showLineNumbers: e.target.checked })}
             />
             <span>Show line numbers</span>
+          </label>
+        </div>
+
+        <div className="prefs-section">
+          <div className="prefs-section-title">Images</div>
+          <label className="prefs-row">
+            <span className="prefs-label">Attachment folder</span>
+            <input
+              className="prefs-input"
+              type="text"
+              value={prefs.attachmentDirName}
+              spellCheck={false}
+              onChange={(e) => setPreferences({ attachmentDirName: e.target.value })}
+            />
+          </label>
+          <label className="prefs-row">
+            <span className="prefs-label">File naming</span>
+            <select
+              className="prefs-input"
+              value={prefs.imageRenameMode}
+              onChange={(e) =>
+                setPreferences({ imageRenameMode: e.target.value as ImageRenameMode })
+              }
+            >
+              <option value="timestamp">Timestamp (img-20260917-142530.png)</option>
+              <option value="keep">Keep original name</option>
+            </select>
+          </label>
+          <label className="prefs-row prefs-check">
+            <input
+              type="checkbox"
+              checked={prefs.copyExternalImages}
+              onChange={(e) => setPreferences({ copyExternalImages: e.target.checked })}
+            />
+            <span>Copy images from outside the document folder into attachments</span>
+          </label>
+          <label className="prefs-row prefs-check">
+            <input
+              type="checkbox"
+              checked={prefs.downloadRemoteImages}
+              onChange={(e) => setPreferences({ downloadRemoteImages: e.target.checked })}
+            />
+            <span>Download pasted/dropped remote image URLs into attachments</span>
           </label>
         </div>
 

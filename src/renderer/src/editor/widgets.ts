@@ -1,4 +1,6 @@
+import { syntaxTree } from '@codemirror/language'
 import { EditorView, WidgetType } from '@codemirror/view'
+import type { SyntaxNode } from '@lezer/common'
 import hljs from 'highlight.js/lib/common'
 import katex from 'katex'
 import mermaid from 'mermaid'
@@ -290,39 +292,255 @@ export class InlineMathWidget extends WidgetType {
   }
 }
 
-export class ImageWidget extends WidgetType {
-  private static cache = new Map<string, string>()
+// ---- images (P05) ------------------------------------------------------------
 
+/** Parsed `![alt](src "title" =WxH)` pieces. */
+export interface ParsedImage {
+  alt: string
+  src: string
+  width?: number
+  height?: number
+}
+
+/**
+ * Parse an image markdown node: `![alt](src)`, optional `"title"`, and the
+ * Typora/pandoc size attribute `=WxH` (either order: `=WxH` after the title).
+ */
+export function parseImageMarkdown(text: string): ParsedImage | null {
+  const m =
+    /^!\[([^\]]*)\]\(\s*([^)\s]+)(?:\s+"[^"]*")?(?:\s+=(\d+)[xX](\d+))?\s*\)$/.exec(text)
+  if (!m) return null
+  const parsed: ParsedImage = { alt: m[1], src: m[2] }
+  if (m[3] && m[4]) {
+    parsed.width = Number(m[3])
+    parsed.height = Number(m[4])
+  }
+  return parsed
+}
+
+interface CachedImage {
+  src: string
+  mtime: number | null
+  absPath: string | null
+}
+
+/**
+ * Resolution cache, keyed by baseDir + markdown src. Entries survive widget
+ * recreations; invalidateImageCache() clears them (watcher / focus paths).
+ */
+const imageCache = new Map<string, CachedImage>()
+
+/** Close every open image zoom toolbar (only one image is selected at a time). */
+export function closeAllImageSelections(): void {
+  for (const el of document.querySelectorAll('.cm-md-image-wrap.cm-md-image-selected')) {
+    el.classList.remove('cm-md-image-selected')
+    el.querySelector('.cm-md-image-toolbar')?.remove()
+  }
+}
+
+/**
+ * Drop all cached image resolutions. The next decoration rebuild re-resolves
+ * every src (mtime-aware, with a cache-busting `v=` param) — wired to the
+ * folder watcher's `image:changed` broadcast and window-focus revalidation.
+ */
+export function invalidateImageCache(): void {
+  imageCache.clear()
+}
+
+/**
+ * Rewrite the image node containing `sourceFrom` with a `=WxH` size suffix
+ * (or drop the suffix when w/h are null). Re-resolves the node through the
+ * syntax tree so the write-back survives intermediate edits.
+ */
+function writeImageSize(
+  view: EditorView,
+  sourceFrom: number,
+  w: number | null,
+  h: number | null
+): void {
+  const state = view.state
+  let node: SyntaxNode | null = syntaxTree(state).resolveInner(sourceFrom, 1)
+  while (node && node.name !== 'Image') node = node.parent
+  if (!node) return
+  const text = state.sliceDoc(node.from, node.to)
+  const m = /^!\[([^\]]*)\]\(([\s\S]*)\)$/.exec(text)
+  if (!m) return
+  const inner = m[2].replace(/\s+=\d+[xX]\d+\s*$/, '').trimEnd()
+  const insert = w != null && h != null ? `![${m[1]}](${inner} =${w}x${h})` : `![${m[1]}](${inner})`
+  view.dispatch({
+    changes: { from: node.from, to: node.to, insert },
+    userEvent: 'input.image.resize'
+  })
+}
+
+export class ImageWidget extends WidgetType {
   constructor(
-    readonly alt: string,
-    readonly src: string,
-    readonly baseDir: string
+    readonly spec: ParsedImage,
+    readonly baseDir: string,
+    /** Source range of the ![…](…) node — anchor for size write-backs. */
+    readonly sourceFrom: number,
+    readonly sourceTo: number,
+    /**
+     * LivePreviewConfig.imageEpoch — part of identity so a cache invalidation
+     * (watcher / focus) recreates the DOM and re-resolves the src. Without
+     * this, CM's eq()-based DOM reuse would keep showing the stale image.
+     */
+    readonly epoch: number = 0
   ) {
     super()
   }
 
+  /**
+   * Width/height intentionally NOT compared: the slider commits a source edit
+   * which rebuilds the widget, and keeping the DOM (toolbar open, style
+   * already applied live) is the better UX. Size changes made in source mode
+   * still land because those edits move the node and force a recreate.
+   */
   eq(other: ImageWidget): boolean {
-    return other.src === this.src && other.baseDir === this.baseDir
+    return (
+      other.spec.src === this.spec.src &&
+      other.spec.alt === this.spec.alt &&
+      other.baseDir === this.baseDir &&
+      other.sourceFrom === this.sourceFrom &&
+      other.epoch === this.epoch
+    )
   }
 
-  toDOM(): HTMLElement {
+  toDOM(view: EditorView): HTMLElement {
+    const wrap = document.createElement('span')
+    wrap.className = 'cm-md-image-wrap'
+
     const img = document.createElement('img')
     img.className = 'cm-md-image'
-    img.alt = this.alt
+    img.alt = this.spec.alt
     img.draggable = false
-
-    const cacheKey = `${this.baseDir}\n${this.src}`
-    const cached = ImageWidget.cache.get(cacheKey)
-    if (cached) {
-      img.src = cached
-    } else {
-      img.src = ''
-      void window.api.resolveImageSrc(this.baseDir, this.src).then((resolved) => {
-        ImageWidget.cache.set(cacheKey, resolved)
-        img.src = resolved
-      })
+    if (this.spec.width) {
+      img.style.width = `${this.spec.width}px`
+      if (this.spec.height) img.style.height = `${this.spec.height}px`
     }
-    return img
+    wrap.appendChild(img)
+
+    // Broken/missing image: placeholder with the alt text, never a blank hole.
+    img.addEventListener('error', () => {
+      if (!img.getAttribute('src') || wrap.classList.contains('cm-md-image-broken')) return
+      wrap.classList.add('cm-md-image-broken')
+      const ph = document.createElement('span')
+      ph.className = 'cm-md-image-placeholder'
+      ph.textContent = this.spec.alt || 'Image not found'
+      wrap.appendChild(ph)
+      img.remove()
+    })
+
+    this.mountResolvedSrc(img)
+    this.mountSelection(wrap, img, view)
+    return wrap
+  }
+
+  private cacheKey(): string {
+    return `${this.baseDir}\n${this.spec.src}`
+  }
+
+  private mountResolvedSrc(img: HTMLImageElement): void {
+    const key = this.cacheKey()
+    const cached = imageCache.get(key)
+    if (cached) {
+      img.src = cached.src
+      return
+    }
+    void window.api.resolveImageSrc(this.baseDir, this.spec.src).then((resolved) => {
+      imageCache.set(key, resolved)
+      img.src = resolved.src
+    })
+  }
+
+  /** Click-to-select: open the zoom toolbar without collapsing to source. */
+  private mountSelection(wrap: HTMLElement, img: HTMLImageElement, view: EditorView): void {
+    img.addEventListener('mousedown', (e) => {
+      // Keep CM from moving the cursor into the source (which would reveal it).
+      e.preventDefault()
+      e.stopPropagation()
+    })
+    img.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (wrap.classList.contains('cm-md-image-selected')) return
+      closeAllImageSelections()
+      wrap.classList.add('cm-md-image-selected')
+      wrap.appendChild(this.buildToolbar(img, view))
+    })
+  }
+
+  private buildToolbar(img: HTMLImageElement, view: EditorView): HTMLElement {
+    const toolbar = document.createElement('div')
+    toolbar.className = 'cm-md-image-toolbar'
+    // Clicks inside the toolbar must not reach CM (cursor move / deselect).
+    toolbar.addEventListener('mousedown', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+    })
+    toolbar.addEventListener('click', (e) => e.stopPropagation())
+
+    const naturalW = img.naturalWidth
+    const naturalH = img.naturalHeight
+    const pctOf = (w?: number): number =>
+      naturalW && w ? Math.round((w / naturalW) * 100) : 100
+    let pct = pctOf(this.spec.width)
+
+    const label = document.createElement('span')
+    label.className = 'cm-md-image-toolbar-pct'
+    const slider = document.createElement('input')
+    slider.type = 'range'
+    slider.min = '25'
+    slider.max = '400'
+    slider.step = '5'
+    slider.value = String(Math.min(400, Math.max(25, pct)))
+    slider.disabled = naturalW === 0
+    slider.title = 'Image size'
+
+    const applyStyle = (p: number): void => {
+      label.textContent = `${p}%`
+      if (!naturalW) return
+      img.style.width = `${Math.round((naturalW * p) / 100)}px`
+      img.style.height = naturalH
+        ? `${Math.round((naturalH * p) / 100)}px`
+        : ''
+    }
+    applyStyle(pct)
+
+    slider.addEventListener('input', () => applyStyle(Number(slider.value)))
+    slider.addEventListener('change', () => {
+      pct = Number(slider.value)
+      if (!naturalW) return
+      const w = Math.max(1, Math.round((naturalW * pct) / 100))
+      const h = naturalH ? Math.max(1, Math.round((naturalH * pct) / 100)) : null
+      writeImageSize(view, this.sourceFrom, w, h)
+    })
+
+    const reset = document.createElement('button')
+    reset.className = 'cm-md-image-toolbar-btn'
+    reset.textContent = '↺'
+    reset.title = 'Reset to original size'
+    reset.addEventListener('click', (e) => {
+      e.preventDefault()
+      writeImageSize(view, this.sourceFrom, null, null)
+    })
+
+    toolbar.append(label, slider, reset)
+
+    // "Show in file manager" only for local files.
+    const cached = imageCache.get(this.cacheKey())
+    if (cached?.absPath) {
+      const reveal = document.createElement('button')
+      reveal.className = 'cm-md-image-toolbar-btn'
+      reveal.textContent = '⏏'
+      reveal.title = 'Show in file manager'
+      reveal.addEventListener('click', (e) => {
+        e.preventDefault()
+        window.api.showItemInFolder(cached.absPath!)
+      })
+      toolbar.appendChild(reveal)
+    }
+    return toolbar
   }
 
   ignoreEvent(): boolean {

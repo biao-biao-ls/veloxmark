@@ -15,6 +15,7 @@ export const PREFERENCES_VERSION = 1
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type SidebarMode = 'outline' | 'files'
+export type ImageRenameMode = 'timestamp' | 'keep'
 
 export interface Preferences {
   version: number
@@ -31,6 +32,15 @@ export interface Preferences {
   restoreLastSession: boolean
   /** Initial sidebar visibility when no session memory exists. */
   sidebarDefaultOpen: boolean
+  // ---- images (P05) ----------------------------------------------------------
+  /** Attachment subdirectory under the document directory (e.g. "assets"). */
+  attachmentDirName: string
+  /** How dropped/imported files outside the doc directory are named in assets. */
+  imageRenameMode: ImageRenameMode
+  /** Copy image files dragged from outside the doc directory into assets. */
+  copyExternalImages: boolean
+  /** Download pasted/dropped remote image URLs into assets instead of keeping them. */
+  downloadRemoteImages: boolean
 }
 
 export interface SessionState {
@@ -59,7 +69,11 @@ export const DEFAULT_PREFERENCES: Preferences = {
   wrapBareUrlOnPaste: true,
   showLineNumbers: true,
   restoreLastSession: true,
-  sidebarDefaultOpen: true
+  sidebarDefaultOpen: true,
+  attachmentDirName: 'assets',
+  imageRenameMode: 'timestamp',
+  copyExternalImages: true,
+  downloadRemoteImages: false
 }
 
 const DEFAULT_SESSION: SessionState = {
@@ -133,7 +147,17 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
     wrapBareUrlOnPaste: p.wrapBareUrlOnPaste !== false,
     showLineNumbers: p.showLineNumbers !== false,
     restoreLastSession: p.restoreLastSession !== false,
-    sidebarDefaultOpen: p.sidebarDefaultOpen !== false
+    sidebarDefaultOpen: p.sidebarDefaultOpen !== false,
+    // A path separator here would let a pref escape the document directory.
+    attachmentDirName:
+      typeof p.attachmentDirName === 'string' &&
+      p.attachmentDirName.trim() &&
+      !/[\\/:*?"<>|]/.test(p.attachmentDirName.trim())
+        ? p.attachmentDirName.trim()
+        : DEFAULT_PREFERENCES.attachmentDirName,
+    imageRenameMode: p.imageRenameMode === 'keep' ? 'keep' : 'timestamp',
+    copyExternalImages: p.copyExternalImages !== false,
+    downloadRemoteImages: p.downloadRemoteImages === true
   }
 }
 
