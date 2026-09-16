@@ -6,7 +6,6 @@ import FileTree from './components/FileTree'
 import TreeMenu from './components/TreeMenu'
 import Titlebar from './components/Titlebar'
 import { createExtensions } from './editor/setup'
-import { livePreviewConfig } from './editor/livePreview'
 import { extractOutline, type OutlineItem } from './outline/extract'
 import { WELCOME_MD } from './content'
 import { useFileOps } from './hooks/useFileOps'
@@ -55,6 +54,7 @@ export default function App(): React.JSX.Element {
     dirty,
     confirmDiscard: fileOps.confirmDiscard,
     loadContent: fileOps.loadContent,
+    setBaseDir: fileOps.setBaseDir,
     setFilePath: fileOps.setFilePath,
     syncAppState,
     setSidebarMode,
@@ -64,8 +64,6 @@ export default function App(): React.JSX.Element {
   // ---- create editor --------------------------------------------------------
   useEffect(() => {
     if (!hostRef.current || viewRef.current) return
-
-    livePreviewConfig.theme = theme
 
     const view = new EditorView({
       state: EditorState.create({

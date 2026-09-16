@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { EditorView } from '@codemirror/view'
-import { livePreviewConfig } from '../editor/livePreview'
+import { updateLivePreviewConfig } from '../editor/setup'
 import { WELCOME_MD } from '../content'
 
 export type SidebarMode = 'outline' | 'files'
@@ -25,6 +25,17 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode }: Args) {
     filePathRef.current = path
     void window.api.setAppState({ filePath: path, dirty: isDirty })
   }, [])
+
+  /** Point relative image resolution at the directory of `path`. */
+  const setBaseDir = useCallback(
+    (path: string) => {
+      const view = viewRef.current
+      if (view) {
+        updateLivePreviewConfig(view, { baseDir: path.replace(/[\\/][^\\/]*$/, '') })
+      }
+    },
+    [viewRef]
+  )
 
   const loadContent = useCallback(
     (content: string, path: string | null) => {
@@ -58,12 +69,12 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode }: Args) {
     if (!confirmDiscard()) return
     const result = await window.api.openFile()
     if (!result) return
-    livePreviewConfig.baseDir = result.filePath.replace(/[\\/][^\\/]*$/, '')
+    setBaseDir(result.filePath)
     loadContent(result.content, result.filePath)
     // Single-file open always focuses the outline; an open folder (if any)
     // stays reachable via the sidebar back button.
     setSidebarMode('outline')
-  }, [confirmDiscard, loadContent, setSidebarMode])
+  }, [confirmDiscard, loadContent, setSidebarMode, setBaseDir])
 
   // Finder "Open With" / double-clicking a registered file (macOS open-file).
   const openFromSystem = useCallback(
@@ -71,11 +82,11 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode }: Args) {
       if (!viewRef.current) return
       if (!confirmDiscard()) return
       const content = await window.api.readFile(path)
-      livePreviewConfig.baseDir = path.replace(/[\\/][^\\/]*$/, '')
+      setBaseDir(path)
       loadContent(content, path)
       setSidebarMode('outline')
     },
-    [viewRef, confirmDiscard, loadContent, setSidebarMode]
+    [viewRef, confirmDiscard, loadContent, setSidebarMode, setBaseDir]
   )
 
   const saveFileAs = useCallback(async (): Promise<boolean> => {
@@ -86,12 +97,12 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode }: Args) {
     const content = view.state.doc.toString()
     await window.api.writeFile(target, content)
     savedContentRef.current = content
-    livePreviewConfig.baseDir = target.replace(/[\\/][^\\/]*$/, '')
+    setBaseDir(target)
     setFilePath(target)
     setDirty(false)
     syncAppState(target, false)
     return true
-  }, [viewRef, syncAppState])
+  }, [viewRef, syncAppState, setBaseDir])
 
   const saveFile = useCallback(async () => {
     const view = viewRef.current
@@ -120,6 +131,7 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode }: Args) {
     filePathRef,
     savedContentRef,
     syncAppState,
+    setBaseDir,
     loadContent,
     confirmDiscard,
     newFile,

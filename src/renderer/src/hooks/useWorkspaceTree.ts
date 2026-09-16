@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type RefObject } from 'react'
 import type { TreeMenuRequest } from '../components/FileTree'
 import type { TreeMenuItem } from '../components/TreeMenu'
-import { livePreviewConfig } from '../editor/livePreview'
 import type { SidebarMode } from './useFileOps'
 
 interface Args {
@@ -9,6 +8,7 @@ interface Args {
   dirty: boolean
   confirmDiscard: () => boolean
   loadContent: (content: string, path: string | null) => void
+  setBaseDir: (path: string) => void
   setFilePath: (path: string | null) => void
   syncAppState: (path: string | null, dirty: boolean) => void
   setSidebarMode: (mode: SidebarMode) => void
@@ -24,6 +24,7 @@ export function useWorkspaceTree({
   dirty,
   confirmDiscard,
   loadContent,
+  setBaseDir,
   setFilePath,
   syncAppState,
   setSidebarMode,
@@ -71,11 +72,11 @@ export function useWorkspaceTree({
       }
       if (!confirmDiscard()) return
       const content = await window.api.readFile(path)
-      livePreviewConfig.baseDir = path.replace(/[\\/][^\\/]*$/, '')
+      setBaseDir(path)
       loadContent(content, path)
       setSidebarMode('outline')
     },
-    [filePathRef, confirmDiscard, loadContent, setSidebarMode]
+    [filePathRef, confirmDiscard, loadContent, setSidebarMode, setBaseDir]
   )
 
   const joinPath = useCallback((dir: string, name: string): string => {

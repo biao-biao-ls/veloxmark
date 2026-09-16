@@ -11,7 +11,14 @@ import {
   lineNumbers,
   drawSelection
 } from '@codemirror/view'
-import { livePreviewField, forceRefresh } from './livePreview'
+import {
+  getLivePreviewConfig,
+  livePreviewConfigCompartment,
+  livePreviewConfigExtension,
+  livePreviewConfigFacet,
+  livePreviewField,
+  type LivePreviewConfig
+} from './livePreview'
 import { compartmentThemes, ThemeName } from './theme'
 
 export const themeCompartment = new Compartment()
@@ -73,6 +80,7 @@ export function createExtensions(callbacks: EditorCallbacks, theme: ThemeName): 
     EditorState.allowMultipleSelections.of(true),
     EditorView.lineWrapping,
     livePreviewField,
+    livePreviewConfigExtension({ theme, baseDir: '' }),
     themeCompartment.of(compartmentThemes[theme]),
     markdownEditingKeymap,
     keymap.of([...searchKeymap, ...historyKeymap, ...defaultKeymap, indentWithTab]),
@@ -86,15 +94,25 @@ export function createExtensions(callbacks: EditorCallbacks, theme: ThemeName): 
   ]
 }
 
-export function refreshLivePreview(view: EditorView): void {
-  view.dispatch({ effects: forceRefresh.of(null) })
+/** Patch the live-preview config (theme/baseDir); decorations rebuild via the facet. */
+export function updateLivePreviewConfig(
+  view: EditorView,
+  patch: Partial<LivePreviewConfig>
+): void {
+  const next = { ...getLivePreviewConfig(view.state), ...patch }
+  view.dispatch({
+    effects: livePreviewConfigCompartment.reconfigure(livePreviewConfigFacet.of(next))
+  })
 }
 
+/** Switch the editor theme: highlight compartment + live-preview config facet. */
 export function reconfigureTheme(view: EditorView, theme: ThemeName): void {
   view.dispatch({
     effects: [
       themeCompartment.reconfigure(compartmentThemes[theme]),
-      forceRefresh.of(null)
+      livePreviewConfigCompartment.reconfigure(
+        livePreviewConfigFacet.of({ ...getLivePreviewConfig(view.state), theme })
+      )
     ]
   })
 }

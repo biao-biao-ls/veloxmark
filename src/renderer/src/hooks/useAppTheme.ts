@@ -1,6 +1,5 @@
 import { useCallback, useState, type RefObject } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { livePreviewConfig } from '../editor/livePreview'
 import { reconfigureTheme } from '../editor/setup'
 import type { ThemeName } from '../editor/theme'
 import { clearMermaidCache } from '../editor/widgets'
@@ -18,7 +17,6 @@ export function useAppTheme(viewRef: RefObject<EditorView | null>) {
     (next: ThemeName) => {
       setTheme(next)
       localStorage.setItem('theme', next)
-      livePreviewConfig.theme = next
       clearMermaidCache()
       const view = viewRef.current
       if (view) reconfigureTheme(view, next)

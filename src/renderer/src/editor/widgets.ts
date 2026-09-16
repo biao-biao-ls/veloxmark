@@ -7,6 +7,8 @@ import githubDarkCss from 'highlight.js/styles/github-dark.css?raw'
 import type { ThemeName } from './theme'
 
 // ---- highlight.js themes, scoped under the app theme class ------------------
+// Injected lazily on first widget render so importing this module in a
+// DOM-less environment (buildDecorations for P15 snapshot tests) is safe.
 
 function injectScopedCss(css: string, scope: string): void {
   const scoped = css.replaceAll('.hljs', `${scope} .hljs`)
@@ -15,27 +17,39 @@ function injectScopedCss(css: string, scope: string): void {
   document.head.appendChild(style)
 }
 
-injectScopedCss(githubCss, '.theme-light')
-injectScopedCss(githubDarkCss, '.theme-dark')
+let scopedCssInjected = false
+
+function ensureScopedCss(): void {
+  if (scopedCssInjected) return
+  scopedCssInjected = true
+  injectScopedCss(githubCss, '.theme-light')
+  injectScopedCss(githubDarkCss, '.theme-dark')
+}
 
 // ---- mermaid ---------------------------------------------------------------
 
-mermaid.initialize({
-  startOnLoad: false,
-  suppressErrorRendering: true,
-  theme: 'neutral',
-  fontFamily:
-    "'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, sans-serif"
-})
-
 const mermaidCache = new Map<string, string>()
 let mermaidSeq = 0
+let mermaidBaseInitialized = false
+
+function ensureMermaidBase(): void {
+  if (mermaidBaseInitialized) return
+  mermaidBaseInitialized = true
+  mermaid.initialize({
+    startOnLoad: false,
+    suppressErrorRendering: true,
+    theme: 'neutral',
+    fontFamily:
+      "'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, sans-serif"
+  })
+}
 
 export function clearMermaidCache(): void {
   mermaidCache.clear()
 }
 
 async function renderMermaid(code: string, theme: ThemeName): Promise<string> {
+  ensureMermaidBase()
   const key = `${theme}\n${code}`
   const cached = mermaidCache.get(key)
   if (cached) return cached
@@ -74,14 +88,46 @@ async function exportSvg(svgEl: SVGSVGElement): Promise<void> {
 
 // ---- widgets ----------------------------------------------------------------
 
-export class CodeBlockWidget extends WidgetType {
+/**
+ * Base for block-level rendered widgets (code, mermaid, math, table).
+ * Owns the click-to-source behavior (mousedown anywhere in the block puts
+ * the cursor back at the block's source range) so subclasses only build DOM.
+ */
+export abstract class BlockWidget extends WidgetType {
   constructor(
-    readonly code: string,
-    readonly lang: string,
     readonly sourceFrom: number,
     readonly sourceTo: number
   ) {
     super()
+  }
+
+  /** Attach click-to-source to the widget's root element (call once in toDOM). */
+  protected mountClickToSource(el: HTMLElement, view: EditorView): void {
+    el.addEventListener('mousedown', (e) => {
+      e.preventDefault()
+      view.dispatch({
+        selection: { anchor: this.sourceFrom },
+        scrollIntoView: true
+      })
+    })
+  }
+
+  /** P06 hook point for a hover toolbar; subclasses will register items here. */
+  protected registerToolbar(_el: HTMLElement): void {}
+
+  ignoreEvent(): boolean {
+    return false
+  }
+}
+
+export class CodeBlockWidget extends BlockWidget {
+  constructor(
+    readonly code: string,
+    readonly lang: string,
+    sourceFrom: number,
+    sourceTo: number
+  ) {
+    super(sourceFrom, sourceTo)
   }
 
   eq(other: CodeBlockWidget): boolean {
@@ -93,6 +139,7 @@ export class CodeBlockWidget extends WidgetType {
   }
 
   toDOM(view: EditorView): HTMLElement {
+    ensureScopedCss()
     const wrap = document.createElement('div')
     wrap.className = 'cm-md-code-block'
 
@@ -116,29 +163,19 @@ export class CodeBlockWidget extends WidgetType {
     pre.appendChild(codeEl)
     wrap.appendChild(pre)
 
-    wrap.addEventListener('mousedown', (e) => {
-      e.preventDefault()
-      view.dispatch({
-        selection: { anchor: this.sourceFrom },
-        scrollIntoView: true
-      })
-    })
+    this.mountClickToSource(wrap, view)
     return wrap
-  }
-
-  ignoreEvent(): boolean {
-    return false
   }
 }
 
-export class MermaidWidget extends WidgetType {
+export class MermaidWidget extends BlockWidget {
   constructor(
     readonly code: string,
-    readonly sourceFrom: number,
-    readonly sourceTo: number,
+    sourceFrom: number,
+    sourceTo: number,
     readonly theme: ThemeName
   ) {
-    super()
+    super(sourceFrom, sourceTo)
   }
 
   eq(other: MermaidWidget): boolean {
@@ -182,28 +219,18 @@ export class MermaidWidget extends WidgetType {
         body.textContent = `Mermaid error: ${err instanceof Error ? err.message : String(err)}`
       })
 
-    wrap.addEventListener('mousedown', (e) => {
-      e.preventDefault()
-      view.dispatch({
-        selection: { anchor: this.sourceFrom },
-        scrollIntoView: true
-      })
-    })
+    this.mountClickToSource(wrap, view)
     return wrap
-  }
-
-  ignoreEvent(): boolean {
-    return false
   }
 }
 
-export class MathBlockWidget extends WidgetType {
+export class MathBlockWidget extends BlockWidget {
   constructor(
     readonly tex: string,
-    readonly sourceFrom: number,
-    readonly sourceTo: number
+    sourceFrom: number,
+    sourceTo: number
   ) {
-    super()
+    super(sourceFrom, sourceTo)
   }
 
   eq(other: MathBlockWidget): boolean {
@@ -218,18 +245,8 @@ export class MathBlockWidget extends WidgetType {
     } catch {
       el.textContent = this.tex
     }
-    el.addEventListener('mousedown', (e) => {
-      e.preventDefault()
-      view.dispatch({
-        selection: { anchor: this.sourceFrom },
-        scrollIntoView: true
-      })
-    })
+    this.mountClickToSource(el, view)
     return el
-  }
-
-  ignoreEvent(): boolean {
-    return false
   }
 }
 
@@ -344,13 +361,13 @@ function alignmentOf(delimiter: string): string {
   return ''
 }
 
-export class TableWidget extends WidgetType {
+export class TableWidget extends BlockWidget {
   constructor(
     readonly source: string,
-    readonly sourceFrom: number,
-    readonly sourceTo: number
+    sourceFrom: number,
+    sourceTo: number
   ) {
-    super()
+    super(sourceFrom, sourceTo)
   }
 
   eq(other: TableWidget): boolean {
@@ -399,14 +416,40 @@ export class TableWidget extends WidgetType {
     }
 
     wrap.appendChild(table)
-    wrap.addEventListener('mousedown', (e) => {
-      e.preventDefault()
+    this.mountClickToSource(wrap, view)
+    return wrap
+  }
+}
+
+/** Interactive task-list checkbox; toggles the source `[x]` marker in place. */
+export class TaskWidget extends WidgetType {
+  constructor(
+    readonly sourceFrom: number,
+    readonly checked: boolean
+  ) {
+    super()
+  }
+
+  eq(other: TaskWidget): boolean {
+    return other.sourceFrom === this.sourceFrom && other.checked === this.checked
+  }
+
+  toDOM(view: EditorView): HTMLElement {
+    const input = document.createElement('input')
+    input.type = 'checkbox'
+    input.className = 'cm-md-task'
+    input.checked = this.checked
+    input.addEventListener('mousedown', (e) => e.stopPropagation())
+    input.addEventListener('change', () => {
       view.dispatch({
-        selection: { anchor: this.sourceFrom },
-        scrollIntoView: true
+        changes: {
+          from: this.sourceFrom + 1,
+          to: this.sourceFrom + 2,
+          insert: input.checked ? 'x' : ' '
+        }
       })
     })
-    return wrap
+    return input
   }
 
   ignoreEvent(): boolean {
