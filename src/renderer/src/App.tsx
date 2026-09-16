@@ -6,6 +6,7 @@ import FileTree from './components/FileTree'
 import TreeMenu from './components/TreeMenu'
 import Titlebar from './components/Titlebar'
 import { createExtensions } from './editor/setup'
+import { readEditingAssistsConfig } from './editor/assists'
 import { extractOutline, type OutlineItem } from './outline/extract'
 import { WELCOME_MD } from './content'
 import { useFileOps } from './hooks/useFileOps'
@@ -83,7 +84,8 @@ export default function App(): React.JSX.Element {
               updateActiveHeading()
             }
           },
-          theme
+          theme,
+          readEditingAssistsConfig()
         )
       }),
       parent: hostRef.current

@@ -3,14 +3,15 @@ import { markdown } from '@codemirror/lang-markdown'
 import { syntaxTree } from '@codemirror/language'
 import { GFM } from '@lezer/markdown'
 import { search, searchKeymap } from '@codemirror/search'
-import { Compartment, EditorSelection, EditorState, Extension } from '@codemirror/state'
+import { Compartment, EditorState, Extension } from '@codemirror/state'
+import { EditorView, highlightActiveLine, keymap, lineNumbers, drawSelection } from '@codemirror/view'
 import {
-  EditorView,
-  highlightActiveLine,
-  keymap,
-  lineNumbers,
-  drawSelection
-} from '@codemirror/view'
+  editingAssistsCompartment,
+  editingAssistsExtension,
+  getEditingAssists,
+  persistEditingAssistsConfig,
+  type EditingAssistsConfig
+} from './assists'
 import {
   getLivePreviewConfig,
   livePreviewConfigCompartment,
@@ -22,6 +23,8 @@ import {
 import { compartmentThemes, ThemeName } from './theme'
 
 export const themeCompartment = new Compartment()
+/** Holds markdown() so addKeymap/pasteURLAsLink can follow the assists toggle. */
+export const markdownCompartment = new Compartment()
 
 export interface EditorCallbacks {
   onChange: (doc: string) => void
@@ -30,59 +33,36 @@ export interface EditorCallbacks {
   onTreeChanged: () => void
 }
 
-/** Wrap the current selection with `mark`, e.g. ** for bold. */
-function wrapSelectionWith(view: EditorView, mark: string): boolean {
-  const { state } = view
-  const changes = state.changeByRange((range) => {
-    const selected = state.sliceDoc(range.from, range.to)
-    const insert = `${mark}${selected}${mark}`
-    return {
-      changes: { from: range.from, to: range.to, insert },
-      range: EditorSelection.range(
-        range.from + mark.length,
-        range.from + mark.length + selected.length
-      )
-    }
+/** markdown() configured for the current assists state. */
+function markdownSupport(assists: EditingAssistsConfig): Extension {
+  return markdown({
+    extensions: [GFM],
+    // When assists are off, drop lang-markdown's Enter list-continuation and
+    // paste-URL-as-link so behavior reverts to plain CM6.
+    addKeymap: assists.enabled,
+    // Selection+URL paste is handled by our own transformPaste (gated).
+    pasteURLAsLink: false
   })
-  view.dispatch(changes, { scrollIntoView: true })
-  return true
 }
 
-const markdownEditingKeymap = keymap.of([
-  {
-    key: 'Mod-b',
-    run: (view) => wrapSelectionWith(view, '**'),
-    preventDefault: true
-  },
-  {
-    key: 'Mod-i',
-    run: (view) => wrapSelectionWith(view, '*'),
-    preventDefault: true
-  },
-  {
-    key: 'Mod-e',
-    run: (view) => wrapSelectionWith(view, '`'),
-    preventDefault: true
-  }
-])
-
-export function createExtensions(callbacks: EditorCallbacks, theme: ThemeName): Extension[] {
+export function createExtensions(
+  callbacks: EditorCallbacks,
+  theme: ThemeName,
+  assists: EditingAssistsConfig
+): Extension[] {
   return [
     lineNumbers(),
     history(),
     drawSelection(),
     highlightActiveLine(),
     search({ top: true }),
-    markdown({
-      extensions: [GFM],
-      addKeymap: true
-    }),
+    markdownCompartment.of(markdownSupport(assists)),
     EditorState.allowMultipleSelections.of(true),
     EditorView.lineWrapping,
     livePreviewField,
     livePreviewConfigExtension({ theme, baseDir: '' }),
+    editingAssistsCompartment.of(editingAssistsExtension(assists)),
     themeCompartment.of(compartmentThemes[theme]),
-    markdownEditingKeymap,
     keymap.of([...searchKeymap, ...historyKeymap, ...defaultKeymap, indentWithTab]),
     EditorView.updateListener.of((update) => {
       if (update.docChanged) callbacks.onChange(update.state.doc.toString())
@@ -113,6 +93,24 @@ export function reconfigureTheme(view: EditorView, theme: ThemeName): void {
       livePreviewConfigCompartment.reconfigure(
         livePreviewConfigFacet.of({ ...getLivePreviewConfig(view.state), theme })
       )
+    ]
+  })
+}
+
+/**
+ * Patch the editing-assists config, persist it, and reconfigure both the
+ * assists compartment and markdown() keymap support.
+ */
+export function updateEditingAssists(
+  view: EditorView,
+  patch: Partial<EditingAssistsConfig>
+): void {
+  const next = { ...getEditingAssists(view.state), ...patch }
+  persistEditingAssistsConfig(patch)
+  view.dispatch({
+    effects: [
+      editingAssistsCompartment.reconfigure(editingAssistsExtension(next)),
+      markdownCompartment.reconfigure(markdownSupport(next))
     ]
   })
 }
