@@ -5,6 +5,8 @@ import type { EditorView } from '@codemirror/view'
 import type { MenuDef, MenuItem } from './components/MenuBar'
 import { HELP_MD } from './content'
 import { transformPaste } from './editor/assists'
+import { insertClipboardImage } from './editor/images'
+import { livePreviewConfigFacet } from './editor/livePreview'
 
 /**
  * Command registry — single source for menu labels, shortcuts and handlers.
@@ -160,12 +162,21 @@ export function buildCommands(ops: CommandOps): Command[] {
       run: () => {
         const v = view()
         if (!v) return
-        void window.api.clipboardRead().then((text) => {
-          if (!text) return
-          // Same transform as the DOM paste handler (URL → link / <url>).
-          const changes = transformPaste(v.state, text)
-          if (changes) v.dispatch({ changes, userEvent: 'input.paste', scrollIntoView: true })
-          else v.dispatch(v.state.replaceSelection(text))
+        // The menu paste goes through IPC (no DOM event), so the P05 clipboard
+        // bitmap check must run here too — a screenshot paste lands in assets/.
+        void insertClipboardImage(v, () =>
+          v.state.facet(livePreviewConfigFacet).baseDir
+            ? Promise.resolve(true)
+            : ops.saveFileAs()
+        ).then((handled) => {
+          if (handled) return
+          void window.api.clipboardRead().then((text) => {
+            if (!text) return
+            // Same transform as the DOM paste handler (URL → link / <url>).
+            const changes = transformPaste(v.state, text)
+            if (changes) v.dispatch({ changes, userEvent: 'input.paste', scrollIntoView: true })
+            else v.dispatch(v.state.replaceSelection(text))
+          })
         })
       }
     },

@@ -1,7 +1,9 @@
 import { parser as mdParser, GFM } from '@lezer/markdown'
 import type { SyntaxNode, Tree } from '@lezer/common'
+import { imageSizeMarkdown } from '../editor/markdown-image-ext'
 import {
   highlightCodeHtml,
+  parseImageMarkdown,
   renderKatexHtml,
   renderMermaid
 } from '../editor/widgets'
@@ -33,7 +35,8 @@ export interface RenderDocOptions {
 }
 
 export async function renderDoc(markdown: string, opts: RenderDocOptions): Promise<string> {
-  const tree = mdParser.configure(GFM).parse(markdown)
+  // Same extension stack as the live preview (setup.ts) — identical trees.
+  const tree = mdParser.configure([GFM, imageSizeMarkdown]).parse(markdown)
   const ctx: RenderCtx = {
     doc: markdown,
     tree,
@@ -386,10 +389,15 @@ async function renderInline(node: SyntaxNode, ctx: RenderCtx): Promise<string> {
       return `<a href="${escapeHtml(href)}">${escapeHtml(href)}</a>`
     }
     case 'Image': {
-      const m = /^!\[([^\]]*)\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)$/.exec(textOf(ctx, node))
-      if (!m) return escapeHtml(textOf(ctx, node))
-      const src = await resolveImageForExport(m[2], ctx.opts)
-      return `<img alt="${escapeHtml(m[1])}" src="${escapeHtml(src)}">`
+      const parsed = parseImageMarkdown(textOf(ctx, node))
+      if (!parsed) return escapeHtml(textOf(ctx, node))
+      const src = await resolveImageForExport(parsed.src, ctx.opts)
+      // P05: keep the Typora/pandoc =WxH size attribute in the export.
+      const size =
+        parsed.width && parsed.height
+          ? ` width="${parsed.width}" height="${parsed.height}"`
+          : ''
+      return `<img alt="${escapeHtml(parsed.alt)}" src="${escapeHtml(src)}"${size}>`
     }
     case 'HardBreak':
       return '<br>'

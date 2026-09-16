@@ -91,9 +91,18 @@ export function registerFilesIpc(getWindow: GetWindow): void {
     }
   })
 
-  ipcMain.handle('file:resolveImageSrc', (_e, dir: string, src: string) => {
-    if (/^(https?:|data:|mdres:)/i.test(src)) return src
+  ipcMain.handle('file:resolveImageSrc', async (_e, dir: string, src: string) => {
+    if (/^(https?:|data:|mdres:)/i.test(src)) return { src, mtime: null, absPath: null }
     const abs = normalize(isAbsolute(src) ? src : join(dir || '.', src))
-    return `mdres://image?path=${encodeURIComponent(abs)}`
+    let mtime: number | null = null
+    try {
+      mtime = (await stat(abs)).mtimeMs
+    } catch {
+      // missing file — the renderer shows the broken-image placeholder
+    }
+    // The v= query busts Chromium's mdres cache when the file changes on disk;
+    // the handler in main.ts only reads `path` and ignores it.
+    const version = mtime != null ? `&v=${Math.floor(mtime)}` : ''
+    return { src: `mdres://image?path=${encodeURIComponent(abs)}${version}`, mtime, absPath: abs }
   })
 }

@@ -8,7 +8,8 @@ import Titlebar from './components/Titlebar'
 import Preferences from './components/Preferences'
 import ExportDialog from './components/ExportDialog'
 import { DialogHost } from './components/Dialog'
-import { createExtensions, updateEditingAssists, updateShowLineNumbers } from './editor/setup'
+import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch } from './editor/setup'
+import { invalidateImageCache } from './editor/widgets'
 import { readEditingAssistsConfig } from './editor/assists'
 import { extractOutline, type OutlineItem } from './outline/extract'
 import { WELCOME_MD } from './content'
@@ -25,6 +26,15 @@ import {
   patchSession
 } from './preferences/store'
 import type { RecentItem } from './commands'
+
+// Handle for CDP smoke tests (scripts/cdp-p05.mjs) — mirrors the __veloxPrefs
+// / __veloxExport pattern; nothing in the app reads it.
+declare global {
+  interface Window {
+    __veloxEditor: { view: EditorView } | null
+  }
+}
+window.__veloxEditor = null
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -241,6 +251,12 @@ export default function App(): React.JSX.Element {
             onTreeChanged: () => {
               updateOutline()
               updateActiveHeading()
+            },
+            // P05: images need the document's directory for assets/ — resolve
+            // true when a path exists, otherwise run Save As first.
+            ensureSaved: async () => {
+              if (filePathRef.current) return true
+              return fileOps.saveFileAs()
             }
           },
           // Read from the store, not the closure: this effect runs once ([]),
@@ -254,6 +270,8 @@ export default function App(): React.JSX.Element {
       parent: hostRef.current
     })
     viewRef.current = view
+    // CDP smoke-test handle (scripts/cdp-p05.mjs) — no other runtime consumers.
+    window.__veloxEditor = { view }
     updateOutline()
 
     // Editor is mounted — main may now deliver queued system open-file paths.
@@ -265,6 +283,30 @@ export default function App(): React.JSX.Element {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // ---- P05: image cache invalidation -----------------------------------------
+  const refreshImages = useCallback(() => {
+    invalidateImageCache()
+    const view = viewRef.current
+    if (view) bumpImageEpoch(view)
+  }, [])
+
+  // Folder workspace: the watcher broadcasts every image file change.
+  useEffect(() => window.api.onImageChanged(() => refreshImages()), [refreshImages])
+
+  // Single-file mode has no watcher — revalidate when the window regains focus.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const onFocus = (): void => {
+      clearTimeout(timer)
+      timer = setTimeout(refreshImages, 300)
+    }
+    window.addEventListener('focus', onFocus)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      clearTimeout(timer)
+    }
+  }, [refreshImages])
 
   // ---- outline navigation ---------------------------------------------------
   const goToHeading = useCallback((pos: number) => {

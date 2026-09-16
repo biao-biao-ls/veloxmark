@@ -12,6 +12,8 @@ import {
   persistEditingAssistsConfig,
   type EditingAssistsConfig
 } from './assists'
+import { imageInputExtension } from './images'
+import { imageSizeMarkdown } from './markdown-image-ext'
 import {
   getLivePreviewConfig,
   livePreviewConfigCompartment,
@@ -33,12 +35,19 @@ export interface EditorCallbacks {
   onSelectionChanged: () => void
   /** Fired when the syntax tree advanced (async parse chunks completing). */
   onTreeChanged: () => void
+  /**
+   * P05: assets need a document directory — resolves true once the document
+   * has a path (Save As ran), false when the user cancelled.
+   */
+  ensureSaved: () => Promise<boolean>
 }
 
 /** markdown() configured for the current assists state. */
 function markdownSupport(assists: EditingAssistsConfig): Extension {
   return markdown({
-    extensions: [GFM],
+    // imageSizeMarkdown (P05) claims ![a](src =WxH) before the built-in link
+    // scan, which would otherwise collapse the node to a broken stub.
+    extensions: [GFM, imageSizeMarkdown],
     // When assists are off, drop lang-markdown's Enter list-continuation and
     // paste-URL-as-link so behavior reverts to plain CM6.
     addKeymap: assists.enabled,
@@ -63,8 +72,10 @@ export function createExtensions(
     EditorState.allowMultipleSelections.of(true),
     EditorView.lineWrapping,
     livePreviewField,
-    livePreviewConfigExtension({ theme, baseDir: '' }),
+    livePreviewConfigExtension({ theme, baseDir: '', imageEpoch: 0 }),
     editingAssistsCompartment.of(editingAssistsExtension(assists)),
+    // Image paste/drop is core behavior — always on (Prec.high inside).
+    imageInputExtension(callbacks.ensureSaved),
     themeCompartment.of(compartmentThemes[theme]),
     keymap.of([...searchKeymap, ...historyKeymap, ...defaultKeymap, indentWithTab]),
     EditorView.updateListener.of((update) => {
@@ -97,6 +108,19 @@ export function reconfigureTheme(view: EditorView, theme: ThemeName): void {
         livePreviewConfigFacet.of({ ...getLivePreviewConfig(view.state), theme })
       )
     ]
+  })
+}
+
+/**
+ * P05: force a decoration rebuild so ImageWidgets re-resolve their srcs.
+ * Call after clearing the image cache (file watcher / window focus).
+ */
+export function bumpImageEpoch(view: EditorView): void {
+  const config = getLivePreviewConfig(view.state)
+  view.dispatch({
+    effects: livePreviewConfigCompartment.reconfigure(
+      livePreviewConfigFacet.of({ ...config, imageEpoch: config.imageEpoch + 1 })
+    )
   })
 }
 

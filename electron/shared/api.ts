@@ -32,6 +32,32 @@ export interface RecentFileItem {
   exists: boolean
 }
 
+/** Where pasted/dropped images land, from the renderer's preferences (P05). */
+export interface ImageSaveOptions {
+  /** Attachment subdirectory under the document directory (e.g. "assets"). */
+  assetsDirName: string
+  /** External files: timestamped rename into assets, or keep the original name. */
+  renameMode: 'timestamp' | 'keep'
+  /** Copy files outside the document directory into assets; false = keep absolute path. */
+  copyExternal: boolean
+}
+
+/** Result of saving a clipboard bitmap to disk (P05). */
+export interface SaveClipboardImageResult {
+  absPath: string
+  /** Relative to the document directory, `/`-separated for markdown. */
+  relPath: string
+}
+
+/** Resolved image src plus mtime so the renderer cache can detect staleness (P05). */
+export interface ResolvedImageSrc {
+  src: string
+  /** ms since epoch; null when the target is not a local file (or is missing). */
+  mtime: number | null
+  /** Absolute local path (for "show in file manager"); null for remote/data srcs. */
+  absPath: string | null
+}
+
 /** Options for printToPDF-based export (P04). */
 export interface PdfExportOptions {
   pageSize: 'A4' | 'Letter'
@@ -61,7 +87,22 @@ export interface RendererApi {
   setAppState(state: AppWindowState): Promise<void>
   /** Push the recent-files list so the macOS native menu can rebuild (P03). */
   setRecentFiles(files: RecentFileItem[]): Promise<void>
-  resolveImageSrc(dir: string, src: string): Promise<string>
+  resolveImageSrc(dir: string, src: string): Promise<ResolvedImageSrc>
+  /** P05: save the clipboard bitmap into the document's assets dir. */
+  saveClipboardImage(
+    baseDir: string,
+    options: ImageSaveOptions
+  ): Promise<SaveClipboardImageResult | null>
+  /** P05: turn a local file into a markdown image src (relative or copied). */
+  importLocalImage(baseDir: string, filePath: string, options: ImageSaveOptions): Promise<string>
+  /** P05: download a remote image into assets; falls back to the URL on failure. */
+  downloadRemoteImage(baseDir: string, url: string, options: ImageSaveOptions): Promise<string>
+  /** P05: folder watcher broadcast when an image file changed on disk. */
+  onImageChanged(callback: (filePath: string) => void): () => void
+  /** P05: reveal the image in the OS file manager. */
+  showItemInFolder(filePath: string): void
+  /** P05: absolute path of a dropped/pasted File (webUtils, Electron ≥32). */
+  getPathForFile(file: File): string
   /** P04: write a renderer-assembled self-contained HTML document. */
   exportHtml(targetPath: string, html: string): Promise<boolean>
   /** P04: print the assembled HTML to PDF via a hidden window. */
@@ -75,6 +116,8 @@ export interface RendererApi {
   windowZoom(action: 'in' | 'out' | 'reset'): void
   clipboardRead(): Promise<string>
   clipboardWrite(text: string): Promise<void>
+  /** P05: true when the clipboard holds a bitmap (screenshot / copied image). */
+  clipboardHasImage(): Promise<boolean>
   rendererReady(): void
   onOpenPath(callback: (filePath: string) => void): () => void
   onOpenFolder(callback: (folderPath: string) => void): () => void

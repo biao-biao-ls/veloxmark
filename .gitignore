@@ -10,3 +10,5 @@ scripts/p0*-*.png
 # CDP 测试脚本自建的临时工作区（fixture + 运行输出，脚本会重建）
 scripts/tmp-p03/
 scripts/tmp-p04/
+scripts/tmp-p05/
+scripts/tmp-p05-outside/

@@ -12,11 +12,17 @@ import type { ThemeName } from '../theme'
 export interface LivePreviewConfig {
   theme: ThemeName
   baseDir: string
+  /**
+   * P05: bumped by invalidateImageCache() so the decoration StateField
+   * rebuilds and ImageWidgets re-resolve their srcs (mtime check / reload).
+   */
+  imageEpoch: number
 }
 
 export const DEFAULT_LIVE_PREVIEW_CONFIG: LivePreviewConfig = {
   theme: 'light',
-  baseDir: ''
+  baseDir: '',
+  imageEpoch: 0
 }
 
 export const livePreviewConfigFacet = Facet.define<LivePreviewConfig, LivePreviewConfig>({

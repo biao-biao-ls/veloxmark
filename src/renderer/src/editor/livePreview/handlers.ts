@@ -8,7 +8,8 @@ import {
   MathBlockWidget,
   MermaidWidget,
   TableWidget,
-  TaskWidget
+  TaskWidget,
+  parseImageMarkdown
 } from '../widgets'
 import type { LivePreviewConfig } from './config'
 
@@ -146,15 +147,19 @@ export function enterLink(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
 
 export function enterImage(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
   if (!ctx.blockTouched(node.from, node.to)) {
-    const m = /^!\[([^\]]*)\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)$/.exec(
-      nodeText(ctx.state, node)
-    )
-    if (m) {
+    const parsed = parseImageMarkdown(nodeText(ctx.state, node))
+    if (parsed) {
       ctx.decos.push({
         from: node.from,
         to: node.to,
         value: Decoration.replace({
-          widget: new ImageWidget(m[1], m[2], ctx.config.baseDir)
+          widget: new ImageWidget(
+            parsed,
+            ctx.config.baseDir,
+            node.from,
+            node.to,
+            ctx.config.imageEpoch
+          )
         })
       })
     }

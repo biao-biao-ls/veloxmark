@@ -1,12 +1,15 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
   AppWindowState,
   DirNode,
   FileFilter,
+  ImageSaveOptions,
   OpenFileResult,
   PdfExportOptions,
   RecentFileItem,
-  RendererApi
+  RendererApi,
+  ResolvedImageSrc,
+  SaveClipboardImageResult
 } from './shared/api'
 
 const api: RendererApi = {
@@ -41,8 +44,26 @@ const api: RendererApi = {
     ipcRenderer.invoke('app:setState', state),
   setRecentFiles: (files: RecentFileItem[]): Promise<void> =>
     ipcRenderer.invoke('app:setRecentFiles', files),
-  resolveImageSrc: (dir: string, src: string): Promise<string> =>
+  resolveImageSrc: (dir: string, src: string): Promise<ResolvedImageSrc> =>
     ipcRenderer.invoke('file:resolveImageSrc', dir, src),
+  saveClipboardImage: (
+    baseDir: string,
+    options: ImageSaveOptions
+  ): Promise<SaveClipboardImageResult | null> =>
+    ipcRenderer.invoke('image:saveClipboard', baseDir, options),
+  importLocalImage: (baseDir: string, filePath: string, options: ImageSaveOptions): Promise<string> =>
+    ipcRenderer.invoke('image:importLocalFile', baseDir, filePath, options),
+  downloadRemoteImage: (baseDir: string, url: string, options: ImageSaveOptions): Promise<string> =>
+    ipcRenderer.invoke('image:downloadRemote', baseDir, url, options),
+  onImageChanged: (callback: (filePath: string) => void): (() => void) => {
+    const listener = (_e: unknown, filePath: string): void => callback(filePath)
+    ipcRenderer.on('image:changed', listener)
+    return () => ipcRenderer.removeListener('image:changed', listener)
+  },
+  showItemInFolder: (filePath: string): void => {
+    void ipcRenderer.invoke('shell:showItemInFolder', filePath)
+  },
+  getPathForFile: (file: File): string => webUtils.getPathForFile(file),
   exportHtml: (targetPath: string, html: string): Promise<boolean> =>
     ipcRenderer.invoke('export:html', targetPath, html),
   exportPdf: (targetPath: string, html: string, options: PdfExportOptions): Promise<boolean> =>
@@ -58,6 +79,7 @@ const api: RendererApi = {
   clipboardRead: (): Promise<string> => ipcRenderer.invoke('clipboard:read'),
   clipboardWrite: (text: string): Promise<void> =>
     ipcRenderer.invoke('clipboard:write', text),
+  clipboardHasImage: (): Promise<boolean> => ipcRenderer.invoke('clipboard:hasImage'),
   // Tell main the editor is mounted so queued system open-file paths are sent.
   rendererReady: (): void => ipcRenderer.send('app:rendererReady'),
   // macOS Finder "Open With" / double-clicking a registered .md file.
