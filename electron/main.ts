@@ -1,12 +1,14 @@
-import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, net, protocol, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, net, protocol, shell } from 'electron'
 
 // NOTE: window uses frameless mode; all menus live in the renderer titlebar.
 // Exception: macOS keeps the native menu bar (see buildDarwinMenu) and native
 // traffic lights via titleBarStyle: 'hiddenInset'.
-import { watch, type FSWatcher } from 'node:fs'
-import { readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
-import { basename, dirname, isAbsolute, join, normalize } from 'node:path'
+import { stat } from 'node:fs/promises'
+import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { registerAllIpc } from './ipc'
+import { stopFolderWatcher } from './ipc/folder'
+import { zoomBy } from './ipc/window'
 
 // In dev the process lives inside Electron.app's bundle, so macOS would show
 // "Electron" in the menu bar; packaged builds get the name from CFBundleName.
@@ -28,6 +30,9 @@ if (process.platform === 'darwin') {
 // on a separate channel so the renderer opens them as a folder workspace.
 const queuedOpens: { path: string; isDir: boolean }[] = []
 let rendererLoaded = false
+
+let mainWindow: BrowserWindow | null = null
+const getWindow = (): BrowserWindow | null => mainWindow
 
 async function deliverOpenPath(filePath: string): Promise<void> {
   let isDir = false
@@ -57,8 +62,6 @@ protocol.registerSchemesAsPrivileged([
     privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true }
   }
 ])
-
-let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -122,225 +125,6 @@ function createWindow(): void {
   }
 }
 
-// ---- file operations -------------------------------------------------------
-
-const FILE_FILTERS = [
-  { name: 'Markdown', extensions: ['md', 'markdown', 'mdown', 'txt'] },
-  { name: 'All Files', extensions: ['*'] }
-]
-
-ipcMain.handle('dialog:openFile', async () => {
-  if (!mainWindow) return null
-  const result = await dialog.showOpenDialog(mainWindow, {
-    properties: ['openFile'],
-    filters: FILE_FILTERS
-  })
-  if (result.canceled || result.filePaths.length === 0) return null
-  const filePath = result.filePaths[0]
-  const content = await readFile(filePath, 'utf-8')
-  return { filePath, content }
-})
-
-ipcMain.handle(
-  'dialog:saveFile',
-  async (_e, defaultPath?: string, filters?: { name: string; extensions: string[] }[]) => {
-    if (!mainWindow) return null
-    const result = await dialog.showSaveDialog(mainWindow, {
-      defaultPath,
-      filters: filters && filters.length > 0 ? filters : FILE_FILTERS
-    })
-    if (result.canceled || !result.filePath) return null
-    return result.filePath
-  }
-)
-
-ipcMain.handle('dialog:openFolder', async () => {
-  if (!mainWindow) return null
-  const result = await dialog.showOpenDialog(mainWindow, {
-    properties: ['openDirectory']
-  })
-  if (result.canceled || result.filePaths.length === 0) return null
-  return { folderPath: result.filePaths[0] }
-})
-
-ipcMain.handle('file:read', async (_e, filePath: string) => {
-  return readFile(filePath, 'utf-8')
-})
-
-ipcMain.handle('file:write', async (_e, filePath: string, content: string) => {
-  await writeFile(filePath, content, 'utf-8')
-  return true
-})
-
-// ---- folder listing ---------------------------------------------------------
-
-export interface DirNode {
-  name: string
-  path: string
-  isDir: boolean
-  children?: DirNode[]
-}
-
-const MD_EXT = /\.(md|markdown|mdown|txt)$/i
-// Common noise that never contains a user's notes; keeps deep scans fast.
-const SKIP_DIRS = new Set(['node_modules', '.git', '.svn', '.hg', 'dist', 'out', 'build'])
-const MAX_SCAN_DEPTH = 8
-
-async function listMarkdownTree(dirPath: string, depth = 0): Promise<DirNode[]> {
-  if (depth > MAX_SCAN_DEPTH) return []
-  let entries
-  try {
-    entries = await readdir(dirPath, { withFileTypes: true })
-  } catch {
-    return [] // unreadable directory — treat as empty rather than failing the scan
-  }
-  const dirs: DirNode[] = []
-  const files: DirNode[] = []
-  for (const entry of entries) {
-    if (entry.name.startsWith('.')) continue
-    const full = join(dirPath, entry.name)
-    if (entry.isDirectory()) {
-      if (SKIP_DIRS.has(entry.name)) continue
-      const children = await listMarkdownTree(full, depth + 1)
-      // keep a folder only when it (recursively) holds markdown files
-      if (children.length > 0) dirs.push({ name: entry.name, path: full, isDir: true, children })
-    } else if (entry.isFile() && MD_EXT.test(entry.name)) {
-      files.push({ name: entry.name, path: full, isDir: false })
-    }
-  }
-  const byName = (a: DirNode, b: DirNode): number => a.name.localeCompare(b.name)
-  dirs.sort(byName)
-  files.sort(byName)
-  return [...dirs, ...files]
-}
-
-ipcMain.handle('folder:list', async (_e, dirPath: string): Promise<DirNode[]> => {
-  return listMarkdownTree(dirPath)
-})
-
-// ---- folder watching --------------------------------------------------------
-// One recursive watcher per opened folder. FS events are debounced and turned
-// into a full tree rescan pushed to the renderer — simple and robust versus
-// replaying incremental rename/change events (editors write via temp+rename).
-
-let folderWatcher: FSWatcher | null = null
-let watchedFolder: string | null = null
-let watchRefreshTimer: NodeJS.Timeout | null = null
-
-async function pushFolderTree(): Promise<void> {
-  if (!watchedFolder) return
-  const tree = await listMarkdownTree(watchedFolder)
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('folder:tree', tree)
-  }
-}
-
-function stopFolderWatcher(): void {
-  if (watchRefreshTimer) {
-    clearTimeout(watchRefreshTimer)
-    watchRefreshTimer = null
-  }
-  folderWatcher?.close()
-  folderWatcher = null
-  watchedFolder = null
-}
-
-ipcMain.handle('folder:watch', async (e, dirPath: string) => {
-  // A window owns exactly one watched folder; replace any previous watcher.
-  stopFolderWatcher()
-  watchedFolder = dirPath
-  try {
-    folderWatcher = watch(dirPath, { recursive: true }, (_event, changedPath) => {
-      // Ignore editor temp files (vim/emacs swap, atomic-save .tmp siblings).
-      const name = basename(changedPath ?? '')
-      if (name.startsWith('.') || name.endsWith('~') || name.endsWith('.swp')) return
-      if (watchRefreshTimer) clearTimeout(watchRefreshTimer)
-      watchRefreshTimer = setTimeout(() => {
-        watchRefreshTimer = null
-        void pushFolderTree()
-      }, 200)
-    })
-    folderWatcher.on('error', () => {
-      // Root deleted or became unreadable — surface an empty tree, keep the
-      // session alive so the user can reopen another folder.
-      stopFolderWatcher()
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('folder:tree', [])
-      }
-    })
-  } catch {
-    // recursive watch unsupported — degraded: tree won't auto-refresh
-    folderWatcher = null
-  }
-  // Send the current tree immediately so the renderer doesn't need a separate
-  // list call when (re)subscribing.
-  e.sender.send('folder:tree', await listMarkdownTree(dirPath))
-  return true
-})
-
-ipcMain.handle('folder:unwatch', () => {
-  stopFolderWatcher()
-  return true
-})
-
-// Renderer-owned lifetime: closing the window drops the OS watch handle.
-app.on('before-quit', stopFolderWatcher)
-app.on('window-all-closed', stopFolderWatcher)
-
-// ---- tree file operations ---------------------------------------------------
-
-ipcMain.handle('file:create', async (_e, filePath: string) => {
-  // 'wx' fails if the path exists — never clobber an existing file.
-  await writeFile(filePath, '', { encoding: 'utf-8', flag: 'wx' })
-  return true
-})
-
-ipcMain.handle('file:delete', async (_e, targetPath: string) => {
-  await rm(targetPath, { recursive: true, force: false })
-  return true
-})
-
-ipcMain.handle('file:rename', async (_e, oldPath: string, newPath: string) => {
-  if (oldPath === newPath) return true
-  await stat(newPath).then(
-    () => {
-      throw new Error(`"${basename(newPath)}" already exists`)
-    },
-    () => undefined // target free
-  )
-  await rename(oldPath, newPath)
-  return true
-})
-
-ipcMain.handle('file:resolveImageSrc', (_e, dir: string, src: string) => {
-  if (/^(https?:|data:|mdres:)/i.test(src)) return src
-  const abs = normalize(isAbsolute(src) ? src : join(dir || '.', src))
-  return `mdres://image?path=${encodeURIComponent(abs)}`
-})
-
-// ---- window controls (custom frameless titlebar) ---------------------------
-
-function zoomBy(delta: number | 'reset'): void {
-  const contents = mainWindow?.webContents
-  if (!contents) return
-  contents.setZoomLevel(delta === 'reset' ? 0 : contents.getZoomLevel() + delta)
-}
-
-ipcMain.on('window:minimize', () => mainWindow?.minimize())
-ipcMain.on('window:maximize-restore', () => {
-  if (!mainWindow) return
-  mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize()
-})
-ipcMain.on('window:close', () => mainWindow?.close())
-ipcMain.on('window:toggleDevTools', () => mainWindow?.webContents.toggleDevTools())
-ipcMain.on('window:zoom', (_e, action: 'in' | 'out' | 'reset') => {
-  if (action === 'reset') zoomBy('reset')
-  else zoomBy(action === 'in' ? 0.5 : -0.5)
-})
-
-ipcMain.handle('clipboard:read', () => clipboard.readText())
-ipcMain.handle('clipboard:write', (_e, text: string) => clipboard.writeText(text))
-
 // Renderer pings once the editor is mounted; only then can openPath be applied.
 ipcMain.on('app:rendererReady', () => {
   rendererLoaded = true
@@ -349,15 +133,6 @@ ipcMain.on('app:rendererReady', () => {
   }
   for (const { path, isDir } of queuedOpens.splice(0)) {
     mainWindow?.webContents.send(isDir ? 'app:openFolder' : 'app:openPath', path)
-  }
-})
-
-// ---- renderer -> main state sync (window title) ----------------------------
-
-ipcMain.handle('app:setState', (_e, state: { filePath: string | null; dirty: boolean }) => {
-  if (mainWindow) {
-    const name = state.filePath ? basename(state.filePath) : 'Untitled'
-    mainWindow.setTitle(`${state.dirty ? '• ' : ''}${name} - VeloxMark`)
   }
 })
 
@@ -441,9 +216,9 @@ function buildDarwinMenu(): Menu {
         commandItem('toggleOutline', 'Toggle Outline'),
         { type: 'separator' },
         // Zoom/devtools run in main directly — no renderer round-trip.
-        { label: 'Zoom In', accelerator: 'Cmd+Plus', click: () => zoomBy(0.5) },
-        { label: 'Zoom Out', accelerator: 'Cmd+-', click: () => zoomBy(-0.5) },
-        { label: 'Reset Zoom', accelerator: 'Cmd+0', click: () => zoomBy('reset') },
+        { label: 'Zoom In', accelerator: 'Cmd+Plus', click: () => zoomBy(getWindow, 0.5) },
+        { label: 'Zoom Out', accelerator: 'Cmd+-', click: () => zoomBy(getWindow, -0.5) },
+        { label: 'Reset Zoom', accelerator: 'Cmd+0', click: () => zoomBy(getWindow, 'reset') },
         { type: 'separator' },
         {
           label: 'Toggle Developer Tools',
@@ -473,6 +248,8 @@ function buildDarwinMenu(): Menu {
 }
 
 app.whenReady().then(() => {
+  registerAllIpc(getWindow)
+
   if (process.platform === 'darwin') {
     Menu.setApplicationMenu(buildDarwinMenu())
   } else {
@@ -502,6 +279,10 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+// Renderer-owned lifetime: closing the window drops the OS watch handle.
+app.on('before-quit', stopFolderWatcher)
+app.on('window-all-closed', stopFolderWatcher)
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

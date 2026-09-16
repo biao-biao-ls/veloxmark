@@ -1,18 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { AppWindowState, DirNode, FileFilter, OpenFileResult, RendererApi } from './shared/api'
 
-export interface OpenFileResult {
-  filePath: string
-  content: string
-}
-
-export interface DirNode {
-  name: string
-  path: string
-  isDir: boolean
-  children?: DirNode[]
-}
-
-const api = {
+const api: RendererApi = {
   platform: process.platform,
   openFile: (): Promise<OpenFileResult | null> => ipcRenderer.invoke('dialog:openFile'),
   openFolder: (): Promise<{ folderPath: string } | null> =>
@@ -33,14 +22,12 @@ const api = {
     ipcRenderer.on('folder:tree', listener)
     return () => ipcRenderer.removeListener('folder:tree', listener)
   },
-  showSaveDialog: (
-    defaultPath?: string,
-    filters?: { name: string; extensions: string[] }[]
-  ): Promise<string | null> => ipcRenderer.invoke('dialog:saveFile', defaultPath, filters),
+  showSaveDialog: (defaultPath?: string, filters?: FileFilter[]): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:saveFile', defaultPath, filters),
   readFile: (filePath: string): Promise<string> => ipcRenderer.invoke('file:read', filePath),
   writeFile: (filePath: string, content: string): Promise<boolean> =>
     ipcRenderer.invoke('file:write', filePath, content),
-  setAppState: (state: { filePath: string | null; dirty: boolean }): Promise<void> =>
+  setAppState: (state: AppWindowState): Promise<void> =>
     ipcRenderer.invoke('app:setState', state),
   resolveImageSrc: (dir: string, src: string): Promise<string> =>
     ipcRenderer.invoke('file:resolveImageSrc', dir, src),
@@ -81,4 +68,4 @@ const api = {
 
 contextBridge.exposeInMainWorld('api', api)
 
-export type Api = typeof api
+export type Api = RendererApi

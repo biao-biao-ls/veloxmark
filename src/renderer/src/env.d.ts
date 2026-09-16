@@ -1,50 +1,14 @@
 /// <reference types="vite/client" />
 
-interface OpenFileResult {
-  filePath: string
-  content: string
+// The bridge shape is defined once in electron/shared/api.ts — never
+// redeclare it here. (Importing keeps this file a module, so Window is
+// declared via `global`.)
+import type { RendererApi } from '../../../electron/shared/api'
+
+declare global {
+  interface Window {
+    api: RendererApi
+  }
 }
 
-interface DirNode {
-  name: string
-  path: string
-  isDir: boolean
-  children?: DirNode[]
-}
-
-interface RendererApi {
-  platform: string
-  openFile(): Promise<OpenFileResult | null>
-  openFolder(): Promise<{ folderPath: string } | null>
-  listDirectory(dirPath: string): Promise<DirNode[]>
-  watchFolder(dirPath: string): Promise<boolean>
-  unwatchFolder(): Promise<boolean>
-  createFile(filePath: string): Promise<boolean>
-  deletePath(targetPath: string): Promise<boolean>
-  renamePath(oldPath: string, newPath: string): Promise<boolean>
-  onFolderTree(callback: (tree: DirNode[]) => void): () => void
-  showSaveDialog(
-    defaultPath?: string,
-    filters?: { name: string; extensions: string[] }[]
-  ): Promise<string | null>
-  readFile(filePath: string): Promise<string>
-  writeFile(filePath: string, content: string): Promise<boolean>
-  setAppState(state: { filePath: string | null; dirty: boolean }): Promise<void>
-  resolveImageSrc(dir: string, src: string): Promise<string>
-  windowMinimize(): void
-  windowMaximizeRestore(): void
-  windowClose(): void
-  windowToggleDevTools(): void
-  windowZoom(action: 'in' | 'out' | 'reset'): void
-  clipboardRead(): Promise<string>
-  clipboardWrite(text: string): Promise<void>
-  rendererReady(): void
-  onOpenPath(callback: (filePath: string) => void): () => void
-  onOpenFolder(callback: (folderPath: string) => void): () => void
-  onFullScreen(callback: (fullScreen: boolean) => void): () => void
-  onMenu(channel: string, callback: () => void): () => void
-}
-
-interface Window {
-  api: RendererApi
-}
+export {}

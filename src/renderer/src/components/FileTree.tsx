@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { DirNode } from '../../../../electron/shared/api'
 import { ChevronDownIcon, ChevronRightIcon } from './Icons'
 
 export interface TreeMenuRequest {

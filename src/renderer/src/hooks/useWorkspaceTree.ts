@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type RefObject } from 'react'
+import type { DirNode } from '../../../../electron/shared/api'
 import type { TreeMenuRequest } from '../components/FileTree'
 import type { TreeMenuItem } from '../components/TreeMenu'
 import type { SidebarMode } from './useFileOps'
