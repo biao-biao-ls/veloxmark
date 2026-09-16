@@ -1,5 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { AppWindowState, DirNode, FileFilter, OpenFileResult, RendererApi } from './shared/api'
+import type {
+  AppWindowState,
+  DirNode,
+  FileFilter,
+  OpenFileResult,
+  RecentFileItem,
+  RendererApi
+} from './shared/api'
 
 const api: RendererApi = {
   platform: process.platform,
@@ -17,6 +24,8 @@ const api: RendererApi = {
     ipcRenderer.invoke('file:delete', targetPath),
   renamePath: (oldPath: string, newPath: string): Promise<boolean> =>
     ipcRenderer.invoke('file:rename', oldPath, newPath),
+  pathExists: (filePath: string): Promise<boolean> =>
+    ipcRenderer.invoke('file:pathExists', filePath),
   onFolderTree: (callback: (tree: DirNode[]) => void): (() => void) => {
     const listener = (_e: unknown, tree: DirNode[]): void => callback(tree)
     ipcRenderer.on('folder:tree', listener)
@@ -29,6 +38,8 @@ const api: RendererApi = {
     ipcRenderer.invoke('file:write', filePath, content),
   setAppState: (state: AppWindowState): Promise<void> =>
     ipcRenderer.invoke('app:setState', state),
+  setRecentFiles: (files: RecentFileItem[]): Promise<void> =>
+    ipcRenderer.invoke('app:setRecentFiles', files),
   resolveImageSrc: (dir: string, src: string): Promise<string> =>
     ipcRenderer.invoke('file:resolveImageSrc', dir, src),
   windowMinimize: (): void => ipcRenderer.send('window:minimize'),
@@ -59,8 +70,8 @@ const api: RendererApi = {
     ipcRenderer.on('app:fullScreen', listener)
     return () => ipcRenderer.removeListener('app:fullScreen', listener)
   },
-  onMenu: (channel: string, callback: () => void): (() => void) => {
-    const listener = (): void => callback()
+  onMenu: (channel: string, callback: (...args: string[]) => void): (() => void) => {
+    const listener = (_e: unknown, ...args: string[]): void => callback(...args)
     ipcRenderer.on(channel, listener)
     return () => ipcRenderer.removeListener(channel, listener)
   }

@@ -4,11 +4,13 @@ import { app, BrowserWindow, ipcMain, Menu, net, protocol, shell } from 'electro
 // Exception: macOS keeps the native menu bar (see buildDarwinMenu) and native
 // traffic lights via titleBarStyle: 'hiddenInset'.
 import { stat } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { registerAllIpc } from './ipc'
 import { stopFolderWatcher } from './ipc/folder'
 import { zoomBy } from './ipc/window'
+import { attachWindowStatePersistence, loadWindowState } from './ipc/window-state'
+import type { RecentFileItem } from './shared/api'
 
 // In dev the process lives inside Electron.app's bundle, so macOS would show
 // "Electron" in the menu bar; packaged builds get the name from CFBundleName.
@@ -64,9 +66,12 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 function createWindow(): void {
+  // P03: restore the last geometry (validated against current displays).
+  const geometry = loadWindowState()
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: geometry.width,
+    height: geometry.height,
+    ...(geometry.x != null && geometry.y != null ? { x: geometry.x, y: geometry.y } : {}),
     minWidth: 640,
     minHeight: 400,
     show: false,
@@ -91,7 +96,11 @@ function createWindow(): void {
     }
   })
 
-  mainWindow.on('ready-to-show', () => mainWindow?.show())
+  mainWindow.on('ready-to-show', () => {
+    if (geometry.maximized) mainWindow?.maximize()
+    mainWindow?.show()
+  })
+  attachWindowStatePersistence(mainWindow)
   mainWindow.on('closed', () => {
     mainWindow = null
     rendererLoaded = false // a new window will signal ready again
@@ -156,7 +165,37 @@ const DARWIN_COMMAND_ACCELERATORS: Record<string, string> = {
   openFolder: 'Cmd+Shift+O',
   saveFile: 'Cmd+S',
   saveFileAs: 'Cmd+Shift+S',
+  openPreferences: 'Cmd+,',
   toggleTheme: 'Cmd+Shift+T'
+}
+
+// P03: recent files, pushed from the renderer (which owns the store) whenever
+// the list changes so the native File > Open Recent submenu stays in sync.
+let recentFiles: RecentFileItem[] = []
+
+function rebuildDarwinMenu(): void {
+  if (process.platform === 'darwin') Menu.setApplicationMenu(buildDarwinMenu())
+}
+
+function recentFilesSubmenu(): Electron.MenuItemConstructorOptions[] {
+  if (recentFiles.length === 0) {
+    return [{ label: 'No Recent Files', enabled: false }]
+  }
+  const items: Electron.MenuItemConstructorOptions[] = recentFiles.map((item) => ({
+    label: basename(item.path),
+    toolTip: item.path,
+    // Missing paths stay listed but greyed out (parity with the in-app menu).
+    enabled: item.exists,
+    click: () => mainWindow?.webContents.send('menu:openRecent', item.path)
+  }))
+  items.push(
+    { type: 'separator' },
+    {
+      label: 'Clear Menu',
+      click: () => mainWindow?.webContents.send('menu:clearRecent')
+    }
+  )
+  return items
 }
 
 function commandItem(id: string, label: string): Electron.MenuItemConstructorOptions {
@@ -180,6 +219,8 @@ function buildDarwinMenu(): Menu {
         { role: 'hideOthers' },
         { role: 'unhide' },
         { type: 'separator' },
+        commandItem('openPreferences', 'Preferences…'),
+        { type: 'separator' },
         { role: 'quit' }
       ]
     },
@@ -189,6 +230,7 @@ function buildDarwinMenu(): Menu {
         commandItem('newFile', 'New'),
         commandItem('openFile', 'Open…'),
         commandItem('openFolder', 'Open Folder…'),
+        { label: 'Open Recent', submenu: recentFilesSubmenu() },
         { type: 'separator' },
         commandItem('saveFile', 'Save'),
         commandItem('saveFileAs', 'Save As…'),
@@ -249,6 +291,13 @@ function buildDarwinMenu(): Menu {
 
 app.whenReady().then(() => {
   registerAllIpc(getWindow)
+
+  // P03: renderer pushes the recent-files list (with existence flags) so the
+  // native Open Recent submenu can rebuild; clearMenu flows back the other way.
+  ipcMain.handle('app:setRecentFiles', (_e, files: RecentFileItem[]) => {
+    recentFiles = Array.isArray(files) ? files : []
+    rebuildDarwinMenu()
+  })
 
   if (process.platform === 'darwin') {
     Menu.setApplicationMenu(buildDarwinMenu())

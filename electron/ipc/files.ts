@@ -81,6 +81,16 @@ export function registerFilesIpc(getWindow: GetWindow): void {
     return true
   })
 
+  // Existence probe for the recent-files menu (P03) — missing paths render greyed.
+  ipcMain.handle('file:pathExists', async (_e, filePath: string) => {
+    try {
+      await stat(filePath)
+      return true
+    } catch {
+      return false
+    }
+  })
+
   ipcMain.handle('file:resolveImageSrc', (_e, dir: string, src: string) => {
     if (/^(https?:|data:|mdres:)/i.test(src)) return src
     const abs = normalize(isAbsolute(src) ? src : join(dir || '.', src))

@@ -26,6 +26,12 @@ export interface FileFilter {
   extensions: string[]
 }
 
+/** Recent-files entry synced to the macOS native menu (P03). */
+export interface RecentFileItem {
+  path: string
+  exists: boolean
+}
+
 /** Shape of the object preload exposes as `window.api`. */
 export interface RendererApi {
   platform: string
@@ -37,11 +43,14 @@ export interface RendererApi {
   createFile(filePath: string): Promise<boolean>
   deletePath(targetPath: string): Promise<boolean>
   renamePath(oldPath: string, newPath: string): Promise<boolean>
+  pathExists(filePath: string): Promise<boolean>
   onFolderTree(callback: (tree: DirNode[]) => void): () => void
   showSaveDialog(defaultPath?: string, filters?: FileFilter[]): Promise<string | null>
   readFile(filePath: string): Promise<string>
   writeFile(filePath: string, content: string): Promise<boolean>
   setAppState(state: AppWindowState): Promise<void>
+  /** Push the recent-files list so the macOS native menu can rebuild (P03). */
+  setRecentFiles(files: RecentFileItem[]): Promise<void>
   resolveImageSrc(dir: string, src: string): Promise<string>
   windowMinimize(): void
   windowMaximizeRestore(): void
@@ -54,5 +63,6 @@ export interface RendererApi {
   onOpenPath(callback: (filePath: string) => void): () => void
   onOpenFolder(callback: (folderPath: string) => void): () => void
   onFullScreen(callback: (fullScreen: boolean) => void): () => void
-  onMenu(channel: string, callback: () => void): () => void
+  /** Menu dispatch; payload args are channel-specific (e.g. openRecent path). */
+  onMenu(channel: string, callback: (...args: string[]) => void): () => void
 }

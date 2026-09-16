@@ -1,0 +1,183 @@
+import { useEffect, useRef } from 'react'
+import { clearRecentFiles, setPreferences, type ThemeMode } from '../preferences/store'
+import { usePreferences } from '../preferences/useStore'
+
+/**
+ * Preferences panel (P03). Modal, grouped Appearance / Editing / Behavior.
+ * Every control writes straight to the preferences store — changes apply
+ * immediately (CSS variables / editor compartments), no confirm step.
+ */
+interface Props {
+  open: boolean
+  onClose: () => void
+}
+
+export default function Preferences({ open, onClose }: Props): React.JSX.Element | null {
+  const prefs = usePreferences()
+  const closeRef = useRef<HTMLButtonElement | null>(null)
+
+  useEffect(() => {
+    if (open) closeRef.current?.focus()
+  }, [open])
+
+  if (!open) return null
+
+  // Keep keystrokes inside the panel (global shortcuts / the editor below).
+  const onKeyDown = (e: React.KeyboardEvent): void => {
+    e.stopPropagation()
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      onClose()
+    }
+  }
+
+  const num = (value: number, onChange: (v: number) => void, min: number, max: number, step = 1) => (
+    <input
+      className="prefs-input prefs-input-num"
+      type="number"
+      value={value}
+      min={min}
+      max={max}
+      step={step}
+      onChange={(e) => {
+        const v = Number(e.target.value)
+        if (Number.isFinite(v)) onChange(Math.min(max, Math.max(min, v)))
+      }}
+    />
+  )
+
+  return (
+    <div className="dialog-overlay prefs-overlay" onKeyDown={onKeyDown} onMouseDown={onClose}>
+      <div
+        className="dialog prefs-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Preferences"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div className="prefs-header">
+          <div className="dialog-title">Preferences</div>
+          <button ref={closeRef} className="dialog-btn" onClick={onClose}>
+            Close
+          </button>
+        </div>
+
+        <div className="prefs-section">
+          <div className="prefs-section-title">Appearance</div>
+          <label className="prefs-row">
+            <span className="prefs-label">Theme</span>
+            <select
+              className="prefs-input"
+              value={prefs.theme}
+              onChange={(e) => setPreferences({ theme: e.target.value as ThemeMode })}
+            >
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+              <option value="system">System</option>
+            </select>
+          </label>
+          <label className="prefs-row">
+            <span className="prefs-label">Editor font</span>
+            <input
+              className="prefs-input"
+              type="text"
+              value={prefs.editorFontFamily}
+              spellCheck={false}
+              onChange={(e) => setPreferences({ editorFontFamily: e.target.value })}
+            />
+          </label>
+          <label className="prefs-row">
+            <span className="prefs-label">Font size</span>
+            {num(
+              prefs.editorFontSize,
+              (v) => setPreferences({ editorFontSize: v }),
+              8,
+              48
+            )}
+            <span className="prefs-unit">px</span>
+          </label>
+          <label className="prefs-row">
+            <span className="prefs-label">Line height</span>
+            {num(
+              prefs.editorLineHeight,
+              (v) => setPreferences({ editorLineHeight: v }),
+              1,
+              3,
+              0.1
+            )}
+          </label>
+          <label className="prefs-row">
+            <span className="prefs-label">Content width</span>
+            {num(
+              prefs.editorMaxWidth,
+              (v) => setPreferences({ editorMaxWidth: v }),
+              0,
+              4000,
+              20
+            )}
+            <span className="prefs-unit">px (0 = full width)</span>
+          </label>
+        </div>
+
+        <div className="prefs-section">
+          <div className="prefs-section-title">Editing</div>
+          <label className="prefs-row prefs-check">
+            <input
+              type="checkbox"
+              checked={prefs.typingAssistsEnabled}
+              onChange={(e) => setPreferences({ typingAssistsEnabled: e.target.checked })}
+            />
+            <span>Typing assists (lists, headings, paste transforms)</span>
+          </label>
+          <label className={`prefs-row prefs-check prefs-sub${prefs.typingAssistsEnabled ? '' : ' prefs-disabled'}`}>
+            <input
+              type="checkbox"
+              disabled={!prefs.typingAssistsEnabled}
+              checked={prefs.wrapBareUrlOnPaste}
+              onChange={(e) => setPreferences({ wrapBareUrlOnPaste: e.target.checked })}
+            />
+            <span>Wrap pasted URLs as &lt;url&gt;</span>
+          </label>
+          <label className="prefs-row prefs-check">
+            <input
+              type="checkbox"
+              checked={prefs.showLineNumbers}
+              onChange={(e) => setPreferences({ showLineNumbers: e.target.checked })}
+            />
+            <span>Show line numbers</span>
+          </label>
+        </div>
+
+        <div className="prefs-section">
+          <div className="prefs-section-title">Behavior</div>
+          <label className="prefs-row prefs-check">
+            <input
+              type="checkbox"
+              checked={prefs.restoreLastSession}
+              onChange={(e) => setPreferences({ restoreLastSession: e.target.checked })}
+            />
+            <span>Restore last opened file and folder on startup</span>
+          </label>
+          <label className="prefs-row prefs-check">
+            <input
+              type="checkbox"
+              checked={prefs.sidebarDefaultOpen}
+              onChange={(e) => setPreferences({ sidebarDefaultOpen: e.target.checked })}
+            />
+            <span>Sidebar open by default (when no session is remembered)</span>
+          </label>
+          <div className="prefs-row">
+            <button
+              className="dialog-btn"
+              onClick={() => {
+                void clearRecentFiles()
+              }}
+            >
+              Clear Recent Files
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
