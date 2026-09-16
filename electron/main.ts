@@ -371,6 +371,27 @@ function sendMenu(channel: string): void {
   mainWindow?.webContents.send(channel)
 }
 
+// App-command accelerators for the macOS native menu. Labels and handlers
+// live in the renderer's command registry (src/renderer/src/commands.ts);
+// this stays a thin id→accelerator map, and every click forwards as
+// `menu:<id>` so the renderer dispatches through the same registry.
+const DARWIN_COMMAND_ACCELERATORS: Record<string, string> = {
+  newFile: 'Cmd+N',
+  openFile: 'Cmd+O',
+  openFolder: 'Cmd+Shift+O',
+  saveFile: 'Cmd+S',
+  saveFileAs: 'Cmd+Shift+S',
+  toggleTheme: 'Cmd+Shift+T'
+}
+
+function commandItem(id: string, label: string): Electron.MenuItemConstructorOptions {
+  return {
+    label,
+    accelerator: DARWIN_COMMAND_ACCELERATORS[id],
+    click: () => sendMenu(`menu:${id}`)
+  }
+}
+
 function buildDarwinMenu(): Menu {
   return Menu.buildFromTemplate([
     {
@@ -390,20 +411,12 @@ function buildDarwinMenu(): Menu {
     {
       label: 'File',
       submenu: [
-        { label: 'New', accelerator: 'Cmd+N', click: () => sendMenu('menu:newFile') },
-        { label: 'Open…', accelerator: 'Cmd+O', click: () => sendMenu('menu:openFile') },
-        {
-          label: 'Open Folder…',
-          accelerator: 'Cmd+Shift+O',
-          click: () => sendMenu('menu:openFolder')
-        },
+        commandItem('newFile', 'New'),
+        commandItem('openFile', 'Open…'),
+        commandItem('openFolder', 'Open Folder…'),
         { type: 'separator' },
-        { label: 'Save', accelerator: 'Cmd+S', click: () => sendMenu('menu:saveFile') },
-        {
-          label: 'Save As…',
-          accelerator: 'Cmd+Shift+S',
-          click: () => sendMenu('menu:saveFileAs')
-        },
+        commandItem('saveFile', 'Save'),
+        commandItem('saveFileAs', 'Save As…'),
         { type: 'separator' },
         { role: 'close' }
       ]
@@ -425,8 +438,9 @@ function buildDarwinMenu(): Menu {
     {
       label: 'View',
       submenu: [
-        { label: 'Toggle Outline', click: () => sendMenu('menu:toggleOutline') },
+        commandItem('toggleOutline', 'Toggle Outline'),
         { type: 'separator' },
+        // Zoom/devtools run in main directly — no renderer round-trip.
         { label: 'Zoom In', accelerator: 'Cmd+Plus', click: () => zoomBy(0.5) },
         { label: 'Zoom Out', accelerator: 'Cmd+-', click: () => zoomBy(-0.5) },
         { label: 'Reset Zoom', accelerator: 'Cmd+0', click: () => zoomBy('reset') },
@@ -437,7 +451,7 @@ function buildDarwinMenu(): Menu {
           click: () => mainWindow?.webContents.toggleDevTools()
         },
         { type: 'separator' },
-        { label: 'Toggle Theme', accelerator: 'Cmd+Shift+T', click: () => sendMenu('menu:toggleTheme') }
+        commandItem('toggleTheme', 'Toggle Theme')
       ]
     },
     {
@@ -453,12 +467,7 @@ function buildDarwinMenu(): Menu {
     },
     {
       label: 'Help',
-      submenu: [
-        {
-          label: 'Markdown Syntax Reference',
-          click: () => sendMenu('menu:showHelp')
-        }
-      ]
+      submenu: [commandItem('showHelp', 'Markdown Syntax Reference')]
     }
   ])
 }

@@ -115,36 +115,6 @@ export default function App(): React.JSX.Element {
     view.focus()
   }, [])
 
-  // ---- edit operations (used by the in-app Edit menu) -----------------------
-  const editCopy = useCallback(() => {
-    const view = viewRef.current
-    if (!view) return
-    const { from, to } = view.state.selection.main
-    if (from !== to) void window.api.clipboardWrite(view.state.sliceDoc(from, to))
-  }, [])
-
-  const editCut = useCallback(() => {
-    const view = viewRef.current
-    if (!view) return
-    const { from, to } = view.state.selection.main
-    if (from === to) return
-    void window.api.clipboardWrite(view.state.sliceDoc(from, to))
-    view.dispatch({ changes: { from, to } })
-  }, [])
-
-  const editPaste = useCallback(async () => {
-    const view = viewRef.current
-    if (!view) return
-    const text = await window.api.clipboardRead()
-    if (text) view.dispatch(view.state.replaceSelection(text))
-  }, [])
-
-  const editSelectAll = useCallback(() => {
-    const view = viewRef.current
-    if (!view) return
-    view.dispatch({ selection: { anchor: 0, head: view.state.doc.length } })
-  }, [])
-
   const toggleTheme = useCallback(() => {
     applyTheme(theme === 'dark' ? 'light' : 'dark')
   }, [applyTheme, theme])
@@ -161,11 +131,7 @@ export default function App(): React.JSX.Element {
     saveFileAs: fileOps.saveFileAs,
     toggleTheme,
     loadContent: fileOps.loadContent,
-    toggleOutline,
-    editCut,
-    editCopy,
-    editPaste,
-    editSelectAll
+    toggleOutline
   })
 
   // Fullscreen state is pushed from main (traffic-light / F11 transitions).
