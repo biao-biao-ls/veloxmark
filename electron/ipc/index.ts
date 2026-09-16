@@ -1,4 +1,5 @@
 import type { BrowserWindow } from 'electron'
+import { registerExportIpc } from './export'
 import { registerFilesIpc } from './files'
 import { registerFolderIpc } from './folder'
 import { registerWindowIpc } from './window'
@@ -11,4 +12,5 @@ export function registerAllIpc(getWindow: GetWindow): void {
   registerWindowIpc(getWindow)
   registerFilesIpc(getWindow)
   registerFolderIpc(getWindow)
+  registerExportIpc()
 }

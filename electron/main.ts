@@ -235,6 +235,11 @@ function buildDarwinMenu(): Menu {
         commandItem('saveFile', 'Save'),
         commandItem('saveFileAs', 'Save As…'),
         { type: 'separator' },
+        {
+          label: 'Export',
+          submenu: [commandItem('exportPdf', 'PDF…'), commandItem('exportHtml', 'HTML…')]
+        },
+        { type: 'separator' },
         { role: 'close' }
       ]
     },

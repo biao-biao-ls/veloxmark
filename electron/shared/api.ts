@@ -32,6 +32,16 @@ export interface RecentFileItem {
   exists: boolean
 }
 
+/** Options for printToPDF-based export (P04). */
+export interface PdfExportOptions {
+  pageSize: 'A4' | 'Letter'
+  margins: 'normal' | 'narrow'
+  /** Header (title) + footer (page numbers) via Chromium print templates. */
+  headerFooter: boolean
+  /** Document title shown in the header when headerFooter is on. */
+  title: string
+}
+
 /** Shape of the object preload exposes as `window.api`. */
 export interface RendererApi {
   platform: string
@@ -52,6 +62,12 @@ export interface RendererApi {
   /** Push the recent-files list so the macOS native menu can rebuild (P03). */
   setRecentFiles(files: RecentFileItem[]): Promise<void>
   resolveImageSrc(dir: string, src: string): Promise<string>
+  /** P04: write a renderer-assembled self-contained HTML document. */
+  exportHtml(targetPath: string, html: string): Promise<boolean>
+  /** P04: print the assembled HTML to PDF via a hidden window. */
+  exportPdf(targetPath: string, html: string, options: PdfExportOptions): Promise<boolean>
+  /** P04: read a relative-path image as a data URL for export embedding. */
+  readImageAsDataUrl(dir: string, src: string): Promise<string>
   windowMinimize(): void
   windowMaximizeRestore(): void
   windowClose(): void

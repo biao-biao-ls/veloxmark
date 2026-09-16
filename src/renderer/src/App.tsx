@@ -6,6 +6,7 @@ import FileTree from './components/FileTree'
 import TreeMenu from './components/TreeMenu'
 import Titlebar from './components/Titlebar'
 import Preferences from './components/Preferences'
+import ExportDialog from './components/ExportDialog'
 import { DialogHost } from './components/Dialog'
 import { createExtensions, updateEditingAssists, updateShowLineNumbers } from './editor/setup'
 import { readEditingAssistsConfig } from './editor/assists'
@@ -14,6 +15,7 @@ import { WELCOME_MD } from './content'
 import { useFileOps } from './hooks/useFileOps'
 import { useWorkspaceTree } from './hooks/useWorkspaceTree'
 import { useAppTheme } from './hooks/useAppTheme'
+import { useExport } from './hooks/useExport'
 import { useMenus } from './hooks/useMenus'
 import { usePreferences, useSession } from './preferences/useStore'
 import {
@@ -79,6 +81,8 @@ export default function App(): React.JSX.Element {
 
   const fileOps = useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRef })
   const { dirty, setDirty, filePath, filePathRef, syncAppState, savedContentRef } = fileOps
+
+  const exportOps = useExport({ viewRef, filePath })
 
   const workspace = useWorkspaceTree({
     filePathRef,
@@ -290,7 +294,8 @@ export default function App(): React.JSX.Element {
     toggleOutline,
     openPreferences: () => setShowPreferences(true),
     openRecentFile: fileOps.openRecentFile,
-    clearRecentFiles
+    clearRecentFiles,
+    exportDocument: exportOps.openExport
   })
 
   // Fullscreen state is pushed from main (traffic-light / F11 transitions).
@@ -377,6 +382,12 @@ export default function App(): React.JSX.Element {
         <div className="editor-host" ref={hostRef} />
       </div>
       <Preferences open={showPreferences} onClose={() => setShowPreferences(false)} />
+      <ExportDialog
+        format={exportOps.exportFormat}
+        defaults={exportOps.exportOptions}
+        onClose={exportOps.closeExport}
+        onConfirm={(format, options) => void exportOps.runExport(format, options)}
+      />
       <DialogHost />
     </div>
   )
