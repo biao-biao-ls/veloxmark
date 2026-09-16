@@ -17,15 +17,15 @@ hooks（`hooks/useFileOps.ts` / `hooks/useWorkspaceTree.ts`）中大量使用
 
 ## 功能需求
 
-- [ ] 通用 `<Dialog>` 组件：标题、正文、任意数量按钮，Enter/Esc 键盘导航，
+- [x] 通用 `<Dialog>` 组件：标题、正文、任意数量按钮，Enter/Esc 键盘导航，
       焦点锁定在对话框内
-- [ ] 三种命令式 API（挂到一个 React context 或全局 store）：
+- [x] 三种命令式 API（挂到一个 React context 或全局 store）：
       `confirm(opts): Promise<boolean>`、`alert(opts): Promise<void>`、
       `prompt(opts): Promise<string | null>`（带输入框、默认值、占位符）
-- [ ] 明暗主题各一套样式，与 `styles.css` 现有变量体系一致
-- [ ] macOS 风格差异：按钮顺序（确认在右）随平台调整
-- [ ] 破坏性操作（删除）确认按钮用危险色
-- [ ] 替换点清单（全量替换，不留原生调用；P00 后分布在两个 hooks）：
+- [x] 明暗主题各一套样式，与 `styles.css` 现有变量体系一致
+- [x] macOS 风格差异：按钮顺序（确认在右）随平台调整
+- [x] 破坏性操作（删除）确认按钮用危险色
+- [x] 替换点清单（全量替换，不留原生调用；P00 后分布在两个 hooks）：
   - `confirmDiscard`（放弃未保存修改）——`hooks/useFileOps.ts`
   - `treeNewFile` / `treeRename`（prompt）、`treeDelete`（confirm）、
     名称非法时的 `alert`——`hooks/useWorkspaceTree.ts`

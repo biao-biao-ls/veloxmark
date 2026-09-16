@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { EditorView } from '@codemirror/view'
 import { updateLivePreviewConfig } from '../editor/setup'
+import { dialog } from '../components/Dialog'
 import { WELCOME_MD } from '../content'
 
 export type SidebarMode = 'outline' | 'files'
@@ -55,18 +56,22 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode }: Args) {
     [viewRef, syncAppState, updateOutline]
   )
 
-  const confirmDiscard = useCallback((): boolean => {
+  const confirmDiscard = useCallback(async (): Promise<boolean> => {
     if (!dirty) return true
-    return window.confirm('Discard unsaved changes?')
+    return dialog.confirm({
+      title: 'Unsaved Changes',
+      message: 'Discard unsaved changes?',
+      confirmLabel: 'Discard'
+    })
   }, [dirty])
 
-  const newFile = useCallback(() => {
-    if (!confirmDiscard()) return
+  const newFile = useCallback(async () => {
+    if (!(await confirmDiscard())) return
     loadContent('', null)
   }, [confirmDiscard, loadContent])
 
   const openFile = useCallback(async () => {
-    if (!confirmDiscard()) return
+    if (!(await confirmDiscard())) return
     const result = await window.api.openFile()
     if (!result) return
     setBaseDir(result.filePath)
@@ -80,7 +85,7 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode }: Args) {
   const openFromSystem = useCallback(
     async (path: string) => {
       if (!viewRef.current) return
-      if (!confirmDiscard()) return
+      if (!(await confirmDiscard())) return
       const content = await window.api.readFile(path)
       setBaseDir(path)
       loadContent(content, path)

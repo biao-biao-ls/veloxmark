@@ -31,7 +31,7 @@ export interface Command {
 /** Runtime operations the registry binds to — supplied by the App hooks. */
 export interface CommandOps {
   viewRef: RefObject<EditorView | null>
-  newFile: () => void
+  newFile: () => Promise<void>
   openFile: () => Promise<void>
   openFolder: () => Promise<void>
   saveFile: () => Promise<void>
@@ -50,7 +50,7 @@ export function buildCommands(ops: CommandOps): Command[] {
       label: 'New',
       shortcut: 'Ctrl+N',
       bindGlobal: true,
-      run: () => ops.newFile()
+      run: () => void ops.newFile()
     },
     {
       id: 'openFile',

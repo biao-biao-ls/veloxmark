@@ -5,6 +5,7 @@ import Outline from './components/Outline'
 import FileTree from './components/FileTree'
 import TreeMenu from './components/TreeMenu'
 import Titlebar from './components/Titlebar'
+import { DialogHost } from './components/Dialog'
 import { createExtensions } from './editor/setup'
 import { readEditingAssistsConfig } from './editor/assists'
 import { extractOutline, type OutlineItem } from './outline/extract'
@@ -211,6 +212,7 @@ export default function App(): React.JSX.Element {
         )}
         <div className="editor-host" ref={hostRef} />
       </div>
+      <DialogHost />
     </div>
   )
 }

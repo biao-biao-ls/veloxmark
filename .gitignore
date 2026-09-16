@@ -5,3 +5,5 @@ build/icon.iconset/
 *.log
 .DS_Store
 .claude/
+# 临时验证截图（已入库的历史截图不受影响）
+scripts/p0*-*.png

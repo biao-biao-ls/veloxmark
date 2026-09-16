@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useState, type RefObject } from 'react
 import type { DirNode } from '../../../../electron/shared/api'
 import type { TreeMenuRequest } from '../components/FileTree'
 import type { TreeMenuItem } from '../components/TreeMenu'
+import { dialog } from '../components/Dialog'
 import type { SidebarMode } from './useFileOps'
 
 interface Args {
   filePathRef: RefObject<string | null>
   dirty: boolean
-  confirmDiscard: () => boolean
+  confirmDiscard: () => Promise<boolean>
   loadContent: (content: string, path: string | null) => void
   setBaseDir: (path: string) => void
   setFilePath: (path: string | null) => void
@@ -71,7 +72,7 @@ export function useWorkspaceTree({
         setSidebarMode('outline')
         return
       }
-      if (!confirmDiscard()) return
+      if (!(await confirmDiscard())) return
       const content = await window.api.readFile(path)
       setBaseDir(path)
       loadContent(content, path)
@@ -91,17 +92,17 @@ export function useWorkspaceTree({
 
   const treeNewFile = useCallback(
     async (dirPath: string) => {
-      const name = window.prompt('New file name:')
+      const name = await dialog.prompt({ title: 'New File', message: 'New file name:' })
       if (!name) return
       if (/[/\\]/.test(name) || name === '.' || name === '..') {
-        window.alert('Invalid file name.')
+        await dialog.alert('Invalid file name.')
         return
       }
       const fileName = /\.[^./\\]+$/.test(name) ? name : `${name}.md`
       try {
         await window.api.createFile(joinPath(dirPath, fileName))
       } catch (err) {
-        window.alert(`Could not create file: ${err instanceof Error ? err.message : err}`)
+        await dialog.alert(`Could not create file: ${err instanceof Error ? err.message : err}`)
       }
     },
     [joinPath]
@@ -109,10 +110,14 @@ export function useWorkspaceTree({
 
   const treeRename = useCallback(
     async (node: DirNode) => {
-      const name = window.prompt(node.isDir ? 'Rename folder:' : 'Rename file:', node.name)
+      const name = await dialog.prompt({
+        title: node.isDir ? 'Rename Folder' : 'Rename File',
+        message: node.isDir ? 'Rename folder:' : 'Rename file:',
+        defaultValue: node.name
+      })
       if (!name || name === node.name) return
       if (/[/\\]/.test(name) || name === '.' || name === '..') {
-        window.alert('Invalid name.')
+        await dialog.alert('Invalid name.')
         return
       }
       // sibling path: swap the last segment, keeping the original separator
@@ -120,7 +125,7 @@ export function useWorkspaceTree({
       try {
         await window.api.renamePath(node.path, newPath)
       } catch (err) {
-        window.alert(`Could not rename: ${err instanceof Error ? err.message : err}`)
+        await dialog.alert(`Could not rename: ${err instanceof Error ? err.message : err}`)
         return
       }
       // keep the open editor attached when its file (or an ancestor folder) moves
@@ -144,11 +149,17 @@ export function useWorkspaceTree({
   const treeDelete = useCallback(
     async (node: DirNode) => {
       const what = node.isDir ? 'folder' : 'file'
-      if (!window.confirm(`Delete ${what} "${node.name}"? This cannot be undone.`)) return
+      const ok = await dialog.confirm({
+        title: `Delete ${what}`,
+        message: `Delete ${what} "${node.name}"? This cannot be undone.`,
+        confirmLabel: 'Delete',
+        danger: true
+      })
+      if (!ok) return
       try {
         await window.api.deletePath(node.path)
       } catch (err) {
-        window.alert(`Could not delete: ${err instanceof Error ? err.message : err}`)
+        await dialog.alert(`Could not delete: ${err instanceof Error ? err.message : err}`)
         return
       }
       // if the open file is gone, detach it (buffer keeps its content → Save As)
