@@ -5,11 +5,13 @@ import {
   buildMenus,
   fmtShortcut,
   matchGlobalShortcut,
-  type CommandOps
+  type CommandOps,
+  type RecentItem
 } from '../commands'
 
 interface Args extends CommandOps {
   isMac: boolean
+  recentItems: RecentItem[]
 }
 
 /**
@@ -17,7 +19,7 @@ interface Args extends CommandOps {
  * the global keydown and the macOS native-menu dispatch (`menu:<id>`).
  * All of them are generated from commands.ts — nothing is hand-listed here.
  */
-export function useMenus({ isMac, ...ops }: Args): {
+export function useMenus({ isMac, recentItems, ...ops }: Args): {
   menus: MenuDef[]
   formatShortcut: (shortcut: string) => string
 } {
@@ -27,7 +29,11 @@ export function useMenus({ isMac, ...ops }: Args): {
   const commandsRef = useRef(commands)
   commandsRef.current = commands
 
-  const menus = useMemo(() => buildMenus(commands, isMac), [commands, isMac])
+  const menus = useMemo(
+    () => buildMenus(commands, isMac, recentItems, ops),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [commands, isMac, recentItems]
+  )
 
   // macOS native menu: every command id gets a `menu:<id>` channel; ids the
   // native menu never sends simply stay silent.

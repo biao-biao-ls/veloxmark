@@ -1,4 +1,9 @@
 import { Compartment, Facet, type EditorState } from '@codemirror/state'
+import {
+  getPreferences,
+  setPreferences,
+  type Preferences
+} from '../../preferences/store'
 
 /**
  * Editing-assists configuration, injected via a Facet + Compartment.
@@ -6,7 +11,8 @@ import { Compartment, Facet, type EditorState } from '@codemirror/state'
  * Mirrors the livePreview config pattern (P00-R3). When `enabled` is false
  * the whole assists extension (keymaps, paste handler) is reconfigured out
  * and markdown() drops `addKeymap`/`pasteURLAsLink`, restoring plain CM6
- * behavior. P03 will expose this through the preferences UI.
+ * behavior. Persisted through the P03 preferences store; the Preferences
+ * panel toggles the same fields.
  */
 export interface EditingAssistsConfig {
   enabled: boolean
@@ -32,17 +38,15 @@ export function getEditingAssists(state: EditorState): EditingAssistsConfig {
   return state.facet(editingAssistsConfigFacet)
 }
 
-/** Restore persisted config (localStorage, keys match the field names). */
+/** Restore persisted config (backed by the P03 preferences store). */
 export function readEditingAssistsConfig(): EditingAssistsConfig {
-  const read = (key: keyof EditingAssistsConfig): boolean => {
-    const stored = localStorage.getItem(key)
-    return stored == null ? DEFAULT_EDITING_ASSISTS_CONFIG[key] : stored !== 'false'
-  }
-  return { enabled: read('enabled'), wrapBareUrlOnPaste: read('wrapBareUrlOnPaste') }
+  const prefs = getPreferences()
+  return { enabled: prefs.typingAssistsEnabled, wrapBareUrlOnPaste: prefs.wrapBareUrlOnPaste }
 }
 
 export function persistEditingAssistsConfig(patch: Partial<EditingAssistsConfig>): void {
-  for (const [key, value] of Object.entries(patch)) {
-    localStorage.setItem(key, String(value))
-  }
+  const next: Partial<Preferences> = {}
+  if (patch.enabled != null) next.typingAssistsEnabled = patch.enabled
+  if (patch.wrapBareUrlOnPaste != null) next.wrapBareUrlOnPaste = patch.wrapBareUrlOnPaste
+  setPreferences(next)
 }

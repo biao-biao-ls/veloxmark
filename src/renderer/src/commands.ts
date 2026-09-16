@@ -2,7 +2,7 @@ import type { RefObject } from 'react'
 import { openSearchPanel } from '@codemirror/search'
 import { redo, undo } from '@codemirror/commands'
 import type { EditorView } from '@codemirror/view'
-import type { MenuDef } from './components/MenuBar'
+import type { MenuDef, MenuItem } from './components/MenuBar'
 import { HELP_MD } from './content'
 import { transformPaste } from './editor/assists'
 
@@ -39,6 +39,17 @@ export interface CommandOps {
   toggleTheme: () => void
   toggleOutline: () => void
   loadContent: (content: string, path: string | null) => void
+  openPreferences: () => void
+  openRecentFile: (path: string) => Promise<void>
+  clearRecentFiles: () => void
+}
+
+/** One validated Open Recent entry (existence decided by the App). */
+export interface RecentItem {
+  path: string
+  /** File name only — the menu label. */
+  name: string
+  exists: boolean
 }
 
 export function buildCommands(ops: CommandOps): Command[] {
@@ -79,6 +90,13 @@ export function buildCommands(ops: CommandOps): Command[] {
       shortcut: 'Ctrl+Shift+S',
       bindGlobal: true,
       run: () => void ops.saveFileAs()
+    },
+    {
+      id: 'openPreferences',
+      label: 'Preferences…',
+      shortcut: 'Ctrl+,',
+      bindGlobal: true,
+      run: () => ops.openPreferences()
     },
     // ---- Edit --------------------------------------------------------------
     {
@@ -195,12 +213,22 @@ export function fmtShortcut(s: string, isMac: boolean): string {
 
 // ---- menu layout -----------------------------------------------------------
 
-type LayoutItem = string | { separator: true }
+type LayoutItem = string | { separator: true } | { recent: true }
 
 const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
   {
     label: 'File',
-    items: ['newFile', 'openFile', 'openFolder', { separator: true }, 'saveFile', 'saveFileAs']
+    items: [
+      'newFile',
+      'openFile',
+      'openFolder',
+      { recent: true },
+      { separator: true },
+      'saveFile',
+      'saveFileAs',
+      { separator: true },
+      'openPreferences'
+    ]
   },
   {
     label: 'Edit',
@@ -234,12 +262,20 @@ const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
 ]
 
 /** Expand the registry + layout into the MenuBar's menu definitions. */
-export function buildMenus(commands: Command[], isMac: boolean): MenuDef[] {
+export function buildMenus(
+  commands: Command[],
+  isMac: boolean,
+  recentItems: RecentItem[] = [],
+  ops?: Pick<CommandOps, 'openRecentFile' | 'clearRecentFiles'>
+): MenuDef[] {
   const byId = new Map(commands.map((c) => [c.id, c]))
   return MENU_LAYOUT.map((menu) => ({
     label: menu.label,
-    items: menu.items.map((item) => {
-      if (typeof item !== 'string') return { separator: true }
+    items: menu.items.map((item): MenuItem => {
+      if (typeof item === 'object' && 'separator' in item) return { separator: true }
+      if (typeof item === 'object' && 'recent' in item) {
+        return { label: 'Open Recent', submenu: buildRecentSubmenu(recentItems, ops) }
+      }
       const cmd = byId.get(item)
       if (!cmd) throw new Error(`menu layout references unknown command "${item}"`)
       return {
@@ -249,6 +285,23 @@ export function buildMenus(commands: Command[], isMac: boolean): MenuDef[] {
       }
     })
   }))
+}
+
+/** Open Recent children: validated entries (missing paths greyed) + Clear Menu. */
+function buildRecentSubmenu(
+  recentItems: RecentItem[],
+  ops?: Pick<CommandOps, 'openRecentFile' | 'clearRecentFiles'>
+): MenuItem[] {
+  if (recentItems.length === 0) return [{ label: 'No Recent Files', disabled: true }]
+  const items: MenuItem[] = recentItems.map((item) => ({
+    label: item.name,
+    title: item.path,
+    disabled: !item.exists,
+    action: () => void ops?.openRecentFile(item.path)
+  }))
+  items.push({ separator: true })
+  items.push({ label: 'Clear Menu', action: () => ops?.clearRecentFiles() })
+  return items
 }
 
 // ---- global shortcuts ------------------------------------------------------

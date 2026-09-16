@@ -25,6 +25,8 @@ import { compartmentThemes, ThemeName } from './theme'
 export const themeCompartment = new Compartment()
 /** Holds markdown() so addKeymap/pasteURLAsLink can follow the assists toggle. */
 export const markdownCompartment = new Compartment()
+/** Holds lineNumbers() so the P03 preferences toggle can swap it live. */
+export const gutterCompartment = new Compartment()
 
 export interface EditorCallbacks {
   onChange: (doc: string) => void
@@ -48,10 +50,11 @@ function markdownSupport(assists: EditingAssistsConfig): Extension {
 export function createExtensions(
   callbacks: EditorCallbacks,
   theme: ThemeName,
-  assists: EditingAssistsConfig
+  assists: EditingAssistsConfig,
+  showLineNumbers: boolean
 ): Extension[] {
   return [
-    lineNumbers(),
+    gutterCompartment.of(showLineNumbers ? lineNumbers() : []),
     history(),
     drawSelection(),
     highlightActiveLine(),
@@ -95,6 +98,11 @@ export function reconfigureTheme(view: EditorView, theme: ThemeName): void {
       )
     ]
   })
+}
+
+/** Toggle the line-number gutter (P03 preferences). */
+export function updateShowLineNumbers(view: EditorView, show: boolean): void {
+  view.dispatch({ effects: gutterCompartment.reconfigure(show ? lineNumbers() : []) })
 }
 
 /**

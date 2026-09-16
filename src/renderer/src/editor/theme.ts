@@ -8,9 +8,12 @@ const lightEditorTheme = EditorView.theme(
   {
     '&': { color: '#333', backgroundColor: '#ffffff' },
     '.cm-content': {
-      fontFamily:
-        "'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, sans-serif",
-      fontSize: '16px',
+      // Appearance comes from :root CSS variables (P03 preferences store).
+      fontFamily: 'var(--editor-font-family)',
+      fontSize: 'var(--editor-font-size)',
+      lineHeight: 'var(--editor-line-height)',
+      maxWidth: 'var(--editor-max-width)',
+      margin: '0 auto',
       caretColor: '#333',
       padding: '16px 0 40vh 0'
     },
@@ -30,9 +33,12 @@ const darkEditorTheme = EditorView.theme(
   {
     '&': { color: '#d4d4d4', backgroundColor: '#1e1e1e' },
     '.cm-content': {
-      fontFamily:
-        "'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, sans-serif",
-      fontSize: '16px',
+      // Appearance comes from :root CSS variables (P03 preferences store).
+      fontFamily: 'var(--editor-font-family)',
+      fontSize: 'var(--editor-font-size)',
+      lineHeight: 'var(--editor-line-height)',
+      maxWidth: 'var(--editor-max-width)',
+      margin: '0 auto',
       caretColor: '#d4d4d4',
       padding: '16px 0 40vh 0'
     },

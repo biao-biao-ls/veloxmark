@@ -3,6 +3,7 @@ import type { DirNode } from '../../../../electron/shared/api'
 import type { TreeMenuRequest } from '../components/FileTree'
 import type { TreeMenuItem } from '../components/TreeMenu'
 import { dialog } from '../components/Dialog'
+import { patchSession } from '../preferences/store'
 import type { SidebarMode } from './useFileOps'
 
 interface Args {
@@ -46,6 +47,8 @@ export function useWorkspaceTree({
       setFolderPath(dirPath)
       setSidebarMode('files')
       setShowOutline(true)
+      // P03: remember for session restore.
+      patchSession({ lastFolderPath: dirPath })
       await window.api.watchFolder(dirPath)
     },
     [setSidebarMode, setShowOutline]

@@ -7,3 +7,5 @@ build/icon.iconset/
 .claude/
 # 临时验证截图（已入库的历史截图不受影响）
 scripts/p0*-*.png
+# CDP 测试脚本自建的临时工作区（fixture + 运行输出，脚本会重建）
+scripts/tmp-p03/
