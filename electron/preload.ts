@@ -1,100 +1,84 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import {
+  IPC,
+  type DirNode,
+  type MenuChannel,
+  type OpenFileResult,
+  type RendererApi,
+  type WriteResult
+} from '@shared/ipc'
 
-export interface OpenFileResult {
-  filePath: string
-  content: string
-}
-
-export interface DirNode {
-  name: string
-  path: string
-  isDir: boolean
-  children?: DirNode[]
-}
-
-export interface WriteResult {
-  ok: boolean
-  /** The file changed on disk since it was opened; pass force to overwrite. */
-  conflict?: boolean
-  error?: string
-}
-
-const api = {
+// Renderer-facing bridge. The shape is fixed by the shared contract; keep
+// this file free of logic beyond channel wiring and listener teardown.
+const api: RendererApi = {
   platform: process.platform,
-  openFile: (): Promise<OpenFileResult | null> => ipcRenderer.invoke('dialog:openFile'),
+  openFile: (): Promise<OpenFileResult | null> => ipcRenderer.invoke(IPC.dialogOpenFile),
   openFolder: (): Promise<{ folderPath: string } | null> =>
-    ipcRenderer.invoke('dialog:openFolder'),
+    ipcRenderer.invoke(IPC.dialogOpenFolder),
   listDirectory: (dirPath: string): Promise<DirNode[]> =>
-    ipcRenderer.invoke('folder:list', dirPath),
+    ipcRenderer.invoke(IPC.folderList, dirPath),
   watchFolder: (dirPath: string): Promise<boolean> =>
-    ipcRenderer.invoke('folder:watch', dirPath),
-  unwatchFolder: (): Promise<boolean> => ipcRenderer.invoke('folder:unwatch'),
+    ipcRenderer.invoke(IPC.folderWatch, dirPath),
+  unwatchFolder: (): Promise<boolean> => ipcRenderer.invoke(IPC.folderUnwatch),
   createFile: (filePath: string): Promise<boolean> =>
-    ipcRenderer.invoke('file:create', filePath),
+    ipcRenderer.invoke(IPC.fileCreate, filePath),
   deletePath: (targetPath: string): Promise<boolean> =>
-    ipcRenderer.invoke('file:delete', targetPath),
+    ipcRenderer.invoke(IPC.fileDelete, targetPath),
   renamePath: (oldPath: string, newPath: string): Promise<boolean> =>
-    ipcRenderer.invoke('file:rename', oldPath, newPath),
+    ipcRenderer.invoke(IPC.fileRename, oldPath, newPath),
   onFolderTree: (callback: (tree: DirNode[]) => void): (() => void) => {
     const listener = (_e: unknown, tree: DirNode[]): void => callback(tree)
-    ipcRenderer.on('folder:tree', listener)
-    return () => ipcRenderer.removeListener('folder:tree', listener)
+    ipcRenderer.on(IPC.folderTree, listener)
+    return () => ipcRenderer.removeListener(IPC.folderTree, listener)
   },
   showSaveDialog: (
     defaultPath?: string,
     filters?: { name: string; extensions: string[] }[]
-  ): Promise<string | null> => ipcRenderer.invoke('dialog:saveFile', defaultPath, filters),
-  readFile: (filePath: string): Promise<string> => ipcRenderer.invoke('file:read', filePath),
+  ): Promise<string | null> => ipcRenderer.invoke(IPC.dialogSaveFile, defaultPath, filters),
+  readFile: (filePath: string): Promise<string> => ipcRenderer.invoke(IPC.fileRead, filePath),
   writeFile: (filePath: string, content: string, opts?: { force?: boolean }): Promise<WriteResult> =>
-    ipcRenderer.invoke('file:write', filePath, content, opts),
+    ipcRenderer.invoke(IPC.fileWrite, filePath, content, opts),
   setAppState: (state: { filePath: string | null; dirty: boolean }): Promise<void> =>
-    ipcRenderer.invoke('app:setState', state),
+    ipcRenderer.invoke(IPC.appSetState, state),
   resolveImageSrc: (dir: string, src: string): Promise<string> =>
-    ipcRenderer.invoke('file:resolveImageSrc', dir, src),
-  windowMinimize: (): void => ipcRenderer.send('window:minimize'),
-  windowMaximizeRestore: (): void => ipcRenderer.send('window:maximize-restore'),
-  windowClose: (): void => ipcRenderer.send('window:close'),
-  windowToggleDevTools: (): void => ipcRenderer.send('window:toggleDevTools'),
+    ipcRenderer.invoke(IPC.fileResolveImageSrc, dir, src),
+  windowMinimize: (): void => ipcRenderer.send(IPC.windowMinimize),
+  windowMaximizeRestore: (): void => ipcRenderer.send(IPC.windowMaximizeRestore),
+  windowClose: (): void => ipcRenderer.send(IPC.windowClose),
+  windowToggleDevTools: (): void => ipcRenderer.send(IPC.windowToggleDevTools),
   windowZoom: (action: 'in' | 'out' | 'reset'): void =>
-    ipcRenderer.send('window:zoom', action),
-  clipboardRead: (): Promise<string> => ipcRenderer.invoke('clipboard:read'),
+    ipcRenderer.send(IPC.windowZoom, action),
+  clipboardRead: (): Promise<string> => ipcRenderer.invoke(IPC.clipboardRead),
   clipboardWrite: (text: string): Promise<void> =>
-    ipcRenderer.invoke('clipboard:write', text),
-  // Tell main the editor is mounted so queued system open-file paths are sent.
-  rendererReady: (): void => ipcRenderer.send('app:rendererReady'),
-  // macOS Finder "Open With" / double-clicking a registered .md file.
+    ipcRenderer.invoke(IPC.clipboardWrite, text),
+  rendererReady: (): void => ipcRenderer.send(IPC.appRendererReady),
   onOpenPath: (callback: (filePath: string) => void): (() => void) => {
     const listener = (_e: unknown, filePath: string): void => callback(filePath)
-    ipcRenderer.on('app:openPath', listener)
-    return () => ipcRenderer.removeListener('app:openPath', listener)
+    ipcRenderer.on(IPC.appOpenPath, listener)
+    return () => ipcRenderer.removeListener(IPC.appOpenPath, listener)
   },
-  // macOS Finder "Open" on a folder (or open-file event with a directory).
   onOpenFolder: (callback: (folderPath: string) => void): (() => void) => {
     const listener = (_e: unknown, folderPath: string): void => callback(folderPath)
-    ipcRenderer.on('app:openFolder', listener)
-    return () => ipcRenderer.removeListener('app:openFolder', listener)
+    ipcRenderer.on(IPC.appOpenFolder, listener)
+    return () => ipcRenderer.removeListener(IPC.appOpenFolder, listener)
   },
   onFullScreen: (callback: (fullScreen: boolean) => void): (() => void) => {
     const listener = (_e: unknown, fullScreen: boolean): void => callback(fullScreen)
-    ipcRenderer.on('app:fullScreen', listener)
-    return () => ipcRenderer.removeListener('app:fullScreen', listener)
+    ipcRenderer.on(IPC.appFullScreen, listener)
+    return () => ipcRenderer.removeListener(IPC.appFullScreen, listener)
   },
-  onMenu: (channel: string, callback: () => void): (() => void) => {
+  onMenu: (channel: MenuChannel, callback: () => void): (() => void) => {
     const listener = (): void => callback()
     ipcRenderer.on(channel, listener)
     return () => ipcRenderer.removeListener(channel, listener)
   },
-  // Main asks the renderer to save the buffer, then report success/failure
-  // so the close flow can continue (or abort on a cancelled Save As).
   onRequestSaveThenClose: (callback: () => void): (() => void) => {
     const listener = (): void => callback()
-    ipcRenderer.on('app:requestSaveThenClose', listener)
-    return () => ipcRenderer.removeListener('app:requestSaveThenClose', listener)
+    ipcRenderer.on(IPC.appRequestSaveThenClose, listener)
+    return () => ipcRenderer.removeListener(IPC.appRequestSaveThenClose, listener)
   },
   saveThenCloseResult: (ok: boolean): void =>
-    ipcRenderer.send('app:saveThenCloseResult', ok)
+    ipcRenderer.send(IPC.appSaveThenCloseResult, ok)
 }
 
 contextBridge.exposeInMainWorld('api', api)
-
-export type Api = typeof api

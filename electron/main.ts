@@ -7,6 +7,7 @@ import { watch, type FSWatcher } from 'node:fs'
 import { readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, normalize } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { IPC, MenuChannel, type DirNode, type ZoomAction } from '@shared/ipc'
 
 // In dev the process lives inside Electron.app's bundle, so macOS would show
 // "Electron" in the menu bar; packaged builds get the name from CFBundleName.
@@ -36,7 +37,7 @@ async function deliverOpenPath(filePath: string): Promise<void> {
   } catch {
     // unreadable path — still attempt to open it as a file
   }
-  const channel = isDir ? 'app:openFolder' : 'app:openPath'
+  const channel = isDir ? IPC.appOpenFolder : IPC.appOpenPath
   if (rendererLoaded && mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send(channel, filePath)
   } else {
@@ -134,7 +135,7 @@ function createWindow(): void {
         detail: 'Your changes will be lost if you don’t save them.'
       })
       if (response === 0) {
-        win.webContents.send('app:requestSaveThenClose')
+        win.webContents.send(IPC.appRequestSaveThenClose)
       } else if (response === 1) {
         forceClose = true
         win.close()
@@ -146,7 +147,7 @@ function createWindow(): void {
   // lights (they auto-hide in fullscreen) — keep the renderer in sync.
   const notifyFullScreen = (): void => {
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('app:fullScreen', mainWindow.isFullScreen())
+      mainWindow.webContents.send(IPC.appFullScreen, mainWindow.isFullScreen())
     }
   }
   mainWindow.on('enter-full-screen', notifyFullScreen)
@@ -193,7 +194,7 @@ const FILE_FILTERS = [
   { name: 'All Files', extensions: ['*'] }
 ]
 
-ipcMain.handle('dialog:openFile', async () => {
+ipcMain.handle(IPC.dialogOpenFile, async () => {
   if (!mainWindow) return null
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openFile'],
@@ -207,7 +208,7 @@ ipcMain.handle('dialog:openFile', async () => {
 })
 
 ipcMain.handle(
-  'dialog:saveFile',
+  IPC.dialogSaveFile,
   async (_e, defaultPath?: string, filters?: { name: string; extensions: string[] }[]) => {
     if (!mainWindow) return null
     const result = await dialog.showSaveDialog(mainWindow, {
@@ -219,7 +220,7 @@ ipcMain.handle(
   }
 )
 
-ipcMain.handle('dialog:openFolder', async () => {
+ipcMain.handle(IPC.dialogOpenFolder, async () => {
   if (!mainWindow) return null
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openDirectory']
@@ -228,7 +229,7 @@ ipcMain.handle('dialog:openFolder', async () => {
   return { folderPath: result.filePaths[0] }
 })
 
-ipcMain.handle('file:read', async (_e, filePath: string) => {
+ipcMain.handle(IPC.fileRead, async (_e, filePath: string) => {
   const content = await readFile(filePath, 'utf-8')
   await stampFile(filePath)
   return content
@@ -241,7 +242,7 @@ ipcMain.handle('file:read', async (_e, filePath: string) => {
 // (pass force:true to overwrite anyway). Temp names start with '.' so the
 // folder watcher already ignores them.
 ipcMain.handle(
-  'file:write',
+  IPC.fileWrite,
   async (_e, filePath: string, content: string, opts?: { force?: boolean }) => {
     try {
       if (opts?.force !== true && openFileStamp?.path === filePath) {
@@ -274,13 +275,6 @@ ipcMain.handle(
 )
 
 // ---- folder listing ---------------------------------------------------------
-
-export interface DirNode {
-  name: string
-  path: string
-  isDir: boolean
-  children?: DirNode[]
-}
 
 const MD_EXT = /\.(md|markdown|mdown|txt)$/i
 // Common noise that never contains a user's notes; keeps deep scans fast.
@@ -315,7 +309,7 @@ async function listMarkdownTree(dirPath: string, depth = 0): Promise<DirNode[]> 
   return [...dirs, ...files]
 }
 
-ipcMain.handle('folder:list', async (_e, dirPath: string): Promise<DirNode[]> => {
+ipcMain.handle(IPC.folderList, async (_e, dirPath: string): Promise<DirNode[]> => {
   return listMarkdownTree(dirPath)
 })
 
@@ -332,7 +326,7 @@ async function pushFolderTree(): Promise<void> {
   if (!watchedFolder) return
   const tree = await listMarkdownTree(watchedFolder)
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('folder:tree', tree)
+    mainWindow.webContents.send(IPC.folderTree, tree)
   }
 }
 
@@ -346,7 +340,7 @@ function stopFolderWatcher(): void {
   watchedFolder = null
 }
 
-ipcMain.handle('folder:watch', async (e, dirPath: string) => {
+ipcMain.handle(IPC.folderWatch, async (e, dirPath: string) => {
   // A window owns exactly one watched folder; replace any previous watcher.
   stopFolderWatcher()
   watchedFolder = dirPath
@@ -366,7 +360,7 @@ ipcMain.handle('folder:watch', async (e, dirPath: string) => {
       // session alive so the user can reopen another folder.
       stopFolderWatcher()
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('folder:tree', [])
+        mainWindow.webContents.send(IPC.folderTree, [])
       }
     })
   } catch {
@@ -375,11 +369,11 @@ ipcMain.handle('folder:watch', async (e, dirPath: string) => {
   }
   // Send the current tree immediately so the renderer doesn't need a separate
   // list call when (re)subscribing.
-  e.sender.send('folder:tree', await listMarkdownTree(dirPath))
+  e.sender.send(IPC.folderTree, await listMarkdownTree(dirPath))
   return true
 })
 
-ipcMain.handle('folder:unwatch', () => {
+ipcMain.handle(IPC.folderUnwatch, () => {
   stopFolderWatcher()
   return true
 })
@@ -390,18 +384,18 @@ app.on('window-all-closed', stopFolderWatcher)
 
 // ---- tree file operations ---------------------------------------------------
 
-ipcMain.handle('file:create', async (_e, filePath: string) => {
+ipcMain.handle(IPC.fileCreate, async (_e, filePath: string) => {
   // 'wx' fails if the path exists — never clobber an existing file.
   await writeFile(filePath, '', { encoding: 'utf-8', flag: 'wx' })
   return true
 })
 
-ipcMain.handle('file:delete', async (_e, targetPath: string) => {
+ipcMain.handle(IPC.fileDelete, async (_e, targetPath: string) => {
   await rm(targetPath, { recursive: true, force: false })
   return true
 })
 
-ipcMain.handle('file:rename', async (_e, oldPath: string, newPath: string) => {
+ipcMain.handle(IPC.fileRename, async (_e, oldPath: string, newPath: string) => {
   if (oldPath === newPath) return true
   await stat(newPath).then(
     () => {
@@ -413,7 +407,7 @@ ipcMain.handle('file:rename', async (_e, oldPath: string, newPath: string) => {
   return true
 })
 
-ipcMain.handle('file:resolveImageSrc', (_e, dir: string, src: string) => {
+ipcMain.handle(IPC.fileResolveImageSrc, (_e, dir: string, src: string) => {
   if (/^(https?:|data:|mdres:)/i.test(src)) return src
   const abs = normalize(isAbsolute(src) ? src : join(dir || '.', src))
   return `mdres://image?path=${encodeURIComponent(abs)}`
@@ -427,35 +421,35 @@ function zoomBy(delta: number | 'reset'): void {
   contents.setZoomLevel(delta === 'reset' ? 0 : contents.getZoomLevel() + delta)
 }
 
-ipcMain.on('window:minimize', () => mainWindow?.minimize())
-ipcMain.on('window:maximize-restore', () => {
+ipcMain.on(IPC.windowMinimize, () => mainWindow?.minimize())
+ipcMain.on(IPC.windowMaximizeRestore, () => {
   if (!mainWindow) return
   mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize()
 })
-ipcMain.on('window:close', () => mainWindow?.close())
-ipcMain.on('window:toggleDevTools', () => mainWindow?.webContents.toggleDevTools())
-ipcMain.on('window:zoom', (_e, action: 'in' | 'out' | 'reset') => {
+ipcMain.on(IPC.windowClose, () => mainWindow?.close())
+ipcMain.on(IPC.windowToggleDevTools, () => mainWindow?.webContents.toggleDevTools())
+ipcMain.on(IPC.windowZoom, (_e, action: ZoomAction) => {
   if (action === 'reset') zoomBy('reset')
   else zoomBy(action === 'in' ? 0.5 : -0.5)
 })
 
-ipcMain.handle('clipboard:read', () => clipboard.readText())
-ipcMain.handle('clipboard:write', (_e, text: string) => clipboard.writeText(text))
+ipcMain.handle(IPC.clipboardRead, () => clipboard.readText())
+ipcMain.handle(IPC.clipboardWrite, (_e, text: string) => clipboard.writeText(text))
 
 // Renderer pings once the editor is mounted; only then can openPath be applied.
-ipcMain.on('app:rendererReady', () => {
+ipcMain.on(IPC.appRendererReady, () => {
   rendererLoaded = true
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('app:fullScreen', mainWindow.isFullScreen())
+    mainWindow.webContents.send(IPC.appFullScreen, mainWindow.isFullScreen())
   }
   for (const { path, isDir } of queuedOpens.splice(0)) {
-    mainWindow?.webContents.send(isDir ? 'app:openFolder' : 'app:openPath', path)
+    mainWindow?.webContents.send(isDir ? IPC.appOpenFolder : IPC.appOpenPath, path)
   }
 })
 
 // ---- renderer -> main state sync (window title) ----------------------------
 
-ipcMain.handle('app:setState', (_e, state: { filePath: string | null; dirty: boolean }) => {
+ipcMain.handle(IPC.appSetState, (_e, state: { filePath: string | null; dirty: boolean }) => {
   appStateDirty = state.dirty
   if (mainWindow) {
     const name = state.filePath ? basename(state.filePath) : 'Untitled'
@@ -466,7 +460,7 @@ ipcMain.handle('app:setState', (_e, state: { filePath: string | null; dirty: boo
 // Renderer finished (or aborted) the close-triggered save. Only a confirmed
 // success closes the window; a cancelled Save As or a failed write keeps it
 // open so the buffer is never dropped silently.
-ipcMain.on('app:saveThenCloseResult', (_e, ok: boolean) => {
+ipcMain.on(IPC.appSaveThenCloseResult, (_e, ok: boolean) => {
   if (ok) {
     forceClose = true
     mainWindow?.close()
@@ -479,7 +473,7 @@ ipcMain.on('app:saveThenCloseResult', (_e, ok: boolean) => {
 // null menu strips the system shortcuts (Cmd+Q/H/W/M, Edit roles like copy and
 // paste in plain <input>s). App-specific items forward to the channels the
 // renderer already listens on (see preload `onMenu`).
-function sendMenu(channel: string): void {
+function sendMenu(channel: MenuChannel): void {
   mainWindow?.webContents.send(channel)
 }
 
@@ -502,19 +496,19 @@ function buildDarwinMenu(): Menu {
     {
       label: 'File',
       submenu: [
-        { label: 'New', accelerator: 'Cmd+N', click: () => sendMenu('menu:newFile') },
-        { label: 'Open…', accelerator: 'Cmd+O', click: () => sendMenu('menu:openFile') },
+        { label: 'New', accelerator: 'Cmd+N', click: () => sendMenu(MenuChannel.newFile) },
+        { label: 'Open…', accelerator: 'Cmd+O', click: () => sendMenu(MenuChannel.openFile) },
         {
           label: 'Open Folder…',
           accelerator: 'Cmd+Shift+O',
-          click: () => sendMenu('menu:openFolder')
+          click: () => sendMenu(MenuChannel.openFolder)
         },
         { type: 'separator' },
-        { label: 'Save', accelerator: 'Cmd+S', click: () => sendMenu('menu:saveFile') },
+        { label: 'Save', accelerator: 'Cmd+S', click: () => sendMenu(MenuChannel.saveFile) },
         {
           label: 'Save As…',
           accelerator: 'Cmd+Shift+S',
-          click: () => sendMenu('menu:saveFileAs')
+          click: () => sendMenu(MenuChannel.saveFileAs)
         },
         { type: 'separator' },
         { role: 'close' }
@@ -537,7 +531,7 @@ function buildDarwinMenu(): Menu {
     {
       label: 'View',
       submenu: [
-        { label: 'Toggle Outline', click: () => sendMenu('menu:toggleOutline') },
+        { label: 'Toggle Outline', click: () => sendMenu(MenuChannel.toggleOutline) },
         { type: 'separator' },
         { label: 'Zoom In', accelerator: 'Cmd+Plus', click: () => zoomBy(0.5) },
         { label: 'Zoom Out', accelerator: 'Cmd+-', click: () => zoomBy(-0.5) },
@@ -549,7 +543,7 @@ function buildDarwinMenu(): Menu {
           click: () => mainWindow?.webContents.toggleDevTools()
         },
         { type: 'separator' },
-        { label: 'Toggle Theme', accelerator: 'Cmd+Shift+T', click: () => sendMenu('menu:toggleTheme') }
+        { label: 'Toggle Theme', accelerator: 'Cmd+Shift+T', click: () => sendMenu(MenuChannel.toggleTheme) }
       ]
     },
     {
@@ -568,7 +562,7 @@ function buildDarwinMenu(): Menu {
       submenu: [
         {
           label: 'Markdown Syntax Reference',
-          click: () => sendMenu('menu:showHelp')
+          click: () => sendMenu(MenuChannel.showHelp)
         }
       ]
     }

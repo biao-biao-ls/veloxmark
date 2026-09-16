@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDownIcon, ChevronRightIcon } from './Icons'
+import type { DirNode } from '@shared/ipc'
 
 export interface TreeMenuRequest {
   x: number

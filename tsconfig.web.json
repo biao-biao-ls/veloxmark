@@ -8,7 +8,9 @@
     "skipLibCheck": true,
     "noEmit": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "useDefineForClassFields": true
+    "useDefineForClassFields": true,
+    "baseUrl": ".",
+    "paths": { "@shared/*": ["shared/*"] }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "shared/**/*"]
 }
