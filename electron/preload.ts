@@ -4,6 +4,7 @@ import type {
   DirNode,
   FileFilter,
   OpenFileResult,
+  PdfExportOptions,
   RecentFileItem,
   RendererApi
 } from './shared/api'
@@ -42,6 +43,12 @@ const api: RendererApi = {
     ipcRenderer.invoke('app:setRecentFiles', files),
   resolveImageSrc: (dir: string, src: string): Promise<string> =>
     ipcRenderer.invoke('file:resolveImageSrc', dir, src),
+  exportHtml: (targetPath: string, html: string): Promise<boolean> =>
+    ipcRenderer.invoke('export:html', targetPath, html),
+  exportPdf: (targetPath: string, html: string, options: PdfExportOptions): Promise<boolean> =>
+    ipcRenderer.invoke('export:pdf', targetPath, html, options),
+  readImageAsDataUrl: (dir: string, src: string): Promise<string> =>
+    ipcRenderer.invoke('export:readImageAsDataUrl', dir, src),
   windowMinimize: (): void => ipcRenderer.send('window:minimize'),
   windowMaximizeRestore: (): void => ipcRenderer.send('window:maximize-restore'),
   windowClose: (): void => ipcRenderer.send('window:close'),

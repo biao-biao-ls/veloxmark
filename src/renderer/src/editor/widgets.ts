@@ -48,7 +48,7 @@ export function clearMermaidCache(): void {
   mermaidCache.clear()
 }
 
-async function renderMermaid(code: string, theme: ThemeName): Promise<string> {
+export async function renderMermaid(code: string, theme: ThemeName): Promise<string> {
   ensureMermaidBase()
   const key = `${theme}\n${code}`
   const cached = mermaidCache.get(key)
@@ -84,6 +84,37 @@ async function exportSvg(svgEl: SVGSVGElement): Promise<void> {
   ])
   if (!target) return
   await window.api.writeFile(target, content)
+}
+
+// ---- shared render helpers (P04 export reuses these for static DOM) --------
+
+/**
+ * Highlight `code` with highlight.js for `lang`; returns the innerHTML for a
+ * `<code class="hljs">` element. Falls back to plain escaped text when the
+ * language is unknown or highlighting throws.
+ */
+export function highlightCodeHtml(code: string, lang: string): string {
+  if (lang && hljs.getLanguage(lang)) {
+    try {
+      return hljs.highlight(code, { language: lang }).value
+    } catch {
+      // fall through to plain text
+    }
+  }
+  const el = document.createElement('code')
+  el.textContent = code
+  return el.innerHTML
+}
+
+/** Render TeX to an HTML string (KaTeX); falls back to the raw source. */
+export function renderKatexHtml(tex: string, displayMode: boolean): string {
+  try {
+    return katex.renderToString(tex, { displayMode, throwOnError: false })
+  } catch {
+    const el = document.createElement(displayMode ? 'div' : 'span')
+    el.textContent = tex
+    return el.outerHTML
+  }
 }
 
 // ---- widgets ----------------------------------------------------------------
@@ -151,15 +182,7 @@ export class CodeBlockWidget extends BlockWidget {
     const pre = document.createElement('pre')
     const codeEl = document.createElement('code')
     codeEl.className = 'hljs'
-    if (this.lang && hljs.getLanguage(this.lang)) {
-      try {
-        codeEl.innerHTML = hljs.highlight(this.code, { language: this.lang }).value
-      } catch {
-        codeEl.textContent = this.code
-      }
-    } else {
-      codeEl.textContent = this.code
-    }
+    codeEl.innerHTML = highlightCodeHtml(this.code, this.lang)
     pre.appendChild(codeEl)
     wrap.appendChild(pre)
 
@@ -240,11 +263,7 @@ export class MathBlockWidget extends BlockWidget {
   toDOM(view: EditorView): HTMLElement {
     const el = document.createElement('div')
     el.className = 'cm-md-math-block'
-    try {
-      katex.render(this.tex, el, { displayMode: true, throwOnError: false })
-    } catch {
-      el.textContent = this.tex
-    }
+    el.innerHTML = renderKatexHtml(this.tex, true)
     this.mountClickToSource(el, view)
     return el
   }
@@ -262,11 +281,7 @@ export class InlineMathWidget extends WidgetType {
   toDOM(): HTMLElement {
     const el = document.createElement('span')
     el.className = 'cm-md-math-inline'
-    try {
-      katex.render(this.tex, el, { displayMode: false, throwOnError: false })
-    } catch {
-      el.textContent = this.tex
-    }
+    el.innerHTML = renderKatexHtml(this.tex, false)
     return el
   }
 

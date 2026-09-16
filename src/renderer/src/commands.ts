@@ -42,6 +42,8 @@ export interface CommandOps {
   openPreferences: () => void
   openRecentFile: (path: string) => Promise<void>
   clearRecentFiles: () => void
+  /** P04: open the export options dialog for the given format. */
+  exportDocument: (format: 'pdf' | 'html') => void
 }
 
 /** One validated Open Recent entry (existence decided by the App). */
@@ -97,6 +99,16 @@ export function buildCommands(ops: CommandOps): Command[] {
       shortcut: 'Ctrl+,',
       bindGlobal: true,
       run: () => ops.openPreferences()
+    },
+    {
+      id: 'exportPdf',
+      label: 'PDF…',
+      run: () => ops.exportDocument('pdf')
+    },
+    {
+      id: 'exportHtml',
+      label: 'HTML…',
+      run: () => ops.exportDocument('html')
     },
     // ---- Edit --------------------------------------------------------------
     {
@@ -213,7 +225,7 @@ export function fmtShortcut(s: string, isMac: boolean): string {
 
 // ---- menu layout -----------------------------------------------------------
 
-type LayoutItem = string | { separator: true } | { recent: true }
+type LayoutItem = string | { separator: true } | { recent: true } | { export: true }
 
 const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
   {
@@ -226,6 +238,8 @@ const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
       { separator: true },
       'saveFile',
       'saveFileAs',
+      { separator: true },
+      { export: true },
       { separator: true },
       'openPreferences'
     ]
@@ -275,6 +289,16 @@ export function buildMenus(
       if (typeof item === 'object' && 'separator' in item) return { separator: true }
       if (typeof item === 'object' && 'recent' in item) {
         return { label: 'Open Recent', submenu: buildRecentSubmenu(recentItems, ops) }
+      }
+      if (typeof item === 'object' && 'export' in item) {
+        return {
+          label: 'Export',
+          submenu: ['exportPdf', 'exportHtml'].map((id) => {
+            const cmd = byId.get(id)
+            if (!cmd) throw new Error(`export submenu references unknown command "${id}"`)
+            return { label: cmd.label, action: cmd.run }
+          })
+        }
       }
       const cmd = byId.get(item)
       if (!cmd) throw new Error(`menu layout references unknown command "${item}"`)
