@@ -35,16 +35,19 @@ Typora 的 Focus Mode（非当前段落变灰）、Typewriter Mode（当前行�
 
 ## 实现要点
 
-- 文件：`livePreview.ts` 增加 `livePreviewConfig.mode: 'live' | 'source'`
-  （source 模式 `buildDecorations` 直接返回空集 + `forceRefresh` 重建）；
-  Focus 装饰加进同一 StateField（需在 buildDecorations 里追加当前块高亮
+- 文件：`editor/livePreview/config.ts` 的 `LivePreviewConfig` 增加
+  `mode: 'live' | 'source'`（source 模式 `buildDecorations` 直接返回
+  空集）；模式切换走 Compartment reconfigure，装饰 StateField 观察
+  Facet 变化自动重建——P00 已废除 forceRefresh 手动刷新模式。Focus
+  装饰加进同一 StateField（需在 buildDecorations 里追加当前块高亮
   class）。
 - 打字机模式：`EditorView.updateListener` 内检测 `selectionSet &&
   scrollStarted` 后手动 `view.scrollDOM.scrollTop = ...`；注意与用户
   主动滚动的冲突（用户滚动时暂停居中直到下次编辑——Typora 的行为）。
 - 开关状态进 P03 的 preferences；无 P03 时先用 localStorage 临时键。
-- 菜单入口：View 菜单加三个 toggle（`App.tsx` menus 定义处），macOS 原生
-  菜单（`electron/main.ts` buildDarwinMenu）同步加。
+- 菜单入口：在 `commands.ts` 注册表加三个 toggle 命令（自绘 MenuBar 与
+  全局快捷键由注册表自动生成）；macOS 原生菜单在 `electron/main.ts`
+  buildDarwinMenu 加对应 id→accelerator 行。
 
 ## 验收标准
 

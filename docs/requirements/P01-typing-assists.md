@@ -41,8 +41,9 @@
   续行/退出；需要读取 `syntaxTree` 判断当前行为 `ListItem`。
 - Tab 升降级：遍历光标所在 `ListItem` 的兄弟范围做统一缩进变更，注意
   有序列表需重排编号。
-- 粘贴拦截：`EditorView.domEventHandlers({ paste })`，在 `livePreviewConfig`
-  同层新增编辑配置对象。
+- 粘贴拦截：`EditorView.domEventHandlers({ paste })`。编辑辅助开关不要
+  再造模块级全局配置对象（P00 已废除该模式）——新增独立 Facet
+  （如 `editingAssists` Facet），由 P03 经 Compartment 注入。
 - 所有行为应可通过一个 `editingAssists: boolean` 配置关闭（为 P03 偏好
   设置预留开关）。
 

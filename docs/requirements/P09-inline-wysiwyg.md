@@ -4,7 +4,7 @@
 
 ## 背景
 
-当前 `livePreview.ts` 的 `touched()` 以**行为粒度**判断：光标进入某行，该行
+当前 `editor/livePreview/handlers.ts` 的 `touched()` 以**行为粒度**判断：光标进入某行，该行
 所有隐藏标记全部显示。后果是光标从左往右经过 `**bold**` 时整行闪回源码，
 与 Typora 的"标记逐字符出现/消失"差距明显。这是实时预览质感的核心差距，
 也是技术上最难的一项（列后置，等 P01–P08 基建完成）。
@@ -29,7 +29,8 @@
 
 ## 技术方案要点
 
-- 核心改动集中在 `livePreview.ts` 的 `touched` / `blockTouched` 逻辑：
+- 核心改动集中在 `editor/livePreview/handlers.ts` 的 `touched` /
+  `blockTouched` 逻辑：
   - 行内标记类节点：改用 `selections.some(r => r.from >= node.from &&
     r.from <= node.to)`（光标在节点内）或选区与节点相交
   - 块级 Widget（代码/数学/表格/mermaid）维持现有 `blockTouched`（块粒度

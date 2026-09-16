@@ -5,7 +5,8 @@
 ## 背景
 
 差距分析中沉淀的工程问题：① 数学渲染用正则每次 transaction 全文档
-`sliceDoc + matchAll`（`livePreview.ts` L283+），大文件输入性能隐患；
+`sliceDoc + matchAll`（`editor/livePreview/handlers.ts` 的 math 正则
+pass），大文件输入性能隐患；
 ② 无自动化测试，验证靠手动 + CDP 截图；③ ImageWidget 缓存不过期（已归
 入 P05）；④ dirty 判定全文比较（已归入 P12）。本需求聚焦性能与测试基建。
 
@@ -33,7 +34,8 @@ P09/P10 这类高风险改造提供安全网。
       `widgets.ts` 的 `splitRow`/`alignmentOf`/`renderInlineCell`、
       P01 新增的列表辅助逻辑
 - [ ] 装饰快照测试：给定文档 + 光标位置 → `buildDecorations` 输出的
-      装饰区间/类型断言（把 livePreview 的可测内核与 EditorView 解耦）
+      装饰区间/类型断言（P00 已把可测内核与 EditorView 解耦，直接测
+      纯函数即可）
 - [ ] CDP 冒烟脚本化：现有 `scripts/cdp-test.mjs` 扩为场景集（打开欢迎页、
       输入标题、切换主题、打开文件夹、截图对比），`npm run test:smoke`
       一键跑
@@ -43,8 +45,10 @@ P09/P10 这类高风险改造提供安全网。
 ## 实现要点
 
 - 基准与优化前后对比数据记录进本目录 `P15-benchmarks.md`（验收依据）。
-- 装饰测试的关键重构：`buildDecorations(state)` 已是纯函数（依赖
-  `livePreviewConfig` 全局——改为参数注入以便测试）。
+- 装饰测试的前置条件已由 P00 就绪：`buildDecorations(state, config)`
+  是纯函数（`editor/livePreview/build.ts`），配置经参数注入（Facet），
+  可在 node 环境以 `EditorState.create` 直接调用——本需求只需接入
+  vitest 建快照，无需再改被测函数签名。
 - vitest 进 devDependencies，配置独立于 electron-vite（node env 即可，
   不需要 DOM 的部分不引 jsdom）。
 

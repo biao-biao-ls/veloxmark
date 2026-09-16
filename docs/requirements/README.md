@@ -7,7 +7,7 @@
 
 | 编号 | 需求 | 类别 | 一句话动机 | 预估规模 |
 | --- | --- | --- | --- | --- |
-| P00 | [需求前置重构](P00-refactor.md) | 工程 | 拆 God Component/命令注册表/装饰纯函数化，为后续需求清障 | M |
+| P00 | [需求前置重构](P00-refactor.md)（已完成） | 工程 | 拆 God Component/命令注册表/装饰纯函数化，为后续需求清障 | M |
 | P01 | [编辑输入辅助](P01-typing-assists.md) | UX | 列表/链接/标题自动化，日常体感提升最大 | S–M |
 | P02 | [自绘模态对话框](P02-dialogs.md) | UX/工程 | 替代 window.confirm 等原生亮色弹窗 | S |
 | P03 | [偏好设置与会话持久化](P03-preferences.md) | 功能 | 字号/侧栏/最近文件可配置且记住 | M |
@@ -26,9 +26,9 @@
 
 ## 排序原则
 
-0. **P00 先行**：行为零变化的结构性重构（App.tsx 拆 hooks、命令注册表、
-   装饰纯函数化、BlockWidget 基类、IPC 类型单一源），约 1 天，避免后续
-   每个需求都在 God Component 上冲突。P02 紧随其后——对话框 async 化
+0. **P00 先行（已完成）**：行为零变化的结构性重构（App.tsx 拆 hooks、
+   命令注册表、装饰纯函数化、BlockWidget 基类、IPC 类型单一源），避免
+   后续每个需求都在 God Component 上冲突。P02 紧随其后——对话框 async 化
    涟漪落在刚拆好的 hooks 上最省。
 1. **性价比优先**：P01–P03 成本低、覆盖面广，先做。
 2. **先补"没有"再优化"有但不好"**：导出（P04）先于行内 WYSIWYG（P09）。
@@ -40,6 +40,6 @@
 
 - Markdown 源文本是唯一数据源，渲染态不允许持有独立状态。
 - 块级 Widget/多行 replace 装饰只能由 StateField 提供（CM6 限制，见
-  `src/renderer/src/editor/livePreview.ts` 头注释）。
+  `src/renderer/src/editor/livePreview/field.ts` 头注释）。
 - UI 必须跟随应用明暗主题；Windows/Linux 为自绘标题栏，macOS 走原生菜单。
 - 验证手段：`npx electron . --remote-debugging-port=9223` + `scripts/cdp-test.mjs`。

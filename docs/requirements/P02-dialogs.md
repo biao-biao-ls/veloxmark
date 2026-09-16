@@ -4,8 +4,9 @@
 
 ## 背景
 
-`App.tsx` 中大量使用 `window.confirm` / `window.prompt` / `window.alert`
-（放弃修改确认、重命名、新建文件、删除确认等）。frameless 暗色应用里弹出
+hooks（`hooks/useFileOps.ts` / `hooks/useWorkspaceTree.ts`）中大量使用
+`window.confirm` / `window.prompt` / `window.alert`（放弃修改确认、重命名、
+新建文件、删除确认等；P00 拆分后调用点已不在 App.tsx）。frameless 暗色应用里弹出
 系统原生亮色对话框，观感割裂，且 macOS/Windows 行为不一致、无法定制按钮
 文案与主题。
 
@@ -24,11 +25,10 @@
 - [ ] 明暗主题各一套样式，与 `styles.css` 现有变量体系一致
 - [ ] macOS 风格差异：按钮顺序（确认在右）随平台调整
 - [ ] 破坏性操作（删除）确认按钮用危险色
-- [ ] 替换点清单（全量替换，不留原生调用）：
-  - `confirmDiscard`（放弃未保存修改）
-  - `treeNewFile` / `treeRename`（prompt）
-  - `treeDelete`（confirm）
-  - 名称非法时的 `alert`
+- [ ] 替换点清单（全量替换，不留原生调用；P00 后分布在两个 hooks）：
+  - `confirmDiscard`（放弃未保存修改）——`hooks/useFileOps.ts`
+  - `treeNewFile` / `treeRename`（prompt）、`treeDelete`（confirm）、
+    名称非法时的 `alert`——`hooks/useWorkspaceTree.ts`
 
 ## 实现要点
 

@@ -5,7 +5,8 @@
 ## 背景
 
 V1 已有文件夹工作区（树侧栏 + fs watch + 新建/重命名/删除，见
-`FileTree.tsx` / `electron/main.ts` 的 watcher），但相比 Typora/VS Code：
+`FileTree.tsx` / `hooks/useWorkspaceTree.ts` / `electron/ipc/folder.ts`
+的 watcher），但相比 Typora/VS Code：
 没有忽略规则（`.git`、`node_modules` 全量显示）、不能新建文件夹、不能拖拽
 移动、没有文件快速打开、没有文件夹内搜索（全局搜索另见 P13）。
 
@@ -36,11 +37,12 @@ V1 已有文件夹工作区（树侧栏 + fs watch + 新建/重命名/删除，�
 
 ## 实现要点
 
-- 忽略规则在**主进程**过滤：`electron/main.ts` 递归/readdir 构树处应用
-  规则后再推送，避免大目录打爆 IPC。
+- 忽略规则在**主进程**过滤：`electron/ipc/folder.ts` 递归/readdir 构树
+  处应用规则后再推送，避免大目录打爆 IPC。
 - 新建文件夹 IPC：`folder:mkdir`；拖拽移动 IPC：`path:move`（校验目标
-  非自身子树）。均挂 preload API。
-- Quick Open：树数据已在渲染进程（`folderTree` state），客户端做模糊
+  非自身子树）。handler 落对应域模块，类型扩 `electron/shared/api.ts`。
+- Quick Open：树数据已在渲染进程（`hooks/useWorkspaceTree.ts` 的
+  `folderTree` state），客户端做模糊
   匹配（子序列匹配 + 打分排序，无需依赖库）；新组件
   `src/renderer/src/components/QuickOpen.tsx`，样式仿命令面板（居中模态、
   键盘上下选择）。

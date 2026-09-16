@@ -36,7 +36,8 @@ Typora 默认还支持 front matter、脚注、`==高亮==`、上标/下标、�
 
 ## 实现要点
 
-- `livePreview.ts` 的树遍历补充节点处理；`@lezer/markdown` 无这些扩展时
+- `editor/livePreview/handlers.ts` 的树遍历补充节点处理（enter 分发处）；
+  `@lezer/markdown` 无这些扩展时
   用与数学相同的**正则扫描补充策略**（front matter 仅扫文档头 4KB）。
 - 脚注跳转：引用处 Widget 点击 → 查找定义位置 → `goToHeading` 式
   dispatch + scrollIntoView；反向链接悬停显示预览（可选）。

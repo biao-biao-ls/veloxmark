@@ -28,10 +28,13 @@ SVG 导出按钮是唯一工具条。Typora 在代码块悬停时显示语言标
 
 ## 实现要点
 
-- 文件：`src/renderer/src/editor/widgets.ts`。抽公共函数
-  `attachBlockToolbar(wrap, items: {label, onClick}[])`。
+- 文件：`src/renderer/src/editor/widgets.ts`。P00 已抽 `BlockWidget`
+  基类并预留工具条挂载点——在基类实现
+  `attachBlockToolbar(wrap, items: {label, onClick}[])`，各子类注册自己
+  的 items，不再逐 Widget 复制。
 - 剪贴板写入复用 `window.api.clipboardWrite`（preload 已有）。
-- mousedown 处理细化：`e.target` 命中 `pre/code`/表格单元格/ SVG 内部时
+- mousedown 处理细化（P00 后 click-to-source 已集中在 `BlockWidget`
+  基类，只改一处）：`e.target` 命中 `pre/code`/表格单元格/ SVG 内部时
   不 preventDefault，让浏览器原生选区工作；命中容器 padding 才跳源码。
   需配合 CM6 `ignoreEvent` 返回值调整。
 - 工具条按钮样式进 `styles.css`（`.cm-md-block-toolbar`），明暗主题各一套。

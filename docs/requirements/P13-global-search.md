@@ -28,8 +28,9 @@ Typora/VS Code 用户预期能跨文件查找甚至替换，目前无法做到�
 ## 实现要点
 
 - 搜索执行放**主进程**：IPC `search:run {rootPath, pattern, options}`，
-  遍历目录（复用 P07 构树的忽略逻辑）逐文件 `readFile` 匹配，流式/分批
-  推送结果（`search:results` 事件），避免大仓库阻塞。
+  新建 `electron/ipc/search.ts` 域模块，遍历目录（复用
+  `electron/ipc/folder.ts` 构树的忽略逻辑）逐文件 `readFile` 匹配，
+  流式/分批推送结果（`search:results` 事件），避免大仓库阻塞。
 - 正则模式需在主进程 try/catch 非法正则并回错误提示。
 - 替换走主进程批量写；正在编辑器打开且 dirty 的文件替换需谨慎——首版
   策略：对 dirty 打开文件跳过并提示（避免覆盖未保存内容）。

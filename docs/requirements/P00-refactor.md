@@ -35,57 +35,57 @@ main 按域分模块。
 
 ### R1 拆分 App.tsx hooks
 
-- [ ] `useFileOps`：new/open/save/saveAs、dirty 判定、`confirmDiscard`、
+- [x] `useFileOps`：new/open/save/saveAs、dirty 判定、`confirmDiscard`、
       `loadContent`、`savedContentRef` 管理
-- [ ] `useWorkspaceTree`：folderPath/folderTree、watch 订阅、树 CRUD
+- [x] `useWorkspaceTree`：folderPath/folderTree、watch 订阅、树 CRUD
       （treeNewFile/treeRename/treeDelete/joinPath）、treeMenu 状态
-- [ ] `useAppTheme`：theme 读写、localStorage 持久化、mermaid 缓存清理、
+- [x] `useAppTheme`：theme 读写、localStorage 持久化、mermaid 缓存清理、
       reconfigureTheme 联动
-- [ ] `useMenus`：menus 定义、全局 keydown 快捷键（过渡期保留，R2 落地
+- [x] `useMenus`：menus 定义、全局 keydown 快捷键（过渡期保留，R2 落地
       后改为从命令注册表生成）
-- [ ] App.tsx 目标 ≤ 250 行：编辑器挂载 effect、hooks 组合、titlebar/侧栏
+- [x] App.tsx 目标 ≤ 250 行：编辑器挂载 effect、hooks 组合、titlebar/侧栏
       JSX
 
 ### R2 命令注册表
 
-- [ ] 新建 `src/renderer/src/commands.ts`：`{ id, label, shortcut, run }`
+- [x] 新建 `src/renderer/src/commands.ts`：`{ id, label, shortcut, run }`
       单一来源，覆盖现有全部命令（File/Edit/View/Help 菜单 + 快捷键）
-- [ ] 自绘 MenuBar 的 menus、全局 keydown 改为由注册表生成
-- [ ] macOS 原生菜单保持 id→accelerator 薄映射，click 统一发
+- [x] 自绘 MenuBar 的 menus、全局 keydown 改为由注册表生成
+- [x] macOS 原生菜单保持 id→accelerator 薄映射，click 统一发
       `menu:<id>`；renderer 侧 `onMenu` 按 id 分发到 `run`
-- [ ] `fmtShortcut` 的 ⌘/⇧ 平台转换移入注册表的展示层
+- [x] `fmtShortcut` 的 ⌘/⇧ 平台转换移入注册表的展示层
 
 ### R3 装饰构建纯函数化
 
-- [ ] `livePreviewConfig` 全局对象废弃，配置改为 CM6 Facet
+- [x] `livePreviewConfig` 全局对象废弃，配置改为 CM6 Facet
       （`livePreviewConfig` Facet + Compartment 注入），App 更新配置走
       Compartment reconfigure，装饰随 transaction 重建，不再手动
       `livePreviewConfig.theme = …` + forceRefresh
-- [ ] `buildDecorations(state, config)` 签名纯函数化：所有配置经参数
+- [x] `buildDecorations(state, config)` 签名纯函数化：所有配置经参数
       传入，不读模块状态
-- [ ] 300 行 buildDecorations 按语法类型拆 handler：heading / inline
+- [x] 300 行 buildDecorations 按语法类型拆 handler：heading / inline
       （em/strong/del/code/link）/ image / list / quote / table /
       fencedCode / hr / task / math（正则 pass 独立函数），tree.iterate
       的 enter 只做分发
-- [ ] `TaskWidget` 从 livePreview.ts 迁入 widgets.ts（与其余 Widget 同处）
-- [ ] 行为对照：拆分前后同一文档 + 光标位置的装饰区间/类型完全一致
+- [x] `TaskWidget` 从 livePreview.ts 迁入 widgets.ts（与其余 Widget 同处）
+- [x] 行为对照：拆分前后同一文档 + 光标位置的装饰区间/类型完全一致
       （可用临时脚本对比，P15 再建正式快照测试）
 
 ### R4 BlockWidget 基类
 
-- [ ] 抽 `BlockWidget extends WidgetType`：持有 `sourceFrom/sourceTo`，
+- [x] 抽 `BlockWidget extends WidgetType`：持有 `sourceFrom/sourceTo`，
       统一 click-to-source（mousedown 定位源码）、`ignoreEvent` 默认值
-- [ ] CodeBlockWidget / MermaidWidget / MathBlockWidget / TableWidget
+- [x] CodeBlockWidget / MermaidWidget / MathBlockWidget / TableWidget
       改继承基类，删除 4 处重复 mousedown 代码
-- [ ] 基类预留工具条挂载点（空实现即可，P06 填充）：子类可注册
+- [x] 基类预留工具条挂载点（空实现即可，P06 填充）：子类可注册
       toolbar items
-- [ ] 行为不变：点击任何渲染块仍然跳回源码（改变此行为是 P06 的事）
+- [x] 行为不变：点击任何渲染块仍然跳回源码（改变此行为是 P06 的事）
 
 ### R5 IPC 类型单一源 + main.ts 分域
 
-- [ ] 新建 `electron/shared/api.ts`：DirNode、OpenFileResult、RendererApi
+- [x] 新建 `electron/shared/api.ts`：DirNode、OpenFileResult、RendererApi
       等类型唯一定义；`preload.ts` 与 `env.d.ts` 引用之，删除两处手抄
-- [ ] `main.ts` 按域拆分（保持现有 channel 名不变）：
+- [x] `main.ts` 按域拆分（保持现有 channel 名不变）：
       - `electron/ipc/window.ts`：窗口控制、zoom、clipboard、app:setState
       - `electron/ipc/files.ts`：dialog:openFile/saveFile/openFolder、
         file:read/write/create/delete/rename、file:resolveImageSrc
@@ -93,7 +93,7 @@ main 按域分模块。
         扫描逻辑
       - `main.ts` 保留：窗口创建、生命周期、协议注册、macOS 菜单、
         open-file 队列
-- [ ] `npm run typecheck` 通过；preload 暴露的 api 对象形状不变
+- [x] `npm run typecheck` 通过；preload 暴露的 api 对象形状不变
       （env.d.ts 消费 shared 类型后 Window.api 类型等价）
 
 ## 实现要点

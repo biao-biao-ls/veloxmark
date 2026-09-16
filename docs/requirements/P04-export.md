@@ -30,7 +30,7 @@ V1 无任何导出能力（记忆中明确留 V2）。导出是从"编辑器"到
 ### 渲染管线
 - 新建 `src/renderer/src/export/renderDoc.ts`：把整篇 Markdown 渲染成
   HTML 字符串。策略：复用 `@lezer/markdown` 语法树 walk（与
-  `livePreview.ts` 同一棵树），输出语义 HTML；KaTeX
+  `editor/livePreview/` 同一棵树），输出语义 HTML；KaTeX
   `renderToString`、mermaid 缓存 SVG、hljs highlight——三者都已在
   `widgets.ts` 存在，抽出可复用函数。
 - 注意与 live preview 的差异：导出无"光标行显示源码"概念，全量渲染。
@@ -39,13 +39,16 @@ V1 无任何导出能力（记忆中明确留 V2）。导出是从"编辑器"到
 - 隐藏 `BrowserWindow` 加载导出 HTML（或当前窗口内开隐藏 iframe 不可行
   ——printToPDF 只作用于 webContents，故用隐藏窗口），调
   `printToPDF({ pageSize, margins, printBackground: true })`，
-  结果 `writeFile`。IPC：`export:pdf` / `export:html` 在
-  `electron/main.ts` 实现。
+  结果 `writeFile`。IPC：`export:pdf` / `export:html` 新建
+  `electron/ipc/export.ts` 域模块实现（沿用 P00 分域惯例），类型扩
+  `electron/shared/api.ts`。
 - 图片使用 `mdres://` 协议时隐藏窗口需同协议注册——复用现有
   `registerSchemesAsPrivileged` 设置即可。
 
 ### UI
 - 导出对话框用 P02 的 Dialog 组件承载选项（文件名、格式选项）。
+- 菜单入口经 `commands.ts` 注册表新增 Export 命令（macOS 在
+  buildDarwinMenu 加 id→accelerator 行）。
 
 ## 验收标准
 

@@ -45,10 +45,10 @@
   竞态。
 - 草稿写入建议在**主进程**做（渲染进程发 IPC 带内容，主进程节流写盘），
   避免渲染进程崩溃瞬间丢掉最后一次 debounce。
-- 自动保存直接复用 `App.tsx` 的 `saveFile`；注意与 `editPaste` 等的
-  事务边界无关——文档级保存即可。
-- dirty 判定现有 `doc !== savedContentRef.current` 每次变更全文比较，
-  大文件下可改为脏标记置位 + 保存时清零（微优化，顺手做）。
+- 自动保存直接复用 `hooks/useFileOps.ts` 的 `saveFile`；注意与
+  `editPaste` 等的事务边界无关——文档级保存即可。
+- dirty 判定现有 `doc !== savedContentRef.current`（useFileOps 内）每次
+  变更全文比较，大文件下可改为脏标记置位 + 保存时清零（微优化，顺手做）。
 
 ## 验收标准
 

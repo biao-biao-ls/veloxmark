@@ -38,16 +38,18 @@ Map，文件在外部被修改后不会刷新，且永不失效。
 ## 实现要点
 
 - 落盘走主进程：新增 IPC `image:saveClipboard`（主进程用
-  `clipboard.readImage().toPNG()` 写文件并返回路径）。`preload.ts` /
-  `env.d.ts` 同步扩 API。
-- 渲染进程粘贴拦截在 `App.tsx` 或 CM6 `domEventHandlers.paste`：先查
+  `clipboard.readImage().toPNG()` 写文件并返回路径）。handler 落
+  `electron/ipc/files.ts`（或新建 image 域模块），类型扩
+  `electron/shared/api.ts`（单一源，`preload.ts` / `env.d.ts` 自动跟随）。
+- 渲染进程粘贴拦截用 CM6 `domEventHandlers.paste`：先查
   `clipboard` 是否有图片（IPC 询问主进程），有则走落盘流程，否则默认文本
   粘贴。
 - 拖拽：`EditorView.domEventHandlers.drop`，`e.dataTransfer.files` 过滤
   image/*。
 - 缩放 UI：图片 Widget 外包一层容器，选中态 class 切换；`WxH` 属性解析
-  正则与 `livePreview.ts` 的 Image 分支合并。
-- 注意 `livePreviewConfig.baseDir` 已存在，落盘相对路径以它为基准。
+  正则与 `editor/livePreview/handlers.ts` 的 Image 分支合并。
+- 注意 `LivePreviewConfig.baseDir` 已存在（Facet 注入，见
+  `editor/livePreview/config.ts`），落盘相对路径以它为基准。
 
 ## 验收标准
 
