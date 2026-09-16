@@ -4,3 +4,4 @@ dist/
 build/icon.iconset/
 *.log
 .DS_Store
+.claude/
