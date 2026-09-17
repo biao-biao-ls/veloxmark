@@ -263,6 +263,51 @@ async function main() {
     `window.__veloxEditor.view.state.doc.toString().includes('{flip=hv}')`
   ))
 
+  // ---- reselect keeps committed size/flip (stale-widget regression) ---------------
+  // eq() reuses the DOM (and its listeners, which close over the ORIGINAL
+  // widget instance) across size/flip commits — re-opening the toolbar must
+  // derive state from the rendered element, not the stale spec, or the image
+  // snaps back to 100%.
+  await evaluate(`(() => {
+    const line = document.querySelector('.cm-line')
+    for (const type of ['mousedown', 'mouseup', 'click']) {
+      line.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, button: 0 }))
+    }
+    return true
+  })()`)
+  check('deselect closes toolbar', await waitFor(`!document.querySelector('.cm-md-image-toolbar')`))
+  const reselectClicked = await evaluate(`(() => {
+    const img = [...document.querySelectorAll('.cm-md-image')].find(i => i.style.width === '2px')
+    if (!img) return false
+    img.click()
+    return true
+  })()`)
+  const reselectOk = await waitFor(`(() => {
+    const wrap = document.querySelector('.cm-md-image-wrap.cm-md-image-selected')
+    if (!wrap) return false
+    const img = wrap.querySelector('img')
+    const label = wrap.querySelector('.cm-md-image-toolbar-pct')
+    const flipH = [...wrap.querySelectorAll('.cm-md-image-toolbar-btn')].find(b => b.title === 'Flip horizontally')
+    return img.style.width === '2px' && label?.textContent === '200%' &&
+      img.style.transform.includes('scaleX(-1)') && flipH?.classList.contains('active')
+  })()`)
+  check('reselect keeps size + flip', reselectOk, reselectOk ? '' : JSON.stringify({
+    reselectClicked,
+    state: await evaluate(`(() => {
+      const wrap = document.querySelector('.cm-md-image-wrap.cm-md-image-selected')
+      const img = wrap?.querySelector('img') ?? null
+      return {
+        selected: !!wrap,
+        styleW: img?.style.width ?? null,
+        transform: img?.style.transform ?? null,
+        label: wrap?.querySelector('.cm-md-image-toolbar-pct')?.textContent ?? null,
+        widths: [...document.querySelectorAll('.cm-md-image')].map(i => i.style.width),
+        toolbar: !!document.querySelector('.cm-md-image-toolbar'),
+        doc: window.__veloxEditor.view.state.doc.toString().slice(0, 120)
+      }
+    })()`)
+  }))
+
   // ---- save + reopen keeps the size ---------------------------------------------
   await evaluate(`window.api.writeFile(${JSON.stringify(FIXTURE_PATH)}, window.__veloxEditor.view.state.doc.toString())`)
   await send('Page.reload')

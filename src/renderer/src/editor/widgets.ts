@@ -525,8 +525,29 @@ export class ImageWidget extends WidgetType {
 
     const pctOf = (w?: number): number =>
       img.naturalWidth && w ? Math.round((w / img.naturalWidth) * 100) : 100
-    let pct = Math.min(PCT_MAX, Math.max(PCT_MIN, pctOf(this.spec.width)))
-    let flip = this.spec.flip ?? ''
+    // The toolbar may be built from a STALE widget instance: eq() reuses this
+    // DOM (and its listeners) across size/flip commits, so `this.spec` can
+    // predate the latest source rewrite. The rendered element always carries
+    // the committed state (applyStyle / flip toggles write it live), so derive
+    // from it — reading spec here would reset a resized image to 100% on
+    // re-select.
+    const derivePct = (): number => {
+      const nw = img.naturalWidth
+      if (nw && img.style.width) {
+        const w = Number.parseFloat(img.style.width)
+        if (Number.isFinite(w) && w > 0) return Math.round((w / nw) * 100)
+      }
+      return pctOf(this.spec.width)
+    }
+    const deriveFlip = (): string => {
+      const t = img.style.transform
+      const h = t.includes('scaleX(-1)')
+      const v = t.includes('scaleY(-1)')
+      return h || v ? `${h ? 'h' : ''}${v ? 'v' : ''}` : (this.spec.flip ?? '')
+    }
+    const clampPct = (p: number): number => Math.min(PCT_MAX, Math.max(PCT_MIN, p))
+    let pct = clampPct(derivePct())
+    let flip = deriveFlip()
 
     const label = document.createElement('span')
     label.className = 'cm-md-image-toolbar-pct'
@@ -626,6 +647,10 @@ export class ImageWidget extends WidgetType {
         () => {
           if (toolbar.isConnected && slider.disabled) {
             slider.disabled = false
+            // naturalWidth is only known now — re-derive before applying so a
+            // committed size isn't overwritten with a stale percentage.
+            pct = clampPct(derivePct())
+            slider.value = String(pctToPos(pct))
             applyStyle(pct)
           }
         },
