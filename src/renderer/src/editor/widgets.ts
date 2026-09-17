@@ -495,28 +495,49 @@ export class ImageWidget extends WidgetType {
   private buildToolbar(img: HTMLImageElement, view: EditorView): HTMLElement {
     const toolbar = document.createElement('div')
     toolbar.className = 'cm-md-image-toolbar'
-    // Clicks inside the toolbar must not reach CM (cursor move / deselect).
+    // Keep events from reaching CM (cursor move / deselect) but NEVER
+    // preventDefault on form controls: cancelling mousedown's default action
+    // kills the range input's native thumb drag (buttons survive because they
+    // fire on click, which is why only the slider felt broken).
     toolbar.addEventListener('mousedown', (e) => {
-      e.preventDefault()
       e.stopPropagation()
+      const t = e.target
+      if (!(t instanceof Element && t.closest('input, button, select, textarea'))) {
+        e.preventDefault()
+      }
     })
     toolbar.addEventListener('click', (e) => e.stopPropagation())
 
+    // Zoom sliders read better on a log scale: the thumb travels multiplicatively,
+    // so 100% (original size) sits at the center of the track and each equal
+    // step is an equal ratio, not an equal pixel delta. Track position 0-100
+    // maps to 25%-400% via pos = 100·log4(pct/25)  ⇔  pct = 25·16^(pos/100).
+    const PCT_MIN = 25
+    const PCT_MAX = 400
+    const RATIO = PCT_MAX / PCT_MIN // 16
+    const posToPct = (pos: number): number =>
+      Math.min(PCT_MAX, Math.max(PCT_MIN, Math.round(PCT_MIN * Math.pow(RATIO, pos / 100))))
+    const pctToPos = (pct: number): number =>
+      Math.min(
+        100,
+        Math.max(0, Math.round((100 * Math.log(pct / PCT_MIN)) / Math.log(RATIO)))
+      )
+
     const pctOf = (w?: number): number =>
       img.naturalWidth && w ? Math.round((w / img.naturalWidth) * 100) : 100
-    let pct = pctOf(this.spec.width)
+    let pct = Math.min(PCT_MAX, Math.max(PCT_MIN, pctOf(this.spec.width)))
     let flip = this.spec.flip ?? ''
 
     const label = document.createElement('span')
     label.className = 'cm-md-image-toolbar-pct'
     const slider = document.createElement('input')
     slider.type = 'range'
-    slider.min = '25'
-    slider.max = '400'
-    slider.step = '5'
-    slider.value = String(Math.min(400, Math.max(25, pct)))
+    slider.min = '0'
+    slider.max = '100'
+    slider.step = '1'
+    slider.value = String(pctToPos(pct))
     // naturalWidth is 0 while the image is still loading — disable until then
-    // (the load listener below rebuilds the toolbar once it's ready).
+    // (the load listener below re-enables it once it's ready).
     slider.disabled = img.naturalWidth === 0
     slider.title = 'Image size'
 
@@ -531,9 +552,11 @@ export class ImageWidget extends WidgetType {
     }
     applyStyle(pct)
 
-    slider.addEventListener('input', () => applyStyle(Number(slider.value)))
+    slider.addEventListener('input', () => {
+      pct = posToPct(Number(slider.value))
+      applyStyle(pct)
+    })
     slider.addEventListener('change', () => {
-      pct = Number(slider.value)
       const nw = img.naturalWidth
       const nh = img.naturalHeight
       if (!nw) return
@@ -569,7 +592,7 @@ export class ImageWidget extends WidgetType {
     reset.addEventListener('click', (e) => {
       e.preventDefault()
       pct = 100
-      slider.value = '100'
+      slider.value = String(pctToPos(100))
       applyStyle(100)
       rewriteImageNode(view, this.sourceFrom, { width: null, height: null })
     })

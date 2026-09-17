@@ -128,12 +128,26 @@ async function main() {
   // folder workspace (watcher active for the image:changed test).
   check('boot: window.api', await waitFor(`!!window.api`))
   check('boot: editor', await waitFor(`!!window.__veloxEditor?.view`))
-  await evaluate(`(() => {
-    localStorage.setItem('veloxmark.session', JSON.stringify({
-      lastFilePath: ${JSON.stringify(FIXTURE_PATH)},
-      lastFolderPath: ${JSON.stringify(TMP)}
-    }))
-  })()`)
+  // The app's own session-persist effect may still be flushing shortly after
+  // boot; seed, then verify the seed survived before reloading.
+  const seeded = await (async () => {
+    for (let i = 0; i < 20; i++) {
+      await evaluate(`(() => {
+        localStorage.setItem('veloxmark.session', JSON.stringify({
+          lastFilePath: ${JSON.stringify(FIXTURE_PATH)},
+          lastFolderPath: ${JSON.stringify(TMP)}
+        }))
+      })()`)
+      await new Promise((r) => setTimeout(r, 250))
+      const cur = await evaluate(`(() => {
+        try { return JSON.parse(localStorage.getItem('veloxmark.session') ?? '{}').lastFilePath ?? null }
+        catch { return null }
+      })()`)
+      if (cur === FIXTURE_PATH) return true
+    }
+    return false
+  })()
+  check('session seed persisted', seeded)
   await send('Page.reload')
   check('restore: fixture loaded', await waitFor(
     `window.__veloxEditor?.view?.state.doc.toString().includes('P05 Image Fixture') ?? false`,
@@ -195,12 +209,21 @@ async function main() {
   )
 
   // ---- resize via the zoom toolbar ----------------------------------------------
-  await evaluate(`(() => {
+  const toolbarImg = await evaluate(`(() => {
     const img = [...document.querySelectorAll('.cm-md-image')].find(i => !i.style.width)
+    if (!img) return false
     img.scrollIntoView({ block: 'center' })
     img.click()
+    return true
   })()`)
+  check('clickable image present', toolbarImg === true)
   check('toolbar opens on click', await waitFor(`!!document.querySelector('.cm-md-image-toolbar')`))
+  // Log-scale mapping: original size must sit at the center of the track.
+  check('slider thumb centers at 100%', await waitFor(`(() => {
+    const slider = document.querySelector('.cm-md-image-toolbar input[type=range]')
+    return !!slider && slider.value === '50' &&
+      document.querySelector('.cm-md-image-toolbar-pct')?.textContent === '100%'
+  })()`))
   const shot1 = await send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(join(TMP, 'p05-toolbar.png'), Buffer.from(shot1.data, 'base64'))
   console.log('saved', join(TMP, 'p05-toolbar.png'))
@@ -208,7 +231,8 @@ async function main() {
   await evaluate(`(() => {
     const slider = document.querySelector('.cm-md-image-toolbar input[type=range]')
     slider.disabled = false
-    slider.value = '200'
+    // Log-scale track: 0→25%, 50→100%, 75→200%, 100→400%.
+    slider.value = '75'
     slider.dispatchEvent(new Event('input', { bubbles: true }))
     slider.dispatchEvent(new Event('change', { bubbles: true }))
   })()`)
@@ -251,6 +275,35 @@ async function main() {
   `))
   check('reopen: flip transform kept on widget', await waitFor(`
     [...document.querySelectorAll('.cm-md-image')].some(i => i.style.transform.includes('scaleX(-1)') && i.style.transform.includes('scaleY(-1)'))
+  `))
+
+  // ---- native thumb drag (guards against toolbar preventDefault eating it) -------
+  // Synthetic dispatchEvent cannot prove the range input still receives
+  // mousedown's default action — a toolbar-level preventDefault silently kills
+  // native slider drags while buttons keep working. Drive real CDP input.
+  await evaluate(`(() => {
+    const img = [...document.querySelectorAll('.cm-md-image')].find(i => i.src.includes('fixture.png'))
+    img.scrollIntoView({ block: 'center' })
+    img.click()
+    return true
+  })()`)
+  await waitFor(`!!document.querySelector('.cm-md-image-toolbar')`)
+  const thumbRect = await evaluate(`(() => {
+    const slider = document.querySelector('.cm-md-image-toolbar input[type=range]')
+    const r = slider.getBoundingClientRect()
+    return { x: r.x, y: r.y + r.height / 2, w: r.width, h: r.height, value: slider.value }
+  })()`)
+  const thumbX = thumbRect.x + (Number(thumbRect.value) / 100) * thumbRect.w
+  await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: thumbX, y: thumbRect.y, button: 'left', buttons: 1, clickCount: 1 })
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: thumbRect.x + thumbRect.w * 0.9, y: thumbRect.y, button: 'left', buttons: 1 })
+  await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: thumbRect.x + thumbRect.w * 0.9, y: thumbRect.y, button: 'left', buttons: 1, clickCount: 1 })
+  check('slider thumb drag moves value', await waitFor(`
+    Number(document.querySelector('.cm-md-image-toolbar input[type=range]')?.value) > 80
+  `, 4000), `thumb started at ${thumbRect.value}`)
+  // Drag ~90% of the log track → well over 200% of the 1×1 natural size.
+  check('drag rewrites size in source', await waitFor(`
+    /fixture\\.png +=\\d+x\\d+/.test(window.__veloxEditor.view.state.doc.toString()) &&
+    !window.__veloxEditor.view.state.doc.toString().includes('=2x2')
   `))
 
   // ---- watcher invalidation ------------------------------------------------------
