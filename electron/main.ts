@@ -22,7 +22,8 @@ if (process.platform === 'darwin') {
     applicationVersion: app.getVersion(),
     copyright: 'Copyright © 2026 VeloxMark contributors',
     // Packaged apps already embed the icns; dev needs an explicit path.
-    ...(app.isPackaged ? {} : { iconPath: join(__dirname, '../../build/icon.png') })
+    // build/logo.png is the Apple-grid master; icon.png stays full-bleed for Windows.
+    ...(app.isPackaged ? {} : { iconPath: join(__dirname, '../../build/logo.png') })
   })
 }
 
@@ -320,9 +321,10 @@ app.whenReady().then(() => {
   }
 
   // macOS ignores the BrowserWindow `icon` option — the Dock icon comes from
-  // the bundle icns when packaged, and from Electron's default in dev.
+  // the bundle icns when packaged, and from the Apple-grid master in dev
+  // (icon.png is full-bleed for the Windows taskbar and must not be used here).
   if (process.platform === 'darwin' && !app.isPackaged) {
-    app.dock.setIcon(join(__dirname, '../../build/icon.png'))
+    app.dock.setIcon(join(__dirname, '../../build/logo.png'))
   }
 
   protocol.handle('mdres', async (request) => {
