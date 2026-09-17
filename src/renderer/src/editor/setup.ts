@@ -14,6 +14,8 @@ import {
 } from './assists'
 import { imageInputExtension } from './images'
 import { imageSizeMarkdown } from './markdown-image-ext'
+import { modeClassesExtension, typewriterExtension } from './modes'
+import { getPreferences } from '../preferences/store'
 import {
   getLivePreviewConfig,
   livePreviewConfigCompartment,
@@ -72,7 +74,18 @@ export function createExtensions(
     EditorState.allowMultipleSelections.of(true),
     EditorView.lineWrapping,
     livePreviewField,
-    livePreviewConfigExtension({ theme, baseDir: '', imageEpoch: 0 }),
+    // P08 mode flags are read from the store (not the args): this runs once at
+    // editor creation, and the App effect keeps them in sync afterwards.
+    livePreviewConfigExtension({
+      theme,
+      baseDir: '',
+      imageEpoch: 0,
+      mode: getPreferences().sourceMode ? 'source' : 'live',
+      focusMode: getPreferences().focusMode,
+      typewriterMode: getPreferences().typewriterMode
+    }),
+    modeClassesExtension,
+    typewriterExtension(),
     editingAssistsCompartment.of(editingAssistsExtension(assists)),
     // Image paste/drop is core behavior — always on (Prec.high inside).
     imageInputExtension(callbacks.ensureSaved),

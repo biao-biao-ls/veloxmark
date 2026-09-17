@@ -30,6 +30,11 @@ import {
  * (EditorState.create + buildDecorations) for snapshot tests (P15).
  */
 export function buildDecorations(state: EditorState, config: LivePreviewConfig): DecorationSet {
+  // P08 source mode: raw Markdown — no live-preview decorations at all.
+  // Syntax highlighting (theme HighlightStyle) and line numbers are
+  // independent of this field and stay on.
+  if (config.mode === 'source') return Decoration.none
+
   const decos: PendingDeco[] = []
   const tree = syntaxTree(state)
   const selections = state.selection.ranges
@@ -80,6 +85,28 @@ export function buildDecorations(state: EditorState, config: LivePreviewConfig):
   })
 
   collectMathDecos(ctx, (pos, side) => tree.resolveInner(pos, side))
+
+  // P08 focus mode: mark every line of the top-level block the cursor is in.
+  // CSS dims all other .cm-line elements via the .cm-focus-mode root class.
+  if (config.focusMode) {
+    const head = selections[0]?.head ?? 0
+    let block = tree.topNode.firstChild
+    while (block) {
+      if (block.from <= head && head <= block.to) {
+        for (let line = doc.lineAt(block.from); ; ) {
+          decos.push({
+            from: line.from,
+            to: line.from,
+            value: Decoration.line({ class: 'cm-focus-active' })
+          })
+          if (line.to >= block.to || line.to >= doc.length) break
+          line = doc.lineAt(line.to + 1)
+        }
+        break
+      }
+      block = block.nextSibling
+    }
+  }
 
   return Decoration.set(decos, true)
 }

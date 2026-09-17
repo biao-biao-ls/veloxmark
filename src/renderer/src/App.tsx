@@ -9,7 +9,7 @@ import Preferences from './components/Preferences'
 import ExportDialog from './components/ExportDialog'
 import QuickOpen from './components/QuickOpen'
 import { DialogHost } from './components/Dialog'
-import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch } from './editor/setup'
+import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch, updateLivePreviewConfig } from './editor/setup'
 import { invalidateImageCache } from './editor/widgets'
 import { readEditingAssistsConfig } from './editor/assists'
 import { extractOutline, type OutlineItem } from './outline/extract'
@@ -227,6 +227,28 @@ export default function App(): React.JSX.Element {
       })
     }
   }, [prefs.typingAssistsEnabled, prefs.wrapBareUrlOnPaste])
+
+  // P08: focus / typewriter / source modes — the command registry only writes
+  // preferences; this effect is the single path that pushes them into the
+  // editor config facet (decorations rebuild via the facet, per field.ts).
+  const prevSourceModeRef = useRef(prefs.sourceMode)
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view) return
+    updateLivePreviewConfig(view, {
+      mode: prefs.sourceMode ? 'source' : 'live',
+      focusMode: prefs.focusMode,
+      typewriterMode: prefs.typewriterMode
+    })
+    // Line heights change when live-preview decorations drop (source) or
+    // return (live); the doc offsets are identical either way, so re-centering
+    // on the cursor is all the "position mapping" needed.
+    if (prevSourceModeRef.current !== prefs.sourceMode) {
+      prevSourceModeRef.current = prefs.sourceMode
+      const head = view.state.selection.main.head
+      view.dispatch({ effects: EditorView.scrollIntoView(head) })
+    }
+  }, [prefs.sourceMode, prefs.focusMode, prefs.typewriterMode])
 
   // ---- sidebar drag-resize ---------------------------------------------------
   const startSidebarResize = useCallback((e: React.MouseEvent) => {

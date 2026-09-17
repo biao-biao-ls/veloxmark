@@ -167,8 +167,8 @@ body {
 .menu-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
+  justify-content: flex-start;
+  gap: 8px;
   width: 100%;
   background: transparent;
   border: none;
@@ -178,6 +178,13 @@ body {
   border-radius: 4px;
   cursor: pointer;
   text-align: left;
+}
+
+/* P08: toggle checkmark column (empty span keeps labels aligned). */
+.menu-item-check {
+  flex: 0 0 12px;
+  font-size: 12px;
+  line-height: 1;
 }
 
 .menu-item:hover:not(:disabled) {
@@ -212,6 +219,7 @@ body {
 }
 
 .menu-item-shortcut {
+  margin-left: auto;
   color: var(--fg-dim);
   font-size: 12px;
 }
@@ -819,6 +827,26 @@ body {
   overflow: auto;
 }
 
+/* ---- P08: focus / typewriter / source modes ---------------------------------- */
+
+/* Focus mode: dim every line; the cursor's top-level block is marked by
+   .cm-focus-active line decorations (livePreview/build.ts) and stays bright.
+   The transition gives the smooth cross-fade between blocks. */
+.cm-editor.cm-focus-mode .cm-line {
+  opacity: 0.45;
+  transition: opacity 0.25s ease;
+}
+
+.cm-editor.cm-focus-mode .cm-line.cm-focus-active {
+  opacity: 1;
+}
+
+/* Typewriter mode: reserve space under the last line so it can scroll up
+   to the viewport center (the plugin centers via scrollTop). */
+.cm-editor.cm-typewriter .cm-scroller {
+  padding-bottom: 50vh;
+}
+
 /* ---- search panel (Ctrl+F, @codemirror/search) -------------------------------- */
 
 .cm-panels {
@@ -952,39 +980,44 @@ body {
   line-height: 1.4;
 }
 
+/* NOTE: line decorations must not carry vertical margins — CodeMirror's
+   heightmap measures border boxes only, so any margin on a .cm-line shifts
+   the DOM away from CM's coordinate mapping and posAtCoords starts landing
+   clicks at the wrong position (end of line / next line). Vertical spacing
+   is done with padding instead; horizontal margins are fine. */
+
 .cm-md-h1 {
   font-size: 2em;
-  margin-top: 0.67em !important;
-  margin-bottom: 0.5em;
+  padding-top: 0.67em !important;
+  padding-bottom: 0.7em !important; /* 0.5em gap + 0.2em before the border */
   border-bottom: 1px solid var(--border);
-  padding-bottom: 0.2em;
 }
 
 .cm-md-h2 {
   font-size: 1.5em;
-  margin-top: 0.8em !important;
-  margin-bottom: 0.4em;
+  padding-top: 0.8em !important;
+  padding-bottom: 0.4em !important;
 }
 
 .cm-md-h3 {
   font-size: 1.25em;
-  margin-top: 0.8em !important;
+  padding-top: 0.8em !important;
 }
 
 .cm-md-h4 {
   font-size: 1.1em;
-  margin-top: 0.7em !important;
+  padding-top: 0.7em !important;
 }
 
 .cm-md-h5 {
   font-size: 1em;
-  margin-top: 0.6em !important;
+  padding-top: 0.6em !important;
 }
 
 .cm-md-h6 {
   font-size: 0.9em;
   color: var(--fg-dim);
-  margin-top: 0.6em !important;
+  padding-top: 0.6em !important;
 }
 
 .cm-md-strong {
@@ -1027,7 +1060,7 @@ body {
 }
 
 .cm-md-list-d1 {
-  margin-top: 0.15em;
+  padding-top: 0.15em;
 }
 
 .cm-md-list-d2 {
@@ -1079,9 +1112,16 @@ body {
 
 /* code blocks */
 
+/* Vertical gap around block widgets lives on the .cm-md-block-gap wrapper as
+   padding (see widgets.ts wrapWithGap) — margin on the widget box itself is
+   invisible to CodeMirror's heightmap and shifts click mapping below it. */
+.cm-md-block-gap {
+  padding: 6px 0;
+}
+
 .cm-md-code-block {
   position: relative;
-  margin: 6px 48px;
+  margin: 0 48px;
   border-radius: 6px;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -1120,7 +1160,7 @@ body {
 
 .cm-md-mermaid {
   position: relative;
-  margin: 8px 48px;
+  margin: 0 48px;
   padding: 16px;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -1145,7 +1185,7 @@ body {
 
 .cm-md-math-block {
   position: relative;
-  margin: 8px 48px;
+  margin: 0 48px;
   padding: 8px 0;
   overflow-x: auto;
   cursor: pointer;
@@ -1301,7 +1341,7 @@ body {
 
 .cm-md-table-wrap {
   position: relative;
-  margin: 8px 48px;
+  margin: 0 48px;
   overflow-x: auto;
   cursor: pointer;
 }

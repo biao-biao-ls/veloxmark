@@ -167,7 +167,10 @@ const DARWIN_COMMAND_ACCELERATORS: Record<string, string> = {
   saveFile: 'Cmd+S',
   saveFileAs: 'Cmd+Shift+S',
   openPreferences: 'Cmd+,',
-  toggleTheme: 'Cmd+Shift+T'
+  toggleTheme: 'Cmd+Shift+T',
+  // P08 writing modes (Typewriter Mode is menu-only, no accelerator).
+  toggleFocusMode: 'F8',
+  toggleSourceMode: 'Cmd+/'
 }
 
 // P03: recent files, pushed from the renderer (which owns the store) whenever
@@ -263,6 +266,10 @@ function buildDarwinMenu(): Menu {
       label: 'View',
       submenu: [
         commandItem('toggleOutline', 'Toggle Outline'),
+        { type: 'separator' },
+        commandItem('toggleFocusMode', 'Focus Mode'),
+        commandItem('toggleTypewriterMode', 'Typewriter Mode'),
+        commandItem('toggleSourceMode', 'Source Mode'),
         { type: 'separator' },
         // Zoom/devtools run in main directly — no renderer round-trip.
         { label: 'Zoom In', accelerator: 'Cmd+Plus', click: () => zoomBy(getWindow, 0.5) },

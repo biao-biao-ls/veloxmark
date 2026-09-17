@@ -17,12 +17,21 @@ export interface LivePreviewConfig {
    * rebuilds and ImageWidgets re-resolve their srcs (mtime check / reload).
    */
   imageEpoch: number
+  /** P08: 'source' disables all live-preview decorations (raw Markdown view). */
+  mode: 'live' | 'source'
+  /** P08: dim every top-level block the cursor is not in. */
+  focusMode: boolean
+  /** P08: keep the cursor line vertically centered while editing. */
+  typewriterMode: boolean
 }
 
 export const DEFAULT_LIVE_PREVIEW_CONFIG: LivePreviewConfig = {
   theme: 'light',
   baseDir: '',
-  imageEpoch: 0
+  imageEpoch: 0,
+  mode: 'live',
+  focusMode: false,
+  typewriterMode: false
 }
 
 export const livePreviewConfigFacet = Facet.define<LivePreviewConfig, LivePreviewConfig>({
