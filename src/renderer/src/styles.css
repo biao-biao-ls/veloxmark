@@ -952,6 +952,7 @@ body {
 /* code blocks */
 
 .cm-md-code-block {
+  position: relative;
   margin: 6px 48px;
   border-radius: 6px;
   overflow: hidden;
@@ -968,6 +969,9 @@ body {
   font-family: Consolas, monospace;
   text-transform: lowercase;
 }
+
+/* Content inside a block widget isn't selectable (contenteditable=false); the
+   pointer cursor signals the whole block is a click target (jump to source). */
 
 .cm-md-code-block pre {
   margin: 0;
@@ -998,31 +1002,6 @@ body {
   overflow-x: auto;
 }
 
-.cm-md-mermaid-export {
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  padding: 2px 8px;
-  font-size: 11px;
-  line-height: 1.6;
-  color: var(--fg-dim);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.cm-md-mermaid:hover .cm-md-mermaid-export {
-  opacity: 1;
-}
-
-.cm-md-mermaid-export:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
 .cm-md-mermaid-body {
   color: var(--fg-dim);
   font-size: 13px;
@@ -1037,6 +1016,7 @@ body {
 /* math */
 
 .cm-md-math-block {
+  position: relative;
   margin: 8px 48px;
   padding: 8px 0;
   overflow-x: auto;
@@ -1046,6 +1026,54 @@ body {
 
 .cm-md-math-inline {
   padding: 0 2px;
+}
+
+/* block toolbar (P06): hover controls shared by code/math/mermaid/table widgets */
+
+.cm-md-block-toolbar {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 0.15s;
+  line-height: 1;
+}
+
+.cm-md-block-toolbar:hover,
+.cm-md-block-toolbar:focus-within {
+  opacity: 1;
+}
+
+/* Parent-hover reveal: CSS can't select a parent, so each block type opts in. */
+.cm-md-code-block:hover .cm-md-block-toolbar,
+.cm-md-mermaid:hover .cm-md-block-toolbar,
+.cm-md-math-block:hover .cm-md-block-toolbar,
+.cm-md-table-wrap:hover .cm-md-block-toolbar {
+  opacity: 1;
+}
+
+.cm-md-block-toolbar-btn {
+  padding: 2px 8px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--fg-dim);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cm-md-block-toolbar-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.cm-md-block-toolbar-btn.copied {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 /* images (P05: selection + zoom toolbar + broken placeholder) */
@@ -1144,6 +1172,7 @@ body {
 /* tables */
 
 .cm-md-table-wrap {
+  position: relative;
   margin: 8px 48px;
   overflow-x: auto;
   cursor: pointer;

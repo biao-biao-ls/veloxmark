@@ -121,10 +121,18 @@ export function renderKatexHtml(tex: string, displayMode: boolean): string {
 
 // ---- widgets ----------------------------------------------------------------
 
+/** One button in a block widget's hover toolbar. */
+export interface BlockToolbarItem {
+  label: string
+  title: string
+  onClick: (btn: HTMLButtonElement) => void
+}
+
 /**
  * Base for block-level rendered widgets (code, mermaid, math, table).
- * Owns the click-to-source behavior (mousedown anywhere in the block puts
- * the cursor back at the block's source range) so subclasses only build DOM.
+ * Owns the click-to-source behavior (mousedown on the block's padding puts
+ * the cursor back at the block's source range; hits on rendered content let
+ * the browser's native selection work) plus the shared hover toolbar.
  */
 export abstract class BlockWidget extends WidgetType {
   constructor(
@@ -134,22 +142,71 @@ export abstract class BlockWidget extends WidgetType {
     super()
   }
 
-  /** Attach click-to-source to the widget's root element (call once in toDOM). */
+  /**
+   * Attach click-to-source to the widget's root element (call once in toDOM).
+   *
+   * Any click on the block — padding or rendered content — jumps back to the
+   * source start. Native text selection inside the widget is impossible (it's
+   * a contenteditable=false host; CM's DOMObserver maps any in-widget caret
+   * back into the doc and collapses the block — probed and confirmed), so a
+   * content-hit exception would only create dead clicks. The toolbar is the
+   * one exemption: its buttons stopPropagation themselves.
+   */
   protected mountClickToSource(el: HTMLElement, view: EditorView): void {
     el.addEventListener('mousedown', (e) => {
+      if (e.target instanceof Element && e.target.closest('.cm-md-block-toolbar')) return
       e.preventDefault()
-      view.dispatch({
-        selection: { anchor: this.sourceFrom },
-        scrollIntoView: true
-      })
+      view.dispatch({ selection: { anchor: this.sourceFrom }, scrollIntoView: true })
     })
   }
 
-  /** P06 hook point for a hover toolbar; subclasses will register items here. */
-  protected registerToolbar(_el: HTMLElement): void {}
+  /** Build the hover toolbar (top-right) and append it to `wrap`. */
+  protected attachBlockToolbar(wrap: HTMLElement, items: BlockToolbarItem[]): void {
+    const bar = document.createElement('div')
+    bar.className = 'cm-md-block-toolbar'
+    for (const item of items) {
+      const btn = document.createElement('button')
+      btn.className = 'cm-md-block-toolbar-btn'
+      btn.textContent = item.label
+      btn.title = item.title
+      // Never let toolbar presses fall through to click-to-source.
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      })
+      btn.addEventListener('click', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        item.onClick(btn)
+      })
+      bar.appendChild(btn)
+    }
+    wrap.appendChild(bar)
+  }
 
+  /** Copy `text` to the clipboard; flash a ✓ on `btn` when it succeeds. */
+  protected async copyWithFeedback(text: string, btn: HTMLButtonElement): Promise<void> {
+    try {
+      await window.api.clipboardWrite(text)
+    } catch {
+      return
+    }
+    const original = btn.textContent
+    btn.textContent = '✓'
+    btn.classList.add('copied')
+    setTimeout(() => {
+      btn.textContent = original
+      btn.classList.remove('copied')
+    }, 1000)
+  }
+
+  /**
+   * CM must not handle events inside rendered blocks: a cursor landing in
+   * the block's source range would collapse the widget mid-selection.
+   * Jump-to-source is driven explicitly by mountClickToSource instead.
+   */
   ignoreEvent(): boolean {
-    return false
+    return true
   }
 }
 
@@ -188,6 +245,13 @@ export class CodeBlockWidget extends BlockWidget {
     pre.appendChild(codeEl)
     wrap.appendChild(pre)
 
+    this.attachBlockToolbar(wrap, [
+      {
+        label: 'Copy',
+        title: 'Copy code',
+        onClick: (btn) => void this.copyWithFeedback(this.code, btn)
+      }
+    ])
     this.mountClickToSource(wrap, view)
     return wrap
   }
@@ -219,22 +283,21 @@ export class MermaidWidget extends BlockWidget {
     body.textContent = 'Rendering diagram…'
     wrap.appendChild(body)
 
-    const exportBtn = document.createElement('button')
-    exportBtn.className = 'cm-md-mermaid-export'
-    exportBtn.textContent = 'SVG'
-    exportBtn.title = 'Export diagram as SVG'
-    // keep the click from falling through to the "edit source" mousedown handler
-    exportBtn.addEventListener('mousedown', (e) => {
-      e.preventDefault()
-      e.stopPropagation()
-    })
-    exportBtn.addEventListener('click', (e) => {
-      e.preventDefault()
-      e.stopPropagation()
-      const svgEl = body.querySelector('svg')
-      if (svgEl) void exportSvg(svgEl)
-    })
-    wrap.appendChild(exportBtn)
+    this.attachBlockToolbar(wrap, [
+      {
+        label: 'Copy',
+        title: 'Copy mermaid source',
+        onClick: (btn) => void this.copyWithFeedback(this.code, btn)
+      },
+      {
+        label: 'SVG',
+        title: 'Export diagram as SVG',
+        onClick: () => {
+          const svgEl = body.querySelector('svg')
+          if (svgEl) void exportSvg(svgEl)
+        }
+      }
+    ])
 
     void renderMermaid(this.code, this.theme)
       .then((svg) => {
@@ -266,6 +329,13 @@ export class MathBlockWidget extends BlockWidget {
     const el = document.createElement('div')
     el.className = 'cm-md-math-block'
     el.innerHTML = renderKatexHtml(this.tex, true)
+    this.attachBlockToolbar(el, [
+      {
+        label: 'Copy',
+        title: 'Copy TeX source',
+        onClick: (btn) => void this.copyWithFeedback(this.tex, btn)
+      }
+    ])
     this.mountClickToSource(el, view)
     return el
   }
@@ -766,6 +836,13 @@ export class TableWidget extends BlockWidget {
     }
 
     wrap.appendChild(table)
+    this.attachBlockToolbar(wrap, [
+      {
+        label: 'Copy',
+        title: 'Copy table as Markdown',
+        onClick: (btn) => void this.copyWithFeedback(this.source, btn)
+      }
+    ])
     this.mountClickToSource(wrap, view)
     return wrap
   }
