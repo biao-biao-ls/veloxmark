@@ -24,6 +24,7 @@ import {
   livePreviewField,
   type LivePreviewConfig
 } from './livePreview'
+import { tableEditField } from './table/state'
 import { compartmentThemes, ThemeName } from './theme'
 
 export const themeCompartment = new Compartment()
@@ -74,6 +75,8 @@ export function createExtensions(
     EditorState.allowMultipleSelections.of(true),
     EditorView.lineWrapping,
     livePreviewField,
+    // P10: active table cell / session column widths — drives enterTable.
+    tableEditField,
     // P08 mode flags are read from the store (not the args): this runs once at
     // editor creation, and the App effect keeps them in sync afterwards.
     livePreviewConfigExtension({

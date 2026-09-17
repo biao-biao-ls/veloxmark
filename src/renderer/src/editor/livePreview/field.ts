@@ -1,6 +1,7 @@
 import { syntaxTree } from '@codemirror/language'
 import { StateField } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView } from '@codemirror/view'
+import { tableEditField } from '../table/state'
 import { buildDecorations } from './build'
 import { getLivePreviewConfig } from './config'
 
@@ -24,7 +25,12 @@ export const livePreviewField = StateField.define<DecorationSet>({
     const treeChanged = syntaxTree(tr.startState) !== syntaxTree(tr.state)
     const configChanged =
       getLivePreviewConfig(tr.startState) !== getLivePreviewConfig(tr.state)
-    if (tr.docChanged || tr.selection || treeChanged || configChanged) {
+    // P10: activating/moving/clearing a table cell editor changes no doc text
+    // or CM selection — rebuild when the table-edit state field changes.
+    // Optional field access: DOM-less snapshot states may omit tableEditField.
+    const tableEditChanged =
+      tr.state.field(tableEditField, false) !== tr.startState.field(tableEditField, false)
+    if (tr.docChanged || tr.selection || treeChanged || configChanged || tableEditChanged) {
       return buildDecorations(tr.state, getLivePreviewConfig(tr.state))
     }
     return value.map(tr.changes)
