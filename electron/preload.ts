@@ -3,6 +3,7 @@ import type {
   AppWindowState,
   DirNode,
   FileFilter,
+  FolderScanOptions,
   ImageSaveOptions,
   OpenFileResult,
   PdfExportOptions,
@@ -19,15 +20,21 @@ const api: RendererApi = {
     ipcRenderer.invoke('dialog:openFolder'),
   listDirectory: (dirPath: string): Promise<DirNode[]> =>
     ipcRenderer.invoke('folder:list', dirPath),
-  watchFolder: (dirPath: string): Promise<boolean> =>
-    ipcRenderer.invoke('folder:watch', dirPath),
+  watchFolder: (dirPath: string, options?: FolderScanOptions): Promise<boolean> =>
+    ipcRenderer.invoke('folder:watch', dirPath, options),
   unwatchFolder: (): Promise<boolean> => ipcRenderer.invoke('folder:unwatch'),
+  setFolderOptions: (options: FolderScanOptions): Promise<void> =>
+    ipcRenderer.invoke('folder:setOptions', options),
   createFile: (filePath: string): Promise<boolean> =>
     ipcRenderer.invoke('file:create', filePath),
+  mkdirPath: (dirPath: string): Promise<boolean> =>
+    ipcRenderer.invoke('file:mkdir', dirPath),
   deletePath: (targetPath: string): Promise<boolean> =>
     ipcRenderer.invoke('file:delete', targetPath),
   renamePath: (oldPath: string, newPath: string): Promise<boolean> =>
     ipcRenderer.invoke('file:rename', oldPath, newPath),
+  movePath: (srcPath: string, destDir: string): Promise<string> =>
+    ipcRenderer.invoke('path:move', srcPath, destDir),
   pathExists: (filePath: string): Promise<boolean> =>
     ipcRenderer.invoke('file:pathExists', filePath),
   onFolderTree: (callback: (tree: DirNode[]) => void): (() => void) => {

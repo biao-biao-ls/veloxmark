@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   clearRecentFiles,
   setPreferences,
@@ -20,9 +20,17 @@ interface Props {
 export default function Preferences({ open, onClose }: Props): React.JSX.Element | null {
   const prefs = usePreferences()
   const closeRef = useRef<HTMLButtonElement | null>(null)
+  // P07: the ignore list is edited line-by-line; a local draft keeps the
+  // in-progress trailing newline out of the store (sanitize drops empty
+  // entries, which would yank the cursor mid-edit).
+  const [ignoreDraft, setIgnoreDraft] = useState(() => prefs.folderIgnoreNames.join('\n'))
 
   useEffect(() => {
-    if (open) closeRef.current?.focus()
+    if (open) {
+      closeRef.current?.focus()
+      setIgnoreDraft(prefs.folderIgnoreNames.join('\n'))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   if (!open) return null
@@ -194,6 +202,40 @@ export default function Preferences({ open, onClose }: Props): React.JSX.Element
             />
             <span>Download pasted/dropped remote image URLs into attachments</span>
           </label>
+        </div>
+
+        <div className="prefs-section">
+          <div className="prefs-section-title">Workspace</div>
+          <label className="prefs-row prefs-check">
+            <input
+              type="checkbox"
+              checked={prefs.showHiddenFiles}
+              onChange={(e) => setPreferences({ showHiddenFiles: e.target.checked })}
+            />
+            <span>Show hidden files (dot-prefixed) in the file tree</span>
+          </label>
+          <div className="prefs-row prefs-row-stack">
+            <span className="prefs-label">Ignored names</span>
+            <textarea
+              className="prefs-input prefs-textarea"
+              rows={4}
+              spellCheck={false}
+              value={ignoreDraft}
+              onChange={(e) => {
+                setIgnoreDraft(e.target.value)
+                setPreferences({
+                  folderIgnoreNames: e.target.value
+                    .split(/\r?\n/)
+                    .map((n) => n.trim())
+                    .filter((n) => n !== '')
+                })
+              }}
+            />
+            <span className="prefs-hint">
+              One entry per line, matched against file/folder names; supports * and ?
+              wildcards. Changes apply to the tree immediately.
+            </span>
+          </div>
         </div>
 
         <div className="prefs-section">

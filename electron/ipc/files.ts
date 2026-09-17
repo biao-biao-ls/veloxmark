@@ -1,5 +1,5 @@
 import { dialog, ipcMain } from 'electron'
-import { readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { cp, mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, isAbsolute, join, normalize } from 'node:path'
 import type { FileFilter } from '../shared/api'
 import type { GetWindow } from './index'
@@ -64,6 +64,19 @@ export function registerFilesIpc(getWindow: GetWindow): void {
     return true
   })
 
+  ipcMain.handle('file:mkdir', async (_e, dirPath: string) => {
+    // Reject first: mkdir without recursive never clobbers, but a clear error
+    // beats EEXIST's raw message (parity with file:create).
+    await stat(dirPath).then(
+      () => {
+        throw new Error(`"${basename(dirPath)}" already exists`)
+      },
+      () => undefined // target free
+    )
+    await mkdir(dirPath)
+    return true
+  })
+
   ipcMain.handle('file:delete', async (_e, targetPath: string) => {
     await rm(targetPath, { recursive: true, force: false })
     return true
@@ -79,6 +92,35 @@ export function registerFilesIpc(getWindow: GetWindow): void {
     )
     await rename(oldPath, newPath)
     return true
+  })
+
+  // P07: drag-drop move. The renderer rejects own-subtree drops too; the check
+  // is repeated here so a stray call can't destroy the source tree.
+  ipcMain.handle('path:move', async (_e, srcPath: string, destDir: string): Promise<string> => {
+    const sep = process.platform === 'win32' ? '\\' : '/'
+    if (destDir === srcPath || destDir.startsWith(srcPath + sep)) {
+      throw new Error('Cannot move a folder into itself')
+    }
+    const newPath = join(destDir, basename(srcPath))
+    if (newPath === srcPath) return srcPath
+    await stat(newPath).then(
+      () => {
+        throw new Error(`"${basename(newPath)}" already exists`)
+      },
+      () => undefined // target free
+    )
+    try {
+      await rename(srcPath, newPath)
+    } catch (err) {
+      // Cross-device move: copy + delete instead of failing outright.
+      if ((err as NodeJS.ErrnoException).code === 'EXDEV') {
+        await cp(srcPath, newPath, { recursive: true })
+        await rm(srcPath, { recursive: true, force: false })
+      } else {
+        throw err
+      }
+    }
+    return newPath
   })
 
   // Existence probe for the recent-files menu (P03) — missing paths render greyed.
