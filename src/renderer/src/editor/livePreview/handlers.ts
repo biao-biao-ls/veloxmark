@@ -31,10 +31,18 @@ export interface BuildCtx {
   state: EditorState
   config: LivePreviewConfig
   decos: PendingDeco[]
-  /** True when any cursor/selection touches the half-open range [from, to]. */
+  /**
+   * Line-granularity: any cursor/selection's line intersects [from, to].
+   * Line-level markers only (ATX #, HR, quotes, tasks).
+   */
   touched: (from: number, to: number) => boolean
   /** True when any cursor/selection lies inside the block [from, to]. */
   blockTouched: (from: number, to: number) => boolean
+  /**
+   * P09 mark-granularity: any selection range intersects closed [from, to].
+   * Inline marks — delimiters show only while the cursor is on/in the span.
+   */
+  markTouched: (from: number, to: number) => boolean
 }
 
 const hide = Decoration.replace({})
@@ -94,7 +102,11 @@ export function enterHeaderMark(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
 // ---- emphasis / strong / strikethrough --------------------------------------
 
 export function enterEmphasisMark(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
-  if (!ctx.touched(node.from, node.to)) {
+  // P09: delimiters show only while the cursor/selection is within the
+  // parent emphasis span — both marks of a pair share one decision, and a
+  // sibling mark on the same line is unaffected.
+  const parent = node.node.parent
+  if (!ctx.markTouched(parent ? parent.from : node.from, parent ? parent.to : node.to)) {
     ctx.decos.push({ from: node.from, to: node.to, value: hide })
   }
   return false
@@ -109,7 +121,9 @@ export function enterInlineMark(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
 }
 
 export function enterStrikethroughMark(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
-  if (!ctx.touched(node.from, node.to)) {
+  // P09: same parent-span rule as enterEmphasisMark (parent = Strikethrough).
+  const parent = node.node.parent
+  if (!ctx.markTouched(parent ? parent.from : node.from, parent ? parent.to : node.to)) {
     ctx.decos.push({ from: node.from, to: node.to, value: hide })
   }
   return false
@@ -119,7 +133,8 @@ export function enterStrikethroughMark(node: SyntaxNodeRef, ctx: BuildCtx): bool
 
 export function enterInlineCode(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
   ctx.decos.push({ from: node.from, to: node.to, value: markCode })
-  if (!ctx.touched(node.from, node.to)) {
+  // P09: backticks show only while the cursor/selection is within the span.
+  if (!ctx.markTouched(node.from, node.to)) {
     for (let c = node.node.firstChild; c; c = c.nextSibling) {
       if (c.name === 'CodeMark') {
         ctx.decos.push({ from: c.from, to: c.to, value: hide })
@@ -133,7 +148,8 @@ export function enterInlineCode(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
 
 export function enterLink(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
   ctx.decos.push({ from: node.from, to: node.to, value: markLink })
-  if (!ctx.touched(node.from, node.to)) {
+  // P09: brackets/URL show only while the cursor/selection is within the span.
+  if (!ctx.markTouched(node.from, node.to)) {
     for (let c = node.node.firstChild; c; c = c.nextSibling) {
       if (c.name === 'LinkMark' || c.name === 'URL') {
         ctx.decos.push({ from: c.from, to: c.to, value: hide })
@@ -191,15 +207,23 @@ export function enterImage(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
 export function enterListMark(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
   const doc = ctx.state.doc
   const line = doc.lineAt(node.from)
-  if (!ctx.touched(line.from, node.to)) {
-    const end = doc.sliceString(node.to, node.to + 1) === ' ' ? node.to + 1 : node.to
+  const end = doc.sliceString(node.to, node.to + 1) === ' ' ? node.to + 1 : node.to
+  // P09: Typora rule — the marker shows only while the cursor sits on the
+  // marker/indent; entering the item text hides it (the CSS ::before bullet
+  // covers the hidden state). `end` is inclusive so a left-moving cursor
+  // reveals the marker at its right edge instead of snapping over it.
+  const shown = ctx.markTouched(line.from, end)
+  if (!shown) {
     ctx.decos.push({ from: line.from, to: end, value: hide })
   }
+  // While the source marker is visible, suppress the CSS bullet so the two
+  // don't render side by side.
+  const depthClass = `cm-md-list cm-md-list-d${listDepth(node)}`
   ctx.decos.push({
     from: line.from,
     to: line.from,
     value: Decoration.line({
-      class: `cm-md-list cm-md-list-d${listDepth(node)}`
+      class: shown ? `${depthClass} cm-md-list-open` : depthClass
     })
   })
   return false
@@ -311,7 +335,7 @@ export function collectMathDecos(
   ctx: BuildCtx,
   resolveNode: (pos: number, side: -1 | 1) => SyntaxNode
 ): void {
-  const { state, decos, blockTouched } = ctx
+  const { state, decos, blockTouched, markTouched } = ctx
   const doc = state.doc
   const mathBlockRanges: Array<[number, number]> = []
 
@@ -381,7 +405,9 @@ export function collectMathDecos(
         }
       }
       if (inCode) continue
-      if (blockTouched(start, end)) continue
+      // P09: inline math follows the mark rule — a selection merely touching
+      // the span reveals it; math *blocks* above stay block-granular.
+      if (markTouched(start, end)) continue
       decos.push({
         from: start,
         to: end,

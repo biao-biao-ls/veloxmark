@@ -40,7 +40,10 @@ export function buildDecorations(state: EditorState, config: LivePreviewConfig):
   const selections = state.selection.ranges
   const doc = state.doc
 
-  /** True when any cursor/selection touches the half-open range [from, to]. */
+  /**
+   * Line-granularity: any cursor/selection's line intersects [from, to].
+   * Kept for line-level markers (ATX #, horizontal rules, quotes, tasks).
+   */
   const touched = (from: number, to: number): boolean =>
     selections.some((r) => {
       const lineFrom = doc.lineAt(r.from).from
@@ -52,7 +55,18 @@ export function buildDecorations(state: EditorState, config: LivePreviewConfig):
   const blockTouched = (from: number, to: number): boolean =>
     selections.some((r) => (r.from >= from && r.from <= to) || (r.to >= from && r.to <= to))
 
-  const ctx: BuildCtx = { state, config, decos, touched, blockTouched }
+  /**
+   * P09 mark-granularity: any selection range intersects the closed interval
+   * [from, to]. An empty cursor degenerates to `from <= head <= to`; a
+   * non-empty range is a plain interval-intersection test, so cross-line
+   * selections reveal every mark they touch. Endpoints count deliberately:
+   * a cursor resting on either edge of a hidden mark must reveal it, so
+   * replace-hidden text never blocks keyboard movement.
+   */
+  const markTouched = (from: number, to: number): boolean =>
+    selections.some((r) => r.from <= to && r.to >= from)
+
+  const ctx: BuildCtx = { state, config, decos, touched, blockTouched, markTouched }
 
   // tree.iterate's enter only dispatches; each syntax kind lives in handlers.ts
   tree.iterate({

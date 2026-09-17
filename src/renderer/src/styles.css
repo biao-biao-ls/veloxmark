@@ -1083,6 +1083,11 @@ body {
   padding-left: 120px;
 }
 
+/* P09: source marker showing — drop the CSS bullet so they don't double up. */
+.cm-md-list-open::before {
+  content: none;
+}
+
 /* blockquote */
 
 .cm-md-quote {
