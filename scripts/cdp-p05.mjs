@@ -128,12 +128,26 @@ async function main() {
   // folder workspace (watcher active for the image:changed test).
   check('boot: window.api', await waitFor(`!!window.api`))
   check('boot: editor', await waitFor(`!!window.__veloxEditor?.view`))
-  await evaluate(`(() => {
-    localStorage.setItem('veloxmark.session', JSON.stringify({
-      lastFilePath: ${JSON.stringify(FIXTURE_PATH)},
-      lastFolderPath: ${JSON.stringify(TMP)}
-    }))
-  })()`)
+  // The app's own session-persist effect may still be flushing shortly after
+  // boot; seed, then verify the seed survived before reloading.
+  const seeded = await (async () => {
+    for (let i = 0; i < 20; i++) {
+      await evaluate(`(() => {
+        localStorage.setItem('veloxmark.session', JSON.stringify({
+          lastFilePath: ${JSON.stringify(FIXTURE_PATH)},
+          lastFolderPath: ${JSON.stringify(TMP)}
+        }))
+      })()`)
+      await new Promise((r) => setTimeout(r, 250))
+      const cur = await evaluate(`(() => {
+        try { return JSON.parse(localStorage.getItem('veloxmark.session') ?? '{}').lastFilePath ?? null }
+        catch { return null }
+      })()`)
+      if (cur === FIXTURE_PATH) return true
+    }
+    return false
+  })()
+  check('session seed persisted', seeded)
   await send('Page.reload')
   check('restore: fixture loaded', await waitFor(
     `window.__veloxEditor?.view?.state.doc.toString().includes('P05 Image Fixture') ?? false`,
@@ -195,12 +209,21 @@ async function main() {
   )
 
   // ---- resize via the zoom toolbar ----------------------------------------------
-  await evaluate(`(() => {
+  const toolbarImg = await evaluate(`(() => {
     const img = [...document.querySelectorAll('.cm-md-image')].find(i => !i.style.width)
+    if (!img) return false
     img.scrollIntoView({ block: 'center' })
     img.click()
+    return true
   })()`)
+  check('clickable image present', toolbarImg === true)
   check('toolbar opens on click', await waitFor(`!!document.querySelector('.cm-md-image-toolbar')`))
+  // Log-scale mapping: original size must sit at the center of the track.
+  check('slider thumb centers at 100%', await waitFor(`(() => {
+    const slider = document.querySelector('.cm-md-image-toolbar input[type=range]')
+    return !!slider && slider.value === '50' &&
+      document.querySelector('.cm-md-image-toolbar-pct')?.textContent === '100%'
+  })()`))
   const shot1 = await send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(join(TMP, 'p05-toolbar.png'), Buffer.from(shot1.data, 'base64'))
   console.log('saved', join(TMP, 'p05-toolbar.png'))
@@ -208,7 +231,8 @@ async function main() {
   await evaluate(`(() => {
     const slider = document.querySelector('.cm-md-image-toolbar input[type=range]')
     slider.disabled = false
-    slider.value = '200'
+    // Log-scale track: 0→25%, 50→100%, 75→200%, 100→400%.
+    slider.value = '75'
     slider.dispatchEvent(new Event('input', { bubbles: true }))
     slider.dispatchEvent(new Event('change', { bubbles: true }))
   })()`)
@@ -216,6 +240,73 @@ async function main() {
   check('slider writes =WxH to source', await waitFor(
     `window.__veloxEditor.view.state.doc.toString().includes('=2x2')`
   ))
+
+  // ---- flip toggles write {flip=…} and apply the transform live ------------------
+  await evaluate(`(() => {
+    const wrap = document.querySelector('.cm-md-image-wrap.cm-md-image-selected')
+    ;[...wrap.querySelectorAll('.cm-md-image-toolbar-btn')].find(b => b.title === 'Flip horizontally').click()
+  })()`)
+  check('flip-h writes {flip=h}', await waitFor(
+    `window.__veloxEditor.view.state.doc.toString().includes('{flip=h}')`
+  ))
+  check(
+    'flip-h applies scaleX(-1)',
+    (await evaluate(`
+      document.querySelector('.cm-md-image-wrap.cm-md-image-selected img')?.style.transform ?? ''
+    `)) === 'scaleX(-1)'
+  )
+  await evaluate(`(() => {
+    const wrap = document.querySelector('.cm-md-image-wrap.cm-md-image-selected')
+    ;[...wrap.querySelectorAll('.cm-md-image-toolbar-btn')].find(b => b.title === 'Flip vertically').click()
+  })()`)
+  check('flip-hv composes to {flip=hv}', await waitFor(
+    `window.__veloxEditor.view.state.doc.toString().includes('{flip=hv}')`
+  ))
+
+  // ---- reselect keeps committed size/flip (stale-widget regression) ---------------
+  // eq() reuses the DOM (and its listeners, which close over the ORIGINAL
+  // widget instance) across size/flip commits — re-opening the toolbar must
+  // derive state from the rendered element, not the stale spec, or the image
+  // snaps back to 100%.
+  await evaluate(`(() => {
+    const line = document.querySelector('.cm-line')
+    for (const type of ['mousedown', 'mouseup', 'click']) {
+      line.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, button: 0 }))
+    }
+    return true
+  })()`)
+  check('deselect closes toolbar', await waitFor(`!document.querySelector('.cm-md-image-toolbar')`))
+  const reselectClicked = await evaluate(`(() => {
+    const img = [...document.querySelectorAll('.cm-md-image')].find(i => i.style.width === '2px')
+    if (!img) return false
+    img.click()
+    return true
+  })()`)
+  const reselectOk = await waitFor(`(() => {
+    const wrap = document.querySelector('.cm-md-image-wrap.cm-md-image-selected')
+    if (!wrap) return false
+    const img = wrap.querySelector('img')
+    const label = wrap.querySelector('.cm-md-image-toolbar-pct')
+    const flipH = [...wrap.querySelectorAll('.cm-md-image-toolbar-btn')].find(b => b.title === 'Flip horizontally')
+    return img.style.width === '2px' && label?.textContent === '200%' &&
+      img.style.transform.includes('scaleX(-1)') && flipH?.classList.contains('active')
+  })()`)
+  check('reselect keeps size + flip', reselectOk, reselectOk ? '' : JSON.stringify({
+    reselectClicked,
+    state: await evaluate(`(() => {
+      const wrap = document.querySelector('.cm-md-image-wrap.cm-md-image-selected')
+      const img = wrap?.querySelector('img') ?? null
+      return {
+        selected: !!wrap,
+        styleW: img?.style.width ?? null,
+        transform: img?.style.transform ?? null,
+        label: wrap?.querySelector('.cm-md-image-toolbar-pct')?.textContent ?? null,
+        widths: [...document.querySelectorAll('.cm-md-image')].map(i => i.style.width),
+        toolbar: !!document.querySelector('.cm-md-image-toolbar'),
+        doc: window.__veloxEditor.view.state.doc.toString().slice(0, 120)
+      }
+    })()`)
+  }))
 
   // ---- save + reopen keeps the size ---------------------------------------------
   await evaluate(`window.api.writeFile(${JSON.stringify(FIXTURE_PATH)}, window.__veloxEditor.view.state.doc.toString())`)
@@ -226,6 +317,38 @@ async function main() {
   ))
   check('reopen: size kept on widget', await waitFor(`
     [...document.querySelectorAll('.cm-md-image')].some(i => i.style.width === '2px')
+  `))
+  check('reopen: flip transform kept on widget', await waitFor(`
+    [...document.querySelectorAll('.cm-md-image')].some(i => i.style.transform.includes('scaleX(-1)') && i.style.transform.includes('scaleY(-1)'))
+  `))
+
+  // ---- native thumb drag (guards against toolbar preventDefault eating it) -------
+  // Synthetic dispatchEvent cannot prove the range input still receives
+  // mousedown's default action — a toolbar-level preventDefault silently kills
+  // native slider drags while buttons keep working. Drive real CDP input.
+  await evaluate(`(() => {
+    const img = [...document.querySelectorAll('.cm-md-image')].find(i => i.src.includes('fixture.png'))
+    img.scrollIntoView({ block: 'center' })
+    img.click()
+    return true
+  })()`)
+  await waitFor(`!!document.querySelector('.cm-md-image-toolbar')`)
+  const thumbRect = await evaluate(`(() => {
+    const slider = document.querySelector('.cm-md-image-toolbar input[type=range]')
+    const r = slider.getBoundingClientRect()
+    return { x: r.x, y: r.y + r.height / 2, w: r.width, h: r.height, value: slider.value }
+  })()`)
+  const thumbX = thumbRect.x + (Number(thumbRect.value) / 100) * thumbRect.w
+  await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: thumbX, y: thumbRect.y, button: 'left', buttons: 1, clickCount: 1 })
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: thumbRect.x + thumbRect.w * 0.9, y: thumbRect.y, button: 'left', buttons: 1 })
+  await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: thumbRect.x + thumbRect.w * 0.9, y: thumbRect.y, button: 'left', buttons: 1, clickCount: 1 })
+  check('slider thumb drag moves value', await waitFor(`
+    Number(document.querySelector('.cm-md-image-toolbar input[type=range]')?.value) > 80
+  `, 4000), `thumb started at ${thumbRect.value}`)
+  // Drag ~90% of the log track → well over 200% of the 1×1 natural size.
+  check('drag rewrites size in source', await waitFor(`
+    /fixture\\.png +=\\d+x\\d+/.test(window.__veloxEditor.view.state.doc.toString()) &&
+    !window.__veloxEditor.view.state.doc.toString().includes('=2x2')
   `))
 
   // ---- watcher invalidation ------------------------------------------------------
@@ -252,6 +375,18 @@ async function main() {
   check('paste local path inserts assets ref', await waitFor(
     `/!\\[\\]\\(assets\\/img-\\d{8}-\\d{6}/.test(window.__veloxEditor.view.state.doc.toString())`
   ))
+  // Regression: a pasted image leaves the cursor at the node end — the widget
+  // must stay rendered (clickable), not collapse to source.
+  check('pasted image renders widget with cursor at end', await waitFor(`
+    (() => {
+      const view = window.__veloxEditor.view
+      const head = view.state.selection.main.head
+      return [...document.querySelectorAll('.cm-md-image-wrap')].some((w) => {
+        const r = w.getBoundingClientRect()
+        return r.width > 0 && head >= view.state.doc.length - 2
+      })
+    })()
+  `))
 
   // ---- drop of a remote image URL (kept as URL by default) -----------------------
   await evaluate(`(() => {
@@ -274,6 +409,16 @@ async function main() {
     'export emits width/height',
     exported.includes('width="64"') && exported.includes('height="32"'),
     String(exported).slice(0, 200)
+  )
+
+  // ---- export keeps the flip transform ------------------------------------------
+  const exportedFlip = await evaluate(
+    `window.__veloxExport.renderHtml('![s](fixture.png =64x32){flip=hv}\\n', { baseDir: ${JSON.stringify(TMP)}, theme: 'light', imageMode: 'embed', katexFonts: 'embed' })`
+  )
+  check(
+    'export emits flip transform',
+    exportedFlip.includes('transform:scaleX(-1) scaleY(-1)'),
+    String(exportedFlip).slice(0, 300)
   )
 
   ws.close()

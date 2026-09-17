@@ -2,6 +2,7 @@ import { parser as mdParser, GFM } from '@lezer/markdown'
 import type { SyntaxNode, Tree } from '@lezer/common'
 import { imageSizeMarkdown } from '../editor/markdown-image-ext'
 import {
+  flipTransform,
   highlightCodeHtml,
   parseImageMarkdown,
   renderKatexHtml,
@@ -397,7 +398,9 @@ async function renderInline(node: SyntaxNode, ctx: RenderCtx): Promise<string> {
         parsed.width && parsed.height
           ? ` width="${parsed.width}" height="${parsed.height}"`
           : ''
-      return `<img alt="${escapeHtml(parsed.alt)}" src="${escapeHtml(src)}"${size}>`
+      // P05: flip is a VeloxMark extension — export it as a CSS transform.
+      const style = parsed.flip ? ` style="transform:${flipTransform(parsed.flip)}"` : ''
+      return `<img alt="${escapeHtml(parsed.alt)}" src="${escapeHtml(src)}"${size}${style}>`
     }
     case 'HardBreak':
       return '<br>'

@@ -300,22 +300,36 @@ export interface ParsedImage {
   src: string
   width?: number
   height?: number
+  /** Flip state persisted as a `{flip=h|v|hv}` attribute after the parens. */
+  flip?: 'h' | 'v' | 'hv'
 }
 
 /**
- * Parse an image markdown node: `![alt](src)`, optional `"title"`, and the
- * Typora/pandoc size attribute `=WxH` (either order: `=WxH` after the title).
+ * Image markdown with optional P05 attributes:
+ * `![alt](src "title" =WxH){flip=h|v|hv}` — Typora/pandoc `=WxH` size inside
+ * the parens, plus our brace-suffixed flip (h = horizontal, v = vertical).
  */
+const IMAGE_MARKDOWN_RE =
+  /^!\[([^\]]*)\]\(\s*([^)\s]+)(?:\s+"([^"]*)")?(?:\s+=(\d+)[xX](\d+))?\s*\)(?:\{flip=([hv]{1,2})\})?$/
+
 export function parseImageMarkdown(text: string): ParsedImage | null {
-  const m =
-    /^!\[([^\]]*)\]\(\s*([^)\s]+)(?:\s+"[^"]*")?(?:\s+=(\d+)[xX](\d+))?\s*\)$/.exec(text)
+  const m = IMAGE_MARKDOWN_RE.exec(text)
   if (!m) return null
   const parsed: ParsedImage = { alt: m[1], src: m[2] }
-  if (m[3] && m[4]) {
-    parsed.width = Number(m[3])
-    parsed.height = Number(m[4])
+  if (m[4] && m[5]) {
+    parsed.width = Number(m[4])
+    parsed.height = Number(m[5])
   }
+  if (m[6]) parsed.flip = m[6] as 'h' | 'v' | 'hv'
   return parsed
+}
+
+/** CSS transform for a flip state ('' when unflipped). Shared with export. */
+export function flipTransform(flip: string | undefined): string {
+  const parts: string[] = []
+  if (flip?.includes('h')) parts.push('scaleX(-1)')
+  if (flip?.includes('v')) parts.push('scaleY(-1)')
+  return parts.join(' ')
 }
 
 interface CachedImage {
@@ -348,25 +362,29 @@ export function invalidateImageCache(): void {
 }
 
 /**
- * Rewrite the image node containing `sourceFrom` with a `=WxH` size suffix
- * (or drop the suffix when w/h are null). Re-resolves the node through the
- * syntax tree so the write-back survives intermediate edits.
+ * Rewrite the image node containing `sourceFrom` with new size/flip
+ * attributes (null clears them). Re-resolves the node through the syntax
+ * tree so the write-back survives intermediate edits.
  */
-function writeImageSize(
+function rewriteImageNode(
   view: EditorView,
   sourceFrom: number,
-  w: number | null,
-  h: number | null
+  next: { width?: number | null; height?: number | null; flip?: string | null }
 ): void {
   const state = view.state
   let node: SyntaxNode | null = syntaxTree(state).resolveInner(sourceFrom, 1)
   while (node && node.name !== 'Image') node = node.parent
   if (!node) return
-  const text = state.sliceDoc(node.from, node.to)
-  const m = /^!\[([^\]]*)\]\(([\s\S]*)\)$/.exec(text)
+  const m = IMAGE_MARKDOWN_RE.exec(state.sliceDoc(node.from, node.to))
   if (!m) return
-  const inner = m[2].replace(/\s+=\d+[xX]\d+\s*$/, '').trimEnd()
-  const insert = w != null && h != null ? `![${m[1]}](${inner} =${w}x${h})` : `![${m[1]}](${inner})`
+  const [, alt, src, title] = m
+  const width = next.width !== undefined ? next.width : m[4] ? Number(m[4]) : null
+  const height = next.height !== undefined ? next.height : m[5] ? Number(m[5]) : null
+  const flip = next.flip !== undefined ? next.flip || null : m[6] || null
+  const titlePart = title != null ? ` "${title}"` : ''
+  const sizePart = width != null && height != null ? ` =${width}x${height}` : ''
+  const flipPart = flip ? `{flip=${flip}}` : ''
+  const insert = `![${alt}](${src}${titlePart}${sizePart})${flipPart}`
   view.dispatch({
     changes: { from: node.from, to: node.to, insert },
     userEvent: 'input.image.resize'
@@ -417,7 +435,11 @@ export class ImageWidget extends WidgetType {
     if (this.spec.width) {
       img.style.width = `${this.spec.width}px`
       if (this.spec.height) img.style.height = `${this.spec.height}px`
+      // Explicit sizes win over the layout clamp — an upscale past the
+      // container width must stay visible (matches Typora).
+      img.style.maxWidth = 'none'
     }
+    if (this.spec.flip) img.style.transform = flipTransform(this.spec.flip)
     wrap.appendChild(img)
 
     // Broken/missing image: placeholder with the alt text, never a blank hole.
@@ -473,59 +495,136 @@ export class ImageWidget extends WidgetType {
   private buildToolbar(img: HTMLImageElement, view: EditorView): HTMLElement {
     const toolbar = document.createElement('div')
     toolbar.className = 'cm-md-image-toolbar'
-    // Clicks inside the toolbar must not reach CM (cursor move / deselect).
+    // Keep events from reaching CM (cursor move / deselect) but NEVER
+    // preventDefault on form controls: cancelling mousedown's default action
+    // kills the range input's native thumb drag (buttons survive because they
+    // fire on click, which is why only the slider felt broken).
     toolbar.addEventListener('mousedown', (e) => {
-      e.preventDefault()
       e.stopPropagation()
+      const t = e.target
+      if (!(t instanceof Element && t.closest('input, button, select, textarea'))) {
+        e.preventDefault()
+      }
     })
     toolbar.addEventListener('click', (e) => e.stopPropagation())
 
-    const naturalW = img.naturalWidth
-    const naturalH = img.naturalHeight
+    // Zoom sliders read better on a log scale: the thumb travels multiplicatively,
+    // so 100% (original size) sits at the center of the track and each equal
+    // step is an equal ratio, not an equal pixel delta. Track position 0-100
+    // maps to 25%-400% via pos = 100·log4(pct/25)  ⇔  pct = 25·16^(pos/100).
+    const PCT_MIN = 25
+    const PCT_MAX = 400
+    const RATIO = PCT_MAX / PCT_MIN // 16
+    const posToPct = (pos: number): number =>
+      Math.min(PCT_MAX, Math.max(PCT_MIN, Math.round(PCT_MIN * Math.pow(RATIO, pos / 100))))
+    const pctToPos = (pct: number): number =>
+      Math.min(
+        100,
+        Math.max(0, Math.round((100 * Math.log(pct / PCT_MIN)) / Math.log(RATIO)))
+      )
+
     const pctOf = (w?: number): number =>
-      naturalW && w ? Math.round((w / naturalW) * 100) : 100
-    let pct = pctOf(this.spec.width)
+      img.naturalWidth && w ? Math.round((w / img.naturalWidth) * 100) : 100
+    // The toolbar may be built from a STALE widget instance: eq() reuses this
+    // DOM (and its listeners) across size/flip commits, so `this.spec` can
+    // predate the latest source rewrite. The rendered element always carries
+    // the committed state (applyStyle / flip toggles write it live), so derive
+    // from it — reading spec here would reset a resized image to 100% on
+    // re-select.
+    const derivePct = (): number => {
+      const nw = img.naturalWidth
+      if (nw && img.style.width) {
+        const w = Number.parseFloat(img.style.width)
+        if (Number.isFinite(w) && w > 0) return Math.round((w / nw) * 100)
+      }
+      return pctOf(this.spec.width)
+    }
+    const deriveFlip = (): string => {
+      const t = img.style.transform
+      const h = t.includes('scaleX(-1)')
+      const v = t.includes('scaleY(-1)')
+      return h || v ? `${h ? 'h' : ''}${v ? 'v' : ''}` : (this.spec.flip ?? '')
+    }
+    const clampPct = (p: number): number => Math.min(PCT_MAX, Math.max(PCT_MIN, p))
+    let pct = clampPct(derivePct())
+    let flip = deriveFlip()
 
     const label = document.createElement('span')
     label.className = 'cm-md-image-toolbar-pct'
     const slider = document.createElement('input')
     slider.type = 'range'
-    slider.min = '25'
-    slider.max = '400'
-    slider.step = '5'
-    slider.value = String(Math.min(400, Math.max(25, pct)))
-    slider.disabled = naturalW === 0
+    slider.min = '0'
+    slider.max = '100'
+    slider.step = '1'
+    slider.value = String(pctToPos(pct))
+    // naturalWidth is 0 while the image is still loading — disable until then
+    // (the load listener below re-enables it once it's ready).
+    slider.disabled = img.naturalWidth === 0
     slider.title = 'Image size'
 
     const applyStyle = (p: number): void => {
       label.textContent = `${p}%`
-      if (!naturalW) return
-      img.style.width = `${Math.round((naturalW * p) / 100)}px`
-      img.style.height = naturalH
-        ? `${Math.round((naturalH * p) / 100)}px`
-        : ''
+      const nw = img.naturalWidth
+      const nh = img.naturalHeight
+      if (!nw) return
+      img.style.width = `${Math.round((nw * p) / 100)}px`
+      img.style.height = nh ? `${Math.round((nh * p) / 100)}px` : ''
+      img.style.maxWidth = 'none'
     }
     applyStyle(pct)
 
-    slider.addEventListener('input', () => applyStyle(Number(slider.value)))
-    slider.addEventListener('change', () => {
-      pct = Number(slider.value)
-      if (!naturalW) return
-      const w = Math.max(1, Math.round((naturalW * pct) / 100))
-      const h = naturalH ? Math.max(1, Math.round((naturalH * pct) / 100)) : null
-      writeImageSize(view, this.sourceFrom, w, h)
+    slider.addEventListener('input', () => {
+      pct = posToPct(Number(slider.value))
+      applyStyle(pct)
     })
+    slider.addEventListener('change', () => {
+      const nw = img.naturalWidth
+      const nh = img.naturalHeight
+      if (!nw) return
+      const w = Math.max(1, Math.round((nw * pct) / 100))
+      const h = nh ? Math.max(1, Math.round((nh * pct) / 100)) : null
+      rewriteImageNode(view, this.sourceFrom, { width: w, height: h })
+    })
+
+    const flipBtn = (bit: 'h' | 'v', glyph: string, title: string): HTMLButtonElement => {
+      const btn = document.createElement('button')
+      btn.className = 'cm-md-image-toolbar-btn'
+      btn.textContent = glyph
+      btn.title = title
+      if (flip.includes(bit)) btn.classList.add('active')
+      btn.addEventListener('click', (e) => {
+        e.preventDefault()
+        flip = flip.includes(bit)
+          ? (flip.replace(bit, '') as typeof flip)
+          : ((flip + bit) as typeof flip)
+        // Deterministic order for hv regardless of toggle sequence.
+        if (flip === 'vh') flip = 'hv'
+        img.style.transform = flipTransform(flip)
+        btn.classList.toggle('active', flip.includes(bit))
+        rewriteImageNode(view, this.sourceFrom, { flip: flip || null })
+      })
+      return btn
+    }
 
     const reset = document.createElement('button')
     reset.className = 'cm-md-image-toolbar-btn'
-    reset.textContent = '↺'
+    reset.textContent = '1:1'
     reset.title = 'Reset to original size'
     reset.addEventListener('click', (e) => {
       e.preventDefault()
-      writeImageSize(view, this.sourceFrom, null, null)
+      pct = 100
+      slider.value = String(pctToPos(100))
+      applyStyle(100)
+      rewriteImageNode(view, this.sourceFrom, { width: null, height: null })
     })
 
-    toolbar.append(label, slider, reset)
+    toolbar.append(
+      label,
+      slider,
+      flipBtn('h', '⇋', 'Flip horizontally'),
+      flipBtn('v', '⤒', 'Flip vertically'),
+      reset
+    )
 
     // "Show in file manager" only for local files.
     const cached = imageCache.get(this.cacheKey())
@@ -539,6 +638,24 @@ export class ImageWidget extends WidgetType {
         window.api.showItemInFolder(cached.absPath!)
       })
       toolbar.appendChild(reveal)
+    }
+
+    // If the image loads while the toolbar is open, re-enable the slider.
+    if (img.naturalWidth === 0) {
+      img.addEventListener(
+        'load',
+        () => {
+          if (toolbar.isConnected && slider.disabled) {
+            slider.disabled = false
+            // naturalWidth is only known now — re-derive before applying so a
+            // committed size isn't overwritten with a stale percentage.
+            pct = clampPct(derivePct())
+            slider.value = String(pctToPos(pct))
+            applyStyle(pct)
+          }
+        },
+        { once: true }
+      )
     }
     return toolbar
   }
