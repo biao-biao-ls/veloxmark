@@ -41,6 +41,11 @@ export interface Preferences {
   copyExternalImages: boolean
   /** Download pasted/dropped remote image URLs into assets instead of keeping them. */
   downloadRemoteImages: boolean
+  // ---- folder workspace (P07) ------------------------------------------------
+  /** File-tree entry names to hide; `*` / `?` wildcards, matched in main. */
+  folderIgnoreNames: string[]
+  /** Include `.`-prefixed entries in the file tree (still subject to ignores). */
+  showHiddenFiles: boolean
 }
 
 export interface SessionState {
@@ -73,7 +78,9 @@ export const DEFAULT_PREFERENCES: Preferences = {
   attachmentDirName: 'assets',
   imageRenameMode: 'timestamp',
   copyExternalImages: true,
-  downloadRemoteImages: false
+  downloadRemoteImages: false,
+  folderIgnoreNames: ['node_modules', '.git', '.svn', '.hg', 'dist', 'out', 'build', '.DS_Store'],
+  showHiddenFiles: false
 }
 
 const DEFAULT_SESSION: SessionState = {
@@ -157,7 +164,18 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
         : DEFAULT_PREFERENCES.attachmentDirName,
     imageRenameMode: p.imageRenameMode === 'keep' ? 'keep' : 'timestamp',
     copyExternalImages: p.copyExternalImages !== false,
-    downloadRemoteImages: p.downloadRemoteImages === true
+    downloadRemoteImages: p.downloadRemoteImages === true,
+    folderIgnoreNames: Array.isArray(p.folderIgnoreNames)
+      ? [
+          ...new Set(
+            p.folderIgnoreNames
+              .filter((n): n is string => typeof n === 'string')
+              .map((n) => n.trim())
+              .filter((n) => n !== '')
+          )
+        ]
+      : [...DEFAULT_PREFERENCES.folderIgnoreNames],
+    showHiddenFiles: p.showHiddenFiles === true
   }
 }
 

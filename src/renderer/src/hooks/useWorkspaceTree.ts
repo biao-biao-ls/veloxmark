@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type RefObject } from 'react'
-import type { DirNode } from '../../../../electron/shared/api'
+import type { DirNode, FolderScanOptions } from '../../../../electron/shared/api'
 import type { TreeMenuRequest } from '../components/FileTree'
 import type { TreeMenuItem } from '../components/TreeMenu'
 import { dialog } from '../components/Dialog'
-import { patchSession } from '../preferences/store'
+import { getPreferences, getSession, patchSession } from '../preferences/store'
 import type { SidebarMode } from './useFileOps'
 
 interface Args {
@@ -18,9 +18,15 @@ interface Args {
   setShowOutline: (visible: boolean) => void
 }
 
+/** Current P07 scan options, pushed to main with every watchFolder. */
+export function folderScanOptions(): FolderScanOptions {
+  const p = getPreferences()
+  return { ignoreNames: p.folderIgnoreNames, showHiddenFiles: p.showHiddenFiles }
+}
+
 /**
  * Folder workspace state: markdown file tree, watcher subscription, tree
- * CRUD (new/rename/delete) and the tree context menu.
+ * CRUD (new/rename/delete/move) and the tree context menu.
  */
 export function useWorkspaceTree({
   filePathRef,
@@ -49,7 +55,7 @@ export function useWorkspaceTree({
       setShowOutline(true)
       // P03: remember for session restore.
       patchSession({ lastFolderPath: dirPath })
-      await window.api.watchFolder(dirPath)
+      await window.api.watchFolder(dirPath, folderScanOptions())
     },
     [setSidebarMode, setShowOutline]
   )
@@ -89,9 +95,38 @@ export function useWorkspaceTree({
     return dir.replace(/[\\/]+$/, '') + sep + name
   }, [])
 
-  // ---- tree operations (new / rename / delete) ------------------------------
+  // ---- tree operations (new / rename / delete / move) -----------------------
   // Tree refresh after each op comes from the watcher's folder:tree push —
   // no manual rescan here.
+
+  /**
+   * Point the editor and session state at a path that just moved from
+   * oldPath to newPath (rename or drag-move; the moved node may be the open
+   * file itself or an ancestor folder of it). Also repairs the recent-files
+   * list so menus don't keep dead paths.
+   */
+  const followMovedPath = useCallback(
+    (oldPath: string, newPath: string) => {
+      const sep = window.api.platform === 'win32' ? '\\' : '/'
+      const current = filePathRef.current
+      if (current === oldPath) {
+        setFilePath(newPath)
+        syncAppState(newPath, dirty)
+      } else if (current && current.startsWith(oldPath + sep)) {
+        const moved = newPath + current.slice(oldPath.length)
+        setFilePath(moved)
+        syncAppState(moved, dirty)
+      }
+      const mapPath = (p: string): string =>
+        p === oldPath ? newPath : p.startsWith(oldPath + sep) ? newPath + p.slice(oldPath.length) : p
+      const s = getSession()
+      patchSession({
+        recentFiles: [...new Set(s.recentFiles.map(mapPath))],
+        ...(s.lastFilePath ? { lastFilePath: mapPath(s.lastFilePath) } : {})
+      })
+    },
+    [filePathRef, dirty, setFilePath, syncAppState]
+  )
 
   const treeNewFile = useCallback(
     async (dirPath: string) => {
@@ -106,6 +141,23 @@ export function useWorkspaceTree({
         await window.api.createFile(joinPath(dirPath, fileName))
       } catch (err) {
         await dialog.alert(`Could not create file: ${err instanceof Error ? err.message : err}`)
+      }
+    },
+    [joinPath]
+  )
+
+  const treeNewFolder = useCallback(
+    async (dirPath: string) => {
+      const name = await dialog.prompt({ title: 'New Folder', message: 'New folder name:' })
+      if (!name) return
+      if (/[/\\]/.test(name) || name === '.' || name === '..') {
+        await dialog.alert('Invalid folder name.')
+        return
+      }
+      try {
+        await window.api.mkdirPath(joinPath(dirPath, name))
+      } catch (err) {
+        await dialog.alert(`Could not create folder: ${err instanceof Error ? err.message : err}`)
       }
     },
     [joinPath]
@@ -132,21 +184,25 @@ export function useWorkspaceTree({
         return
       }
       // keep the open editor attached when its file (or an ancestor folder) moves
-      const current = filePathRef.current
-      if (current === node.path) {
-        setFilePath(newPath)
-        syncAppState(newPath, dirty)
-      } else if (
-        node.isDir &&
-        current &&
-        current.startsWith(node.path + (window.api.platform === 'win32' ? '\\' : '/'))
-      ) {
-        const moved = newPath + current.slice(node.path.length)
-        setFilePath(moved)
-        syncAppState(moved, dirty)
+      followMovedPath(node.path, newPath)
+    },
+    [followMovedPath]
+  )
+
+  // P07: drag-drop — move srcPath into destDir (main validates the subtree).
+  const treeMove = useCallback(
+    async (srcPath: string, destDir: string) => {
+      const sep = window.api.platform === 'win32' ? '\\' : '/'
+      // drop into itself or its own subtree — refuse before hitting IPC
+      if (destDir === srcPath || destDir.startsWith(srcPath + sep)) return
+      try {
+        const newPath = await window.api.movePath(srcPath, destDir)
+        followMovedPath(srcPath, newPath)
+      } catch (err) {
+        await dialog.alert(`Could not move: ${err instanceof Error ? err.message : err}`)
       }
     },
-    [filePathRef, dirty, setFilePath, syncAppState]
+    [followMovedPath]
   )
 
   const treeDelete = useCallback(
@@ -176,21 +232,58 @@ export function useWorkspaceTree({
     [filePathRef, dirty, setFilePath, syncAppState]
   )
 
+  const treeCopyPath = useCallback((node: DirNode | null) => {
+    const target = node ? node.path : folderPath
+    if (target) void window.api.clipboardWrite(target)
+  }, [folderPath])
+
+  const treeCopyRelativePath = useCallback(
+    (node: DirNode) => {
+      if (!folderPath) return
+      const sep = window.api.platform === 'win32' ? '\\' : '/'
+      const prefix = folderPath.endsWith(sep) ? folderPath : folderPath + sep
+      void window.api.clipboardWrite(node.path.startsWith(prefix) ? node.path.slice(prefix.length) : node.path)
+    },
+    [folderPath]
+  )
+
   const treeMenuItems: TreeMenuItem[] = useMemo(() => {
-    if (!treeMenu) return []
+    if (!treeMenu || !folderPath) return []
     const { node } = treeMenu
+    // Root: right-click on the empty area under the tree.
+    if (!node) {
+      return [
+        { label: 'New File', action: () => void treeNewFile(folderPath) },
+        { label: 'New Folder', action: () => void treeNewFolder(folderPath) },
+        { label: 'Copy Path', action: () => treeCopyPath(null) }
+      ]
+    }
     if (node.isDir) {
       return [
         { label: 'New File', action: () => void treeNewFile(node.path) },
+        { label: 'New Folder', action: () => void treeNewFolder(node.path) },
+        { label: 'Copy Path', action: () => treeCopyPath(node) },
+        { label: 'Copy Relative Path', action: () => treeCopyRelativePath(node) },
         { label: 'Rename', action: () => void treeRename(node) },
         { label: 'Delete', danger: true, action: () => void treeDelete(node) }
       ]
     }
     return [
+      { label: 'Copy Path', action: () => treeCopyPath(node) },
+      { label: 'Copy Relative Path', action: () => treeCopyRelativePath(node) },
       { label: 'Rename', action: () => void treeRename(node) },
       { label: 'Delete', danger: true, action: () => void treeDelete(node) }
     ]
-  }, [treeMenu, treeNewFile, treeRename, treeDelete])
+  }, [
+    treeMenu,
+    folderPath,
+    treeNewFile,
+    treeNewFolder,
+    treeCopyPath,
+    treeCopyRelativePath,
+    treeRename,
+    treeDelete
+  ])
 
   // Watcher pushes a full tree on every (debounced) FS change.
   useEffect(() => {
@@ -212,6 +305,8 @@ export function useWorkspaceTree({
     openFolder,
     openFolderFromSystem,
     openFileFromTree,
-    treeNewFile
+    treeNewFile,
+    treeNewFolder,
+    treeMove
   }
 }

@@ -7,6 +7,7 @@ import TreeMenu from './components/TreeMenu'
 import Titlebar from './components/Titlebar'
 import Preferences from './components/Preferences'
 import ExportDialog from './components/ExportDialog'
+import QuickOpen from './components/QuickOpen'
 import { DialogHost } from './components/Dialog'
 import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch } from './editor/setup'
 import { invalidateImageCache } from './editor/widgets'
@@ -69,6 +70,7 @@ export default function App(): React.JSX.Element {
   const [sidebarWidth, setSidebarWidth] = useState(() => getSession().sidebarWidth ?? 240)
   const [sidebarResizing, setSidebarResizing] = useState(false)
   const [showPreferences, setShowPreferences] = useState(false)
+  const [showQuickOpen, setShowQuickOpen] = useState(false)
 
   const updateOutline = useCallback(() => {
     const view = viewRef.current
@@ -199,6 +201,16 @@ export default function App(): React.JSX.Element {
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // ---- P07: folder-tree scan options live in preferences (renderer) but are
+  // applied in main — push them whenever they change (main re-scans if a
+  // folder is being watched).
+  useEffect(() => {
+    void window.api.setFolderOptions({
+      ignoreNames: prefs.folderIgnoreNames,
+      showHiddenFiles: prefs.showHiddenFiles
+    })
+  }, [prefs.folderIgnoreNames, prefs.showHiddenFiles])
 
   // ---- editor preference toggles (live reconfigure) --------------------------
   useEffect(() => {
@@ -337,7 +349,8 @@ export default function App(): React.JSX.Element {
     openPreferences: () => setShowPreferences(true),
     openRecentFile: fileOps.openRecentFile,
     clearRecentFiles,
-    exportDocument: exportOps.openExport
+    exportDocument: exportOps.openExport,
+    openQuickOpen: () => setShowQuickOpen(true)
   })
 
   // Fullscreen state is pushed from main (traffic-light / F11 transitions).
@@ -386,6 +399,20 @@ export default function App(): React.JSX.Element {
                   activePath={filePath}
                   onOpen={(path) => void workspace.openFileFromTree(path)}
                   onContextMenu={workspace.setTreeMenu}
+                  onMove={(src, dest) => void workspace.treeMove(src, dest)}
+                />
+                {/* P07: right-click on the empty area under the tree → root menu
+                    (rows stopPropagation, so only bare clicks land here). */}
+                <div
+                  className="filetree-blank"
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    workspace.setTreeMenu({
+                      x: e.clientX,
+                      y: e.clientY,
+                      node: null
+                    })
+                  }}
                 />
                 {workspace.treeMenu && (
                   <TreeMenu
@@ -424,6 +451,13 @@ export default function App(): React.JSX.Element {
         <div className="editor-host" ref={hostRef} />
       </div>
       <Preferences open={showPreferences} onClose={() => setShowPreferences(false)} />
+      <QuickOpen
+        open={showQuickOpen}
+        nodes={workspace.folderTree}
+        folderPath={workspace.folderPath}
+        onOpenFile={(path) => void workspace.openFileFromTree(path)}
+        onClose={() => setShowQuickOpen(false)}
+      />
       <ExportDialog
         format={exportOps.exportFormat}
         defaults={exportOps.exportOptions}

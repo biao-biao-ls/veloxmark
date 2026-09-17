@@ -46,6 +46,8 @@ export interface CommandOps {
   clearRecentFiles: () => void
   /** P04: open the export options dialog for the given format. */
   exportDocument: (format: 'pdf' | 'html') => void
+  /** P07: open the Quick Open (fuzzy file search) modal. */
+  openQuickOpen: () => void
 }
 
 /** One validated Open Recent entry (existence decided by the App). */
@@ -80,6 +82,13 @@ export function buildCommands(ops: CommandOps): Command[] {
       shortcut: 'Ctrl+Shift+O',
       bindGlobal: true,
       run: () => void ops.openFolder()
+    },
+    {
+      id: 'quickOpen',
+      label: 'Quick Open…',
+      shortcut: 'Ctrl+P',
+      bindGlobal: true,
+      run: () => ops.openQuickOpen()
     },
     {
       id: 'saveFile',
@@ -245,6 +254,7 @@ const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
       'newFile',
       'openFile',
       'openFolder',
+      'quickOpen',
       { recent: true },
       { separator: true },
       'saveFile',

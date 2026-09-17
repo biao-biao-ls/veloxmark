@@ -2,14 +2,57 @@ import { ipcMain } from 'electron'
 import { watch, type FSWatcher } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { basename, isAbsolute, join } from 'node:path'
-import type { DirNode } from '../shared/api'
+import type { DirNode, FolderScanOptions } from '../shared/api'
 import { IMAGE_FILE_EXT, queueImageChange, stopImageChangeBroadcast } from './image'
 import type { GetWindow } from './index'
 
 const MD_EXT = /\.(md|markdown|mdown|txt)$/i
-// Common noise that never contains a user's notes; keeps deep scans fast.
-const SKIP_DIRS = new Set(['node_modules', '.git', '.svn', '.hg', 'dist', 'out', 'build'])
 const MAX_SCAN_DEPTH = 8
+
+// P07: scan options arrive from the renderer's preferences (localStorage lives
+// renderer-side). Defaults must stay in sync with DEFAULT_PREFERENCES in
+// src/renderer/src/preferences/store.ts.
+const DEFAULT_FOLDER_OPTIONS: FolderScanOptions = {
+  ignoreNames: ['node_modules', '.git', '.svn', '.hg', 'dist', 'out', 'build', '.DS_Store'],
+  showHiddenFiles: false
+}
+
+let scanOptions: FolderScanOptions = { ...DEFAULT_FOLDER_OPTIONS, ignoreNames: [...DEFAULT_FOLDER_OPTIONS.ignoreNames] }
+let ignoreMatchers: RegExp[] = scanOptions.ignoreNames.map(nameToMatcher)
+
+/** Compile a name pattern (`*` / `?` wildcards) into an anchored matcher. */
+function nameToMatcher(pattern: string): RegExp {
+  const escaped = pattern
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*/g, '.*')
+    .replace(/\?/g, '.')
+  return new RegExp(`^${escaped}$`, 'i')
+}
+
+function setScanOptions(options: Partial<FolderScanOptions> | undefined): void {
+  if (!options) return
+  const ignoreNames = Array.isArray(options.ignoreNames)
+    ? options.ignoreNames.filter((n): n is string => typeof n === 'string' && n.trim() !== '')
+    : scanOptions.ignoreNames
+  scanOptions = {
+    ignoreNames,
+    showHiddenFiles: options.showHiddenFiles === true
+  }
+  ignoreMatchers = scanOptions.ignoreNames.map(nameToMatcher)
+}
+
+/** True when the entry name matches the user's ignore list. */
+function isIgnored(name: string): boolean {
+  return ignoreMatchers.some((m) => m.test(name))
+}
+
+/** Apply the hidden/ignore rules to one fs path (relative or absolute). */
+function pathFiltered(relPath: string): boolean {
+  const segments = relPath.split(/[\\/]+/).filter(Boolean)
+  return segments.some(
+    (seg) => (!scanOptions.showHiddenFiles && seg.startsWith('.')) || isIgnored(seg)
+  )
+}
 
 async function listMarkdownTree(dirPath: string, depth = 0): Promise<DirNode[]> {
   if (depth > MAX_SCAN_DEPTH) return []
@@ -22,10 +65,10 @@ async function listMarkdownTree(dirPath: string, depth = 0): Promise<DirNode[]> 
   const dirs: DirNode[] = []
   const files: DirNode[] = []
   for (const entry of entries) {
-    if (entry.name.startsWith('.')) continue
+    if (!scanOptions.showHiddenFiles && entry.name.startsWith('.')) continue
+    if (isIgnored(entry.name)) continue
     const full = join(dirPath, entry.name)
     if (entry.isDirectory()) {
-      if (SKIP_DIRS.has(entry.name)) continue
       const children = await listMarkdownTree(full, depth + 1)
       // keep a folder only when it (recursively) holds markdown files
       if (children.length > 0) dirs.push({ name: entry.name, path: full, isDir: true, children })
@@ -73,15 +116,21 @@ export function registerFolderIpc(getWindow: GetWindow): void {
     return listMarkdownTree(dirPath)
   })
 
-  ipcMain.handle('folder:watch', async (e, dirPath: string) => {
+  ipcMain.handle('folder:watch', async (e, dirPath: string, options?: FolderScanOptions) => {
     // A window owns exactly one watched folder; replace any previous watcher.
     stopFolderWatcher()
+    setScanOptions(options)
     watchedFolder = dirPath
     try {
       folderWatcher = watch(dirPath, { recursive: true }, (_event, changedPath) => {
         // Ignore editor temp files (vim/emacs swap, atomic-save .tmp siblings).
+        // Dotfiles are handled by pathFiltered below so that hidden .md files
+        // still refresh the tree when "show hidden files" is on.
         const name = basename(changedPath ?? '')
-        if (name.startsWith('.') || name.endsWith('~') || name.endsWith('.swp')) return
+        if (name.endsWith('~') || name.endsWith('.swp') || name.endsWith('.tmp')) return
+        // Changes inside ignored/hidden trees can't affect the pushed tree —
+        // skip them before scheduling a full rescan (node_modules churn etc.).
+        if (changedPath && pathFiltered(changedPath)) return
         // P05: image files never appear in the markdown tree — broadcast them
         // on their own channel so the editor can invalidate its image cache.
         if (changedPath && IMAGE_FILE_EXT.test(name)) {
@@ -115,5 +164,11 @@ export function registerFolderIpc(getWindow: GetWindow): void {
   ipcMain.handle('folder:unwatch', () => {
     stopFolderWatcher()
     return true
+  })
+
+  // P07: preferences changed — swap the rules and refresh the live tree.
+  ipcMain.handle('folder:setOptions', (_e, options: FolderScanOptions) => {
+    setScanOptions(options)
+    void pushFolderTree()
   })
 }

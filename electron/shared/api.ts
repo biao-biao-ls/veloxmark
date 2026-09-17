@@ -58,6 +58,14 @@ export interface ResolvedImageSrc {
   absPath: string | null
 }
 
+/** Folder-tree scan options pushed from the renderer's preferences (P07). */
+export interface FolderScanOptions {
+  /** Entry names excluded from the tree; supports `*` / `?` wildcards. */
+  ignoreNames: string[]
+  /** Include `.`-prefixed files/dirs (still subject to ignoreNames). */
+  showHiddenFiles: boolean
+}
+
 /** Options for printToPDF-based export (P04). */
 export interface PdfExportOptions {
   pageSize: 'A4' | 'Letter'
@@ -74,11 +82,18 @@ export interface RendererApi {
   openFile(): Promise<OpenFileResult | null>
   openFolder(): Promise<{ folderPath: string } | null>
   listDirectory(dirPath: string): Promise<DirNode[]>
-  watchFolder(dirPath: string): Promise<boolean>
+  /** options, when given, replace the current scan options before watching. */
+  watchFolder(dirPath: string, options?: FolderScanOptions): Promise<boolean>
   unwatchFolder(): Promise<boolean>
+  /** P07: update ignore/hidden rules; re-pushes the tree when watching. */
+  setFolderOptions(options: FolderScanOptions): Promise<void>
   createFile(filePath: string): Promise<boolean>
+  /** P07: create a directory; fails when the path already exists. */
+  mkdirPath(dirPath: string): Promise<boolean>
   deletePath(targetPath: string): Promise<boolean>
   renamePath(oldPath: string, newPath: string): Promise<boolean>
+  /** P07: move a file/dir into destDir; resolves with the new full path. */
+  movePath(srcPath: string, destDir: string): Promise<string>
   pathExists(filePath: string): Promise<boolean>
   onFolderTree(callback: (tree: DirNode[]) => void): () => void
   showSaveDialog(defaultPath?: string, filters?: FileFilter[]): Promise<string | null>
