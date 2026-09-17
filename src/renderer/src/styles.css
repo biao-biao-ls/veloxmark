@@ -1382,6 +1382,97 @@ body {
   padding: 0.1em 0.3em;
 }
 
+/* P10: table cell editing — handles, active cell, nested editor */
+
+.cm-md-table-wrap {
+  cursor: default;
+}
+
+.cm-md-table-editing .cm-md-table {
+  width: auto;
+  min-width: 100%;
+}
+
+.cm-md-table-editing td,
+.cm-md-table-editing th {
+  cursor: text;
+}
+
+.cm-md-table td.cm-md-table-cell-editing,
+.cm-md-table th.cm-md-table-cell-editing {
+  outline: 2px solid var(--accent, #4a9eed);
+  outline-offset: -2px;
+  background: var(--bg);
+  min-width: 3em;
+}
+
+.cm-md-table-cell-editing .cm-editor {
+  min-width: 2em;
+}
+
+.cm-md-handle-cell {
+  border: none !important;
+  background: transparent !important;
+  padding: 2px 4px !important;
+  vertical-align: middle;
+  white-space: nowrap;
+  width: 1%;
+}
+
+.cm-md-handle-row .cm-md-handle-cell {
+  padding-bottom: 0 !important;
+}
+
+.cm-md-table-handle-btn {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  line-height: 16px;
+  margin: 0 1px;
+  padding: 0;
+  font-size: 12px;
+  text-align: center;
+  color: var(--fg);
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0.65;
+}
+
+.cm-md-table-handle-btn:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--code-bg);
+}
+
+.cm-md-table-handle-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.cm-md-col-handle-cell {
+  position: relative;
+}
+
+.cm-md-col-grip {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 7px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 2;
+}
+
+.cm-md-col-grip:hover {
+  background: var(--accent, #4a9eed);
+  opacity: 0.5;
+}
+
+.cm-md-table-menu {
+  z-index: 3000;
+}
+
 /* tasks */
 
 .cm-md-task {

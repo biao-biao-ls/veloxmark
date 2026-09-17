@@ -32,7 +32,10 @@ import type { RecentItem } from './commands'
 // / __veloxExport pattern; nothing in the app reads it.
 declare global {
   interface Window {
-    __veloxEditor: { view: EditorView } | null
+    __veloxEditor: {
+      view: EditorView
+      applyLivePreviewConfig: typeof updateLivePreviewConfig
+    } | null
   }
 }
 window.__veloxEditor = null
@@ -305,7 +308,9 @@ export default function App(): React.JSX.Element {
     })
     viewRef.current = view
     // CDP smoke-test handle (scripts/cdp-p05.mjs) — no other runtime consumers.
-    window.__veloxEditor = { view }
+    // applyLivePreviewConfig lets CDP toggle source/focus/typewriter modes the
+    // same way the prefs effect below does, without going through the store.
+    window.__veloxEditor = { view, applyLivePreviewConfig: updateLivePreviewConfig }
     updateOutline()
 
     // Editor is mounted — main may now deliver queued system open-file paths.

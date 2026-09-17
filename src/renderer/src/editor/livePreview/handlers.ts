@@ -7,10 +7,11 @@ import {
   InlineMathWidget,
   MathBlockWidget,
   MermaidWidget,
-  TableWidget,
   TaskWidget,
   parseImageMarkdown
 } from '../widgets'
+import { TableWidget } from '../table/widget'
+import { getTableEdit } from '../table/state'
 import type { LivePreviewConfig } from './config'
 
 /**
@@ -249,16 +250,26 @@ export function enterQuoteMark(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
 // ---- tables -----------------------------------------------------------------
 
 export function enterTable(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
-  if (ctx.blockTouched(node.from, node.to)) return false
   const doc = ctx.state.doc
   const lineFrom = doc.lineAt(node.from).from
   const lineTo = doc.lineAt(node.to).to
+  // P10: while a cell of THIS table is being edited the widget stays mounted
+  // (cell-edit state drives the DOM); otherwise keep the V1 escape hatch —
+  // a CM cursor inside the table range reveals the raw source.
+  const edit = getTableEdit(ctx.state)
+  const active = edit.active
+  const isActive = active != null && active.tableFrom === lineFrom
+  if (!isActive && ctx.blockTouched(node.from, node.to)) return false
   const source = ctx.state.sliceDoc(lineFrom, lineTo)
   ctx.decos.push({
     from: lineFrom,
     to: lineTo,
     value: Decoration.replace({
-      widget: new TableWidget(source, node.from, node.to),
+      widget: new TableWidget(source, lineFrom, lineTo, {
+        active: isActive ? { row: active.row, col: active.col, caret: active.caret } : null,
+        colWidths: edit.colWidths.get(lineFrom),
+        theme: ctx.config.theme
+      }),
       block: true
     })
   })
