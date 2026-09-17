@@ -952,39 +952,44 @@ body {
   line-height: 1.4;
 }
 
+/* NOTE: line decorations must not carry vertical margins — CodeMirror's
+   heightmap measures border boxes only, so any margin on a .cm-line shifts
+   the DOM away from CM's coordinate mapping and posAtCoords starts landing
+   clicks at the wrong position (end of line / next line). Vertical spacing
+   is done with padding instead; horizontal margins are fine. */
+
 .cm-md-h1 {
   font-size: 2em;
-  margin-top: 0.67em !important;
-  margin-bottom: 0.5em;
+  padding-top: 0.67em !important;
+  padding-bottom: 0.7em !important; /* 0.5em gap + 0.2em before the border */
   border-bottom: 1px solid var(--border);
-  padding-bottom: 0.2em;
 }
 
 .cm-md-h2 {
   font-size: 1.5em;
-  margin-top: 0.8em !important;
-  margin-bottom: 0.4em;
+  padding-top: 0.8em !important;
+  padding-bottom: 0.4em !important;
 }
 
 .cm-md-h3 {
   font-size: 1.25em;
-  margin-top: 0.8em !important;
+  padding-top: 0.8em !important;
 }
 
 .cm-md-h4 {
   font-size: 1.1em;
-  margin-top: 0.7em !important;
+  padding-top: 0.7em !important;
 }
 
 .cm-md-h5 {
   font-size: 1em;
-  margin-top: 0.6em !important;
+  padding-top: 0.6em !important;
 }
 
 .cm-md-h6 {
   font-size: 0.9em;
   color: var(--fg-dim);
-  margin-top: 0.6em !important;
+  padding-top: 0.6em !important;
 }
 
 .cm-md-strong {
@@ -1027,7 +1032,7 @@ body {
 }
 
 .cm-md-list-d1 {
-  margin-top: 0.15em;
+  padding-top: 0.15em;
 }
 
 .cm-md-list-d2 {
@@ -1079,9 +1084,16 @@ body {
 
 /* code blocks */
 
+/* Vertical gap around block widgets lives on the .cm-md-block-gap wrapper as
+   padding (see widgets.ts wrapWithGap) — margin on the widget box itself is
+   invisible to CodeMirror's heightmap and shifts click mapping below it. */
+.cm-md-block-gap {
+  padding: 6px 0;
+}
+
 .cm-md-code-block {
   position: relative;
-  margin: 6px 48px;
+  margin: 0 48px;
   border-radius: 6px;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -1120,7 +1132,7 @@ body {
 
 .cm-md-mermaid {
   position: relative;
-  margin: 8px 48px;
+  margin: 0 48px;
   padding: 16px;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -1145,7 +1157,7 @@ body {
 
 .cm-md-math-block {
   position: relative;
-  margin: 8px 48px;
+  margin: 0 48px;
   padding: 8px 0;
   overflow-x: auto;
   cursor: pointer;
@@ -1301,7 +1313,7 @@ body {
 
 .cm-md-table-wrap {
   position: relative;
-  margin: 8px 48px;
+  margin: 0 48px;
   overflow-x: auto;
   cursor: pointer;
 }

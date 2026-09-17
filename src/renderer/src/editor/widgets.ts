@@ -160,6 +160,22 @@ export abstract class BlockWidget extends WidgetType {
     })
   }
 
+  /**
+   * Wrap a block widget's visual box in an outer element that carries the
+   * vertical gap as *padding*. CodeMirror measures only border boxes, so a
+   * margin on the widget box itself would not be counted in the heightmap
+   * and every line below the widget would click-map to the wrong position.
+   * Click-to-source lives on the outer element: mousedowns on the inner box
+   * bubble up, and toolbar buttons stopPropagation before they get here.
+   */
+  protected wrapWithGap(el: HTMLElement, view: EditorView): HTMLElement {
+    const outer = document.createElement('div')
+    outer.className = 'cm-md-block-gap'
+    outer.appendChild(el)
+    this.mountClickToSource(outer, view)
+    return outer
+  }
+
   /** Build the hover toolbar (top-right) and append it to `wrap`. */
   protected attachBlockToolbar(wrap: HTMLElement, items: BlockToolbarItem[]): void {
     const bar = document.createElement('div')
@@ -252,8 +268,7 @@ export class CodeBlockWidget extends BlockWidget {
         onClick: (btn) => void this.copyWithFeedback(this.code, btn)
       }
     ])
-    this.mountClickToSource(wrap, view)
-    return wrap
+    return this.wrapWithGap(wrap, view)
   }
 }
 
@@ -307,8 +322,7 @@ export class MermaidWidget extends BlockWidget {
         body.textContent = `Mermaid error: ${err instanceof Error ? err.message : String(err)}`
       })
 
-    this.mountClickToSource(wrap, view)
-    return wrap
+    return this.wrapWithGap(wrap, view)
   }
 }
 
@@ -336,8 +350,7 @@ export class MathBlockWidget extends BlockWidget {
         onClick: (btn) => void this.copyWithFeedback(this.tex, btn)
       }
     ])
-    this.mountClickToSource(el, view)
-    return el
+    return this.wrapWithGap(el, view)
   }
 }
 
@@ -843,8 +856,7 @@ export class TableWidget extends BlockWidget {
         onClick: (btn) => void this.copyWithFeedback(this.source, btn)
       }
     ])
-    this.mountClickToSource(wrap, view)
-    return wrap
+    return this.wrapWithGap(wrap, view)
   }
 }
 
