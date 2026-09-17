@@ -145,8 +145,27 @@ export function enterLink(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
 
 // ---- images -----------------------------------------------------------------
 
+/**
+ * Image renderer (P05):
+ * ```
+ * ![alt](src)
+ * ![alt](src =WxH)
+ * ![alt](src =WxH){flip=hv}
+ * ```
+ * Always a widget — broken images show a dashed placeholder.
+ *
+ * Collapse rule (deliberately different from blockTouched's inclusive test):
+ * the widget hides only when the selection lies strictly inside the image
+ * span. A cursor sitting exactly on the node edges — the state a pasted image
+ * is left in, and the state needed to click it — keeps the widget rendered.
+ */
 export function enterImage(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
-  if (!ctx.blockTouched(node.from, node.to)) {
+  const inside = ctx.state.selection.ranges.some(
+    (r) =>
+      (r.from > node.from && r.from < node.to) ||
+      (r.to > node.from && r.to < node.to)
+  )
+  if (!inside) {
     const parsed = parseImageMarkdown(nodeText(ctx.state, node))
     if (parsed) {
       ctx.decos.push({

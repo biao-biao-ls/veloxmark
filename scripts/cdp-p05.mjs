@@ -217,6 +217,28 @@ async function main() {
     `window.__veloxEditor.view.state.doc.toString().includes('=2x2')`
   ))
 
+  // ---- flip toggles write {flip=…} and apply the transform live ------------------
+  await evaluate(`(() => {
+    const wrap = document.querySelector('.cm-md-image-wrap.cm-md-image-selected')
+    ;[...wrap.querySelectorAll('.cm-md-image-toolbar-btn')].find(b => b.title === 'Flip horizontally').click()
+  })()`)
+  check('flip-h writes {flip=h}', await waitFor(
+    `window.__veloxEditor.view.state.doc.toString().includes('{flip=h}')`
+  ))
+  check(
+    'flip-h applies scaleX(-1)',
+    (await evaluate(`
+      document.querySelector('.cm-md-image-wrap.cm-md-image-selected img')?.style.transform ?? ''
+    `)) === 'scaleX(-1)'
+  )
+  await evaluate(`(() => {
+    const wrap = document.querySelector('.cm-md-image-wrap.cm-md-image-selected')
+    ;[...wrap.querySelectorAll('.cm-md-image-toolbar-btn')].find(b => b.title === 'Flip vertically').click()
+  })()`)
+  check('flip-hv composes to {flip=hv}', await waitFor(
+    `window.__veloxEditor.view.state.doc.toString().includes('{flip=hv}')`
+  ))
+
   // ---- save + reopen keeps the size ---------------------------------------------
   await evaluate(`window.api.writeFile(${JSON.stringify(FIXTURE_PATH)}, window.__veloxEditor.view.state.doc.toString())`)
   await send('Page.reload')
@@ -226,6 +248,9 @@ async function main() {
   ))
   check('reopen: size kept on widget', await waitFor(`
     [...document.querySelectorAll('.cm-md-image')].some(i => i.style.width === '2px')
+  `))
+  check('reopen: flip transform kept on widget', await waitFor(`
+    [...document.querySelectorAll('.cm-md-image')].some(i => i.style.transform.includes('scaleX(-1)') && i.style.transform.includes('scaleY(-1)'))
   `))
 
   // ---- watcher invalidation ------------------------------------------------------
@@ -252,6 +277,18 @@ async function main() {
   check('paste local path inserts assets ref', await waitFor(
     `/!\\[\\]\\(assets\\/img-\\d{8}-\\d{6}/.test(window.__veloxEditor.view.state.doc.toString())`
   ))
+  // Regression: a pasted image leaves the cursor at the node end — the widget
+  // must stay rendered (clickable), not collapse to source.
+  check('pasted image renders widget with cursor at end', await waitFor(`
+    (() => {
+      const view = window.__veloxEditor.view
+      const head = view.state.selection.main.head
+      return [...document.querySelectorAll('.cm-md-image-wrap')].some((w) => {
+        const r = w.getBoundingClientRect()
+        return r.width > 0 && head >= view.state.doc.length - 2
+      })
+    })()
+  `))
 
   // ---- drop of a remote image URL (kept as URL by default) -----------------------
   await evaluate(`(() => {
@@ -274,6 +311,16 @@ async function main() {
     'export emits width/height',
     exported.includes('width="64"') && exported.includes('height="32"'),
     String(exported).slice(0, 200)
+  )
+
+  // ---- export keeps the flip transform ------------------------------------------
+  const exportedFlip = await evaluate(
+    `window.__veloxExport.renderHtml('![s](fixture.png =64x32){flip=hv}\\n', { baseDir: ${JSON.stringify(TMP)}, theme: 'light', imageMode: 'embed', katexFonts: 'embed' })`
+  )
+  check(
+    'export emits flip transform',
+    exportedFlip.includes('transform:scaleX(-1) scaleY(-1)'),
+    String(exportedFlip).slice(0, 300)
   )
 
   ws.close()
