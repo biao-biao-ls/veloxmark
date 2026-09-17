@@ -46,6 +46,13 @@ export interface Preferences {
   folderIgnoreNames: string[]
   /** Include `.`-prefixed entries in the file tree (still subject to ignores). */
   showHiddenFiles: boolean
+  // ---- focus modes (P08) -----------------------------------------------------
+  /** Dim every top-level block the cursor is not in. */
+  focusMode: boolean
+  /** Keep the cursor line vertically centered while editing. */
+  typewriterMode: boolean
+  /** Raw Markdown view — live-preview decorations off. */
+  sourceMode: boolean
 }
 
 export interface SessionState {
@@ -80,7 +87,10 @@ export const DEFAULT_PREFERENCES: Preferences = {
   copyExternalImages: true,
   downloadRemoteImages: false,
   folderIgnoreNames: ['node_modules', '.git', '.svn', '.hg', 'dist', 'out', 'build', '.DS_Store'],
-  showHiddenFiles: false
+  showHiddenFiles: false,
+  focusMode: false,
+  typewriterMode: false,
+  sourceMode: false
 }
 
 const DEFAULT_SESSION: SessionState = {
@@ -175,7 +185,10 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
           )
         ]
       : [...DEFAULT_PREFERENCES.folderIgnoreNames],
-    showHiddenFiles: p.showHiddenFiles === true
+    showHiddenFiles: p.showHiddenFiles === true,
+    focusMode: p.focusMode === true,
+    typewriterMode: p.typewriterMode === true,
+    sourceMode: p.sourceMode === true
   }
 }
 

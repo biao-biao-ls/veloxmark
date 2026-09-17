@@ -7,6 +7,7 @@ import { HELP_MD } from './content'
 import { transformPaste } from './editor/assists'
 import { insertClipboardImage } from './editor/images'
 import { livePreviewConfigFacet } from './editor/livePreview'
+import { getPreferences, setPreferences } from './preferences/store'
 
 /**
  * Command registry — single source for menu labels, shortcuts and handlers.
@@ -28,6 +29,8 @@ export interface Command {
    * handling so prompts and inputs keep working.
    */
   bindGlobal?: boolean
+  /** P08: toggle commands show a checkmark in the in-app menu when on. */
+  checked?: () => boolean
 }
 
 /** Runtime operations the registry binds to — supplied by the App hooks. */
@@ -210,6 +213,30 @@ export function buildCommands(ops: CommandOps): Command[] {
     },
     // ---- View --------------------------------------------------------------
     { id: 'toggleOutline', label: 'Toggle Outline', run: () => ops.toggleOutline() },
+    // P08 writing modes — state lives in preferences; the App effect pushes
+    // it into the editor config facet (single write path, survives restart).
+    {
+      id: 'toggleFocusMode',
+      label: 'Focus Mode',
+      shortcut: 'F8',
+      bindGlobal: true,
+      checked: () => getPreferences().focusMode,
+      run: () => setPreferences({ focusMode: !getPreferences().focusMode })
+    },
+    {
+      id: 'toggleTypewriterMode',
+      label: 'Typewriter Mode',
+      checked: () => getPreferences().typewriterMode,
+      run: () => setPreferences({ typewriterMode: !getPreferences().typewriterMode })
+    },
+    {
+      id: 'toggleSourceMode',
+      label: 'Source Mode',
+      shortcut: 'Ctrl+/',
+      bindGlobal: true,
+      checked: () => getPreferences().sourceMode,
+      run: () => setPreferences({ sourceMode: !getPreferences().sourceMode })
+    },
     { id: 'zoomIn', label: 'Zoom In', run: () => window.api.windowZoom('in') },
     { id: 'zoomOut', label: 'Zoom Out', run: () => window.api.windowZoom('out') },
     { id: 'zoomReset', label: 'Reset Zoom', run: () => window.api.windowZoom('reset') },
@@ -284,6 +311,10 @@ const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
     items: [
       'toggleOutline',
       { separator: true },
+      'toggleFocusMode',
+      'toggleTypewriterMode',
+      'toggleSourceMode',
+      { separator: true },
       'zoomIn',
       'zoomOut',
       'zoomReset',
@@ -326,6 +357,7 @@ export function buildMenus(
       return {
         label: cmd.label,
         shortcut: cmd.shortcut ? fmtShortcut(cmd.shortcut, isMac) : undefined,
+        checked: cmd.checked?.(),
         action: cmd.run
       }
     })
@@ -353,18 +385,27 @@ function buildRecentSubmenu(
 
 /**
  * Find the command whose global shortcut matches this key event.
- * Parity with the previous hand-written handler: Cmd/Ctrl required, Shift
- * must match exactly, Alt is ignored.
+ * Parity with the previous hand-written handler for chorded shortcuts:
+ * Cmd/Ctrl required, Shift must match exactly, Alt is ignored. P08 adds
+ * bare function keys (e.g. F8 for Focus Mode) — those match with no
+ * modifiers at all.
  */
 export function matchGlobalShortcut(e: KeyboardEvent, commands: Command[]): Command | null {
-  if (!(e.ctrlKey || e.metaKey)) return null
   const k = e.key.toLowerCase()
+  const hasChordMod = e.ctrlKey || e.metaKey || e.altKey
   for (const cmd of commands) {
     if (!cmd.bindGlobal || !cmd.shortcut) continue
     const parts = cmd.shortcut.split('+')
     const key = parts[parts.length - 1].toLowerCase()
     const needShift = parts.includes('Shift')
-    if (key === k && needShift === e.shiftKey) return cmd
+    const needCtrl = parts.includes('Ctrl')
+    if (needCtrl) {
+      if (!(e.ctrlKey || e.metaKey) || needShift !== e.shiftKey) continue
+    } else {
+      // Bare shortcuts are function keys only — reject any modifier.
+      if (hasChordMod || e.shiftKey || !/^f\d{1,2}$/.test(key)) continue
+    }
+    if (key === k) return cmd
   }
   return null
 }

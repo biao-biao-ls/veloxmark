@@ -8,6 +8,8 @@ export interface MenuItem {
   action?: () => void
   separator?: boolean
   disabled?: boolean
+  /** P08: toggle items show a checkmark while the mode is on. */
+  checked?: boolean
   /** Second-level menu (e.g. File > Open Recent); shown on hover. */
   submenu?: MenuItem[]
 }
@@ -67,6 +69,7 @@ export default function MenuBar({ menus }: Props): React.JSX.Element {
                       item.action?.()
                     }}
                   >
+                    <span className="menu-item-check">{item.checked ? '✓' : ''}</span>
                     <span className="menu-item-label">{item.label}</span>
                     {item.shortcut && (
                       <span className="menu-item-shortcut">{item.shortcut}</span>
