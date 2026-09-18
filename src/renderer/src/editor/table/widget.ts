@@ -845,7 +845,9 @@ export class TableWidget extends BlockWidget {
 // Test/debug hook for CDP scripts (scripts/cdp-p10.mjs) — same pattern as
 // window.__veloxEditor. DOM mousedown/contextmenu paths are exercised with
 // synthetic events; these helpers drive nav/ops deterministically.
-;(window as unknown as { __veloxTable?: unknown }).__veloxTable = {
+// P15: attached behind a window guard — vitest imports this module in a
+// DOM-less node environment for buildDecorations snapshot tests.
+const tableTestHook = {
   get nested(): EditorView | null {
     return activeNestedView()
   },
@@ -890,4 +892,7 @@ export class TableWidget extends BlockWidget {
   pasteTsv(view: EditorView, tsv: string): void {
     handleTsvPaste(view, tsv)
   }
+}
+if (typeof window !== 'undefined') {
+  ;(window as unknown as { __veloxTable?: unknown }).__veloxTable = tableTestHook
 }

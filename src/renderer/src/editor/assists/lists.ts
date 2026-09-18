@@ -40,15 +40,34 @@ function dedentLen(lead: string, unit: string): number {
 export function indentListItem(view: EditorView, dir: 1 | -1): boolean {
   const { state } = view
   if (!getEditingAssists(state).enabled) return false
+  const plan = computeIndentChanges(state, dir)
+  if (!plan) return false
+
+  const tr = state.update({ changes: plan.changes, scrollIntoView: true })
+  view.dispatch(tr)
+  renumberOrderedLists(view, tr.changes.mapPos(plan.from), tr.changes.mapPos(plan.to, 1))
+  return true
+}
+
+/**
+ * P15: pure planning step of indentListItem — computes the change set for an
+ * indent/dedent of the list item(s) under the selection without touching a
+ * view. Returns null when the operation is a no-op or illegal (e.g. dedent
+ * attempted on an unindented item marker line). Unit-tested headlessly.
+ */
+export function computeIndentChanges(
+  state: EditorState,
+  dir: 1 | -1
+): { changes: ChangeSpec[]; from: number; to: number } | null {
   const unit = state.facet(indentUnit)
 
   const items: SyntaxNode[] = []
   for (const range of state.selection.ranges) {
     const item = listItemAt(state, range.from)
-    if (!item) return false
+    if (!item) return null
     if (!items.some((i) => i.from === item.from && i.to === item.to)) items.push(item)
   }
-  if (!items.length) return false
+  if (!items.length) return null
 
   const changes: ChangeSpec[] = []
   const seenLines = new Set<number>()
@@ -66,7 +85,7 @@ export function indentListItem(view: EditorView, dir: 1 | -1): boolean {
       } else {
         const lead = /^[\t ]*/.exec(line.text)![0]
         // The item's own marker line must be indented to dedent at all.
-        if (n === first && !dedentLen(lead, unit)) return false
+        if (n === first && !dedentLen(lead, unit)) return null
         const remove = dedentLen(lead, unit)
         if (remove) changes.push({ from: line.from, to: line.from + remove })
       }
@@ -74,12 +93,8 @@ export function indentListItem(view: EditorView, dir: 1 | -1): boolean {
       maxTo = Math.max(maxTo, line.to)
     }
   }
-  if (!changes.length) return false
-
-  const tr = state.update({ changes, scrollIntoView: true })
-  view.dispatch(tr)
-  renumberOrderedLists(view, tr.changes.mapPos(minFrom), tr.changes.mapPos(maxTo, 1))
-  return true
+  if (!changes.length) return null
+  return { changes, from: minFrom, to: maxTo }
 }
 
 /**
@@ -87,7 +102,16 @@ export function indentListItem(view: EditorView, dir: 1 | -1): boolean {
  * its start number, the rest are made consecutive.
  */
 function renumberOrderedLists(view: EditorView, from: number, to: number): void {
-  const state = view.state
+  const changes = collectRenumberChanges(view.state, from, to)
+  if (changes.length) view.dispatch({ changes })
+}
+
+/**
+ * P15: pure renumber planner (renumberOrderedLists without the dispatch).
+ * Exported for unit tests — given a state and a doc range, returns the
+ * digit-replacement changes that make ordered-list numbering consecutive.
+ */
+export function collectRenumberChanges(state: EditorState, from: number, to: number): ChangeSpec[] {
   const tree = ensureSyntaxTree(state, to, 5000) ?? syntaxTree(state)
   const changes: { from: number; to: number; insert: string }[] = []
   tree.iterate({
@@ -110,5 +134,5 @@ function renumberOrderedLists(view: EditorView, from: number, to: number): void 
       }
     }
   })
-  if (changes.length) view.dispatch({ changes })
+  return changes
 }

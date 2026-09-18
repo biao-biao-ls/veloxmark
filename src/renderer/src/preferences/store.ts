@@ -155,21 +155,24 @@ export function subscribeSession(listener: () => void): () => void {
 /** One-time import of the pre-P03 standalone localStorage keys. */
 function migrateLegacyKeys(raw: Partial<Preferences>): Partial<Preferences> {
   const next = { ...raw }
-  if (next.theme == null) {
-    const legacyTheme = localStorage.getItem('theme')
+  // P15: unit tests import this module in a DOM-less node environment —
+  // guard the legacy-key reads the same way readJson guards its own.
+  const ls = typeof localStorage !== 'undefined' ? localStorage : null
+  if (next.theme == null && ls) {
+    const legacyTheme = ls.getItem('theme')
     if (legacyTheme === 'dark' || legacyTheme === 'light') next.theme = legacyTheme
   }
-  if (next.typingAssistsEnabled == null) {
-    const stored = localStorage.getItem('enabled')
+  if (next.typingAssistsEnabled == null && ls) {
+    const stored = ls.getItem('enabled')
     if (stored != null) next.typingAssistsEnabled = stored !== 'false'
   }
-  if (next.wrapBareUrlOnPaste == null) {
-    const stored = localStorage.getItem('wrapBareUrlOnPaste')
+  if (next.wrapBareUrlOnPaste == null && ls) {
+    const stored = ls.getItem('wrapBareUrlOnPaste')
     if (stored != null) next.wrapBareUrlOnPaste = stored !== 'false'
   }
-  localStorage.removeItem('theme')
-  localStorage.removeItem('enabled')
-  localStorage.removeItem('wrapBareUrlOnPaste')
+  ls?.removeItem('theme')
+  ls?.removeItem('enabled')
+  ls?.removeItem('wrapBareUrlOnPaste')
   return next
 }
 
@@ -270,6 +273,8 @@ let session: SessionState = (() => {
 // ---- CSS variable injection (live appearance preview) -----------------------
 
 export function applyPreferencesCssVars(p: Preferences = preferences): void {
+  // P15: DOM-less vitest imports pull this module in — no document, no-op.
+  if (typeof document === 'undefined') return
   const root = document.documentElement
   root.style.setProperty('--editor-font-family', p.editorFontFamily)
   root.style.setProperty('--editor-font-size', `${p.editorFontSize}px`)
@@ -332,10 +337,13 @@ declare global {
     }
   }
 }
-window.__veloxPrefs = {
-  getPreferences,
-  getSession,
-  setPreferences,
-  addRecentFile,
-  clearRecentFiles
+// P15: guarded — vitest imports this module in a DOM-less node environment.
+if (typeof window !== 'undefined') {
+  window.__veloxPrefs = {
+    getPreferences,
+    getSession,
+    setPreferences,
+    addRecentFile,
+    clearRecentFiles
+  }
 }
