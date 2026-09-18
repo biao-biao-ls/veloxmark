@@ -234,7 +234,7 @@ async function main() {
   const pinPrefs = (extra = '') => evaluate(`(() => {
     const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') ?? '{}')
     localStorage.setItem('veloxmark.preferences', JSON.stringify({
-      ...raw, restoreLastSession: false, autoSaveMode: 'off'${extra ? `, ${extra}` : ''}
+      ...raw, language: 'en', restoreLastSession: false, autoSaveMode: 'off'${extra ? `, ${extra}` : ''}
     }))
     return true
   })()`)

@@ -369,7 +369,7 @@ async function main() {
   await evaluate(`(() => {
     const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') ?? '{}')
     localStorage.setItem('veloxmark.preferences', JSON.stringify({
-      ...raw, restoreLastSession: false, autoSaveMode: 'off', crashRecoveryEnabled: false
+      ...raw, language: 'en', restoreLastSession: false, autoSaveMode: 'off', crashRecoveryEnabled: false
     }))
     return true
   })()`)

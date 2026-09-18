@@ -134,7 +134,7 @@ async function main() {
   await evaluate(`(() => {
     const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') ?? '{}')
     localStorage.setItem('veloxmark.preferences', JSON.stringify({
-      ...raw, focusMode: false, typewriterMode: false, crashRecoveryEnabled: false, autoSaveMode: 'off', sourceMode: false
+      ...raw, language: 'en', focusMode: false, typewriterMode: false, crashRecoveryEnabled: false, autoSaveMode: 'off', sourceMode: false
     }))
     localStorage.setItem('veloxmark.session', JSON.stringify({
       lastFilePath: ${JSON.stringify(FIXTURE_PATH)},
@@ -284,7 +284,7 @@ async function main() {
   await evaluate(`(() => {
     const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') ?? '{}')
     localStorage.setItem('veloxmark.preferences', JSON.stringify({
-      ...raw, focusMode: false, typewriterMode: false, crashRecoveryEnabled: false, autoSaveMode: 'off', sourceMode: false
+      ...raw, language: 'en', focusMode: false, typewriterMode: false, crashRecoveryEnabled: false, autoSaveMode: 'off', sourceMode: false
     }))
   })()`)
 

@@ -4,6 +4,7 @@ import { updateLivePreviewConfig } from '../editor/setup'
 import { dialog } from '../components/Dialog'
 import { WELCOME_MD } from '../content'
 import { addRecentFile, patchSession } from '../preferences/store'
+import { t } from '../i18n'
 
 export type SidebarMode = 'outline' | 'files' | 'search'
 
@@ -122,11 +123,11 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRe
   const confirmDiscard = useCallback(async (): Promise<boolean> => {
     if (!dirtyRef.current) return true
     const choice = await dialog.choose({
-      title: 'Unsaved Changes',
-      message: 'Save changes before continuing?',
-      confirmLabel: 'Save',
-      discardLabel: "Don't Save",
-      cancelLabel: 'Cancel'
+      title: t('dialog.unsavedTitle'),
+      message: t('dialog.unsavedSwitch'),
+      confirmLabel: t('dialog.save'),
+      discardLabel: t('dialog.dontSave'),
+      cancelLabel: t('dialog.cancel')
     })
     if (choice === 'cancel') return false
     if (choice === 'discard') {
@@ -143,11 +144,11 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRe
   const queryClose = useCallback(async (): Promise<boolean> => {
     if (!dirtyRef.current) return true
     const choice = await dialog.choose({
-      title: 'Unsaved Changes',
-      message: 'Save changes before closing?',
-      confirmLabel: 'Save',
-      discardLabel: "Don't Save",
-      cancelLabel: 'Cancel'
+      title: t('dialog.unsavedTitle'),
+      message: t('dialog.unsavedClose'),
+      confirmLabel: t('dialog.save'),
+      discardLabel: t('dialog.dontSave'),
+      cancelLabel: t('dialog.cancel')
     })
     if (choice === 'cancel') return false
     if (choice === 'discard') {
@@ -194,7 +195,7 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRe
       if (!viewRef.current) return
       if (!(await confirmDiscard())) return
       if (!(await window.api.pathExists(path))) {
-        await dialog.alert({ title: 'File Not Found', message: `No longer exists:\n${path}` })
+        await dialog.alert({ title: t('dialog.fileNotFound'), message: t('dialog.fileGone', { path }) })
         return
       }
       const content = await window.api.readFile(path)

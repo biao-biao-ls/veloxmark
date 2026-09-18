@@ -185,6 +185,8 @@ export interface RendererApi {
   setAppState(state: AppWindowState): Promise<void>
   /** Push the recent-files list so the macOS native menu can rebuild (P03). */
   setRecentFiles(files: RecentFileItem[]): Promise<void>
+  /** P14: persist UI language in userData + rebuild the macOS native menu. */
+  setUiLanguage(lang: 'zh' | 'en'): Promise<void>
   resolveImageSrc(dir: string, src: string): Promise<ResolvedImageSrc>
   /** P05: save the clipboard bitmap into the document's assets dir. */
   saveClipboardImage(

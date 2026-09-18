@@ -17,6 +17,8 @@ export type ThemeMode = 'light' | 'dark' | 'system'
 export type SidebarMode = 'outline' | 'files' | 'search'
 export type ImageRenameMode = 'timestamp' | 'keep'
 export type AutoSaveMode = 'off' | 'debounce' | 'interval'
+/** P14: UI language — 'system' follows navigator.language. */
+export type LanguagePref = 'system' | 'zh' | 'en'
 
 export interface Preferences {
   version: number
@@ -63,6 +65,11 @@ export interface Preferences {
   autoSaveIntervalMin: number
   /** Write crash-recovery drafts + offer restore on startup. */
   crashRecoveryEnabled: boolean
+  // ---- i18n & status bar (P14) ----------------------------------------------
+  /** UI language; 'system' resolves via navigator.language at boot. */
+  language: LanguagePref
+  /** Bottom status bar (cursor / word count / mode lamps). */
+  showStatusBar: boolean
 }
 
 export interface SessionState {
@@ -106,7 +113,9 @@ export const DEFAULT_PREFERENCES: Preferences = {
   autoSaveMode: 'debounce',
   autoSaveDelaySec: 3,
   autoSaveIntervalMin: 5,
-  crashRecoveryEnabled: true
+  crashRecoveryEnabled: true,
+  language: 'system',
+  showStatusBar: true
 }
 
 const DEFAULT_SESSION: SessionState = {
@@ -212,7 +221,9 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
         : DEFAULT_PREFERENCES.autoSaveMode,
     autoSaveDelaySec: num(p.autoSaveDelaySec, 3, 1, 60),
     autoSaveIntervalMin: num(p.autoSaveIntervalMin, 5, 1, 60),
-    crashRecoveryEnabled: p.crashRecoveryEnabled !== false
+    crashRecoveryEnabled: p.crashRecoveryEnabled !== false,
+    language: p.language === 'zh' || p.language === 'en' ? p.language : 'system',
+    showStatusBar: p.showStatusBar !== false
   }
 }
 

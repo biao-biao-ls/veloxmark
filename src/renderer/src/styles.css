@@ -1829,3 +1829,69 @@ body {
 .search-more:hover {
   color: var(--accent);
 }
+
+/* ---- P14 status bar -------------------------------------------------------- */
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 24px;
+  flex-shrink: 0;
+  padding: 0 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-sidebar);
+  color: var(--fg-dim);
+  font-size: 12px;
+  user-select: none;
+  gap: 12px;
+}
+
+.sb-left,
+.sb-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sb-cursor {
+  font-variant-numeric: tabular-nums;
+}
+
+.sb-sel {
+  color: var(--accent);
+}
+
+.sb-stat {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sb-stat-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sb-stat-btn:hover {
+  color: var(--fg);
+}
+
+.sb-lamp {
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+.sb-autosave {
+  color: var(--fg-dim);
+  white-space: nowrap;
+}

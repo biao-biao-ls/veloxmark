@@ -15,7 +15,9 @@ import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImag
 import { invalidateImageCache } from './editor/widgets'
 import { readEditingAssistsConfig } from './editor/assists'
 import { extractOutline, type OutlineItem } from './outline/extract'
-import { WELCOME_MD } from './content'
+import { getWelcomeMd, WELCOME_MD_EN, WELCOME_MD_ZH } from './content'
+import { getLang, resolveLang, setLang, t, useTranslation } from './i18n'
+import StatusBar, { EMPTY_STATS, computeDocStats, type DocStats } from './components/StatusBar'
 import { useFileOps } from './hooks/useFileOps'
 import { useAutoSave } from './hooks/useAutoSave'
 import { useWorkspaceTree } from './hooks/useWorkspaceTree'
@@ -27,7 +29,8 @@ import {
   clearRecentFiles,
   getPreferences,
   getSession,
-  patchSession
+  patchSession,
+  setPreferences
 } from './preferences/store'
 import type { SidebarMode } from './preferences/store'
 import type { SearchOptions, SearchReplaceRequest, SearchReplaceResult } from '../../../electron/shared/api'
@@ -70,11 +73,20 @@ declare global {
       getDoc: () => string
       getFilePath: () => string | null
     } | null
+    /** P14 e2e handle: i18n + status-bar stats. */
+    __veloxP14: {
+      setLanguage: (pref: 'system' | 'zh' | 'en') => void
+      getLang: () => string
+      getStats: () => DocStats
+      t: (key: string, params?: Record<string, string | number>) => string
+      loadDoc: (text: string, path: string) => void
+    } | null
   }
 }
 window.__veloxEditor = null
 window.__veloxP12 = null
 window.__veloxP13 = null
+window.__veloxP14 = null
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -94,6 +106,9 @@ export default function App(): React.JSX.Element {
 
   const { theme, toggleTheme } = useAppTheme(viewRef)
   const prefs = usePreferences()
+  // P14: subscribes App (and therefore all t() descendants) to language flips.
+  const { lang } = useTranslation()
+  const [stats, setStats] = useState<DocStats>(EMPTY_STATS)
   const session = useSession()
   const [outline, setOutline] = useState<OutlineItem[]>([])
   const [activePos, setActivePos] = useState<number | null>(null)
@@ -280,12 +295,11 @@ export default function App(): React.JSX.Element {
       }
       if (d.path == null) {
         const choice = await dialog.choose({
-          title: 'Recover Unsaved Draft',
-          message:
-            'An unsaved Untitled draft was found (the previous session may have crashed). Restore it?',
-          confirmLabel: 'Restore Draft',
-          discardLabel: 'Discard Draft',
-          cancelLabel: 'Later'
+          title: t('dialog.recoverTitle'),
+          message: t('dialog.recoverUntitled'),
+          confirmLabel: t('dialog.restoreDraft'),
+          discardLabel: t('dialog.discardDraft'),
+          cancelLabel: t('dialog.later')
         })
         if (choice === 'confirm') {
           fileOps.loadContent(d.content, null)
@@ -305,11 +319,11 @@ export default function App(): React.JSX.Element {
         continue
       }
       const choice = await dialog.choose({
-        title: 'Recover Unsaved Draft',
-        message: `A draft for\n${d.path}\ndiffers from the file on disk. Restore the draft?`,
-        confirmLabel: 'Restore Draft',
-        discardLabel: 'Discard Draft',
-        cancelLabel: 'Later'
+        title: t('dialog.recoverTitle'),
+        message: t('dialog.recoverPath', { path: d.path ?? '' }),
+        confirmLabel: t('dialog.restoreDraft'),
+        discardLabel: t('dialog.discardDraft'),
+        cancelLabel: t('dialog.later')
       })
       if (choice === 'confirm') {
         fileOps.loadContent(d.content, d.path)
@@ -430,7 +444,7 @@ export default function App(): React.JSX.Element {
 
     const view = new EditorView({
       state: EditorState.create({
-        doc: WELCOME_MD,
+        doc: getWelcomeMd(getLang()),
         extensions: createExtensions(
           {
             onChange: () => {
@@ -444,9 +458,13 @@ export default function App(): React.JSX.Element {
               updateOutline()
               // P12 autosave + draft debounce pipelines.
               autoSaveNotifyRef.current()
+              // P14 status bar: cursor immediate + full stats debounced.
+              updateCursorStatsRef.current()
+              scheduleDocStatsRef.current()
             },
             onSelectionChanged: () => {
               updateActiveHeading()
+              updateCursorStatsRef.current()
               // P12: persist the cursor for session restore (throttled).
               const head = view.state.selection.main.head
               clearTimeout(cursorPersistTimer)
@@ -455,6 +473,7 @@ export default function App(): React.JSX.Element {
             onTreeChanged: () => {
               updateOutline()
               updateActiveHeading()
+              scheduleDocStatsRef.current()
             },
             // P05: images need the document's directory for assets/ — resolve
             // true when a path exists, otherwise run Save As first.
@@ -479,6 +498,8 @@ export default function App(): React.JSX.Element {
     // same way the prefs effect below does, without going through the store.
     window.__veloxEditor = { view, applyLivePreviewConfig: updateLivePreviewConfig }
     updateOutline()
+    updateCursorStatsRef.current()
+    scheduleDocStatsRef.current()
 
     // Editor is mounted — main may now deliver queued system open-file paths.
     window.api.rendererReady()
@@ -528,6 +549,79 @@ export default function App(): React.JSX.Element {
   }, [])
 
   const toggleOutline = useCallback(() => setShowOutline((v) => !v), [])
+
+  // ---- P14: language pref → i18n runtime + macOS native menu ------------------
+  useEffect(() => {
+    const resolved = resolveLang(prefs.language)
+    setLang(resolved)
+    void window.api.setUiLanguage(resolved).catch(() => {})
+  }, [prefs.language])
+
+  // Swap a still-showing welcome document when the language flips.
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view) return
+    if (filePathRef.current != null) return
+    const doc = view.state.doc.toString()
+    if (doc !== WELCOME_MD_EN && doc !== WELCOME_MD_ZH) return
+    const next = getWelcomeMd(lang)
+    if (doc === next) return
+    fileOps.loadContent(next, null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang])
+
+  // ---- P14 status-bar stats bridges (cursor live; doc stats debounced 300ms) -
+  const statsTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const updateCursorStats = useCallback(() => {
+    const view = viewRef.current
+    if (!view) return
+    const { state } = view
+    const head = state.selection.main.head
+    const lineObj = state.doc.lineAt(head)
+    setStats((s) => ({
+      ...s,
+      line: lineObj.number,
+      col: head - lineObj.from + 1,
+      selChars: state.selection.main.to - state.selection.main.from
+    }))
+  }, [])
+  const scheduleDocStats = useCallback(() => {
+    clearTimeout(statsTimerRef.current)
+    statsTimerRef.current = setTimeout(() => {
+      const view = viewRef.current
+      if (!view) return
+      const text = view.state.doc.toString()
+      const base = computeDocStats(text)
+      const { state } = view
+      const head = state.selection.main.head
+      const lineObj = state.doc.lineAt(head)
+      setStats({
+        ...base,
+        line: lineObj.number,
+        col: head - lineObj.from + 1,
+        selChars: state.selection.main.to - state.selection.main.from
+      })
+    }, 300)
+  }, [])
+  const updateCursorStatsRef = useRef(updateCursorStats)
+  updateCursorStatsRef.current = updateCursorStats
+  const scheduleDocStatsRef = useRef(scheduleDocStats)
+  scheduleDocStatsRef.current = scheduleDocStats
+
+  // P14 e2e handle.
+  const statsRef = useRef(stats)
+  statsRef.current = stats
+  const loadContentRef = useRef(fileOps.loadContent)
+  loadContentRef.current = fileOps.loadContent
+  useEffect(() => {
+    window.__veloxP14 = {
+      setLanguage: (pref) => setPreferences({ language: pref }),
+      getLang: () => getLang(),
+      getStats: () => statsRef.current,
+      t: (key, params) => t(key, params),
+      loadDoc: (text, path) => loadContentRef.current(text, path)
+    }
+  }, [])
 
   // ---- P13 folder-wide search ------------------------------------------------
   const openGlobalSearch = useCallback(() => {
@@ -654,14 +748,14 @@ export default function App(): React.JSX.Element {
                   <button
                     className="sidebar-action"
                     onClick={openGlobalSearch}
-                    title="Search in folder (Ctrl+Shift+F)"
+                    title={t('app.searchInFolder')}
                   >
                     <SearchIcon size={13} />
                   </button>
                   <button
                     className="sidebar-action"
                     onClick={() => void workspace.treeNewFile(workspace.folderPath!)}
-                    title="New file"
+                    title={t('app.newFile')}
                   >
                     +
                   </button>
@@ -702,17 +796,17 @@ export default function App(): React.JSX.Element {
                     <button
                       className="sidebar-back"
                       onClick={() => setSidebarMode('files')}
-                      title="Back to file list"
+                      title={t('app.filesBack')}
                     >
-                      ‹ Files
+                      {t('app.filesBack')}
                     </button>
                   )}
-                  <span>Outline</span>
+                  <span>{t('outline.title')}</span>
                   {workspace.folderPath && (
                     <button
                       className="sidebar-action"
                       onClick={openGlobalSearch}
-                      title="Search in folder (Ctrl+Shift+F)"
+                      title={t('app.searchInFolder')}
                     >
                       <SearchIcon size={13} />
                     </button>
@@ -731,6 +825,9 @@ export default function App(): React.JSX.Element {
         )}
         <div className="editor-host" ref={hostRef} />
       </div>
+      {prefs.showStatusBar !== false && (
+        <StatusBar stats={stats} prefs={prefs} autoSaveAt={autoSave.lastAutoSaveAt} />
+      )}
       <Preferences open={showPreferences} onClose={() => setShowPreferences(false)} />
       <QuickOpen
         open={showQuickOpen}

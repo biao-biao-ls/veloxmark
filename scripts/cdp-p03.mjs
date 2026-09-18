@@ -262,6 +262,14 @@ async function flushLocalStorage() {
   await send('Page.enable')
   await send('Runtime.enable')
   await waitFor('.cm-content')
+// Pin UI language to English — OS locale may be zh; the asserts below are English.
+await evaluate(`(() => {
+  const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') || '{}')
+  localStorage.setItem('veloxmark.preferences', JSON.stringify({ ...raw, language: 'en' }))
+  window.__veloxPrefs?.setPreferences({ language: 'en' })
+  return true
+})()`)
+
   APP_URL = target.url
 }
 
@@ -290,6 +298,14 @@ await evaluate(`(async () => {
   return true
 })()`)
 
+// Pin UI language to English — OS locale may be zh; the asserts below are English.
+await evaluate(`(() => {
+  const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') || '{}')
+  localStorage.setItem('veloxmark.preferences', JSON.stringify({ ...raw, language: 'en' }))
+  window.__veloxPrefs?.setPreferences({ language: 'en' })
+  return true
+})()`)
+
 if (PHASE === 'a') {
   // Wipe profile state and reload so defaults are actually tested.
   await evaluate(`(() => {
@@ -302,6 +318,13 @@ if (PHASE === 'a') {
   })()`)
   await wait(3000)
   await waitFor('.cm-content')
+// Pin UI language to English — OS locale may be zh; the asserts below are English.
+await evaluate(`(() => {
+  const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') || '{}')
+  localStorage.setItem('veloxmark.preferences', JSON.stringify({ ...raw, language: 'en' }))
+  window.__veloxPrefs?.setPreferences({ language: 'en' })
+  return true
+})()`)
 
   // --- defaults on a clean profile ------------------------------------------
   const initial = await evaluate(`(() => ({
@@ -339,8 +362,15 @@ if (PHASE === 'a') {
   }))()`)
   assert(panel.open, 'Ctrl+, opens the preferences panel', panel)
   assert(
-    JSON.stringify(panel.sections) === JSON.stringify(['Appearance', 'Editing', 'Behavior']),
-    'panel groups are Appearance/Editing/Behavior',
+    JSON.stringify(panel.sections) === JSON.stringify([
+      'Appearance',
+      'Editing',
+      'Images',
+      'Workspace',
+      'Autosave & Recovery',
+      'Behavior'
+    ]),
+    'panel groups are the six current sections (en)',
     panel
   )
   await screenshot(`${OUT}/p03-prefs-panel.png`)

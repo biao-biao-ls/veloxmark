@@ -164,6 +164,14 @@ async function main() {
     await new Promise((r) => setTimeout(r, 500))
   }
 
+  // Pin UI language to English — OS locale may be zh; menu/dialog asserts are English.
+  await evaluate(`(() => {
+    const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') || '{}')
+    localStorage.setItem('veloxmark.preferences', JSON.stringify({ ...raw, language: 'en' }))
+    window.__veloxPrefs?.setPreferences({ language: 'en' })
+    return true
+  })()`)
+
   const failures = []
   const check = (name, ok, detail = '') => {
     console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${ok || !detail ? '' : ` — ${detail}`}`)

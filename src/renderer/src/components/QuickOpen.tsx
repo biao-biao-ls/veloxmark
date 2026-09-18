@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { DirNode } from '../../../../electron/shared/api'
+import { t } from '../i18n'
 
 interface Props {
   open: boolean
@@ -141,7 +142,7 @@ export default function QuickOpen({
         className="quickopen-panel"
         role="dialog"
         aria-modal="true"
-        aria-label="Quick Open"
+        aria-label={t('quick.title')}
         onMouseDown={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
           // keep keys away from the global shortcut handler and the editor
@@ -165,7 +166,7 @@ export default function QuickOpen({
           ref={inputRef}
           className="quickopen-input"
           type="text"
-          placeholder="Search files by name…"
+          placeholder={t('quick.placeholder')}
           spellCheck={false}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -189,7 +190,7 @@ export default function QuickOpen({
           </div>
         ) : (
           <div className="quickopen-empty">
-            {files.length === 0 ? 'No folder workspace open' : 'No matching files'}
+            {files.length === 0 ? t('quick.noFolder') : t('quick.noMatch')}
           </div>
         )}
       </div>

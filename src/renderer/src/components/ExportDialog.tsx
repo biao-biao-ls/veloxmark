@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ExportFormat, ExportOptions, ExportThemeOption } from '../hooks/useExport'
+import { t } from '../i18n'
 
 /**
  * Export options dialog (P04). Reuses the P02 dialog CSS classes like the
@@ -53,27 +54,27 @@ export default function ExportDialog({
         className="dialog prefs-dialog"
         role="dialog"
         aria-modal="true"
-        aria-label={isPdf ? 'Export PDF' : 'Export HTML'}
+        aria-label={isPdf ? t('export.pdfTitle') : t('export.htmlTitle')}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="dialog-title">{isPdf ? 'Export PDF' : 'Export HTML'}</div>
+        <div className="dialog-title">{isPdf ? t('export.pdfTitle') : t('export.htmlTitle')}</div>
 
         <label className="prefs-row">
-          <span className="prefs-label">Theme</span>
+          <span className="prefs-label">{t('export.theme')}</span>
           <select
             className="prefs-input"
             value={options.theme}
             onChange={(e) => patch({ theme: e.target.value as ExportThemeOption })}
           >
-            <option value="current">Follow current theme</option>
-            <option value="light">Force light</option>
+            <option value="current">{t('export.themeCurrent')}</option>
+            <option value="light">{t('export.themeLight')}</option>
           </select>
         </label>
 
         {isPdf ? (
           <>
             <label className="prefs-row">
-              <span className="prefs-label">Paper size</span>
+              <span className="prefs-label">{t('export.paper')}</span>
               <select
                 className="prefs-input"
                 value={options.pageSize}
@@ -84,14 +85,14 @@ export default function ExportDialog({
               </select>
             </label>
             <label className="prefs-row">
-              <span className="prefs-label">Margins</span>
+              <span className="prefs-label">{t('export.margins')}</span>
               <select
                 className="prefs-input"
                 value={options.margins}
                 onChange={(e) => patch({ margins: e.target.value as 'normal' | 'narrow' })}
               >
-                <option value="normal">Normal</option>
-                <option value="narrow">Narrow</option>
+                <option value="normal">{t('export.marginsNormal')}</option>
+                <option value="narrow">{t('export.marginsNarrow')}</option>
               </select>
             </label>
             <label className="prefs-row prefs-check">
@@ -100,31 +101,31 @@ export default function ExportDialog({
                 checked={options.headerFooter}
                 onChange={(e) => patch({ headerFooter: e.target.checked })}
               />
-              <span>Header (file name) and footer (page numbers)</span>
+              <span>{t('export.headerFooter')}</span>
             </label>
           </>
         ) : (
           <>
             <label className="prefs-row">
-              <span className="prefs-label">Images</span>
+              <span className="prefs-label">{t('export.images')}</span>
               <select
                 className="prefs-input"
                 value={options.imageMode}
                 onChange={(e) => patch({ imageMode: e.target.value as 'embed' | 'relative' })}
               >
-                <option value="embed">Embed as base64</option>
-                <option value="relative">Keep relative paths</option>
+                <option value="embed">{t('export.imageEmbed')}</option>
+                <option value="relative">{t('export.imageRelative')}</option>
               </select>
             </label>
             <label className="prefs-row">
-              <span className="prefs-label">KaTeX fonts</span>
+              <span className="prefs-label">{t('export.katexFonts')}</span>
               <select
                 className="prefs-input"
                 value={options.katexFonts}
                 onChange={(e) => patch({ katexFonts: e.target.value as 'embed' | 'cdn' })}
               >
-                <option value="embed">Embed (offline-ready)</option>
-                <option value="cdn">CDN fallback (smaller file)</option>
+                <option value="embed">{t('export.katexEmbed')}</option>
+                <option value="cdn">{t('export.katexCdn')}</option>
               </select>
             </label>
           </>
@@ -135,14 +136,14 @@ export default function ExportDialog({
           {isMac ? (
             <>
               <button className="dialog-btn" onClick={onClose}>
-                Cancel
+                {t('dialog.cancel')}
               </button>
               <button
                 ref={exportBtnRef}
                 className="dialog-btn dialog-btn-primary"
                 onClick={() => onConfirm(format, options)}
               >
-                Export…
+                {t('export.exportBtn')}
               </button>
             </>
           ) : (
@@ -152,10 +153,10 @@ export default function ExportDialog({
                 className="dialog-btn dialog-btn-primary"
                 onClick={() => onConfirm(format, options)}
               >
-                Export…
+                {t('export.exportBtn')}
               </button>
               <button className="dialog-btn" onClick={onClose}>
-                Cancel
+                {t('dialog.cancel')}
               </button>
             </>
           )}

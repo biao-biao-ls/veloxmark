@@ -21,7 +21,7 @@
 | P11 | [扩展语法支持](P11-extended-syntax.md)（已完成） | 功能 | front matter、脚注、==高亮== | M |
 | P12 | [自动保存与崩溃恢复](P12-autosave.md)（已完成） | 功能 | 数据安全兜底 | M |
 | P13 | [文件夹全局搜索](P13-global-search.md)（已完成） | 功能 | 侧栏内跨文件查找/替换 | M |
-| P14 | [界面 i18n 与状态栏](P14-i18n-statusbar.md) | 功能 | 中文化 + 字数统计 | S–M |
+| P14 | [界面 i18n 与状态栏](P14-i18n-statusbar.md)（已完成） | 功能 | 中文化 + 字数统计 | S–M |
 | P15 | [工程质量加固](P15-quality.md) | 工程 | 数学渲染性能、自动测试 | M |
 | P16 | [Mermaid 图表体验增强](P16-mermaid-ux.md) | UX/功能 | 错误不清屏、模板插入、PNG/图片剪贴板、大图 lightbox | M |
 | P17 | [链接导航与文档间跳转](P17-link-navigation.md) | UX/功能 | 相对路径/锚点跳转，文件夹工作区闭环的最后一环 | S–M |

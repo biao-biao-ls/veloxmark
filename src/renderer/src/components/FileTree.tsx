@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { DirNode } from '../../../../electron/shared/api'
 import { ChevronDownIcon, ChevronRightIcon } from './Icons'
+import { t } from '../i18n'
 
 /** node === null means the workspace root (empty-area context menu, P07). */
 export interface TreeMenuRequest {
@@ -101,7 +102,7 @@ export default function FileTree({
   }
 
   if (nodes.length === 0) {
-    return <div className="outline-empty">No markdown files</div>
+    return <div className="outline-empty">{t('tree.noMarkdown')}</div>
   }
 
   const isDropAllowed = (src: string, destDir: string): boolean =>

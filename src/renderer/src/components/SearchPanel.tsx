@@ -8,6 +8,7 @@ import type {
 import { folderScanOptions } from '../hooks/useWorkspaceTree'
 import type { SidebarMode } from '../preferences/store'
 import { dialog } from './Dialog'
+import { t } from '../i18n'
 
 /**
  * P13 folder-wide search/replace sidebar view.
@@ -132,9 +133,9 @@ export default function SearchPanel({
       if (!folderPath || !query) return
       if (scope === 'all') {
         const ok = await dialog.confirm({
-          title: 'Replace All',
-          message: `Replace ${totalMatches} match(es) for "${query}" across ${files.length} file(s)? This writes files on disk.`,
-          confirmLabel: 'Replace All',
+          title: t('search.replaceAllTitle'),
+          message: t('search.replaceAllMsg', { total: totalMatches, query, files: files.length }),
+          confirmLabel: t('search.replaceAll'),
           danger: true
         })
         if (!ok) return
@@ -157,8 +158,8 @@ export default function SearchPanel({
       }
       if (res.skipped.length > 0) {
         await dialog.alert({
-          title: 'Replace Skipped',
-          message: `Skipped (open with unsaved changes):\n${res.skipped.join('\n')}`
+          title: t('search.skippedTitle'),
+          message: t('search.skippedMsg', { paths: res.skipped.join('\n') })
         })
       }
       if (currentFilePath && !dirty && res.written.includes(currentFilePath)) {
@@ -192,19 +193,19 @@ export default function SearchPanel({
   return (
     <div className="search-panel">
       <div className="sidebar-header">
-        <button className="sidebar-back" onClick={() => onSwitchMode('files')} title="Back to file list">
-          ‹ Files
+        <button className="sidebar-back" onClick={() => onSwitchMode('files')} title={t('search.backFiles')}>
+          {t('search.backFiles')}
         </button>
-        <button className="sidebar-back" onClick={() => onSwitchMode('outline')} title="Back to outline">
-          ‹ Outline
+        <button className="sidebar-back" onClick={() => onSwitchMode('outline')} title={t('search.backOutline')}>
+          {t('search.backOutline')}
         </button>
-        <span>Search</span>
+        <span>{t('search.title')}</span>
       </div>
       <div className="search-bar">
         <input
           ref={inputRef}
           className="search-input"
-          placeholder="Search in folder…"
+          placeholder={t('search.placeholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           spellCheck={false}
@@ -212,21 +213,21 @@ export default function SearchPanel({
         <div className="search-toggles">
           <button
             className={`search-toggle${caseSensitive ? ' active' : ''}`}
-            title="Match case"
+            title={t('search.matchCase')}
             onClick={() => setCaseSensitive((v) => !v)}
           >
             Aa
           </button>
           <button
             className={`search-toggle${wholeWord ? ' active' : ''}`}
-            title="Whole word"
+            title={t('search.wholeWord')}
             onClick={() => setWholeWord((v) => !v)}
           >
             W
           </button>
           <button
             className={`search-toggle${regex ? ' active' : ''}`}
-            title="Regular expression"
+            title={t('search.regex')}
             onClick={() => setRegex((v) => !v)}
           >
             .*
@@ -236,7 +237,7 @@ export default function SearchPanel({
       <div className="search-replace-row">
         <input
           className="search-replace-input"
-          placeholder="Replace…"
+          placeholder={t('search.replacePlaceholder')}
           value={replaceText}
           onChange={(e) => setReplaceText(e.target.value)}
           spellCheck={false}
@@ -246,21 +247,21 @@ export default function SearchPanel({
           disabled={totalMatches === 0 || searching}
           onClick={() => void doReplace('all')}
         >
-          Replace All
+          {t('search.replaceAll')}
         </button>
       </div>
       <div className="search-status">
         {error ? (
           <div className="search-error">{error}</div>
         ) : !folderPath ? (
-          <div className="search-empty">Open a folder to search across files</div>
+          <div className="search-empty">{t('search.emptyFolder')}</div>
         ) : searching ? (
-          <div className="search-hint">Searching…</div>
+          <div className="search-hint">{t('search.searching')}</div>
         ) : query && files.length === 0 ? (
-          <div className="search-empty">No results</div>
+          <div className="search-empty">{t('search.noResults')}</div>
         ) : query ? (
           <div className="search-count">
-            {totalMatches} match(es) in {files.length} file(s)
+            {t('search.count', { total: totalMatches, files: files.length })}
           </div>
         ) : null}
       </div>
@@ -277,7 +278,7 @@ export default function SearchPanel({
                 <span className="search-file-count">{f.matchCount}</span>
                 <button
                   className="search-file-replace"
-                  title="Replace all matches in this file"
+                  title={t('search.replaceFile')}
                   onClick={() => void doReplace('file', f.path)}
                 >
                   ⇄
@@ -298,7 +299,7 @@ export default function SearchPanel({
                   </span>
                   <button
                     className="search-match-replace"
-                    title="Replace this match"
+                    title={t('search.replaceOne')}
                     onClick={(e) => {
                       e.stopPropagation()
                       void doReplace('one', f.path, m)
@@ -310,7 +311,7 @@ export default function SearchPanel({
               ))}
               {f.matches.length > VISIBLE_PER_FILE && (
                 <button className="search-more" onClick={() => toggleExpanded(f.path)}>
-                  {isOpen ? 'Show less' : `+${f.matches.length - VISIBLE_PER_FILE} more`}
+                  {isOpen ? t('search.showLess') : t('search.more', { n: f.matches.length - VISIBLE_PER_FILE })}
                 </button>
               )}
             </div>

@@ -1,4 +1,5 @@
 import type { OutlineItem } from '../outline/extract'
+import { t } from '../i18n'
 
 interface Props {
   items: OutlineItem[]
@@ -8,7 +9,7 @@ interface Props {
 
 export default function Outline({ items, activePos, onSelect }: Props): React.JSX.Element {
   if (items.length === 0) {
-    return <div className="outline-empty">No headings yet</div>
+    return <div className="outline-empty">{t('outline.empty')}</div>
   }
   return (
     <nav className="outline">

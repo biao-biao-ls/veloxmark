@@ -3,10 +3,11 @@ import { openSearchPanel } from '@codemirror/search'
 import { redo, undo } from '@codemirror/commands'
 import type { EditorView } from '@codemirror/view'
 import type { MenuDef, MenuItem } from './components/MenuBar'
-import { HELP_MD } from './content'
+import { getHelpMd } from './content'
 import { transformPaste } from './editor/assists'
 import { insertClipboardImage } from './editor/images'
 import { livePreviewConfigFacet } from './editor/livePreview'
+import { getLang, t } from './i18n'
 import { getPreferences, setPreferences } from './preferences/store'
 
 /**
@@ -69,67 +70,67 @@ export function buildCommands(ops: CommandOps): Command[] {
     // ---- File --------------------------------------------------------------
     {
       id: 'newFile',
-      label: 'New',
+      label: 'cmd.newFile',
       shortcut: 'Ctrl+N',
       bindGlobal: true,
       run: () => void ops.newFile()
     },
     {
       id: 'openFile',
-      label: 'Open…',
+      label: 'cmd.openFile',
       shortcut: 'Ctrl+O',
       bindGlobal: true,
       run: () => void ops.openFile()
     },
     {
       id: 'openFolder',
-      label: 'Open Folder…',
+      label: 'cmd.openFolder',
       shortcut: 'Ctrl+Shift+O',
       bindGlobal: true,
       run: () => void ops.openFolder()
     },
     {
       id: 'quickOpen',
-      label: 'Quick Open…',
+      label: 'cmd.quickOpen',
       shortcut: 'Ctrl+P',
       bindGlobal: true,
       run: () => ops.openQuickOpen()
     },
     {
       id: 'saveFile',
-      label: 'Save',
+      label: 'cmd.saveFile',
       shortcut: 'Ctrl+S',
       bindGlobal: true,
       run: () => void ops.saveFile()
     },
     {
       id: 'saveFileAs',
-      label: 'Save As…',
+      label: 'cmd.saveFileAs',
       shortcut: 'Ctrl+Shift+S',
       bindGlobal: true,
       run: () => void ops.saveFileAs()
     },
     {
       id: 'openPreferences',
-      label: 'Preferences…',
+      label: 'cmd.openPreferences',
       shortcut: 'Ctrl+,',
       bindGlobal: true,
       run: () => ops.openPreferences()
     },
     {
       id: 'exportPdf',
-      label: 'PDF…',
+      label: 'cmd.exportPdf',
       run: () => ops.exportDocument('pdf')
     },
     {
       id: 'exportHtml',
-      label: 'HTML…',
+      label: 'cmd.exportHtml',
       run: () => ops.exportDocument('html')
     },
     // ---- Edit --------------------------------------------------------------
     {
       id: 'undo',
-      label: 'Undo',
+      label: 'cmd.undo',
       shortcut: 'Ctrl+Z',
       run: () => {
         const v = view()
@@ -138,7 +139,7 @@ export function buildCommands(ops: CommandOps): Command[] {
     },
     {
       id: 'redo',
-      label: 'Redo',
+      label: 'cmd.redo',
       shortcut: 'Ctrl+Y',
       run: () => {
         const v = view()
@@ -147,7 +148,7 @@ export function buildCommands(ops: CommandOps): Command[] {
     },
     {
       id: 'cut',
-      label: 'Cut',
+      label: 'cmd.cut',
       shortcut: 'Ctrl+X',
       run: () => {
         const v = view()
@@ -160,7 +161,7 @@ export function buildCommands(ops: CommandOps): Command[] {
     },
     {
       id: 'copy',
-      label: 'Copy',
+      label: 'cmd.copy',
       shortcut: 'Ctrl+C',
       run: () => {
         const v = view()
@@ -171,7 +172,7 @@ export function buildCommands(ops: CommandOps): Command[] {
     },
     {
       id: 'paste',
-      label: 'Paste',
+      label: 'cmd.paste',
       shortcut: 'Ctrl+V',
       run: () => {
         const v = view()
@@ -196,7 +197,7 @@ export function buildCommands(ops: CommandOps): Command[] {
     },
     {
       id: 'selectAll',
-      label: 'Select All',
+      label: 'cmd.selectAll',
       shortcut: 'Ctrl+A',
       run: () => {
         const v = view()
@@ -206,7 +207,7 @@ export function buildCommands(ops: CommandOps): Command[] {
     },
     {
       id: 'find',
-      label: 'Find',
+      label: 'cmd.find',
       shortcut: 'Ctrl+F',
       run: () => {
         const v = view()
@@ -214,10 +215,10 @@ export function buildCommands(ops: CommandOps): Command[] {
       }
     },
     // ---- View --------------------------------------------------------------
-    { id: 'toggleOutline', label: 'Toggle Outline', run: () => ops.toggleOutline() },
+    { id: 'toggleOutline', label: 'cmd.toggleOutline', run: () => ops.toggleOutline() },
     {
       id: 'globalSearch',
-      label: 'Search in Folder…',
+      label: 'cmd.globalSearch',
       shortcut: 'Ctrl+Shift+F',
       bindGlobal: true,
       run: () => ops.openGlobalSearch()
@@ -226,7 +227,7 @@ export function buildCommands(ops: CommandOps): Command[] {
     // it into the editor config facet (single write path, survives restart).
     {
       id: 'toggleFocusMode',
-      label: 'Focus Mode',
+      label: 'cmd.toggleFocusMode',
       shortcut: 'F8',
       bindGlobal: true,
       checked: () => getPreferences().focusMode,
@@ -234,29 +235,29 @@ export function buildCommands(ops: CommandOps): Command[] {
     },
     {
       id: 'toggleTypewriterMode',
-      label: 'Typewriter Mode',
+      label: 'cmd.toggleTypewriterMode',
       checked: () => getPreferences().typewriterMode,
       run: () => setPreferences({ typewriterMode: !getPreferences().typewriterMode })
     },
     {
       id: 'toggleSourceMode',
-      label: 'Source Mode',
+      label: 'cmd.toggleSourceMode',
       shortcut: 'Ctrl+/',
       bindGlobal: true,
       checked: () => getPreferences().sourceMode,
       run: () => setPreferences({ sourceMode: !getPreferences().sourceMode })
     },
-    { id: 'zoomIn', label: 'Zoom In', run: () => window.api.windowZoom('in') },
-    { id: 'zoomOut', label: 'Zoom Out', run: () => window.api.windowZoom('out') },
-    { id: 'zoomReset', label: 'Reset Zoom', run: () => window.api.windowZoom('reset') },
+    { id: 'zoomIn', label: 'cmd.zoomIn', run: () => window.api.windowZoom('in') },
+    { id: 'zoomOut', label: 'cmd.zoomOut', run: () => window.api.windowZoom('out') },
+    { id: 'zoomReset', label: 'cmd.zoomReset', run: () => window.api.windowZoom('reset') },
     {
       id: 'toggleDevTools',
-      label: 'Toggle Developer Tools',
+      label: 'cmd.toggleDevTools',
       run: () => window.api.windowToggleDevTools()
     },
     {
       id: 'toggleTheme',
-      label: 'Toggle Theme',
+      label: 'cmd.toggleTheme',
       shortcut: 'Ctrl+Shift+T',
       bindGlobal: true,
       run: () => ops.toggleTheme()
@@ -264,8 +265,8 @@ export function buildCommands(ops: CommandOps): Command[] {
     // ---- Help --------------------------------------------------------------
     {
       id: 'showHelp',
-      label: 'Markdown Syntax Reference',
-      run: () => ops.loadContent(HELP_MD, null)
+      label: 'cmd.showHelp',
+      run: () => ops.loadContent(getHelpMd(getLang()), null)
     }
   ]
 }
@@ -285,7 +286,7 @@ type LayoutItem = string | { separator: true } | { recent: true } | { export: tr
 
 const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
   {
-    label: 'File',
+    label: 'menu.file',
     items: [
       'newFile',
       'openFile',
@@ -302,7 +303,7 @@ const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
     ]
   },
   {
-    label: 'Edit',
+    label: 'menu.edit',
     items: [
       'undo',
       'redo',
@@ -316,7 +317,7 @@ const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
     ]
   },
   {
-    label: 'View',
+    label: 'menu.view',
     items: [
       'toggleOutline',
       { separator: true },
@@ -335,7 +336,7 @@ const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
       'toggleTheme'
     ]
   },
-  { label: 'Help', items: ['showHelp'] }
+  { label: 'menu.help', items: ['showHelp'] }
 ]
 
 /** Expand the registry + layout into the MenuBar's menu definitions. */
@@ -347,26 +348,26 @@ export function buildMenus(
 ): MenuDef[] {
   const byId = new Map(commands.map((c) => [c.id, c]))
   return MENU_LAYOUT.map((menu) => ({
-    label: menu.label,
+    label: t(menu.label),
     items: menu.items.map((item): MenuItem => {
       if (typeof item === 'object' && 'separator' in item) return { separator: true }
       if (typeof item === 'object' && 'recent' in item) {
-        return { label: 'Open Recent', submenu: buildRecentSubmenu(recentItems, ops) }
+        return { label: t('menu.openRecent'), submenu: buildRecentSubmenu(recentItems, ops) }
       }
       if (typeof item === 'object' && 'export' in item) {
         return {
-          label: 'Export',
+          label: t('menu.export'),
           submenu: ['exportPdf', 'exportHtml'].map((id) => {
             const cmd = byId.get(id)
             if (!cmd) throw new Error(`export submenu references unknown command "${id}"`)
-            return { label: cmd.label, action: cmd.run }
+            return { label: t(cmd.label), action: cmd.run }
           })
         }
       }
       const cmd = byId.get(item)
       if (!cmd) throw new Error(`menu layout references unknown command "${item}"`)
       return {
-        label: cmd.label,
+        label: t(cmd.label),
         shortcut: cmd.shortcut ? fmtShortcut(cmd.shortcut, isMac) : undefined,
         checked: cmd.checked?.(),
         action: cmd.run
@@ -380,7 +381,7 @@ function buildRecentSubmenu(
   recentItems: RecentItem[],
   ops?: Pick<CommandOps, 'openRecentFile' | 'clearRecentFiles'>
 ): MenuItem[] {
-  if (recentItems.length === 0) return [{ label: 'No Recent Files', disabled: true }]
+  if (recentItems.length === 0) return [{ label: t('menu.noRecent'), disabled: true }]
   const items: MenuItem[] = recentItems.map((item) => ({
     label: item.name,
     title: item.path,
@@ -388,7 +389,7 @@ function buildRecentSubmenu(
     action: () => void ops?.openRecentFile(item.path)
   }))
   items.push({ separator: true })
-  items.push({ label: 'Clear Menu', action: () => ops?.clearRecentFiles() })
+  items.push({ label: t('menu.clearMenu'), action: () => ops?.clearRecentFiles() })
   return items
 }
 

@@ -56,6 +56,8 @@ const api: RendererApi = {
     ipcRenderer.invoke('app:setState', state),
   setRecentFiles: (files: RecentFileItem[]): Promise<void> =>
     ipcRenderer.invoke('app:setRecentFiles', files),
+  setUiLanguage: (lang: 'zh' | 'en'): Promise<void> =>
+    ipcRenderer.invoke('app:setLanguage', lang),
   resolveImageSrc: (dir: string, src: string): Promise<ResolvedImageSrc> =>
     ipcRenderer.invoke('file:resolveImageSrc', dir, src),
   saveClipboardImage: (

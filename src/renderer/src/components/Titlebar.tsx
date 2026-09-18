@@ -1,6 +1,7 @@
 import MenuBar, { type MenuDef } from './MenuBar'
 import { CloseIcon, MaximizeIcon, MinimizeIcon, MoonIcon, PanelIcon, SearchIcon, SunIcon } from './Icons'
 import type { ThemeName } from '../editor/theme'
+import { t } from '../i18n'
 
 interface Props {
   menus: MenuDef[]
@@ -34,10 +35,9 @@ export default function Titlebar({
 }: Props): React.JSX.Element {
   const autoSaveLabel =
     autoSaveAt != null
-      ? `Auto-saved ${new Date(autoSaveAt).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit'
-        })}`
+      ? t('tb.autoSaved', {
+          time: new Date(autoSaveAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        })
       : null
   return (
     <div
@@ -59,35 +59,35 @@ export default function Titlebar({
       <button
         className="tb-btn"
         onClick={openSearch}
-        title="Search in folder (Ctrl+Shift+F)"
+        title={t('app.searchInFolder')}
       >
         <SearchIcon />
       </button>
-      <button className="tb-btn" onClick={toggleOutline} title="Toggle outline">
+      <button className="tb-btn" onClick={toggleOutline} title={t('tb.outline')}>
         <PanelIcon />
       </button>
       <button
         className="tb-btn"
         onClick={toggleTheme}
-        title={`Toggle theme (${formatShortcut('Ctrl+Shift+T')})`}
+        title={t('tb.theme')}
       >
         {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
       </button>
       <div className="window-controls">
-        <button className="wc-btn" onClick={() => window.api.windowMinimize()} title="Minimize">
+        <button className="wc-btn" onClick={() => window.api.windowMinimize()} title={t('tb.minimize')}>
           <MinimizeIcon />
         </button>
         <button
           className="wc-btn"
           onClick={() => window.api.windowMaximizeRestore()}
-          title="Maximize / Restore"
+          title={t('tb.maximize')}
         >
           <MaximizeIcon />
         </button>
         <button
           className="wc-btn wc-close"
           onClick={() => window.api.windowClose()}
-          title="Close"
+          title={t('tb.close')}
         >
           <CloseIcon />
         </button>

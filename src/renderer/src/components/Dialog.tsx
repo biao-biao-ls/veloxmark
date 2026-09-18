@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { t } from '../i18n'
 
 /**
  * In-app modal dialogs replacing the native alert/confirm/prompt.
@@ -103,7 +104,7 @@ export const dialog = {
         title: o.title,
         message: o.message,
         defaultValue: '',
-        confirmLabel: o.okLabel ?? 'OK',
+        confirmLabel: o.okLabel ?? t('dialog.ok'),
         cancelLabel: '',
         discardLabel: '',
         danger: false,
@@ -119,8 +120,8 @@ export const dialog = {
         title: opts.title,
         message: opts.message,
         defaultValue: '',
-        confirmLabel: opts.confirmLabel ?? 'OK',
-        cancelLabel: opts.cancelLabel ?? 'Cancel',
+        confirmLabel: opts.confirmLabel ?? t('dialog.ok'),
+        cancelLabel: opts.cancelLabel ?? t('dialog.cancel'),
         discardLabel: '',
         danger: opts.danger ?? false,
         resolve: (v) => resolve(v as boolean)
@@ -136,8 +137,8 @@ export const dialog = {
         message: opts.message,
         defaultValue: opts.defaultValue ?? '',
         placeholder: opts.placeholder,
-        confirmLabel: opts.confirmLabel ?? 'OK',
-        cancelLabel: opts.cancelLabel ?? 'Cancel',
+        confirmLabel: opts.confirmLabel ?? t('dialog.ok'),
+        cancelLabel: opts.cancelLabel ?? t('dialog.cancel'),
         discardLabel: '',
         danger: false,
         resolve: (v) => resolve(v as string | null)
@@ -153,9 +154,9 @@ export const dialog = {
         title: opts.title,
         message: opts.message,
         defaultValue: '',
-        confirmLabel: opts.confirmLabel ?? 'Save',
-        cancelLabel: opts.cancelLabel ?? 'Cancel',
-        discardLabel: opts.discardLabel ?? "Don't Save",
+        confirmLabel: opts.confirmLabel ?? t('dialog.save'),
+        cancelLabel: opts.cancelLabel ?? t('dialog.cancel'),
+        discardLabel: opts.discardLabel ?? t('dialog.dontSave'),
         danger: opts.danger ?? false,
         resolve: (v) => resolve(v as ChooseResult)
       })
@@ -269,7 +270,7 @@ function Dialog({ req }: Props): React.JSX.Element {
         className="dialog"
         role="alertdialog"
         aria-modal="true"
-        aria-label={req.title ?? 'Dialog'}
+        aria-label={req.title ?? t('dialog.dialog')}
       >
         {req.title && <div className="dialog-title">{req.title}</div>}
         {req.message && <div className="dialog-message">{req.message}</div>}

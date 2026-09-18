@@ -5,6 +5,7 @@ import type { TreeMenuItem } from '../components/TreeMenu'
 import { dialog } from '../components/Dialog'
 import { getPreferences, getSession, patchSession } from '../preferences/store'
 import type { SidebarMode } from './useFileOps'
+import { t } from '../i18n'
 
 interface Args {
   filePathRef: RefObject<string | null>
@@ -130,17 +131,17 @@ export function useWorkspaceTree({
 
   const treeNewFile = useCallback(
     async (dirPath: string) => {
-      const name = await dialog.prompt({ title: 'New File', message: 'New file name:' })
+      const name = await dialog.prompt({ title: t('tree.newFile'), message: t('tree.newFileName') })
       if (!name) return
       if (/[/\\]/.test(name) || name === '.' || name === '..') {
-        await dialog.alert('Invalid file name.')
+        await dialog.alert(t('tree.invalidName'))
         return
       }
       const fileName = /\.[^./\\]+$/.test(name) ? name : `${name}.md`
       try {
         await window.api.createFile(joinPath(dirPath, fileName))
       } catch (err) {
-        await dialog.alert(`Could not create file: ${err instanceof Error ? err.message : err}`)
+        await dialog.alert(t('tree.createFileErr', { msg: err instanceof Error ? err.message : String(err) }))
       }
     },
     [joinPath]
@@ -148,16 +149,16 @@ export function useWorkspaceTree({
 
   const treeNewFolder = useCallback(
     async (dirPath: string) => {
-      const name = await dialog.prompt({ title: 'New Folder', message: 'New folder name:' })
+      const name = await dialog.prompt({ title: t('tree.newFolder'), message: t('tree.newFolderName') })
       if (!name) return
       if (/[/\\]/.test(name) || name === '.' || name === '..') {
-        await dialog.alert('Invalid folder name.')
+        await dialog.alert(t('tree.invalidFolderName'))
         return
       }
       try {
         await window.api.mkdirPath(joinPath(dirPath, name))
       } catch (err) {
-        await dialog.alert(`Could not create folder: ${err instanceof Error ? err.message : err}`)
+        await dialog.alert(t('tree.createFolderErr', { msg: err instanceof Error ? err.message : String(err) }))
       }
     },
     [joinPath]
@@ -166,13 +167,13 @@ export function useWorkspaceTree({
   const treeRename = useCallback(
     async (node: DirNode) => {
       const name = await dialog.prompt({
-        title: node.isDir ? 'Rename Folder' : 'Rename File',
-        message: node.isDir ? 'Rename folder:' : 'Rename file:',
+        title: node.isDir ? t('tree.renameFolder') : t('tree.renameFile'),
+        message: node.isDir ? t('tree.renameFolderMsg') : t('tree.renameFileMsg'),
         defaultValue: node.name
       })
       if (!name || name === node.name) return
       if (/[/\\]/.test(name) || name === '.' || name === '..') {
-        await dialog.alert('Invalid name.')
+        await dialog.alert(t('tree.invalidAnyName'))
         return
       }
       // sibling path: swap the last segment, keeping the original separator
@@ -180,7 +181,7 @@ export function useWorkspaceTree({
       try {
         await window.api.renamePath(node.path, newPath)
       } catch (err) {
-        await dialog.alert(`Could not rename: ${err instanceof Error ? err.message : err}`)
+        await dialog.alert(t('tree.renameErr', { msg: err instanceof Error ? err.message : String(err) }))
         return
       }
       // keep the open editor attached when its file (or an ancestor folder) moves
@@ -199,7 +200,7 @@ export function useWorkspaceTree({
         const newPath = await window.api.movePath(srcPath, destDir)
         followMovedPath(srcPath, newPath)
       } catch (err) {
-        await dialog.alert(`Could not move: ${err instanceof Error ? err.message : err}`)
+        await dialog.alert(t('tree.moveErr', { msg: err instanceof Error ? err.message : String(err) }))
       }
     },
     [followMovedPath]
@@ -207,18 +208,19 @@ export function useWorkspaceTree({
 
   const treeDelete = useCallback(
     async (node: DirNode) => {
-      const what = node.isDir ? 'folder' : 'file'
       const ok = await dialog.confirm({
-        title: `Delete ${what}`,
-        message: `Delete ${what} "${node.name}"? This cannot be undone.`,
-        confirmLabel: 'Delete',
+        title: node.isDir ? t('tree.deleteFolderTitle') : t('tree.deleteFileTitle'),
+        message: node.isDir
+          ? t('tree.deleteFolderMsg', { name: node.name })
+          : t('tree.deleteFileMsg', { name: node.name }),
+        confirmLabel: t('tree.deleteConfirm'),
         danger: true
       })
       if (!ok) return
       try {
         await window.api.deletePath(node.path)
       } catch (err) {
-        await dialog.alert(`Could not delete: ${err instanceof Error ? err.message : err}`)
+        await dialog.alert(t('tree.deleteErr', { msg: err instanceof Error ? err.message : String(err) }))
         return
       }
       // if the open file is gone, detach it (buffer keeps its content → Save As)
@@ -253,26 +255,26 @@ export function useWorkspaceTree({
     // Root: right-click on the empty area under the tree.
     if (!node) {
       return [
-        { label: 'New File', action: () => void treeNewFile(folderPath) },
-        { label: 'New Folder', action: () => void treeNewFolder(folderPath) },
-        { label: 'Copy Path', action: () => treeCopyPath(null) }
+        { label: 'tree.newFile', action: () => void treeNewFile(folderPath) },
+        { label: 'tree.newFolder', action: () => void treeNewFolder(folderPath) },
+        { label: 'tree.copyPath', action: () => treeCopyPath(null) }
       ]
     }
     if (node.isDir) {
       return [
-        { label: 'New File', action: () => void treeNewFile(node.path) },
-        { label: 'New Folder', action: () => void treeNewFolder(node.path) },
-        { label: 'Copy Path', action: () => treeCopyPath(node) },
-        { label: 'Copy Relative Path', action: () => treeCopyRelativePath(node) },
-        { label: 'Rename', action: () => void treeRename(node) },
-        { label: 'Delete', danger: true, action: () => void treeDelete(node) }
+        { label: 'tree.newFile', action: () => void treeNewFile(node.path) },
+        { label: 'tree.newFolder', action: () => void treeNewFolder(node.path) },
+        { label: 'tree.copyPath', action: () => treeCopyPath(node) },
+        { label: 'tree.copyRelPath', action: () => treeCopyRelativePath(node) },
+        { label: 'tree.rename', action: () => void treeRename(node) },
+        { label: 'tree.delete', danger: true, action: () => void treeDelete(node) }
       ]
     }
     return [
-      { label: 'Copy Path', action: () => treeCopyPath(node) },
-      { label: 'Copy Relative Path', action: () => treeCopyRelativePath(node) },
-      { label: 'Rename', action: () => void treeRename(node) },
-      { label: 'Delete', danger: true, action: () => void treeDelete(node) }
+      { label: 'tree.copyPath', action: () => treeCopyPath(node) },
+      { label: 'tree.copyRelPath', action: () => treeCopyRelativePath(node) },
+      { label: 'tree.rename', action: () => void treeRename(node) },
+      { label: 'tree.delete', danger: true, action: () => void treeDelete(node) }
     ]
   }, [
     treeMenu,

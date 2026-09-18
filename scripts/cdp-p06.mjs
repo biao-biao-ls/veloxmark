@@ -120,7 +120,7 @@ async function main() {
   await evaluate(`(() => {
     const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') ?? '{}')
     localStorage.setItem('veloxmark.preferences', JSON.stringify({
-      ...raw, crashRecoveryEnabled: false, autoSaveMode: 'off'
+      ...raw, language: 'en', crashRecoveryEnabled: false, autoSaveMode: 'off'
     }))
   })()`)
   try {

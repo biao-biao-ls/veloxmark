@@ -3,6 +3,7 @@ import { app, BrowserWindow, ipcMain, Menu, net, protocol, shell } from 'electro
 // NOTE: window uses frameless mode; all menus live in the renderer titlebar.
 // Exception: macOS keeps the native menu bar (see buildDarwinMenu) and native
 // traffic lights via titleBarStyle: 'hiddenInset'.
+import { readFileSync, writeFileSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -200,13 +201,79 @@ const DARWIN_COMMAND_ACCELERATORS: Record<string, string> = {
 // the list changes so the native File > Open Recent submenu stays in sync.
 let recentFiles: RecentFileItem[] = []
 
+// ---- P14: native-menu language ----------------------------------------------
+// The renderer resolves the language pref (system → zh/en) and pushes it here;
+// we persist to userData so the menu built at startup (before the renderer is
+// ready) already matches. Fallback chain: stored file → app locale → en.
+type UiLang = 'zh' | 'en'
+const NATIVE_MENU_STRINGS: Record<UiLang, Record<string, string>> = {
+  en: {
+    app: 'VeloxMark', services: 'Services', hide: 'Hide VeloxMark', hideOthers: 'Hide Others',
+    unhide: 'Show All', quit: 'Quit VeloxMark', preferences: 'Preferences…',
+    file: 'File', newFile: 'New', openFile: 'Open…', openFolder: 'Open Folder…',
+    quickOpen: 'Quick Open…', openRecent: 'Open Recent', noRecent: 'No Recent Files',
+    clearMenu: 'Clear Menu', save: 'Save', saveAs: 'Save As…', export: 'Export',
+    pdf: 'PDF…', html: 'HTML…', close: 'Close',
+    edit: 'Edit', cut: 'Cut', copy: 'Copy', paste: 'Paste', pasteMatch: 'Paste and Match Style',
+    del: 'Delete', selectAll: 'Select All',
+    view: 'View', toggleOutline: 'Toggle Outline', globalSearch: 'Search in Folder…',
+    focusMode: 'Focus Mode', typewriterMode: 'Typewriter Mode', sourceMode: 'Source Mode',
+    zoomIn: 'Zoom In', zoomOut: 'Zoom Out', zoomReset: 'Reset Zoom',
+    devTools: 'Toggle Developer Tools', toggleTheme: 'Toggle Theme',
+    window: 'Window', minimize: 'Minimize', zoom: 'Zoom', fullscreen: 'Enter Full Screen',
+    front: 'Bring All to Front',
+    help: 'Help', showHelp: 'Markdown Syntax Reference'
+  },
+  zh: {
+    app: 'VeloxMark', services: '服务', hide: '隐藏 VeloxMark', hideOthers: '隐藏其他',
+    unhide: '全部显示', quit: '退出 VeloxMark', preferences: '偏好设置…',
+    file: '文件', newFile: '新建', openFile: '打开…', openFolder: '打开文件夹…',
+    quickOpen: '快速打开…', openRecent: '打开最近', noRecent: '暂无最近文件',
+    clearMenu: '清空列表', save: '保存', saveAs: '另存为…', export: '导出',
+    pdf: 'PDF…', html: 'HTML…', close: '关闭',
+    edit: '编辑', cut: '剪切', copy: '复制', paste: '粘贴', pasteMatch: '粘贴并匹配样式',
+    del: '删除', selectAll: '全选',
+    view: '视图', toggleOutline: '切换大纲', globalSearch: '文件夹内搜索…',
+    focusMode: '专注模式', typewriterMode: '打字机模式', sourceMode: '源码模式',
+    zoomIn: '放大', zoomOut: '缩小', zoomReset: '重置缩放',
+    devTools: '开发者工具', toggleTheme: '切换主题',
+    window: '窗口', minimize: '最小化', zoom: '缩放', fullscreen: '进入全屏幕',
+    front: '前置所有窗口',
+    help: '帮助', showHelp: 'Markdown 语法参考'
+  }
+}
+
+function uiLanguagePath(): string {
+  return join(app.getPath('userData'), 'ui-language.json')
+}
+
+function readStoredUiLang(): UiLang | null {
+  try {
+    const raw = JSON.parse(readFileSync(uiLanguagePath(), 'utf8')) as { lang?: unknown }
+    return raw.lang === 'zh' || raw.lang === 'en' ? raw.lang : null
+  } catch {
+    return null
+  }
+}
+
+let uiLang: UiLang = 'en'
+
+function initUiLang(): void {
+  const stored = readStoredUiLang()
+  if (stored) {
+    uiLang = stored
+  } else {
+    uiLang = app.getLocale().toLowerCase().startsWith('zh') ? 'zh' : 'en'
+  }
+}
+
 function rebuildDarwinMenu(): void {
   if (process.platform === 'darwin') Menu.setApplicationMenu(buildDarwinMenu())
 }
 
-function recentFilesSubmenu(): Electron.MenuItemConstructorOptions[] {
+function recentFilesSubmenu(S: Record<string, string>): Electron.MenuItemConstructorOptions[] {
   if (recentFiles.length === 0) {
-    return [{ label: 'No Recent Files', enabled: false }]
+    return [{ label: S.noRecent, enabled: false }]
   }
   const items: Electron.MenuItemConstructorOptions[] = recentFiles.map((item) => ({
     label: basename(item.path),
@@ -218,7 +285,7 @@ function recentFilesSubmenu(): Electron.MenuItemConstructorOptions[] {
   items.push(
     { type: 'separator' },
     {
-      label: 'Clear Menu',
+      label: S.clearMenu,
       click: () => mainWindow?.webContents.send('menu:clearRecent')
     }
   )
@@ -234,101 +301,103 @@ function commandItem(id: string, label: string): Electron.MenuItemConstructorOpt
 }
 
 function buildDarwinMenu(): Menu {
+  const S = NATIVE_MENU_STRINGS[uiLang]
   return Menu.buildFromTemplate([
     {
-      label: 'VeloxMark',
+      label: S.app,
       submenu: [
         { role: 'about' },
         { type: 'separator' },
-        { role: 'services' },
+        { role: 'services', label: S.services },
         { type: 'separator' },
-        { role: 'hide' },
-        { role: 'hideOthers' },
-        { role: 'unhide' },
+        { role: 'hide', label: S.hide },
+        { role: 'hideOthers', label: S.hideOthers },
+        { role: 'unhide', label: S.unhide },
         { type: 'separator' },
-        commandItem('openPreferences', 'Preferences…'),
+        commandItem('openPreferences', S.preferences),
         { type: 'separator' },
-        { role: 'quit' }
+        { role: 'quit', label: S.quit }
       ]
     },
     {
-      label: 'File',
+      label: S.file,
       submenu: [
-        commandItem('newFile', 'New'),
-        commandItem('openFile', 'Open…'),
-        commandItem('openFolder', 'Open Folder…'),
-        commandItem('quickOpen', 'Quick Open…'),
-        { label: 'Open Recent', submenu: recentFilesSubmenu() },
+        commandItem('newFile', S.newFile),
+        commandItem('openFile', S.openFile),
+        commandItem('openFolder', S.openFolder),
+        commandItem('quickOpen', S.quickOpen),
+        { label: S.openRecent, submenu: recentFilesSubmenu(S) },
         { type: 'separator' },
-        commandItem('saveFile', 'Save'),
-        commandItem('saveFileAs', 'Save As…'),
+        commandItem('saveFile', S.save),
+        commandItem('saveFileAs', S.saveAs),
         { type: 'separator' },
         {
-          label: 'Export',
-          submenu: [commandItem('exportPdf', 'PDF…'), commandItem('exportHtml', 'HTML…')]
+          label: S.export,
+          submenu: [commandItem('exportPdf', S.pdf), commandItem('exportHtml', S.html)]
         },
         { type: 'separator' },
-        { role: 'close' }
+        { role: 'close', label: S.close }
       ]
     },
     {
-      label: 'Edit',
+      label: S.edit,
       submenu: [
         // No undo/redo roles on purpose: a menu accelerator would intercept
         // Cmd+Z/Y before CodeMirror sees them, and native undo fights CM6's
         // transaction history. CM6's own keymap handles them in the editor.
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        { role: 'pasteAndMatchStyle' },
-        { role: 'delete' },
-        { role: 'selectAll' }
+        { role: 'cut', label: S.cut },
+        { role: 'copy', label: S.copy },
+        { role: 'paste', label: S.paste },
+        { role: 'pasteAndMatchStyle', label: S.pasteMatch },
+        { role: 'delete', label: S.del },
+        { role: 'selectAll', label: S.selectAll }
       ]
     },
     {
-      label: 'View',
+      label: S.view,
       submenu: [
-        commandItem('toggleOutline', 'Toggle Outline'),
+        commandItem('toggleOutline', S.toggleOutline),
         { type: 'separator' },
-        commandItem('globalSearch', 'Search in Folder…'),
+        commandItem('globalSearch', S.globalSearch),
         { type: 'separator' },
-        commandItem('toggleFocusMode', 'Focus Mode'),
-        commandItem('toggleTypewriterMode', 'Typewriter Mode'),
-        commandItem('toggleSourceMode', 'Source Mode'),
+        commandItem('toggleFocusMode', S.focusMode),
+        commandItem('toggleTypewriterMode', S.typewriterMode),
+        commandItem('toggleSourceMode', S.sourceMode),
         { type: 'separator' },
         // Zoom/devtools run in main directly — no renderer round-trip.
-        { label: 'Zoom In', accelerator: 'Cmd+Plus', click: () => zoomBy(getWindow, 0.5) },
-        { label: 'Zoom Out', accelerator: 'Cmd+-', click: () => zoomBy(getWindow, -0.5) },
-        { label: 'Reset Zoom', accelerator: 'Cmd+0', click: () => zoomBy(getWindow, 'reset') },
+        { label: S.zoomIn, accelerator: 'Cmd+Plus', click: () => zoomBy(getWindow, 0.5) },
+        { label: S.zoomOut, accelerator: 'Cmd+-', click: () => zoomBy(getWindow, -0.5) },
+        { label: S.zoomReset, accelerator: 'Cmd+0', click: () => zoomBy(getWindow, 'reset') },
         { type: 'separator' },
         {
-          label: 'Toggle Developer Tools',
+          label: S.devTools,
           accelerator: 'Alt+Cmd+I',
           click: () => mainWindow?.webContents.toggleDevTools()
         },
         { type: 'separator' },
-        commandItem('toggleTheme', 'Toggle Theme')
+        commandItem('toggleTheme', S.toggleTheme)
       ]
     },
     {
-      label: 'Window',
+      label: S.window,
       submenu: [
-        { role: 'minimize' },
-        { role: 'zoom' },
+        { role: 'minimize', label: S.minimize },
+        { role: 'zoom', label: S.zoom },
         { type: 'separator' },
-        { role: 'togglefullscreen' },
+        { role: 'togglefullscreen', label: S.fullscreen },
         { type: 'separator' },
-        { role: 'front' }
+        { role: 'front', label: S.front }
       ]
     },
     {
-      label: 'Help',
-      submenu: [commandItem('showHelp', 'Markdown Syntax Reference')]
+      label: S.help,
+      submenu: [commandItem('showHelp', S.showHelp)]
     }
   ])
 }
 
 app.whenReady().then(() => {
+  initUiLang()
   registerAllIpc(getWindow)
 
   // P03: renderer pushes the recent-files list (with existence flags) so the
@@ -336,6 +405,18 @@ app.whenReady().then(() => {
   ipcMain.handle('app:setRecentFiles', (_e, files: RecentFileItem[]) => {
     recentFiles = Array.isArray(files) ? files : []
     rebuildDarwinMenu()
+  })
+
+  // P14: renderer resolved the language pref — persist + rebuild native menu.
+  ipcMain.handle('app:setLanguage', (_e, lang: string) => {
+    uiLang = lang === 'zh' ? 'zh' : 'en'
+    try {
+      writeFileSync(uiLanguagePath(), JSON.stringify({ lang: uiLang }), 'utf8')
+    } catch (err) {
+      console.error('[veloxmark] failed to persist ui language', err)
+    }
+    rebuildDarwinMenu()
+    return true
   })
 
   // P12: renderer verdict for the close query — allow re-runs close with the
