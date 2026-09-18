@@ -10,6 +10,8 @@ interface Props {
   toggleOutline: () => void
   toggleTheme: () => void
   formatShortcut: (shortcut: string) => string
+  /** P12: ms timestamp of the last autosave/draft-save; null = none yet. */
+  autoSaveAt?: number | null
 }
 
 /**
@@ -24,8 +26,16 @@ export default function Titlebar({
   theme,
   toggleOutline,
   toggleTheme,
-  formatShortcut
+  formatShortcut,
+  autoSaveAt
 }: Props): React.JSX.Element {
+  const autoSaveLabel =
+    autoSaveAt != null
+      ? `Auto-saved ${new Date(autoSaveAt).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit'
+        })}`
+      : null
   return (
     <div
       className="titlebar"
@@ -40,6 +50,7 @@ export default function Titlebar({
       <span className="tb-title">
         {dirty && <span className="tb-dirty">• </span>}
         {fileName} — VeloxMark
+        {autoSaveLabel && <span className="tb-autosave"> {autoSaveLabel}</span>}
       </span>
       <span className="tb-spacer" />
       <button className="tb-btn" onClick={toggleOutline} title="Toggle outline">

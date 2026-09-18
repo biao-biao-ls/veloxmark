@@ -8,13 +8,14 @@ import Titlebar from './components/Titlebar'
 import Preferences from './components/Preferences'
 import ExportDialog from './components/ExportDialog'
 import QuickOpen from './components/QuickOpen'
-import { DialogHost } from './components/Dialog'
+import { DialogHost, dialog } from './components/Dialog'
 import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch, updateLivePreviewConfig } from './editor/setup'
 import { invalidateImageCache } from './editor/widgets'
 import { readEditingAssistsConfig } from './editor/assists'
 import { extractOutline, type OutlineItem } from './outline/extract'
 import { WELCOME_MD } from './content'
 import { useFileOps } from './hooks/useFileOps'
+import { useAutoSave } from './hooks/useAutoSave'
 import { useWorkspaceTree } from './hooks/useWorkspaceTree'
 import { useAppTheme } from './hooks/useAppTheme'
 import { useExport } from './hooks/useExport'
@@ -36,9 +37,24 @@ declare global {
       view: EditorView
       applyLivePreviewConfig: typeof updateLivePreviewConfig
     } | null
+    /** P12 e2e handle: close-query / drafts / autosave inspection. */
+    __veloxP12: {
+      queryClose: () => Promise<boolean>
+      confirmDiscard: () => Promise<boolean>
+      saveFile: () => Promise<boolean>
+      loadDoc: (content: string, path: string | null) => void
+      getFilePath: () => string | null
+      getDirty: () => boolean
+      draftList: () => Promise<Awaited<ReturnType<typeof window.api.draftList>>>
+      draftWrite: (path: string | null, content: string) => Promise<void>
+      draftDiscard: (path: string | null) => Promise<void>
+      runDraftCheck: () => Promise<void>
+      getLastAutoSaveAt: () => number | null
+    } | null
   }
 }
 window.__veloxEditor = null
+window.__veloxP12 = null
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -96,6 +112,24 @@ export default function App(): React.JSX.Element {
 
   const fileOps = useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRef })
   const { dirty, setDirty, filePath, filePathRef, syncAppState, savedContentRef } = fileOps
+
+  // P12: autosave + draft pipeline. notifyChange is read through a ref from
+  // the editor's once-mounted onChange (see createExtensions below).
+  const autoSave = useAutoSave({
+    viewRef,
+    filePathRef,
+    dirtyRef: fileOps.dirtyRef,
+    savedContentRef,
+    mode: prefs.autoSaveMode,
+    delaySec: prefs.autoSaveDelaySec,
+    intervalMin: prefs.autoSaveIntervalMin,
+    crashRecoveryEnabled: prefs.crashRecoveryEnabled,
+    saveFile: fileOps.saveFile,
+    setDirty,
+    syncAppState
+  })
+  const autoSaveNotifyRef = useRef(autoSave.notifyChange)
+  autoSaveNotifyRef.current = autoSave.notifyChange
 
   const exportOps = useExport({ viewRef, filePath })
 
@@ -189,6 +223,12 @@ export default function App(): React.JSX.Element {
         }
         if (saved.lastFilePath && (await window.api.pathExists(saved.lastFilePath))) {
           await fileOps.openRecentFile(saved.lastFilePath)
+          // P12: reapply the saved cursor position with the restored file.
+          const view = viewRef.current
+          const cursor = saved.lastCursor
+          if (view && cursor != null && cursor > 0 && cursor <= view.state.doc.length) {
+            view.dispatch({ selection: { anchor: cursor } })
+          }
         }
         // Reapply the stored mode last, so restoring a file inside a folder
         // workspace comes back in files mode (acceptance criterion 2).
@@ -204,6 +244,99 @@ export default function App(): React.JSX.Element {
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // ---- P12: close intercept + crash-recovery drafts --------------------------
+  // Startup draft scan: after session restore settles, compare stored drafts
+  // against disk and offer restore/discard. Runs once per launch when the
+  // pref is on; e2e drives the same body via __veloxP12.runDraftCheck.
+  const checkDrafts = useCallback(async (): Promise<void> => {
+    const drafts = await window.api.draftList()
+    for (const d of drafts) {
+      if (!d.content) {
+        void window.api.draftDiscard(d.path)
+        continue
+      }
+      if (d.path == null) {
+        const choice = await dialog.choose({
+          title: 'Recover Unsaved Draft',
+          message:
+            'An unsaved Untitled draft was found (the previous session may have crashed). Restore it?',
+          confirmLabel: 'Restore Draft',
+          discardLabel: 'Discard Draft',
+          cancelLabel: 'Later'
+        })
+        if (choice === 'confirm') {
+          fileOps.loadContent(d.content, null)
+          // Draft content was never saved — dirty against an empty baseline.
+          fileOps.savedContentRef.current = ''
+          fileOps.dirtyRef.current = true
+          fileOps.setDirty(true)
+        } else if (choice === 'discard') {
+          void window.api.draftDiscard(null)
+        }
+        continue
+      }
+      const exists = await window.api.pathExists(d.path)
+      const disk = exists ? await window.api.readFile(d.path) : ''
+      if (disk === d.content) {
+        void window.api.draftDiscard(d.path)
+        continue
+      }
+      const choice = await dialog.choose({
+        title: 'Recover Unsaved Draft',
+        message: `A draft for\n${d.path}\ndiffers from the file on disk. Restore the draft?`,
+        confirmLabel: 'Restore Draft',
+        discardLabel: 'Discard Draft',
+        cancelLabel: 'Later'
+      })
+      if (choice === 'confirm') {
+        fileOps.loadContent(d.content, d.path)
+        // Loaded draft vs disk baseline → dirty until the user saves again.
+        fileOps.savedContentRef.current = disk
+        const isDirty = d.content !== disk
+        fileOps.dirtyRef.current = isDirty
+        fileOps.setDirty(isDirty)
+        fileOps.syncAppState(d.path, isDirty)
+        // Restore keeps the draft until an explicit save/discard.
+      } else if (choice === 'discard') {
+        void window.api.draftDiscard(d.path)
+      }
+      // 'cancel'/Later: leave the draft on disk — the next launch re-offers.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileOps.loadContent, fileOps.setDirty, fileOps.syncAppState])
+
+  useEffect(() => {
+    if (!sessionSynced) return
+    if (!getPreferences().crashRecoveryEnabled) return
+    void checkDrafts()
+  }, [sessionSynced, checkDrafts])
+
+  // Close-query subscription + CDP handle. Identity tracks queryClose.
+  const queryClose = fileOps.queryClose
+  // lastAutoSaveAt via ref — this effect must not depend on the autosave
+  // hook's per-render object identity.
+  const lastAutoSaveAtRef = useRef<number | null>(null)
+  lastAutoSaveAtRef.current = autoSave.lastAutoSaveAt
+  useEffect(() => {
+    window.__veloxP12 = {
+      queryClose: () => queryClose(),
+      confirmDiscard: () => fileOps.confirmDiscard(),
+      saveFile: () => fileOps.saveFile(),
+      loadDoc: (content, path) => fileOps.loadContent(content, path),
+      getFilePath: () => filePathRef.current,
+      getDirty: () => fileOps.dirtyRef.current,
+      draftList: () => window.api.draftList(),
+      draftWrite: (path, content) => window.api.draftWrite(path, content),
+      draftDiscard: (path) => window.api.draftDiscard(path),
+      runDraftCheck: () => checkDrafts(),
+      getLastAutoSaveAt: () => lastAutoSaveAtRef.current
+    }
+    return window.api.onQueryClose(() => {
+      void queryClose().then((allow) => window.api.closeResponse(allow))
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryClose, checkDrafts])
 
   // ---- P07: folder-tree scan options live in preferences (renderer) but are
   // applied in main — push them whenever they change (main re-scans if a
@@ -271,6 +404,7 @@ export default function App(): React.JSX.Element {
   // ---- create editor --------------------------------------------------------
   useEffect(() => {
     if (!hostRef.current || viewRef.current) return
+    let cursorPersistTimer: ReturnType<typeof setTimeout> | undefined
 
     const view = new EditorView({
       state: EditorState.create({
@@ -278,13 +412,24 @@ export default function App(): React.JSX.Element {
         extensions: createExtensions(
           {
             onChange: () => {
-              const doc = view.state.doc.toString()
-              const isDirty = doc !== savedContentRef.current
-              setDirty(isDirty)
-              syncAppState(filePathRef.current, isDirty)
+              // P12 dirty flag: set on change, cleared on save — no per-change
+              // full-document compare. Programmatic loads suppress the flag.
+              if (!fileOps.suppressDirtyRef.current && !fileOps.dirtyRef.current) {
+                fileOps.dirtyRef.current = true
+                setDirty(true)
+                syncAppState(filePathRef.current, true)
+              }
               updateOutline()
+              // P12 autosave + draft debounce pipelines.
+              autoSaveNotifyRef.current()
             },
-            onSelectionChanged: () => updateActiveHeading(),
+            onSelectionChanged: () => {
+              updateActiveHeading()
+              // P12: persist the cursor for session restore (throttled).
+              const head = view.state.selection.main.head
+              clearTimeout(cursorPersistTimer)
+              cursorPersistTimer = setTimeout(() => patchSession({ lastCursor: head }), 500)
+            },
             onTreeChanged: () => {
               updateOutline()
               updateActiveHeading()
@@ -317,6 +462,7 @@ export default function App(): React.JSX.Element {
     window.api.rendererReady()
 
     return () => {
+      clearTimeout(cursorPersistTimer)
       view.destroy()
       viewRef.current = null
     }
@@ -368,8 +514,10 @@ export default function App(): React.JSX.Element {
     newFile: fileOps.newFile,
     openFile: fileOps.openFile,
     openFolder: workspace.openFolder,
-    saveFile: fileOps.saveFile,
-    saveFileAs: fileOps.saveFileAs,
+    saveFile: async () => {
+      await fileOps.saveFile()
+    },
+    saveFileAs: () => fileOps.saveFileAs(),
     toggleTheme,
     loadContent: fileOps.loadContent,
     toggleOutline,
@@ -404,6 +552,7 @@ export default function App(): React.JSX.Element {
         toggleOutline={toggleOutline}
         toggleTheme={toggleTheme}
         formatShortcut={formatShortcut}
+        autoSaveAt={autoSave.lastAutoSaveAt}
       />
 
       <div className="main">

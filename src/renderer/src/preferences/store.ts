@@ -16,6 +16,7 @@ export const PREFERENCES_VERSION = 1
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type SidebarMode = 'outline' | 'files'
 export type ImageRenameMode = 'timestamp' | 'keep'
+export type AutoSaveMode = 'off' | 'debounce' | 'interval'
 
 export interface Preferences {
   version: number
@@ -53,6 +54,15 @@ export interface Preferences {
   typewriterMode: boolean
   /** Raw Markdown view — live-preview decorations off. */
   sourceMode: boolean
+  // ---- autosave & crash recovery (P12) ---------------------------------------
+  /** off | input-debounce (N seconds) | fixed interval (N minutes). */
+  autoSaveMode: AutoSaveMode
+  /** Debounce delay in seconds when autoSaveMode === 'debounce'. */
+  autoSaveDelaySec: number
+  /** Interval in minutes when autoSaveMode === 'interval'. */
+  autoSaveIntervalMin: number
+  /** Write crash-recovery drafts + offer restore on startup. */
+  crashRecoveryEnabled: boolean
 }
 
 export interface SessionState {
@@ -63,6 +73,8 @@ export interface SessionState {
   lastFolderPath: string | null
   /** Most-recent-first, max 10. */
   recentFiles: string[]
+  /** P12: editor cursor offset restored with the last file. */
+  lastCursor: number | null
 }
 
 export const RECENT_FILES_MAX = 10
@@ -90,7 +102,11 @@ export const DEFAULT_PREFERENCES: Preferences = {
   showHiddenFiles: false,
   focusMode: false,
   typewriterMode: false,
-  sourceMode: false
+  sourceMode: false,
+  autoSaveMode: 'debounce',
+  autoSaveDelaySec: 3,
+  autoSaveIntervalMin: 5,
+  crashRecoveryEnabled: true
 }
 
 const DEFAULT_SESSION: SessionState = {
@@ -99,7 +115,8 @@ const DEFAULT_SESSION: SessionState = {
   sidebarWidth: null,
   lastFilePath: null,
   lastFolderPath: null,
-  recentFiles: []
+  recentFiles: [],
+  lastCursor: null
 }
 
 const PREFS_KEY = 'veloxmark.preferences'
@@ -188,7 +205,14 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
     showHiddenFiles: p.showHiddenFiles === true,
     focusMode: p.focusMode === true,
     typewriterMode: p.typewriterMode === true,
-    sourceMode: p.sourceMode === true
+    sourceMode: p.sourceMode === true,
+    autoSaveMode:
+      p.autoSaveMode === 'off' || p.autoSaveMode === 'interval' || p.autoSaveMode === 'debounce'
+        ? p.autoSaveMode
+        : DEFAULT_PREFERENCES.autoSaveMode,
+    autoSaveDelaySec: num(p.autoSaveDelaySec, 3, 1, 60),
+    autoSaveIntervalMin: num(p.autoSaveIntervalMin, 5, 1, 60),
+    crashRecoveryEnabled: p.crashRecoveryEnabled !== false
   }
 }
 
@@ -221,7 +245,11 @@ let session: SessionState = (() => {
     lastFolderPath: typeof raw.lastFolderPath === 'string' ? raw.lastFolderPath : null,
     recentFiles: Array.isArray(raw.recentFiles)
       ? raw.recentFiles.filter((p): p is string => typeof p === 'string').slice(0, RECENT_FILES_MAX)
-      : []
+      : [],
+    lastCursor:
+      typeof raw.lastCursor === 'number' && Number.isFinite(raw.lastCursor) && raw.lastCursor >= 0
+        ? raw.lastCursor
+        : null
   }
 })()
 
@@ -284,9 +312,16 @@ declare global {
     __veloxPrefs: {
       getPreferences: typeof getPreferences
       getSession: typeof getSession
+      setPreferences: typeof setPreferences
       addRecentFile: typeof addRecentFile
       clearRecentFiles: typeof clearRecentFiles
     }
   }
 }
-window.__veloxPrefs = { getPreferences, getSession, addRecentFile, clearRecentFiles }
+window.__veloxPrefs = {
+  getPreferences,
+  getSession,
+  setPreferences,
+  addRecentFile,
+  clearRecentFiles
+}

@@ -128,6 +128,20 @@ async function main() {
   // folder workspace (watcher active for the image:changed test).
   check('boot: window.api', await waitFor(`!!window.api`))
   check('boot: editor', await waitFor(`!!window.__veloxEditor?.view`))
+  // P12 hygiene: disable autosave/crash-recovery so draft dialogs and
+  // mid-test autosaves never interfere with the image/session checks.
+  await evaluate(`(() => {
+    const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') ?? '{}')
+    localStorage.setItem('veloxmark.preferences', JSON.stringify({
+      ...raw, crashRecoveryEnabled: false, autoSaveMode: 'off'
+    }))
+  })()`)
+  try {
+    const drafts = await evaluate(`window.api.draftList()`)
+    for (const d of drafts ?? []) {
+      await evaluate(`window.api.draftDiscard(${JSON.stringify(d.path)})`)
+    }
+  } catch { /* drafts API unavailable — nothing to clean */ }
   // The app's own session-persist effect may still be flushing shortly after
   // boot; seed, then verify the seed survived before reloading.
   const seeded = await (async () => {

@@ -120,6 +120,13 @@ body {
   color: var(--accent);
 }
 
+/* P12: autosave timestamp next to the document name */
+.tb-autosave {
+  color: var(--fg-dim);
+  opacity: 0.75;
+  font-size: 11px;
+}
+
 .tb-spacer {
   flex: 1;
 }

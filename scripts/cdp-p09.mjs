@@ -163,7 +163,7 @@ async function main() {
   await evaluate(`(() => {
     const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') ?? '{}')
     localStorage.setItem('veloxmark.preferences', JSON.stringify({
-      ...raw, restoreLastSession: false, focusMode: false, typewriterMode: false, sourceMode: false
+      ...raw, restoreLastSession: false, focusMode: false, typewriterMode: false, crashRecoveryEnabled: false, autoSaveMode: 'off', sourceMode: false
     }))
     localStorage.setItem('veloxmark.session', JSON.stringify({ lastFilePath: null, lastFolderPath: null }))
   })()`)
@@ -319,7 +319,7 @@ async function main() {
     await evaluate(`(() => {
       const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') ?? '{}')
       localStorage.setItem('veloxmark.preferences', JSON.stringify({
-        ...raw, restoreLastSession: false, focusMode: false, typewriterMode: false, sourceMode: true
+        ...raw, restoreLastSession: false, focusMode: false, typewriterMode: false, crashRecoveryEnabled: false, autoSaveMode: 'off', sourceMode: true
       }))
     })()`)
     await send('Page.reload')
@@ -335,7 +335,7 @@ async function main() {
     // Back to live mode for the block-widget check.
     await evaluate(`(() => {
       const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') ?? '{}')
-      localStorage.setItem('veloxmark.preferences', JSON.stringify({ ...raw, sourceMode: false }))
+      localStorage.setItem('veloxmark.preferences', JSON.stringify({ ...raw, crashRecoveryEnabled: false, autoSaveMode: 'off', sourceMode: false }))
     })()`)
     await send('Page.reload')
     check('regress: reboot for live mode', await waitFor(`!!window.__veloxEditor?.view`, 20000))

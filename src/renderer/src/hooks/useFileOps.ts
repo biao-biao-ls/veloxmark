@@ -17,11 +17,19 @@ interface Args {
 
 /**
  * Single-file document state and operations: new/open/save/saveAs, dirty
- * tracking, and the system (Finder) open-file entry point.
+ * tracking, P12 three-option discard/close gates, and the system (Finder)
+ * open-file entry point.
+ *
+ * Dirty tracking (P12 micro-opt): a ref flag is set on every change and
+ * cleared on save — no per-keystroke full-document compare. Programmatic
+ * loads set `suppressDirtyRef` around their dispatch so onChange skips.
  */
 export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRef }: Args) {
   const filePathRef = useRef<string | null>(null)
   const savedContentRef = useRef<string>(WELCOME_MD)
+  const dirtyRef = useRef(false)
+  /** True only while loadContent is replacing the document. */
+  const suppressDirtyRef = useRef(false)
   const [filePath, setFilePath] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
 
@@ -45,12 +53,15 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRe
     (content: string, path: string | null) => {
       const view = viewRef.current
       if (!view) return
+      suppressDirtyRef.current = true
       view.dispatch({
         changes: { from: 0, to: view.state.doc.length, insert: content },
         selection: { anchor: 0 },
         effects: EditorView.scrollIntoView(0, { y: 'start' })
       })
+      suppressDirtyRef.current = false
       savedContentRef.current = content
+      dirtyRef.current = false
       setFilePath(path)
       setDirty(false)
       syncAppState(path, false)
@@ -58,20 +69,94 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRe
       // P03: any successful open lands in Recent Files and session memory.
       if (path) {
         addRecentFile(path)
-        patchSession({ lastFilePath: path })
+        patchSession({ lastFilePath: path, lastCursor: 0 })
+      } else {
+        patchSession({ lastCursor: 0 })
       }
     },
     [viewRef, syncAppState, updateOutline]
   )
 
+  const saveFileAs = useCallback(async (): Promise<boolean> => {
+    const view = viewRef.current
+    if (!view) return false
+    const target = await window.api.showSaveDialog(filePathRef.current ?? 'untitled.md')
+    if (!target) return false
+    const content = view.state.doc.toString()
+    await window.api.writeFile(target, content)
+    savedContentRef.current = content
+    dirtyRef.current = false
+    setBaseDir(target)
+    setFilePath(target)
+    setDirty(false)
+    syncAppState(target, false)
+    // P12: a successful save retires both the target's and the Untitled drafts.
+    void window.api.draftDiscard(target)
+    void window.api.draftDiscard(null)
+    // P03: Save As to a new path also becomes the recent/session file.
+    addRecentFile(target)
+    patchSession({ lastFilePath: target })
+    return true
+  }, [viewRef, syncAppState, setBaseDir])
+
+  /** Save the current document; false when a Save As dialog is cancelled. */
+  const saveFile = useCallback(async (): Promise<boolean> => {
+    const view = viewRef.current
+    if (!view) return false
+    if (!filePathRef.current) return saveFileAs()
+    const content = view.state.doc.toString()
+    await window.api.writeFile(filePathRef.current, content)
+    savedContentRef.current = content
+    dirtyRef.current = false
+    setDirty(false)
+    syncAppState(filePathRef.current, false)
+    void window.api.draftDiscard(filePathRef.current)
+    return true
+  }, [viewRef, saveFileAs, syncAppState])
+
+  /**
+   * P12 three-option gate before discarding dirty content (open/new/switch).
+   * Save → saveFile (false when Save As is cancelled = abort the operation);
+   * Don't Save → drop the associated draft; Cancel → abort.
+   */
   const confirmDiscard = useCallback(async (): Promise<boolean> => {
-    if (!dirty) return true
-    return dialog.confirm({
+    if (!dirtyRef.current) return true
+    const choice = await dialog.choose({
       title: 'Unsaved Changes',
-      message: 'Discard unsaved changes?',
-      confirmLabel: 'Discard'
+      message: 'Save changes before continuing?',
+      confirmLabel: 'Save',
+      discardLabel: "Don't Save",
+      cancelLabel: 'Cancel'
     })
-  }, [dirty])
+    if (choice === 'cancel') return false
+    if (choice === 'discard') {
+      void window.api.draftDiscard(filePathRef.current)
+      return true
+    }
+    return saveFile()
+  }, [saveFile])
+
+  /**
+   * P12 close intercept handler — also reachable via window.__veloxP12 for
+   * CDP. Returns whether main may proceed with the close.
+   */
+  const queryClose = useCallback(async (): Promise<boolean> => {
+    if (!dirtyRef.current) return true
+    const choice = await dialog.choose({
+      title: 'Unsaved Changes',
+      message: 'Save changes before closing?',
+      confirmLabel: 'Save',
+      discardLabel: "Don't Save",
+      cancelLabel: 'Cancel'
+    })
+    if (choice === 'cancel') return false
+    if (choice === 'discard') {
+      void window.api.draftDiscard(filePathRef.current)
+      return true
+    }
+    // Save As cancelled → keep the window open.
+    return saveFile()
+  }, [saveFile])
 
   const newFile = useCallback(async () => {
     if (!(await confirmDiscard())) return
@@ -101,38 +186,6 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRe
     },
     [viewRef, confirmDiscard, loadContent, setSidebarMode, setBaseDir]
   )
-
-  const saveFileAs = useCallback(async (): Promise<boolean> => {
-    const view = viewRef.current
-    if (!view) return false
-    const target = await window.api.showSaveDialog(filePathRef.current ?? 'untitled.md')
-    if (!target) return false
-    const content = view.state.doc.toString()
-    await window.api.writeFile(target, content)
-    savedContentRef.current = content
-    setBaseDir(target)
-    setFilePath(target)
-    setDirty(false)
-    syncAppState(target, false)
-    // P03: Save As to a new path also becomes the recent/session file.
-    addRecentFile(target)
-    patchSession({ lastFilePath: target })
-    return true
-  }, [viewRef, syncAppState, setBaseDir])
-
-  const saveFile = useCallback(async () => {
-    const view = viewRef.current
-    if (!view) return
-    if (!filePathRef.current) {
-      await saveFileAs()
-      return
-    }
-    const content = view.state.doc.toString()
-    await window.api.writeFile(filePathRef.current, content)
-    savedContentRef.current = content
-    setDirty(false)
-    syncAppState(filePathRef.current, false)
-  }, [viewRef, saveFileAs, syncAppState])
 
   // Open a specific path (Recent Files entries, session restore). Existence
   // is checked here so a deleted file alerts instead of throwing.
@@ -166,10 +219,13 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRe
     setFilePath,
     filePathRef,
     savedContentRef,
+    dirtyRef,
+    suppressDirtyRef,
     syncAppState,
     setBaseDir,
     loadContent,
     confirmDiscard,
+    queryClose,
     newFile,
     openFile,
     openFromSystem,

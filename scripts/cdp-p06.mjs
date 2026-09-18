@@ -115,6 +115,20 @@ async function main() {
   // Boot, seed the session so restore opens the fixture, reload.
   check('boot: window.api', await waitFor(`!!window.api`))
   check('boot: editor', await waitFor(`!!window.__veloxEditor?.view`))
+  // P12 hygiene: disable autosave/crash-recovery so draft dialogs never
+  // interfere with the widget-toolbar checks.
+  await evaluate(`(() => {
+    const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') ?? '{}')
+    localStorage.setItem('veloxmark.preferences', JSON.stringify({
+      ...raw, crashRecoveryEnabled: false, autoSaveMode: 'off'
+    }))
+  })()`)
+  try {
+    const drafts = await evaluate(`window.api.draftList()`)
+    for (const d of drafts ?? []) {
+      await evaluate(`window.api.draftDiscard(${JSON.stringify(d.path)})`)
+    }
+  } catch { /* drafts API unavailable — nothing to clean */ }
   const seeded = await (async () => {
     for (let i = 0; i < 20; i++) {
       await evaluate(`(() => {

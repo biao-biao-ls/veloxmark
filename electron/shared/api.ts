@@ -76,6 +76,20 @@ export interface PdfExportOptions {
   title: string
 }
 
+/** P12: crash-recovery draft stored in userData/drafts/<sha1>.json. */
+export interface DraftRecord {
+  /** Document path the draft belongs to; null = Untitled buffer. */
+  path: string | null
+  content: string
+  /** ms since epoch when the draft was written. */
+  mtime: number
+}
+
+/** Draft listed at startup, with its storage key (sha1 of path/untitled). */
+export interface DraftListItem extends DraftRecord {
+  key: string
+}
+
 /** Shape of the object preload exposes as `window.api`. */
 export interface RendererApi {
   platform: string
@@ -129,6 +143,16 @@ export interface RendererApi {
   windowClose(): void
   windowToggleDevTools(): void
   windowZoom(action: 'in' | 'out' | 'reset'): void
+  /** P12: renderer → main close-query verdict (true = allow the close). */
+  closeResponse(allow: boolean): void
+  /** P12: main → renderer close request (traffic light / Cmd+Q / window ×). */
+  onQueryClose(callback: () => void): () => void
+  /** P12: write/refresh the crash-recovery draft for a document (null = Untitled). */
+  draftWrite(path: string | null, content: string): Promise<void>
+  /** P12: delete the draft after a successful save or explicit discard. */
+  draftDiscard(path: string | null): Promise<void>
+  /** P12: all stored drafts (startup recovery scan). */
+  draftList(): Promise<DraftListItem[]>
   clipboardRead(): Promise<string>
   clipboardWrite(text: string): Promise<void>
   /** P05: true when the clipboard holds a bitmap (screenshot / copied image). */

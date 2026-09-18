@@ -280,6 +280,16 @@ await send('Runtime.enable')
 await wait(2500)
 await waitFor('.cm-content')
 
+// P12 hygiene: wipe any leftover crash-recovery drafts so a recovery dialog
+// can never appear over the preferences/session assertions.
+await evaluate(`(async () => {
+  try {
+    const drafts = await window.api.draftList()
+    for (const d of drafts ?? []) await window.api.draftDiscard(d.path)
+  } catch { /* older build without drafts API */ }
+  return true
+})()`)
+
 if (PHASE === 'a') {
   // Wipe profile state and reload so defaults are actually tested.
   await evaluate(`(() => {

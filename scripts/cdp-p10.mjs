@@ -125,7 +125,7 @@ async function main() {
   await evaluate(`(() => {
     const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') ?? '{}')
     localStorage.setItem('veloxmark.preferences', JSON.stringify({
-      ...raw, restoreLastSession: false, focusMode: false, typewriterMode: false, sourceMode: false
+      ...raw, restoreLastSession: false, focusMode: false, typewriterMode: false, crashRecoveryEnabled: false, autoSaveMode: 'off', sourceMode: false
     }))
     localStorage.setItem('veloxmark.session', JSON.stringify({ lastFilePath: null, lastFolderPath: null }))
   })()`)

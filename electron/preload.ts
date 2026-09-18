@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
   AppWindowState,
   DirNode,
+  DraftListItem,
   FileFilter,
   FolderScanOptions,
   ImageSaveOptions,
@@ -83,6 +84,19 @@ const api: RendererApi = {
   windowToggleDevTools: (): void => ipcRenderer.send('window:toggleDevTools'),
   windowZoom: (action: 'in' | 'out' | 'reset'): void =>
     ipcRenderer.send('window:zoom', action),
+  // P12 close intercept: verdict back to main's close handler.
+  closeResponse: (allow: boolean): void => ipcRenderer.send('app:closeResponse', allow),
+  onQueryClose: (callback: () => void): (() => void) => {
+    const listener = (): void => callback()
+    ipcRenderer.on('app:queryClose', listener)
+    return () => ipcRenderer.removeListener('app:queryClose', listener)
+  },
+  // P12 crash-recovery drafts (main-process storage under userData/drafts).
+  draftWrite: (path: string | null, content: string): Promise<void> =>
+    ipcRenderer.invoke('draft:write', path, content),
+  draftDiscard: (path: string | null): Promise<void> =>
+    ipcRenderer.invoke('draft:discard', path),
+  draftList: (): Promise<DraftListItem[]> => ipcRenderer.invoke('draft:list'),
   clipboardRead: (): Promise<string> => ipcRenderer.invoke('clipboard:read'),
   clipboardWrite: (text: string): Promise<void> =>
     ipcRenderer.invoke('clipboard:write', text),

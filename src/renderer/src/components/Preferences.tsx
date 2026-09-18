@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   clearRecentFiles,
   setPreferences,
+  type AutoSaveMode,
   type ImageRenameMode,
   type ThemeMode
 } from '../preferences/store'
@@ -236,6 +237,62 @@ export default function Preferences({ open, onClose }: Props): React.JSX.Element
               wildcards. Changes apply to the tree immediately.
             </span>
           </div>
+        </div>
+
+        <div className="prefs-section">
+          <div className="prefs-section-title">Autosave & Recovery</div>
+          <label className="prefs-row">
+            <span className="prefs-label">Auto-save</span>
+            <select
+              className="prefs-input"
+              value={prefs.autoSaveMode}
+              onChange={(e) =>
+                setPreferences({ autoSaveMode: e.target.value as AutoSaveMode })
+              }
+            >
+              <option value="off">Off</option>
+              <option value="debounce">After input stops (debounce)</option>
+              <option value="interval">Fixed interval</option>
+            </select>
+          </label>
+          <label
+            className={`prefs-row${prefs.autoSaveMode === 'debounce' ? '' : ' prefs-disabled'}`}
+          >
+            <span className="prefs-label">Debounce delay</span>
+            <input
+              className="prefs-input prefs-input-num"
+              type="number"
+              min={1}
+              max={60}
+              value={prefs.autoSaveDelaySec}
+              disabled={prefs.autoSaveMode !== 'debounce'}
+              onChange={(e) => setPreferences({ autoSaveDelaySec: Number(e.target.value) })}
+            />
+            <span className="prefs-unit">seconds after last change</span>
+          </label>
+          <label
+            className={`prefs-row${prefs.autoSaveMode === 'interval' ? '' : ' prefs-disabled'}`}
+          >
+            <span className="prefs-label">Interval</span>
+            <input
+              className="prefs-input prefs-input-num"
+              type="number"
+              min={1}
+              max={60}
+              value={prefs.autoSaveIntervalMin}
+              disabled={prefs.autoSaveMode !== 'interval'}
+              onChange={(e) => setPreferences({ autoSaveIntervalMin: Number(e.target.value) })}
+            />
+            <span className="prefs-unit">minutes between saves</span>
+          </label>
+          <label className="prefs-row prefs-check">
+            <input
+              type="checkbox"
+              checked={prefs.crashRecoveryEnabled}
+              onChange={(e) => setPreferences({ crashRecoveryEnabled: e.target.checked })}
+            />
+            <span>Crash recovery: keep drafts and offer restore on startup</span>
+          </label>
         </div>
 
         <div className="prefs-section">

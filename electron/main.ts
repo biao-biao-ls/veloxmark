@@ -37,6 +37,9 @@ let rendererLoaded = false
 let mainWindow: BrowserWindow | null = null
 const getWindow = (): BrowserWindow | null => mainWindow
 
+// P12: true only for the close retry that follows an approved queryClose.
+let closeApproved = false
+
 async function deliverOpenPath(filePath: string): Promise<void> {
   let isDir = false
   try {
@@ -101,7 +104,24 @@ function createWindow(): void {
     if (geometry.maximized) mainWindow?.maximize()
     mainWindow?.show()
   })
+  // Crash diagnostics (e2e + field): never silent-kill the renderer.
+  mainWindow.webContents.on('render-process-gone', (_e, details) => {
+    console.error('[veloxmark] render-process-gone', details.reason, details.exitCode)
+  })
   attachWindowStatePersistence(mainWindow)
+
+  // P12 close intercept: ask the renderer whether the close may proceed. The
+  // renderer shows the three-option dialog when dirty and answers via
+  // `app:closeResponse`; `closeApproved` lets the retried close through.
+  // Applies to the titlebar ×, Cmd+Q / Alt+F4 and app.quit() alike — all of
+  // them fire the window 'close' event first.
+  mainWindow.on('close', (e) => {
+    if (closeApproved) return
+    e.preventDefault()
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('app:queryClose')
+    }
+  })
   mainWindow.on('closed', () => {
     mainWindow = null
     rendererLoaded = false // a new window will signal ready again
@@ -312,6 +332,17 @@ app.whenReady().then(() => {
   ipcMain.handle('app:setRecentFiles', (_e, files: RecentFileItem[]) => {
     recentFiles = Array.isArray(files) ? files : []
     rebuildDarwinMenu()
+  })
+
+  // P12: renderer verdict for the close query — allow re-runs close with the
+  // intercept flag set; deny is a no-op (the renderer already showed Cancel).
+  ipcMain.on('app:closeResponse', (_e, allow: boolean) => {
+    const win = getWindow()
+    if (!win || win.isDestroyed()) return
+    if (!allow) return
+    closeApproved = true
+    win.close()
+    closeApproved = false
   })
 
   if (process.platform === 'darwin') {

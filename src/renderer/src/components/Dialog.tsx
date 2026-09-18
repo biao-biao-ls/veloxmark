@@ -33,17 +33,32 @@ export interface PromptOptions {
   cancelLabel?: string
 }
 
+/** P12: three-way choice (e.g. Save / Don't Save / Cancel). */
+export type ChooseResult = 'confirm' | 'discard' | 'cancel'
+
+export interface ChooseOptions {
+  message: string
+  title?: string
+  confirmLabel?: string
+  discardLabel?: string
+  cancelLabel?: string
+  /** Destructive third action — discard button uses the danger color. */
+  danger?: boolean
+}
+
 // ---- singleton store --------------------------------------------------------
 
 interface DialogRequest {
   id: number
-  kind: 'alert' | 'confirm' | 'prompt'
+  kind: 'alert' | 'confirm' | 'prompt' | 'choose'
   title?: string
   message?: string
   defaultValue: string
   placeholder?: string
   confirmLabel: string
   cancelLabel: string
+  /** P12 choose dialogs only — middle/third button label. */
+  discardLabel: string
   danger: boolean
   resolve: (value: unknown) => void
 }
@@ -90,6 +105,7 @@ export const dialog = {
         defaultValue: '',
         confirmLabel: o.okLabel ?? 'OK',
         cancelLabel: '',
+        discardLabel: '',
         danger: false,
         resolve: () => resolve()
       })
@@ -105,6 +121,7 @@ export const dialog = {
         defaultValue: '',
         confirmLabel: opts.confirmLabel ?? 'OK',
         cancelLabel: opts.cancelLabel ?? 'Cancel',
+        discardLabel: '',
         danger: opts.danger ?? false,
         resolve: (v) => resolve(v as boolean)
       })
@@ -121,8 +138,26 @@ export const dialog = {
         placeholder: opts.placeholder,
         confirmLabel: opts.confirmLabel ?? 'OK',
         cancelLabel: opts.cancelLabel ?? 'Cancel',
+        discardLabel: '',
         danger: false,
         resolve: (v) => resolve(v as string | null)
+      })
+    })
+  },
+
+  /** P12: three-way dialog — confirm / discard / cancel. */
+  choose(opts: ChooseOptions): Promise<ChooseResult> {
+    return new Promise((resolve) => {
+      open({
+        kind: 'choose',
+        title: opts.title,
+        message: opts.message,
+        defaultValue: '',
+        confirmLabel: opts.confirmLabel ?? 'Save',
+        cancelLabel: opts.cancelLabel ?? 'Cancel',
+        discardLabel: opts.discardLabel ?? "Don't Save",
+        danger: opts.danger ?? false,
+        resolve: (v) => resolve(v as ChooseResult)
       })
     })
   }
@@ -156,8 +191,11 @@ function Dialog({ req }: Props): React.JSX.Element {
   const defaultBtnRef = useRef<HTMLButtonElement | null>(null)
   const [value, setValue] = useState(req.defaultValue)
 
-  const confirm = (): void => settle(req.kind === 'prompt' ? value : true)
-  const cancel = (): void => settle(req.kind === 'prompt' ? null : false)
+  const confirm = (): void =>
+    settle(req.kind === 'prompt' ? value : req.kind === 'choose' ? 'confirm' : true)
+  const cancel = (): void =>
+    settle(req.kind === 'prompt' ? null : req.kind === 'choose' ? 'cancel' : false)
+  const discard = (): void => settle('discard')
 
   // Initial focus: the input (with its default selected) or the default button.
   useEffect(() => {
@@ -215,6 +253,14 @@ function Dialog({ req }: Props): React.JSX.Element {
       {req.cancelLabel}
     </button>
   )
+  const discardBtn = (
+    <button
+      className={`dialog-btn${req.danger ? ' dialog-btn-danger' : ''}`}
+      onClick={discard}
+    >
+      {req.discardLabel}
+    </button>
+  )
 
   return (
     <div className="dialog-overlay" onKeyDown={onKeyDown}>
@@ -239,6 +285,20 @@ function Dialog({ req }: Props): React.JSX.Element {
         <div className="dialog-buttons">
           {req.kind === 'alert' ? (
             confirmBtn
+          ) : req.kind === 'choose' ? (
+            isMac ? (
+              <>
+                {cancelBtn}
+                {discardBtn}
+                {confirmBtn}
+              </>
+            ) : (
+              <>
+                {confirmBtn}
+                {discardBtn}
+                {cancelBtn}
+              </>
+            )
           ) : isMac ? (
             <>
               {cancelBtn}
