@@ -182,6 +182,8 @@ export interface RendererApi {
   showSaveDialog(defaultPath?: string, filters?: FileFilter[]): Promise<string | null>
   readFile(filePath: string): Promise<string>
   writeFile(filePath: string, content: string): Promise<boolean>
+  /** P16: write raw bytes (base64 payload, no data: prefix) — PNG export. */
+  writeFileBase64(filePath: string, base64: string): Promise<boolean>
   setAppState(state: AppWindowState): Promise<void>
   /** Push the recent-files list so the macOS native menu can rebuild (P03). */
   setRecentFiles(files: RecentFileItem[]): Promise<void>
@@ -238,6 +240,8 @@ export interface RendererApi {
   clipboardWrite(text: string): Promise<void>
   /** P05: true when the clipboard holds a bitmap (screenshot / copied image). */
   clipboardHasImage(): Promise<boolean>
+  /** P16: place a data-URL bitmap on the OS clipboard (Mermaid Copy Image). */
+  clipboardWriteImage(dataUrl: string): Promise<void>
   rendererReady(): void
   onOpenPath(callback: (filePath: string) => void): () => void
   onOpenFolder(callback: (folderPath: string) => void): () => void

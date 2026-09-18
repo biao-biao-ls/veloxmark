@@ -19,37 +19,37 @@ Mermaid 在 V1 只有"渲染 + P06 工具条（Copy 源码 / 导出 SVG）"。�
 ## 功能需求
 
 ### 错误与编辑态体验
-- [ ] 重渲染期间保留上一版图（降透明度 + "Updating…" 角标），渲染成功
+- [x] 重渲染期间保留上一版图（降透明度 + "Updating…" 角标），渲染成功
       后原位替换
-- [ ] 渲染失败：图保留并变暗，错误信息以覆盖条显示在图底部（不再替换
+- [x] 渲染失败：图保留并变暗，错误信息以覆盖条显示在图底部（不再替换
       内容）；错误文本含位置信息时提供 "跳到源码" 按钮 → 跳到 fence 内
       对应行
-- [ ] 从未成功渲染过的 fence 失败时：显示占位框 + 错误信息（与图片
+- [x] 从未成功渲染过的 fence 失败时：显示占位框 + 错误信息（与图片
       占位符风格一致）
 
 ### 图模板插入
-- [ ] Insert 菜单 / 命令 `insertMermaidDiagram`：选择图类型后在光标处
+- [x] Insert 菜单 / 命令 `insertMermaidDiagram`：选择图类型后在光标处
       插入骨架代码；类型：flowchart / sequence / class / state / ER /
       gantt / pie 七种
-- [ ] 选择 UI：复用对话框体系（列表选择，键盘上下 + 回车）
-- [ ] 模板内容含中文注释示例（帮助理解语法结构），插入后光标落在第一个
+- [x] 选择 UI：复用对话框体系（列表选择，键盘上下 + 回车）
+- [x] 模板内容含中文注释示例（帮助理解语法结构），插入后光标落在第一个
       可编辑节点名上
-- [ ] 若光标已在 mermaid fence 内：不插入新 fence，改为提示已存在（首版
+- [x] 若光标已在 mermaid fence 内：不插入新 fence，改为提示已存在（首版
       直接不动作）
 
 ### 导出补全
-- [ ] 工具条新增 "PNG"：SVG 栅格化（canvas，devicePixelRatio 2x）后走
+- [x] 工具条新增 "PNG"：SVG 栅格化（canvas，devicePixelRatio 2x）后走
       保存对话框，默认文件名 `diagram.png`
-- [ ] 工具条新增 "Copy Image"：PNG 写入系统剪贴板（图片格式），可直接
+- [x] 工具条新增 "Copy Image"：PNG 写入系统剪贴板（图片格式），可直接
       粘贴到微信/飞书/邮件
-- [ ] 暗色主题下 PNG 保留当前 mermaid 主题配色（与所见一致）
+- [x] 暗色主题下 PNG 保留当前 mermaid 主题配色（与所见一致）
 
 ### 大图预览（lightbox）
-- [ ] 点击渲染态图形本体进入 lightbox 全屏预览（半透明遮罩 + 居中 SVG）
-- [ ] 滚轮缩放（以光标为中心）、拖拽平移、双击恢复 100%、Esc/点击遮罩
+- [x] 点击渲染态图形本体进入 lightbox 全屏预览（半透明遮罩 + 居中 SVG）
+- [x] 滚轮缩放（以光标为中心）、拖拽平移、双击恢复 100%、Esc/点击遮罩
       关闭
-- [ ] lightbox 打开时仅一个实例（仿 `closeOpenImageZoom` 的互斥模式）
-- [ ] 点击图形与 P06 "点击块回源码" 的关系：图形命中进 lightbox，块
+- [x] lightbox 打开时仅一个实例（仿 `closeOpenImageZoom` 的互斥模式）
+- [x] 点击图形与 P06 "点击块回源码" 的关系：图形命中进 lightbox，块
       padding 命中仍回源码
 
 ## 实现要点
@@ -94,3 +94,42 @@ Mermaid 在 V1 只有"渲染 + P06 工具条（Copy 源码 / 导出 SVG）"。�
 - 源码分屏实时预览（另见 P25）、PlantUML 等其他图语言
 - 渲染并发限流（属 P15）、mermaid 配置项自定义主题色
 - 图内节点点击跳转/交互图
+
+## 实施状态（已完成）
+
+- 提交：`feat(P16)`，e2e `scripts/cdp-p16.mjs`（端口 9233）**24/24 PASS**；
+  P15 回归：`test:unit` 57/57、`test:smoke` 5/5、typecheck 绿。
+- **错误态**：`MermaidWidget.toDOM` 拆 `svgHost + badge + errorBar`；按
+  fence `sourceFrom` 键的模块级 `mermaidLastGood` 记住最近一次成功渲染，
+  文本变更重建 widget 后错误路径恢复旧 SVG（`.is-dim` 降透明度）+
+  底部错误条（错误文本 + "跳到源码" 按钮，按 mermaid `line N` 映射回
+  fence 内行）；从未成功的 fence 走 `.cm-md-mermaid-placeholder` 占位框。
+  重渲染期间左上角 "Updating…" 角标；成功后原位替换、清错误条。
+- **模板插入**：`editor/mermaidTemplates.ts` 七种骨架（flowchart/sequence/
+  class/state/ER/gantt/pie，中文 `%%` 注释，cursorOffset 落首个可编辑
+  token）；命令 `insertMermaidDiagram` 进 commands.ts + MENU_LAYOUT Insert
+  分组 + darwin 原生菜单（NATIVE_MENU_STRINGS zh/en）；选择 UI 为
+  `components/ListPickDialog.tsx`（自绘对话框，↑↓+Enter+Esc，后续 P21/P22
+  复用）；`isCursorInMermaidFence` 在 fence 内时命令 no-op（首版不动作）。
+  插入时前后自动补空行，光标落在首个节点名（e2e 断言落 "客户端"）。
+- **导出**：工具条 PNG（`rasterizeSvgToPng`，SVG→Image→canvas 2x，默认
+  `diagram.png`）+ Copy Image（PNG dataURL）；新 IPC
+  `clipboard:writeImage`（`clipboard.write({image: nativeImage.createFromDataURL})`）
+  与 `file:writeBase64`（二进制安全写入）进 api.ts/preload；暗色主题
+  PNG 沿渲染态 mermaid 配色（cache key 含 theme，所见即所得）。
+- **lightbox**：`components/MermaidLightbox.tsx` 挂 App 根部，模块级
+  bus（`mermaidLightboxBus.ts`）单例互斥；svg 本体点击进 lightbox
+  （wrap 上 stopPropagation 阻断回源码），块 padding 点击仍回源码
+  （e2e 断言 selection==sourceFrom）；滚轮以光标为中心缩放、拖拽平移、
+  双击 100%、Esc/遮罩关闭；`.vm-mermaid-lightbox` 遮罩明暗两套
+  （dark rgba(0,0,0,0.82)，e2e 断言 alpha≥0.75）。
+- **e2e 观测性**：contextBridge 的 `window.api` 在当前 Electron 为
+  冻结属性（non-configurable/non-writable，实测 probe 确认），无法就地
+  stub；按 `__veloxTable` 惯例新增导出 IO 缝 `setMermaidExportIo`（默认
+  落回 window.api），经 `__veloxP16.setExportIo` 注入捕获桩完成 PNG/
+  剪贴板断言（PNG magic `iVBOR`、dataURL 前缀均校验）。
+- 测试钩子：`window.__veloxP16`（templates/insertTemplate/openInsertDialog/
+  getDialogOpen/isCursorInMermaidFence/setExportIo）；单测
+  `editor/mermaidTemplates.test.ts`（7 模板结构 + cursorOffset + fence 探针）
+  计入 unit 57/57。
+- 需求文档命名备注：实现文件为 `P16-mermaid-ux.md`（非 mermaid-enhanced）。

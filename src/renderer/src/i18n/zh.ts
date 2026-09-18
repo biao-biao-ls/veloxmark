@@ -28,9 +28,11 @@ export const ZH: Record<string, string> = {
   'cmd.toggleDevTools': '开发者工具',
   'cmd.toggleTheme': '切换主题',
   'cmd.showHelp': 'Markdown 语法参考',
+  'cmd.insertMermaidDiagram': 'Mermaid 图表…',
   'menu.file': '文件',
   'menu.edit': '编辑',
   'menu.view': '视图',
+  'menu.insert': '插入',
   'menu.help': '帮助',
   'menu.openRecent': '打开最近',
   'menu.export': '导出',
@@ -206,5 +208,22 @@ export const ZH: Record<string, string> = {
   'status.savedAt': '已保存 {time}',
   'status.detailTitle': '统计详情',
   'status.detailMsg':
-    '段落：{paragraphs}\n字数（中文字+西文词）：{words}\n字符：{chars}\n字符（不含空格）：{charsNoSpace}'
+    '段落：{paragraphs}\n字数（中文字+西文词）：{words}\n字符：{chars}\n字符（不含空格）：{charsNoSpace}',
+
+  // ---- P16 mermaid UX --------------------------------------------------------
+  'mermaid.dialogTitle': '插入 Mermaid 图表',
+  'mermaid.tpl.flowchart': '流程图',
+  'mermaid.tpl.sequence': '时序图',
+  'mermaid.tpl.class': '类图',
+  'mermaid.tpl.state': '状态图',
+  'mermaid.tpl.er': 'ER 图（实体关系）',
+  'mermaid.tpl.gantt': '甘特图',
+  'mermaid.tpl.pie': '饼图',
+  'mermaid.rendering': '渲染图表中…',
+  'mermaid.updating': '更新中…',
+  'mermaid.failed': 'Mermaid 图表（渲染失败）',
+  'mermaid.errorLabel': 'Mermaid 错误',
+  'mermaid.jumpToSource': '跳到源码',
+  'mermaid.copyImage': '复制图片',
+  'mermaid.png': 'PNG'
 }

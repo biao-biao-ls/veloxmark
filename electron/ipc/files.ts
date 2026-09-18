@@ -56,6 +56,13 @@ export function registerFilesIpc(getWindow: GetWindow): void {
     return true
   })
 
+  // P16: binary-safe sibling of file:write (Mermaid PNG export sends the
+  // base64 payload only — the renderer strips any data: prefix).
+  ipcMain.handle('file:writeBase64', async (_e, filePath: string, base64: string) => {
+    await writeFile(filePath, Buffer.from(base64, 'base64'))
+    return true
+  })
+
   // ---- tree file operations -------------------------------------------------
 
   ipcMain.handle('file:create', async (_e, filePath: string) => {

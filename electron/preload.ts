@@ -52,6 +52,8 @@ const api: RendererApi = {
   readFile: (filePath: string): Promise<string> => ipcRenderer.invoke('file:read', filePath),
   writeFile: (filePath: string, content: string): Promise<boolean> =>
     ipcRenderer.invoke('file:write', filePath, content),
+  writeFileBase64: (filePath: string, base64: string): Promise<boolean> =>
+    ipcRenderer.invoke('file:writeBase64', filePath, base64),
   setAppState: (state: AppWindowState): Promise<void> =>
     ipcRenderer.invoke('app:setState', state),
   setRecentFiles: (files: RecentFileItem[]): Promise<void> =>
@@ -121,6 +123,8 @@ const api: RendererApi = {
   clipboardWrite: (text: string): Promise<void> =>
     ipcRenderer.invoke('clipboard:write', text),
   clipboardHasImage: (): Promise<boolean> => ipcRenderer.invoke('clipboard:hasImage'),
+  clipboardWriteImage: (dataUrl: string): Promise<void> =>
+    ipcRenderer.invoke('clipboard:writeImage', dataUrl),
   // Tell main the editor is mounted so queued system open-file paths are sent.
   rendererReady: (): void => ipcRenderer.send('app:rendererReady'),
   // macOS Finder "Open With" / double-clicking a registered .md file.

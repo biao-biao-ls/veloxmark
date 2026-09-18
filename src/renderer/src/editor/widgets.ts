@@ -8,6 +8,8 @@ import githubCss from 'highlight.js/styles/github.css?raw'
 import githubDarkCss from 'highlight.js/styles/github-dark.css?raw'
 import type { ThemeName } from './theme'
 import type { FrontMatterSummary } from './livePreview/extendedSyntax'
+import { t } from '../i18n'
+import { openMermaidLightbox } from '../components/mermaidLightboxBus'
 
 // ---- highlight.js themes, scoped under the app theme class ------------------
 // Injected lazily on first widget render so importing this module in a
@@ -120,6 +122,137 @@ async function exportSvg(svgEl: SVGSVGElement): Promise<void> {
   ])
   if (!target) return
   await window.api.writeFile(target, content)
+}
+
+/**
+ * P16: rasterize a rendered SVG to a PNG data URL at `scale`× (default 2×,
+ * matching the Typora-quality bar). Returns null when the canvas or the SVG
+ * image fails to load.
+ */
+async function rasterizeSvgToPng(svgEl: SVGSVGElement, scale = 2): Promise<string | null> {
+  const clone = svgEl.cloneNode(true) as SVGSVGElement
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+  const w = svgEl.clientWidth || Number(clone.getAttribute('width')) || 800
+  const h = svgEl.clientHeight || Number(clone.getAttribute('height')) || 600
+  if (!clone.getAttribute('viewBox')) clone.setAttribute('viewBox', `0 0 ${w} ${h}`)
+  const svgText = new XMLSerializer().serializeToString(clone)
+  const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgText)}`
+  const img = new Image()
+  try {
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve()
+      img.onerror = () => reject(new Error('svg image failed to load'))
+      img.src = url
+    })
+  } catch {
+    return null
+  }
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round((img.width || w) * scale))
+  canvas.height = Math.max(1, Math.round((img.height || h) * scale))
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+  return canvas.toDataURL('image/png')
+}
+
+/** P16: PNG export — 2× raster + native save dialog (default name diagram.png). */
+async function exportPng(svgEl: SVGSVGElement): Promise<void> {
+  const dataUrl = await rasterizeSvgToPng(svgEl, 2)
+  if (!dataUrl) return
+  const target = await mermaidIo.showSaveDialog('diagram.png', [
+    { name: 'PNG', extensions: ['png'] },
+    { name: 'All Files', extensions: ['*'] }
+  ])
+  if (!target) return
+  const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1)
+  await mermaidIo.writeFileBase64(target, b64)
+}
+
+/** P16: Copy Image — PNG data URL onto the OS clipboard. */
+async function copyPngImage(svgEl: SVGSVGElement): Promise<void> {
+  const dataUrl = await rasterizeSvgToPng(svgEl, 2)
+  if (!dataUrl) return
+  await mermaidIo.clipboardWriteImage(dataUrl)
+}
+
+// ---- P16 export IO seam ------------------------------------------------------
+// contextBridge's `window.api` is frozen (non-configurable, non-writable) in
+// current Electron builds, so e2e suites inject capture stubs here instead —
+// same test-hook convention as window.__veloxTable / __veloxEditor. Product
+// code always falls through to window.api when no override is installed.
+
+interface MermaidExportIo {
+  showSaveDialog: (defaultPath?: string, filters?: { name: string; extensions: string[] }[]) => Promise<string | null>
+  writeFileBase64: (filePath: string, base64: string) => Promise<boolean>
+  clipboardWriteImage: (dataUrl: string) => Promise<void>
+}
+
+let mermaidIoOverride: Partial<MermaidExportIo> | null = null
+
+export function setMermaidExportIo(io: Partial<MermaidExportIo> | null): void {
+  mermaidIoOverride = io
+}
+
+const mermaidIo: MermaidExportIo = {
+  showSaveDialog: (defaultPath, filters) =>
+    mermaidIoOverride?.showSaveDialog
+      ? mermaidIoOverride.showSaveDialog(defaultPath, filters)
+      : window.api.showSaveDialog(defaultPath, filters),
+  writeFileBase64: (filePath, base64) =>
+    mermaidIoOverride?.writeFileBase64
+      ? mermaidIoOverride.writeFileBase64(filePath, base64)
+      : window.api.writeFileBase64(filePath, base64),
+  clipboardWriteImage: (dataUrl) =>
+    mermaidIoOverride?.clipboardWriteImage
+      ? mermaidIoOverride.clipboardWriteImage(dataUrl)
+      : window.api.clipboardWriteImage(dataUrl)
+}
+
+// ---- P16 mermaid error-state memory -----------------------------------------
+// Live preview recreates the widget whenever the fence text changes, so an
+// in-DOM "old SVG" would be lost exactly when it is needed (user breaks the
+// syntax). Remember the last good render per fence start; on failure the new
+// widget shows that SVG dimmed instead of wiping the diagram.
+
+interface MermaidGoodRender {
+  svg: string
+  code: string
+  theme: ThemeName
+}
+
+const mermaidLastGood = new Map<number, MermaidGoodRender>()
+
+function rememberMermaidGood(pos: number, entry: MermaidGoodRender): void {
+  mermaidLastGood.set(pos, entry)
+  // Bounded: drop oldest entries when the document churns a lot.
+  if (mermaidLastGood.size > 64) {
+    const first = mermaidLastGood.keys().next().value
+    if (first !== undefined) mermaidLastGood.delete(first)
+  }
+}
+
+/** Test hook / theme switch hook: clear remembered mermaid renders. */
+export function clearMermaidLastGood(): void {
+  mermaidLastGood.clear()
+}
+
+/**
+ * P16: jump-to-source for a mermaid parse error. Mermaid messages carry
+ * `Parse error on line N` (or `line N: …`) — N is 1-based within the fence
+ * body. Returns the doc position when a line can be extracted.
+ */
+function mermaidErrorDocPos(view: EditorView, sourceFrom: number, msg: string): number | null {
+  const m = /line\s+(\d+)/i.exec(msg)
+  const state = view.state
+  if (state.doc.length === 0 || sourceFrom >= state.doc.length) return null
+  // Body starts on the line after the ```mermaid opener.
+  const opener = state.doc.lineAt(Math.min(sourceFrom, state.doc.length - 1))
+  const bodyStartLine = opener.number + 1
+  const targetLine = m ? bodyStartLine + (Number(m[1]) - 1) : bodyStartLine
+  const lineCount = state.doc.lines
+  const clamped = Math.min(Math.max(targetLine, 1), lineCount)
+  return state.doc.line(clamped).from
 }
 
 // ---- shared render helpers (P04 export reuses these for static DOM) --------
@@ -327,10 +460,60 @@ export class MermaidWidget extends BlockWidget {
   toDOM(view: EditorView): HTMLElement {
     const wrap = document.createElement('div')
     wrap.className = 'cm-md-mermaid'
-    const body = document.createElement('div')
-    body.className = 'cm-md-mermaid-body'
-    body.textContent = 'Rendering diagram…'
-    wrap.appendChild(body)
+    const svgHost = document.createElement('div')
+    svgHost.className = 'cm-md-mermaid-svg'
+    const badge = document.createElement('div')
+    badge.className = 'cm-md-mermaid-badge'
+    badge.hidden = true
+    const errorBar = document.createElement('div')
+    errorBar.className = 'cm-md-mermaid-error'
+    errorBar.hidden = true
+    wrap.appendChild(svgHost)
+    wrap.appendChild(badge)
+    wrap.appendChild(errorBar)
+
+    // Restore the last good render for this fence (if any) so a broken edit
+    // dims the previous SVG instead of blanking the block.
+    const prev = mermaidLastGood.get(this.sourceFrom)
+    const showPlaceholder = (): void => {
+      svgHost.textContent = ''
+      const ph = document.createElement('div')
+      ph.className = 'cm-md-mermaid-placeholder'
+      ph.textContent = t('mermaid.failed')
+      svgHost.appendChild(ph)
+    }
+    if (prev && prev.svg) {
+      svgHost.innerHTML = prev.svg
+      svgHost.classList.add('is-dim')
+      badge.hidden = false
+      badge.textContent = t('mermaid.updating')
+    } else if (this.code.trim() === '') {
+      showPlaceholder()
+    } else {
+      svgHost.textContent = t('mermaid.rendering')
+    }
+
+    const setError = (msg: string): void => {
+      errorBar.hidden = false
+      errorBar.textContent = `${t('mermaid.errorLabel')}: ${msg}`
+      const jump = document.createElement('button')
+      jump.type = 'button'
+      jump.className = 'cm-md-mermaid-jump'
+      jump.textContent = t('mermaid.jumpToSource')
+      jump.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      })
+      jump.addEventListener('click', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        const pos = mermaidErrorDocPos(view, this.sourceFrom, msg)
+        view.dispatch({ selection: { anchor: pos ?? this.sourceFrom }, scrollIntoView: true })
+        view.focus()
+      })
+      errorBar.appendChild(jump)
+      badge.hidden = true
+    }
 
     this.attachBlockToolbar(wrap, [
       {
@@ -342,18 +525,62 @@ export class MermaidWidget extends BlockWidget {
         label: 'SVG',
         title: 'Export diagram as SVG',
         onClick: () => {
-          const svgEl = body.querySelector('svg')
+          const svgEl = svgHost.querySelector('svg')
           if (svgEl) void exportSvg(svgEl)
+        }
+      },
+      {
+        label: t('mermaid.png'),
+        title: 'Export diagram as PNG (2x)',
+        onClick: () => {
+          const svgEl = svgHost.querySelector('svg')
+          if (svgEl) void exportPng(svgEl)
+        }
+      },
+      {
+        label: t('mermaid.copyImage'),
+        title: 'Copy diagram image to clipboard',
+        onClick: () => {
+          const svgEl = svgHost.querySelector('svg')
+          if (svgEl) void copyPngImage(svgEl)
         }
       }
     ])
 
+    // svg-body click opens the fullscreen lightbox; clicks on padding,
+    // the error bar or the placeholder still fall through to click-to-source.
+    wrap.addEventListener('mousedown', (e) => {
+      if (e.target instanceof Element && e.target.closest('svg') && !e.target.closest('.cm-md-block-toolbar')) {
+        e.stopPropagation()
+      }
+    })
+    wrap.addEventListener('click', (e) => {
+      if (!(e.target instanceof Element)) return
+      if (!e.target.closest('svg') || e.target.closest('.cm-md-block-toolbar')) return
+      e.stopPropagation()
+      const svgEl = svgHost.querySelector('svg')
+      if (svgEl) openMermaidLightbox(svgEl.outerHTML)
+    })
+
     void renderMermaid(this.code, this.theme)
       .then((svg) => {
-        body.innerHTML = svg
+        rememberMermaidGood(this.sourceFrom, { svg, code: this.code, theme: this.theme })
+        svgHost.classList.remove('is-dim')
+        svgHost.innerHTML = svg
+        badge.hidden = true
+        errorBar.hidden = true
+        errorBar.textContent = ''
       })
       .catch((err: unknown) => {
-        body.textContent = `Mermaid error: ${err instanceof Error ? err.message : String(err)}`
+        const msg = err instanceof Error ? err.message : String(err)
+        if (prev && prev.svg) {
+          // Keep the old SVG visible-but-dimmed + error overlay (P16 ①).
+          svgHost.innerHTML = prev.svg
+          svgHost.classList.add('is-dim')
+        } else {
+          showPlaceholder()
+        }
+        setError(msg)
       })
 
     return this.wrapWithGap(wrap, view)

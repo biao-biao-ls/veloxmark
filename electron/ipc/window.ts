@@ -1,4 +1,4 @@
-import { clipboard, ipcMain, type BrowserWindow } from 'electron'
+import { clipboard, ipcMain, nativeImage, type BrowserWindow } from 'electron'
 import { basename } from 'node:path'
 import type { AppWindowState } from '../shared/api'
 import type { GetWindow } from './index'
@@ -28,6 +28,11 @@ export function registerWindowIpc(getWindow: GetWindow): void {
   // P05: cheap bitmap probe so the menu Paste path can skip the image flow
   // (and any Save As prompt) when the clipboard only holds text.
   ipcMain.handle('clipboard:hasImage', () => !clipboard.readImage().isEmpty())
+  // P16: Mermaid "Copy Image" — data-URL bitmap onto the OS clipboard.
+  ipcMain.handle('clipboard:writeImage', (_e, dataUrl: string) => {
+    const img = nativeImage.createFromDataURL(dataUrl)
+    if (!img.isEmpty()) clipboard.write({ image: img })
+  })
 
   // Renderer -> main state sync so the OS window title tracks the document.
   ipcMain.handle('app:setState', (_e, state: AppWindowState) => {

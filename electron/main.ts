@@ -220,6 +220,7 @@ const NATIVE_MENU_STRINGS: Record<UiLang, Record<string, string>> = {
     focusMode: 'Focus Mode', typewriterMode: 'Typewriter Mode', sourceMode: 'Source Mode',
     zoomIn: 'Zoom In', zoomOut: 'Zoom Out', zoomReset: 'Reset Zoom',
     devTools: 'Toggle Developer Tools', toggleTheme: 'Toggle Theme',
+    insert: 'Insert', insertMermaidDiagram: 'Mermaid Diagram…',
     window: 'Window', minimize: 'Minimize', zoom: 'Zoom', fullscreen: 'Enter Full Screen',
     front: 'Bring All to Front',
     help: 'Help', showHelp: 'Markdown Syntax Reference'
@@ -237,6 +238,7 @@ const NATIVE_MENU_STRINGS: Record<UiLang, Record<string, string>> = {
     focusMode: '专注模式', typewriterMode: '打字机模式', sourceMode: '源码模式',
     zoomIn: '放大', zoomOut: '缩小', zoomReset: '重置缩放',
     devTools: '开发者工具', toggleTheme: '切换主题',
+    insert: '插入', insertMermaidDiagram: 'Mermaid 图表…',
     window: '窗口', minimize: '最小化', zoom: '缩放', fullscreen: '进入全屏幕',
     front: '前置所有窗口',
     help: '帮助', showHelp: 'Markdown 语法参考'
@@ -377,6 +379,10 @@ function buildDarwinMenu(): Menu {
         { type: 'separator' },
         commandItem('toggleTheme', S.toggleTheme)
       ]
+    },
+    {
+      label: S.insert,
+      submenu: [commandItem('insertMermaidDiagram', S.insertMermaidDiagram)]
     },
     {
       label: S.window,

@@ -13,12 +13,15 @@ import Preferences from './components/Preferences'
 import ExportDialog from './components/ExportDialog'
 import QuickOpen from './components/QuickOpen'
 import SearchPanel from './components/SearchPanel'
+import ListPickDialog from './components/ListPickDialog'
+import MermaidLightbox from './components/MermaidLightbox'
 import { DialogHost, dialog } from './components/Dialog'
 import { SearchIcon } from './components/Icons'
 import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch, updateLivePreviewConfig } from './editor/setup'
-import { invalidateImageCache } from './editor/widgets'
+import { invalidateImageCache, setMermaidExportIo } from './editor/widgets'
 import { readEditingAssistsConfig } from './editor/assists'
 import { extractOutline, type OutlineItem } from './outline/extract'
+import { MERMAID_TEMPLATES, isCursorInMermaidFence } from './editor/mermaidTemplates'
 import { getWelcomeMd, WELCOME_MD_EN, WELCOME_MD_ZH } from './content'
 import { getLang, resolveLang, setLang, t, useTranslation } from './i18n'
 import StatusBar, { EMPTY_STATS, computeDocStats, type DocStats } from './components/StatusBar'
@@ -93,6 +96,15 @@ declare global {
         samples?: number
       ) => { lines: number; formulas: number; samples: number; avg: number; p95: number; max: number }
     } | null
+    /** P16 e2e handle: mermaid template insert + fence probe + export IO seam. */
+    __veloxP16: {
+      templates: () => string[]
+      insertTemplate: (id: string) => void
+      openInsertDialog: () => void
+      getDialogOpen: () => boolean
+      isCursorInMermaidFence: () => boolean
+      setExportIo: (io: Parameters<typeof setMermaidExportIo>[0]) => void
+    } | null
   }
 }
 window.__veloxEditor = null
@@ -100,6 +112,7 @@ window.__veloxP12 = null
 window.__veloxP13 = null
 window.__veloxP14 = null
 window.__veloxP15 = null
+window.__veloxP16 = null
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -732,6 +745,62 @@ export default function App(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openGlobalSearch, openSearchResult, workspace.loadFolder])
 
+  // ---- P16: Mermaid insert dialog + template application --------------------
+  const [showMermaidInsert, setShowMermaidInsert] = useState(false)
+  const mermaidDialogOpenRef = useRef(false)
+  mermaidDialogOpenRef.current = showMermaidInsert
+
+  /** Menu/command entry: no-op while the cursor sits in a mermaid fence. */
+  const openMermaidInsert = useCallback(() => {
+    const view = viewRef.current
+    if (view && isCursorInMermaidFence(view.state)) return
+    setShowMermaidInsert(true)
+  }, [viewRef])
+
+  const insertMermaidTemplate = useCallback(
+    (id: string) => {
+      setShowMermaidInsert(false)
+      const tpl = MERMAID_TEMPLATES.find((x) => x.id === id)
+      const view = viewRef.current
+      if (!tpl || !view) return
+      const { state } = view
+      const { from, to } = state.selection.main
+      let insert = tpl.code
+      let lead = 0
+      // Keep the fence on its own lines even when inserted mid-sentence.
+      if (from > 0 && state.doc.sliceString(from - 1, from) !== '\n') {
+        insert = `\n\n${insert}`
+        lead = 2
+      }
+      if (to < state.doc.length && state.doc.sliceString(to, to + 1) !== '\n') {
+        insert = `${insert}\n`
+      }
+      view.dispatch({
+        changes: { from, to, insert },
+        selection: { anchor: from + lead + tpl.cursorOffset },
+        scrollIntoView: true
+      })
+      view.focus()
+    },
+    [viewRef]
+  )
+
+  // P16 e2e handle.
+  useEffect(() => {
+    window.__veloxP16 = {
+      templates: () => MERMAID_TEMPLATES.map((x) => x.id),
+      insertTemplate: (id) => insertMermaidTemplate(id),
+      openInsertDialog: () => openMermaidInsert(),
+      getDialogOpen: () => mermaidDialogOpenRef.current,
+      isCursorInMermaidFence: () => {
+        const view = viewRef.current
+        return view ? isCursorInMermaidFence(view.state) : false
+      },
+      setExportIo: (io) => setMermaidExportIo(io)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [insertMermaidTemplate, openMermaidInsert])
+
   const { menus, formatShortcut } = useMenus({
     viewRef,
     isMac,
@@ -751,7 +820,8 @@ export default function App(): React.JSX.Element {
     openRecentFile: fileOps.openRecentFile,
     clearRecentFiles,
     exportDocument: exportOps.openExport,
-    openQuickOpen: () => setShowQuickOpen(true)
+    openQuickOpen: () => setShowQuickOpen(true),
+    openMermaidInsert
   })
 
   // Fullscreen state is pushed from main (traffic-light / F11 transitions).
@@ -896,6 +966,14 @@ export default function App(): React.JSX.Element {
         onClose={exportOps.closeExport}
         onConfirm={(format, options) => void exportOps.runExport(format, options)}
       />
+      <ListPickDialog
+        open={showMermaidInsert}
+        title={t('mermaid.dialogTitle')}
+        items={MERMAID_TEMPLATES.map((x) => ({ id: x.id, labelKey: x.labelKey }))}
+        onPick={insertMermaidTemplate}
+        onClose={() => setShowMermaidInsert(false)}
+      />
+      <MermaidLightbox />
       <DialogHost />
     </div>
   )

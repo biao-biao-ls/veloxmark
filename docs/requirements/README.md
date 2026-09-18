@@ -23,7 +23,7 @@
 | P13 | [文件夹全局搜索](P13-global-search.md)（已完成） | 功能 | 侧栏内跨文件查找/替换 | M |
 | P14 | [界面 i18n 与状态栏](P14-i18n-statusbar.md)（已完成） | 功能 | 中文化 + 字数统计 | S–M |
 | P15 | [工程质量加固](P15-quality.md)（已完成） | 工程 | 数学渲染性能、自动测试 | M |
-| P16 | [Mermaid 图表体验增强](P16-mermaid-ux.md) | UX/功能 | 错误不清屏、模板插入、PNG/图片剪贴板、大图 lightbox | M |
+| P16 | [Mermaid 图表体验增强](P16-mermaid-ux.md)（已完成） | UX/功能 | 错误不清屏、模板插入、PNG/图片剪贴板、大图 lightbox | M |
 | P17 | [链接导航与文档间跳转](P17-link-navigation.md) | UX/功能 | 相对路径/锚点跳转，文件夹工作区闭环的最后一环 | S–M |
 | P18 | [标题折叠](P18-heading-fold.md) | UX | 长文按章节折叠，大纲联动、会话记忆 | S–M |
 | P19 | [粘贴 HTML 转 Markdown](P19-paste-html-to-md.md) | UX/功能 | 网页/公众号富文本粘贴得到干净 Markdown | S–M |

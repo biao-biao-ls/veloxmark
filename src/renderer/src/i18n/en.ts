@@ -28,9 +28,11 @@ export const EN: Record<string, string> = {
   'cmd.toggleDevTools': 'Toggle Developer Tools',
   'cmd.toggleTheme': 'Toggle Theme',
   'cmd.showHelp': 'Markdown Syntax Reference',
+  'cmd.insertMermaidDiagram': 'Mermaid Diagram…',
   'menu.file': 'File',
   'menu.edit': 'Edit',
   'menu.view': 'View',
+  'menu.insert': 'Insert',
   'menu.help': 'Help',
   'menu.openRecent': 'Open Recent',
   'menu.export': 'Export',
@@ -209,5 +211,22 @@ export const EN: Record<string, string> = {
   'status.savedAt': 'Saved {time}',
   'status.detailTitle': 'Statistics',
   'status.detailMsg':
-    'Paragraphs: {paragraphs}\nWords/chars (CJK): {words}\nCharacters: {chars}\nCharacters (no spaces): {charsNoSpace}'
+    'Paragraphs: {paragraphs}\nWords/chars (CJK): {words}\nCharacters: {chars}\nCharacters (no spaces): {charsNoSpace}',
+
+  // ---- P16 mermaid UX --------------------------------------------------------
+  'mermaid.dialogTitle': 'Insert Mermaid Diagram',
+  'mermaid.tpl.flowchart': 'Flowchart',
+  'mermaid.tpl.sequence': 'Sequence Diagram',
+  'mermaid.tpl.class': 'Class Diagram',
+  'mermaid.tpl.state': 'State Diagram',
+  'mermaid.tpl.er': 'Entity-Relationship Diagram',
+  'mermaid.tpl.gantt': 'Gantt Chart',
+  'mermaid.tpl.pie': 'Pie Chart',
+  'mermaid.rendering': 'Rendering diagram…',
+  'mermaid.updating': 'Updating…',
+  'mermaid.failed': 'Mermaid diagram (render failed)',
+  'mermaid.errorLabel': 'Mermaid error',
+  'mermaid.jumpToSource': 'Jump to source',
+  'mermaid.copyImage': 'Copy Image',
+  'mermaid.png': 'PNG'
 }

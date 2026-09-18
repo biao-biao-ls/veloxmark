@@ -54,6 +54,8 @@ export interface CommandOps {
   openQuickOpen: () => void
   /** P13: open the sidebar Search view and focus its query box. */
   openGlobalSearch: () => void
+  /** P16: open the Mermaid template picker (App no-ops inside a fence). */
+  openMermaidInsert: () => void
 }
 
 /** One validated Open Recent entry (existence decided by the App). */
@@ -262,6 +264,12 @@ export function buildCommands(ops: CommandOps): Command[] {
       bindGlobal: true,
       run: () => ops.toggleTheme()
     },
+    // ---- Insert (P16) -------------------------------------------------------
+    {
+      id: 'insertMermaidDiagram',
+      label: 'cmd.insertMermaidDiagram',
+      run: () => ops.openMermaidInsert()
+    },
     // ---- Help --------------------------------------------------------------
     {
       id: 'showHelp',
@@ -336,6 +344,7 @@ const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
       'toggleTheme'
     ]
   },
+  { label: 'menu.insert', items: ['insertMermaidDiagram'] },
   { label: 'menu.help', items: ['showHelp'] }
 ]
 
