@@ -9,6 +9,17 @@ import {
   renderMermaid
 } from '../editor/widgets'
 import type { ThemeName } from '../editor/theme'
+import {
+  ABBR_DEF_RE,
+  ATTR_RE,
+  DL_DEF_RE,
+  FOOTNOTE_DEF_RE,
+  type FootnoteDef,
+  collectFootnoteDefs,
+  escapeRegExp,
+  parseAttrString,
+  parseFrontMatter
+} from '../editor/livePreview/extendedSyntax'
 
 /**
  * Static-document renderer (P04 export).
@@ -36,15 +47,50 @@ export interface RenderDocOptions {
 }
 
 export async function renderDoc(markdown: string, opts: RenderDocOptions): Promise<string> {
-  // Same extension stack as the live preview (setup.ts) — identical trees.
-  const tree = mdParser.configure([GFM, imageSizeMarkdown]).parse(markdown)
+  // P11: strip front matter from the walked source; surface `title` as an h1.
+  const fm = parseFrontMatter(markdown)
+  const body = fm ? markdown.slice(fm.end) : markdown
+  const tree = mdParser.configure([GFM, imageSizeMarkdown]).parse(body)
+
+  // Footnote numbering is first-reference order in the body (defs excluded).
+  const defs = collectFootnoteDefs(body)
+  const footnoteNums = new Map<string, number>()
+  const footnotes: FootnoteDef[] = []
+  for (const def of defs.values()) {
+    footnoteNums.set(def.id, def.num)
+    footnotes.push(def)
+  }
+  footnotes.sort((a, b) => a.num - b.num)
+
+  // Abbreviation definitions — titles attach to <abbr> usages in the body.
+  const abbrs = new Map<string, string>()
+  for (const line of body.split('\n')) {
+    const m = ABBR_DEF_RE.exec(line)
+    if (m && !abbrs.has(m[1])) abbrs.set(m[1], m[2].trim())
+  }
+
   const ctx: RenderCtx = {
-    doc: markdown,
+    doc: body,
     tree,
     opts,
-    parts: []
+    parts: [],
+    footnoteNums,
+    abbrs
+  }
+  if (fm?.summary.title) {
+    ctx.parts.push(`<h1 class="export-fm-title">${escapeHtml(fm.summary.title)}</h1>`)
   }
   await renderBlockChildren(tree.topNode, ctx)
+  if (footnotes.length) {
+    const items = footnotes
+      .map((def) => {
+        const text = renderTextRun(def.text, ctx)
+        const back = `<a href="#fnref-${escapeHtml(def.id)}" class="export-footnote-backref">↩</a>`
+        return `<li id="fn-${escapeHtml(def.id)}">${text} ${back}</li>`
+      })
+      .join('\n')
+    ctx.parts.push(`<hr class="export-footnotes-sep">\n<ol class="export-footnotes">\n${items}\n</ol>`)
+  }
   return ctx.parts.join('\n')
 }
 
@@ -53,6 +99,10 @@ interface RenderCtx {
   tree: Tree
   opts: RenderDocOptions
   parts: string[]
+  /** Footnote id → display number (first-reference order). */
+  footnoteNums: Map<string, number>
+  /** Abbreviation id → expansion (from `*[id]: …` definition lines). */
+  abbrs: Map<string, string>
 }
 
 function textOf(ctx: RenderCtx, node: SyntaxNode): string {
@@ -67,21 +117,116 @@ function escapeHtml(text: string): string {
     .replace(/"/g, '&quot;')
 }
 
-/** Text run → escaped HTML with inline $math$ substituted (mirrors collectMathDecos). */
-function renderTextRun(text: string): string {
+/**
+ * Text run → escaped HTML with P11 inline substitutions (mirrors the live
+ * preview regex passes): $math$, [^footnote], ==highlight==, ^sup^, ~sub~,
+ * plus word-boundary abbreviation expansion in the plain gaps.
+ */
+function renderTextRun(text: string, ctx?: RenderCtx): string {
   let out = ''
   let last = 0
-  const re = /\$([^$\n]+?)\$/g
+  const re =
+    /\$([^$\n]+?)\$|\[\^([^\]\s]+)\]|==([^=\n]+)==|\^([^\^\n]+?)\^|(?<!~)~([^~\n]+?)~(?!~)/g
   for (const m of text.matchAll(re)) {
-    const content = m[1]
-    // Same guards as live preview: no padded / double-$ content.
-    if (content !== content.trim() || content.includes('$$')) continue
-    out += escapeHtml(text.slice(last, m.index))
-    out += `<span class="export-math-inline">${renderKatexHtml(content, false)}</span>`
+    const gap = text.slice(last, m.index)
+    const content = m[1] ?? m[2] ?? m[3] ?? m[4] ?? m[5]
+    if (m[1] !== undefined) {
+      // Same guards as live preview: no padded / double-$ content.
+      if (content !== content.trim() || content.includes('$$')) continue
+    } else if (!content) {
+      continue
+    }
+    out += escapeWithAbbrs(gap, ctx)
+    if (m[1] !== undefined) {
+      out += `<span class="export-math-inline">${renderKatexHtml(m[1], false)}</span>`
+    } else if (m[2] !== undefined) {
+      const id = m[2]
+      const num = ctx?.footnoteNums.get(id)
+      if (num != null) {
+        out += `<sup class="export-footnote-ref" id="fnref-${escapeHtml(id)}"><a href="#fn-${escapeHtml(id)}">${num}</a></sup>`
+      } else {
+        out += `<sup class="export-footnote-ref">[${escapeHtml(id)}]</sup>`
+      }
+    } else if (m[3] !== undefined) {
+      out += `<mark class="export-mark">${escapeWithAbbrs(m[3], ctx)}</mark>`
+    } else if (m[4] !== undefined) {
+      out += `<sup class="export-sup">${escapeWithAbbrs(m[4], ctx)}</sup>`
+    } else if (m[5] !== undefined) {
+      out += `<sub class="export-sub">${escapeWithAbbrs(m[5], ctx)}</sub>`
+    }
     last = m.index + m[0].length
   }
-  out += escapeHtml(text.slice(last))
+  out += escapeWithAbbrs(text.slice(last), ctx)
   return out
+}
+
+/**
+ * Escape plain text, expanding known abbreviations to <abbr title> — the
+ * placeholder masking keeps replacements out of HTML-escaped tag soup.
+ */
+function escapeWithAbbrs(text: string, ctx?: RenderCtx): string {
+  if (!ctx || ctx.abbrs.size === 0 || text === '') return escapeHtml(text)
+  const keys = [...ctx.abbrs.keys()].sort((a, b) => b.length - a.length)
+  const re = new RegExp(`(?<![\\w*])(${keys.map(escapeRegExp).join('|')})(?![\\w*])`, 'g')
+  const slots: string[] = []
+  const masked = text.replace(re, (_m, abbr: string) => {
+    slots.push(abbr)
+    return `${slots.length - 1}`
+  })
+  return escapeHtml(masked).replace(/(\d+)/g, (_m, i) => {
+    const abbr = slots[Number(i)]
+    return `<abbr title="${escapeHtml(ctx.abbrs.get(abbr) ?? '')}">${escapeHtml(abbr)}</abbr>`
+  })
+}
+
+/** Trailing `{#id .class}` on a block's raw source → ` id="…" class="…"`. */
+function attrsFromTrailing(raw: string): string {
+  const m = ATTR_RE.exec(raw)
+  if (!m) return ''
+  const parsed = parseAttrString(m[1])
+  const id = parsed.id ? ` id="${escapeHtml(parsed.id)}"` : ''
+  const cls = parsed.classes.length ? ` class="${escapeHtml(parsed.classes.join(' '))}"` : ''
+  return id + cls
+}
+
+/** Strip a trailing `{…}` attribute span from rendered inner HTML (escaped text). */
+function stripTrailingAttrs(inner: string): string {
+  return inner.replace(/\{((?:[#.][\w-]+[ \t]*)+)\}[ \t]*$/, '')
+}
+
+/** True when a block-level paragraph *starts* with `: ` (definition-list body). */
+function isDefLineText(raw: string): boolean {
+  return DL_DEF_RE.test(raw)
+}
+
+/**
+ * Pandoc-style DL packed into ONE paragraph (`term\n: def1\n: def2`, no blank
+ * lines — CommonMark keeps them in a single Paragraph; lezer has no DL node).
+ * Returns term + definition texts when every non-empty line fits the shape.
+ */
+function splitDefinitionList(raw: string): { term: string; defs: string[]; termOffset: number; defOffsets: number[] } | null {
+  const lines = raw.split('\n')
+  const nonEmpty: { text: string; offset: number }[] = []
+  let offset = 0
+  for (const line of lines) {
+    if (line.trim() !== '') nonEmpty.push({ text: line, offset })
+    offset += line.length + 1
+  }
+  if (nonEmpty.length < 2) return null
+  if (isDefLineText(nonEmpty[0].text)) return null
+  const term = nonEmpty[0].text
+  const t = term.trim()
+  if (/^(#{1,6}\s|```|~~~|\||[-*+]\s|\d+\.\s|>)/.test(t)) return null
+  if (FOOTNOTE_DEF_RE.test(term) || ABBR_DEF_RE.test(term)) return null
+  const defs: string[] = []
+  const defOffsets: number[] = [] // offset of each def's *content* (after marker)
+  for (const { text, offset } of nonEmpty.slice(1)) {
+    const m = DL_DEF_RE.exec(text)
+    if (!m) return null
+    defs.push(m[2])
+    defOffsets.push(offset + (text.length - m[2].length))
+  }
+  return { term, defs, termOffset: nonEmpty[0].offset, defOffsets }
 }
 
 // ---- math block detection (paragraph level) ---------------------------------
@@ -102,9 +247,66 @@ function asMathBlock(text: string): MathBlock | null {
 // ---- block dispatch ----------------------------------------------------------
 
 async function renderBlockChildren(node: SyntaxNode, ctx: RenderCtx): Promise<void> {
-  for (let child = node.firstChild; child; child = child.nextSibling) {
+  let child = node.firstChild
+  while (child) {
+    const raw = textOf(ctx, child)
+
+    // P11 definition/reference lines never render as body content.
+    if (FOOTNOTE_DEF_RE.test(raw) || ABBR_DEF_RE.test(raw)) {
+      child = child.nextSibling
+      continue
+    }
+    // Generic link-reference definitions (`[foo]: url`) — dropped by browsers
+    // too; footnote-shaped ones are handled above.
+    if (/^\[[^\]\s]+\]:[ \t]*\S/.test(raw) && !raw.includes('\n')) {
+      child = child.nextSibling
+      continue
+    }
+
+    // P11 definition list: term paragraph followed by `: definition` paragraphs.
+    if (child.name === 'Paragraph' && raw.trim() !== '' && !isDefLineText(raw)) {
+      let sib = child.nextSibling
+      const defParas: SyntaxNode[] = []
+      while (sib && sib.name === 'Paragraph' && isDefLineText(textOf(ctx, sib))) {
+        defParas.push(sib)
+        sib = sib.nextSibling
+      }
+      const termTrim = raw.trim()
+      const looksLikeTerm =
+        !/^(#{1,6}\s|```|~~~|\||[-*+]\s|\d+\.\s|>)/.test(termTrim) &&
+        !FOOTNOTE_DEF_RE.test(raw) &&
+        !ABBR_DEF_RE.test(raw)
+      if (defParas.length && looksLikeTerm) {
+        ctx.parts.push(await renderDefinitionList(child, defParas, ctx))
+        child = sib
+        continue
+      }
+    }
+
     await renderBlock(child, ctx)
+    child = child.nextSibling
   }
+}
+
+/** `term` paragraph + `: def` paragraphs → semantic <dl>. */
+async function renderDefinitionList(
+  termNode: SyntaxNode,
+  defNodes: SyntaxNode[],
+  ctx: RenderCtx
+): Promise<string> {
+  const termRaw = textOf(ctx, termNode)
+  const termInner = stripTrailingAttrs(await renderInlineChildren(termNode, ctx))
+  const termAttrs = attrsFromTrailing(termRaw)
+  const defs: string[] = []
+  for (const d of defNodes) {
+    const raw = textOf(ctx, d)
+    const m = DL_DEF_RE.exec(raw)
+    const markerLen = m ? raw.length - m[2].length : 0
+    const inner = await renderInlineRange(d.from + markerLen, d.to, d, ctx)
+    const attrs = attrsFromTrailing(raw)
+    defs.push(`<dd${attrs}>${stripTrailingAttrs(inner)}</dd>`)
+  }
+  return `<dl class="export-dl">\n<dt${termAttrs}>${termInner}</dt>\n${defs.join('\n')}\n</dl>`
 }
 
 async function renderBlock(node: SyntaxNode, ctx: RenderCtx): Promise<void> {
@@ -116,16 +318,20 @@ async function renderBlock(node: SyntaxNode, ctx: RenderCtx): Promise<void> {
     // Skip the leading HeaderMark (#s); render the rest as inline.
     const mark = node.firstChild
     const contentFrom = mark && mark.name === 'HeaderMark' ? mark.to : node.from
+    const raw = textOf(ctx, node)
     const inner = await renderInlineRange(contentFrom, node.to, node, ctx)
-    ctx.parts.push(`<h${level}>${inner.trim()}</h${level}>`)
+    const attrs = attrsFromTrailing(raw)
+    ctx.parts.push(`<h${level}${attrs}>${stripTrailingAttrs(inner).trim()}</h${level}>`)
     return
   }
 
   const setext = /^SetextHeading([12])$/.exec(name)
   if (setext) {
     const level = Number(setext[1])
+    const raw = textOf(ctx, node)
     const inner = await renderInlineChildren(node, ctx, (n) => n.name !== 'HeaderMark')
-    ctx.parts.push(`<h${level}>${inner.trim()}</h${level}>`)
+    const attrs = attrsFromTrailing(raw)
+    ctx.parts.push(`<h${level}${attrs}>${stripTrailingAttrs(inner).trim()}</h${level}>`)
     return
   }
 
@@ -139,8 +345,24 @@ async function renderBlock(node: SyntaxNode, ctx: RenderCtx): Promise<void> {
         )
         return
       }
+      // P11: pandoc definition list packed into a single paragraph.
+      const dl = splitDefinitionList(raw)
+      if (dl) {
+        const termFrom = node.from + dl.termOffset
+        const termTo = termFrom + dl.term.length
+        const termInner = stripTrailingAttrs(await renderInlineRange(termFrom, termTo, node, ctx))
+        const dds: string[] = []
+        for (let i = 0; i < dl.defs.length; i++) {
+          const dFrom = node.from + dl.defOffsets[i]
+          const dTo = dFrom + dl.defs[i].length
+          dds.push(`<dd>${stripTrailingAttrs(await renderInlineRange(dFrom, dTo, node, ctx))}</dd>`)
+        }
+        ctx.parts.push(`<dl class="export-dl">\n<dt>${termInner}</dt>\n${dds.join('\n')}\n</dl>`)
+        return
+      }
       const inner = await renderInlineChildren(node, ctx)
-      ctx.parts.push(`<p>${inner}</p>`)
+      const attrs = attrsFromTrailing(raw)
+      ctx.parts.push(`<p${attrs}>${stripTrailingAttrs(inner)}</p>`)
       return
     }
     case 'Blockquote': {
@@ -343,13 +565,13 @@ async function renderInlineRange(
   let cursor = from
   for (let child = container.firstChild; child; child = child.nextSibling) {
     if (child.from < from || child.to > to) continue
-    if (child.from > cursor) out += renderTextRun(ctx.doc.slice(cursor, child.from))
+    if (child.from > cursor) out += renderTextRun(ctx.doc.slice(cursor, child.from), ctx)
     // Rejected children are consumed silently (URL text inside links, task
     // markers) — their source must not leak into the surrounding text gap.
     if (accept(child)) out += await renderInline(child, ctx)
     cursor = child.to
   }
-  if (cursor < to) out += renderTextRun(ctx.doc.slice(cursor, to))
+  if (cursor < to) out += renderTextRun(ctx.doc.slice(cursor, to), ctx)
   return out
 }
 
@@ -379,6 +601,10 @@ async function renderInline(node: SyntaxNode, ctx: RenderCtx): Promise<string> {
       return `<code>${escapeHtml(code)}</code>`
     }
     case 'Link': {
+      // P11: `[^id]` reference-links are footnote refs — render as superscript.
+      const whole = textOf(ctx, node)
+      const fn = /^\[\^([^\]\s]+)\]$/.exec(whole)
+      if (fn) return renderTextRun(whole, ctx)
       const url = node.getChild('URL')
       const href = url ? textOf(ctx, url) : ''
       const inner = await renderInlineChildren(node, ctx, (n) => n.name !== 'URL')
@@ -410,7 +636,7 @@ async function renderInline(node: SyntaxNode, ctx: RenderCtx): Promise<string> {
       return textOf(ctx, node)
     default: {
       if (node.firstChild) return renderInlineChildren(node, ctx)
-      return renderTextRun(textOf(ctx, node))
+      return renderTextRun(textOf(ctx, node), ctx)
     }
   }
 }

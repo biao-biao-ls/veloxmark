@@ -18,7 +18,7 @@
 | P08 | [专注/打字机/源码模式](P08-focus-modes.md) | UX | Typora 标志性写作体验 | S–M |
 | P09 | [行内元素细粒度 WYSIWYG](P09-inline-wysiwyg.md)（已完成） | UX | 光标在行中不再整行闪回源码 | L |
 | P10 | [表格单元格级编辑](P10-table-editing.md)（已完成） | UX/功能 | 表格从"整块黑盒"到单元格直接编辑 | L |
-| P11 | [扩展语法支持](P11-extended-syntax.md) | 功能 | front matter、脚注、==高亮== | M |
+| P11 | [扩展语法支持](P11-extended-syntax.md)（已完成） | 功能 | front matter、脚注、==高亮== | M |
 | P12 | [自动保存与崩溃恢复](P12-autosave.md) | 功能 | 数据安全兜底 | M |
 | P13 | [文件夹全局搜索](P13-global-search.md) | 功能 | 侧栏内跨文件查找/替换 | M |
 | P14 | [界面 i18n 与状态栏](P14-i18n-statusbar.md) | 功能 | 中文化 + 字数统计 | S–M |

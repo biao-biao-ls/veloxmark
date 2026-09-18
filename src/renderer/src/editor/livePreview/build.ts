@@ -3,6 +3,7 @@ import type { EditorState } from '@codemirror/state'
 import { Decoration, type DecorationSet } from '@codemirror/view'
 import type { LivePreviewConfig } from './config'
 import {
+  collectExtendedDecos,
   collectMathDecos,
   enterEmphasisMark,
   enterFencedCode,
@@ -99,6 +100,8 @@ export function buildDecorations(state: EditorState, config: LivePreviewConfig):
   })
 
   collectMathDecos(ctx, (pos, side) => tree.resolveInner(pos, side))
+  // P11 extended syntax: front matter / footnotes / highlight / sub-sup pass.
+  collectExtendedDecos(ctx, (pos, side) => tree.resolveInner(pos, side))
 
   // P08 focus mode: mark every line of the top-level block the cursor is in.
   // CSS dims all other .cm-line elements via the .cm-focus-mode root class.

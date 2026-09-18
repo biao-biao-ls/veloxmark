@@ -17,6 +17,7 @@ const lightVars = `
   --quote-border: #d0d7de;
   --code-bg: rgba(175, 184, 193, 0.2);
   --hr-color: #d8dee4;
+  --highlight-bg: #fff8c5;
 `
 
 const darkVars = `
@@ -29,6 +30,7 @@ const darkVars = `
   --quote-border: #444444;
   --code-bg: rgba(110, 118, 129, 0.25);
   --hr-color: #444444;
+  --highlight-bg: rgba(187, 128, 9, 0.45);
 `
 
 export const EXPORT_DOC_CSS = `
@@ -216,5 +218,78 @@ export const EXPORT_DOC_CSS = `
 
 .export-theme-dark .katex {
   color: #d4d4d4;
+}
+
+/* ---- P11 extended syntax ---------------------------------------------------- */
+
+.export-doc .export-fm-title {
+  margin-top: 0;
+}
+
+.export-doc mark.export-mark,
+.export-doc .export-mark {
+  background: var(--highlight-bg);
+  border-radius: 2px;
+  padding: 0 1px;
+  color: inherit;
+}
+
+.export-doc sup.export-sup,
+.export-doc .export-sup {
+  font-size: 0.75em;
+  vertical-align: super;
+}
+
+.export-doc sub.export-sub,
+.export-doc .export-sub {
+  font-size: 0.75em;
+  vertical-align: sub;
+}
+
+.export-doc .export-footnote-ref {
+  font-size: 0.75em;
+}
+
+.export-doc .export-footnote-ref a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.export-doc .export-footnotes-sep {
+  margin-top: 2em;
+}
+
+.export-doc ol.export-footnotes {
+  font-size: 0.9em;
+  color: var(--fg-dim);
+}
+
+.export-doc ol.export-footnotes li {
+  margin: 0.25em 0;
+}
+
+.export-doc .export-footnote-backref {
+  color: var(--accent);
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.export-doc abbr {
+  text-decoration: underline dotted var(--fg-dim);
+  cursor: help;
+}
+
+.export-doc dl.export-dl {
+  margin: 0.5em 0;
+}
+
+.export-doc dl.export-dl dt {
+  font-weight: 600;
+  margin-top: 0.4em;
+}
+
+.export-doc dl.export-dl dd {
+  margin: 0.15em 0 0.15em 1.5em;
+  color: var(--fg-dim);
 }
 `

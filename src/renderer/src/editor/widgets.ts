@@ -7,6 +7,7 @@ import mermaid from 'mermaid'
 import githubCss from 'highlight.js/styles/github.css?raw'
 import githubDarkCss from 'highlight.js/styles/github-dark.css?raw'
 import type { ThemeName } from './theme'
+import type { FrontMatterSummary } from './livePreview/extendedSyntax'
 
 // ---- highlight.js themes, scoped under the app theme class ------------------
 // Injected lazily on first widget render so importing this module in a
@@ -372,6 +373,130 @@ export class InlineMathWidget extends WidgetType {
 
   ignoreEvent(): boolean {
     return false
+  }
+}
+
+// ---- P11 extended syntax widgets ----------------------------------------------
+
+/**
+ * Collapsed YAML front-matter card. Clicking anywhere puts the cursor inside
+ * the `---` source range — the blockTouched rule then drops the widget and
+ * reveals the raw source, same edit loop as code blocks.
+ */
+export class FrontMatterWidget extends WidgetType {
+  constructor(
+    readonly summary: FrontMatterSummary,
+    readonly yaml: string,
+    readonly sourceFrom: number,
+    readonly sourceTo: number
+  ) {
+    super()
+  }
+
+  eq(other: FrontMatterWidget): boolean {
+    return other.yaml === this.yaml && other.sourceFrom === this.sourceFrom
+  }
+
+  toDOM(view: EditorView): HTMLElement {
+    const outer = document.createElement('div')
+    outer.className = 'cm-md-block-gap'
+    const card = document.createElement('div')
+    card.className = 'cm-md-frontmatter'
+
+    const head = document.createElement('div')
+    head.className = 'cm-md-frontmatter-head'
+    head.textContent = 'Front Matter'
+    card.appendChild(head)
+
+    const bodyEl = document.createElement('div')
+    bodyEl.className = 'cm-md-frontmatter-body'
+    const s = this.summary
+    const rows: Array<[string, string]> = []
+    if (s.title) rows.push(['title', s.title])
+    if (s.date) rows.push(['date', s.date])
+    if (s.tags && s.tags.length) rows.push(['tags', s.tags.join(', ')])
+    if (rows.length === 0) {
+      // No recognized summary keys — show a compact key listing instead.
+      const keys = s.keys.length ? s.keys.join(', ') : this.yaml.split(/\r?\n/).length + ' lines'
+      rows.push(['keys', keys])
+    }
+    for (const [k, v] of rows) {
+      const kv = document.createElement('div')
+      kv.className = 'cm-md-frontmatter-kv'
+      const keyEl = document.createElement('span')
+      keyEl.className = 'cm-md-frontmatter-key'
+      keyEl.textContent = k
+      const valEl = document.createElement('span')
+      valEl.className = 'cm-md-frontmatter-val'
+      valEl.textContent = v
+      kv.appendChild(keyEl)
+      kv.appendChild(valEl)
+      bodyEl.appendChild(kv)
+    }
+    card.appendChild(bodyEl)
+    outer.appendChild(card)
+
+    outer.addEventListener('mousedown', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      // Cursor into the YAML body → blockTouched → source shows for editing.
+      view.dispatch({
+        selection: { anchor: Math.min(this.sourceFrom + 4, this.sourceTo) },
+        scrollIntoView: true
+      })
+      view.focus()
+    })
+    return outer
+  }
+
+  ignoreEvent(): boolean {
+    return true
+  }
+}
+
+/**
+ * Footnote reference `[^id]` → superscript number. Click jumps to the
+ * definition line when one exists.
+ */
+export class FootnoteRefWidget extends WidgetType {
+  constructor(
+    readonly id: string,
+    readonly num: number | undefined,
+    readonly defPos: number | undefined
+  ) {
+    super()
+  }
+
+  eq(other: FootnoteRefWidget): boolean {
+    return other.id === this.id && other.num === this.num && other.defPos === this.defPos
+  }
+
+  toDOM(view: EditorView): HTMLElement {
+    const el = document.createElement('sup')
+    el.className = 'cm-md-footnote-ref'
+    el.textContent = this.num != null && this.num > 0 ? `[${this.num}]` : `[${this.id}]`
+    if (this.defPos != null) {
+      el.classList.add('cm-md-footnote-ref-clickable')
+      el.title = `跳转到脚注 [^${this.id}]`
+      const defPos = this.defPos
+      el.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        view.dispatch({
+          selection: { anchor: defPos },
+          effects: EditorView.scrollIntoView(defPos, { y: 'center' }),
+          scrollIntoView: true
+        })
+        view.focus()
+      })
+    } else {
+      el.title = `未找到脚注定义 [^${this.id}]`
+    }
+    return el
+  }
+
+  ignoreEvent(): boolean {
+    return true
   }
 }
 
