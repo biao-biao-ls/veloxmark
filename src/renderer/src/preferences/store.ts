@@ -14,7 +14,7 @@
 export const PREFERENCES_VERSION = 1
 
 export type ThemeMode = 'light' | 'dark' | 'system'
-export type SidebarMode = 'outline' | 'files'
+export type SidebarMode = 'outline' | 'files' | 'search'
 export type ImageRenameMode = 'timestamp' | 'keep'
 export type AutoSaveMode = 'off' | 'debounce' | 'interval'
 
@@ -236,7 +236,10 @@ let session: SessionState = (() => {
   if (!raw) return { ...DEFAULT_SESSION }
   return {
     sidebarVisible: typeof raw.sidebarVisible === 'boolean' ? raw.sidebarVisible : null,
-    sidebarMode: raw.sidebarMode === 'files' || raw.sidebarMode === 'outline' ? raw.sidebarMode : null,
+    sidebarMode:
+      raw.sidebarMode === 'files' || raw.sidebarMode === 'outline' || raw.sidebarMode === 'search'
+        ? raw.sidebarMode
+        : null,
     sidebarWidth:
       typeof raw.sidebarWidth === 'number' && Number.isFinite(raw.sidebarWidth)
         ? Math.min(480, Math.max(160, raw.sidebarWidth))

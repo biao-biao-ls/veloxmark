@@ -8,7 +8,9 @@ import Titlebar from './components/Titlebar'
 import Preferences from './components/Preferences'
 import ExportDialog from './components/ExportDialog'
 import QuickOpen from './components/QuickOpen'
+import SearchPanel from './components/SearchPanel'
 import { DialogHost, dialog } from './components/Dialog'
+import { SearchIcon } from './components/Icons'
 import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch, updateLivePreviewConfig } from './editor/setup'
 import { invalidateImageCache } from './editor/widgets'
 import { readEditingAssistsConfig } from './editor/assists'
@@ -27,6 +29,8 @@ import {
   getSession,
   patchSession
 } from './preferences/store'
+import type { SidebarMode } from './preferences/store'
+import type { SearchOptions, SearchReplaceRequest, SearchReplaceResult } from '../../../electron/shared/api'
 import type { RecentItem } from './commands'
 
 // Handle for CDP smoke tests (scripts/cdp-p05.mjs) — mirrors the __veloxPrefs
@@ -51,10 +55,26 @@ declare global {
       runDraftCheck: () => Promise<void>
       getLastAutoSaveAt: () => number | null
     } | null
+    /** P13 e2e handle: folder search / replace / jump-to-result. */
+    __veloxP13: {
+      openFolder: (path: string) => Promise<void>
+      openSearch: () => void
+      getSidebarMode: () => string
+      searchRun: (
+        root: string,
+        pattern: string,
+        options: SearchOptions
+      ) => Promise<{ searchId: number; error?: string }>
+      searchReplace: (req: SearchReplaceRequest) => Promise<SearchReplaceResult>
+      openAt: (path: string, line: number, col: number) => Promise<void>
+      getDoc: () => string
+      getFilePath: () => string | null
+    } | null
   }
 }
 window.__veloxEditor = null
 window.__veloxP12 = null
+window.__veloxP13 = null
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -83,13 +103,15 @@ export default function App(): React.JSX.Element {
     () => getSession().sidebarVisible ?? getPreferences().sidebarDefaultOpen
   )
   const [isFullScreen, setIsFullScreen] = useState(false)
-  const [sidebarMode, setSidebarMode] = useState<'outline' | 'files'>(
+  const [sidebarMode, setSidebarMode] = useState<SidebarMode>(
     () => getSession().sidebarMode ?? 'outline'
   )
   const [sidebarWidth, setSidebarWidth] = useState(() => getSession().sidebarWidth ?? 240)
   const [sidebarResizing, setSidebarResizing] = useState(false)
   const [showPreferences, setShowPreferences] = useState(false)
   const [showQuickOpen, setShowQuickOpen] = useState(false)
+  // P13: bumped by Ctrl+Shift+F so the SearchPanel focuses its query box.
+  const [searchFocusToken, setSearchFocusToken] = useState(0)
 
   const updateOutline = useCallback(() => {
     const view = viewRef.current
@@ -507,6 +529,61 @@ export default function App(): React.JSX.Element {
 
   const toggleOutline = useCallback(() => setShowOutline((v) => !v), [])
 
+  // ---- P13 folder-wide search ------------------------------------------------
+  const openGlobalSearch = useCallback(() => {
+    setShowOutline(true)
+    setSidebarMode('search')
+    setSearchFocusToken((t) => t + 1)
+  }, [])
+
+  /** Open a search hit: same dirty gate, then cursor at line/col. */
+  const openSearchResult = useCallback(
+    async (path: string, line: number, col: number) => {
+      const ok = await fileOps.openFileByPath(path)
+      if (!ok) return
+      const view = viewRef.current
+      if (!view) return
+      const doc = view.state.doc
+      const lineObj = doc.line(Math.min(Math.max(line, 1), doc.lines))
+      const anchor = Math.min(lineObj.from + Math.max(col, 0), lineObj.to)
+      view.dispatch({
+        selection: { anchor },
+        effects: EditorView.scrollIntoView(anchor, { y: 'center' }),
+        scrollIntoView: true
+      })
+      view.focus()
+    },
+    [fileOps, viewRef]
+  )
+
+  /** Re-read an open file from disk after a replace wrote it. */
+  const reloadOpenFile = useCallback(
+    async (path: string) => {
+      if (filePathRef.current !== path) return
+      const content = await window.api.readFile(path)
+      fileOps.loadContent(content, path)
+    },
+    [filePathRef, fileOps]
+  )
+
+  const sidebarModeRef = useRef<SidebarMode>(sidebarMode)
+  sidebarModeRef.current = sidebarMode
+
+  // P13 e2e handle.
+  useEffect(() => {
+    window.__veloxP13 = {
+      openFolder: (path) => workspace.loadFolder(path),
+      openSearch: () => openGlobalSearch(),
+      getSidebarMode: () => sidebarModeRef.current,
+      searchRun: (root, pattern, options) => window.api.searchRun(root, pattern, options),
+      searchReplace: (req) => window.api.searchReplace(req),
+      openAt: (path, line, col) => openSearchResult(path, line, col),
+      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
+      getFilePath: () => filePathRef.current
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openGlobalSearch, openSearchResult, workspace.loadFolder])
+
   const { menus, formatShortcut } = useMenus({
     viewRef,
     isMac,
@@ -521,6 +598,7 @@ export default function App(): React.JSX.Element {
     toggleTheme,
     loadContent: fileOps.loadContent,
     toggleOutline,
+    openGlobalSearch,
     openPreferences: () => setShowPreferences(true),
     openRecentFile: fileOps.openRecentFile,
     clearRecentFiles,
@@ -553,15 +631,33 @@ export default function App(): React.JSX.Element {
         toggleTheme={toggleTheme}
         formatShortcut={formatShortcut}
         autoSaveAt={autoSave.lastAutoSaveAt}
+        openSearch={openGlobalSearch}
       />
 
       <div className="main">
         {showOutline && (
           <aside className="sidebar" style={{ width: sidebarWidth }}>
-            {sidebarMode === 'files' && workspace.folderPath ? (
+            {sidebarMode === 'search' ? (
+              <SearchPanel
+                folderPath={workspace.folderPath}
+                currentFilePath={filePath}
+                dirty={dirty}
+                focusToken={searchFocusToken}
+                onOpenAt={openSearchResult}
+                onReloadIfOpen={reloadOpenFile}
+                onSwitchMode={(mode) => setSidebarMode(mode)}
+              />
+            ) : sidebarMode === 'files' && workspace.folderPath ? (
               <>
                 <div className="sidebar-header" title={workspace.folderPath}>
                   <span className="sidebar-title">{folderName}</span>
+                  <button
+                    className="sidebar-action"
+                    onClick={openGlobalSearch}
+                    title="Search in folder (Ctrl+Shift+F)"
+                  >
+                    <SearchIcon size={13} />
+                  </button>
                   <button
                     className="sidebar-action"
                     onClick={() => void workspace.treeNewFile(workspace.folderPath!)}
@@ -612,6 +708,15 @@ export default function App(): React.JSX.Element {
                     </button>
                   )}
                   <span>Outline</span>
+                  {workspace.folderPath && (
+                    <button
+                      className="sidebar-action"
+                      onClick={openGlobalSearch}
+                      title="Search in folder (Ctrl+Shift+F)"
+                    >
+                      <SearchIcon size={13} />
+                    </button>
+                  )}
                 </div>
                 <Outline items={outline} activePos={activePos} onSelect={goToHeading} />
               </>

@@ -191,7 +191,9 @@ const DARWIN_COMMAND_ACCELERATORS: Record<string, string> = {
   toggleTheme: 'Cmd+Shift+T',
   // P08 writing modes (Typewriter Mode is menu-only, no accelerator).
   toggleFocusMode: 'F8',
-  toggleSourceMode: 'Cmd+/'
+  toggleSourceMode: 'Cmd+/',
+  // P13 folder-wide search.
+  globalSearch: 'Cmd+Shift+F'
 }
 
 // P03: recent files, pushed from the renderer (which owns the store) whenever
@@ -287,6 +289,8 @@ function buildDarwinMenu(): Menu {
       label: 'View',
       submenu: [
         commandItem('toggleOutline', 'Toggle Outline'),
+        { type: 'separator' },
+        commandItem('globalSearch', 'Search in Folder…'),
         { type: 'separator' },
         commandItem('toggleFocusMode', 'Focus Mode'),
         commandItem('toggleTypewriterMode', 'Typewriter Mode'),

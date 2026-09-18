@@ -90,6 +90,75 @@ export interface DraftListItem extends DraftRecord {
   key: string
 }
 
+/** P13: folder-wide search options (renderer preferences + toggles). */
+export interface SearchOptions {
+  caseSensitive: boolean
+  wholeWord: boolean
+  regex: boolean
+  /** Per-file match list cap; main hard-caps at 200. */
+  maxPerFile?: number
+  /** Lowercase extensions without dot; default md/markdown/mdown/txt. */
+  exts?: string[]
+  /** P07 folder scan rules — reuse the tree's ignore/hidden settings. */
+  scanOptions?: FolderScanOptions
+}
+
+/** One line hit inside a file. */
+export interface SearchMatch {
+  /** 1-based line number. */
+  line: number
+  /** 0-based match offset within the original line (replace-one anchor). */
+  col: number
+  /** Matched length on the original line. */
+  length: number
+  /** Windowed snippet shown in the panel (may trim long lines). */
+  lineText: string
+  /** Match offset within `lineText` (highlight anchor). */
+  snippetCol: number
+}
+
+/** Matches of one file; the list is capped, `matchCount` is the true total. */
+export interface SearchFileResult {
+  path: string
+  /** Relative to rootPath, `/`-separated. */
+  relPath: string
+  matches: SearchMatch[]
+  matchCount: number
+}
+
+/** Batched stream event on `search:results`; `done` marks the final batch. */
+export interface SearchRunPayload {
+  searchId: number
+  files: SearchFileResult[]
+  done: boolean
+  totalMatches?: number
+  error?: string
+}
+
+/** P13 replace request; scope one/file require `path` (+ line/col for one). */
+export interface SearchReplaceRequest {
+  rootPath: string
+  pattern: string
+  options: SearchOptions
+  replace: string
+  scope: 'one' | 'file' | 'all'
+  path?: string
+  line?: number
+  col?: number
+  /** Paths the renderer holds open+dirty — main skips writing these. */
+  skipPaths?: string[]
+}
+
+export interface SearchReplaceResult {
+  /** Number of matches actually replaced. */
+  replaced: number
+  /** Skip-listed paths (open + dirty in the editor). */
+  skipped: string[]
+  /** Files written to disk. */
+  written: string[]
+  error?: string
+}
+
 /** Shape of the object preload exposes as `window.api`. */
 export interface RendererApi {
   platform: string
@@ -153,6 +222,16 @@ export interface RendererApi {
   draftDiscard(path: string | null): Promise<void>
   /** P12: all stored drafts (startup recovery scan). */
   draftList(): Promise<DraftListItem[]>
+  /** P13: start a folder-wide search; results stream via onSearchResults. */
+  searchRun(
+    rootPath: string,
+    pattern: string,
+    options: SearchOptions
+  ): Promise<{ searchId: number; error?: string }>
+  /** P13: batched search results (filter by searchId to drop stale streams). */
+  onSearchResults(callback: (payload: SearchRunPayload) => void): () => void
+  /** P13: replace one match / one file / everything under rootPath. */
+  searchReplace(req: SearchReplaceRequest): Promise<SearchReplaceResult>
   clipboardRead(): Promise<string>
   clipboardWrite(text: string): Promise<void>
   /** P05: true when the clipboard holds a bitmap (screenshot / copied image). */

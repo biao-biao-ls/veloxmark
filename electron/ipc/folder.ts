@@ -41,6 +41,16 @@ function setScanOptions(options: Partial<FolderScanOptions> | undefined): void {
   ignoreMatchers = scanOptions.ignoreNames.map(nameToMatcher)
 }
 
+/** P13: shared with search.ts — same scan rules the folder tree uses. */
+export function applyFolderScanOptions(options: Partial<FolderScanOptions> | undefined): void {
+  setScanOptions(options)
+}
+
+/** P13: shared ignore/hidden rule for a path segment or relative path. */
+export function isIgnoredPath(relPath: string): boolean {
+  return pathFiltered(relPath)
+}
+
 /** True when the entry name matches the user's ignore list. */
 function isIgnored(name: string): boolean {
   return ignoreMatchers.some((m) => m.test(name))

@@ -1,5 +1,5 @@
 import MenuBar, { type MenuDef } from './MenuBar'
-import { CloseIcon, MaximizeIcon, MinimizeIcon, MoonIcon, PanelIcon, SunIcon } from './Icons'
+import { CloseIcon, MaximizeIcon, MinimizeIcon, MoonIcon, PanelIcon, SearchIcon, SunIcon } from './Icons'
 import type { ThemeName } from '../editor/theme'
 
 interface Props {
@@ -12,6 +12,8 @@ interface Props {
   formatShortcut: (shortcut: string) => string
   /** P12: ms timestamp of the last autosave/draft-save; null = none yet. */
   autoSaveAt?: number | null
+  /** P13: open the sidebar folder-search view (Ctrl+Shift+F). */
+  openSearch?: () => void
 }
 
 /**
@@ -27,7 +29,8 @@ export default function Titlebar({
   toggleOutline,
   toggleTheme,
   formatShortcut,
-  autoSaveAt
+  autoSaveAt,
+  openSearch
 }: Props): React.JSX.Element {
   const autoSaveLabel =
     autoSaveAt != null
@@ -53,6 +56,13 @@ export default function Titlebar({
         {autoSaveLabel && <span className="tb-autosave"> {autoSaveLabel}</span>}
       </span>
       <span className="tb-spacer" />
+      <button
+        className="tb-btn"
+        onClick={openSearch}
+        title="Search in folder (Ctrl+Shift+F)"
+      >
+        <SearchIcon />
+      </button>
       <button className="tb-btn" onClick={toggleOutline} title="Toggle outline">
         <PanelIcon />
       </button>

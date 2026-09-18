@@ -4,6 +4,7 @@ import { registerExportIpc } from './export'
 import { registerFilesIpc } from './files'
 import { registerFolderIpc } from './folder'
 import { registerImageIpc } from './image'
+import { registerSearchIpc } from './search'
 import { registerWindowIpc } from './window'
 
 /** Lazy access to the main window — it is created/destroyed across the app lifetime. */
@@ -17,4 +18,5 @@ export function registerAllIpc(getWindow: GetWindow): void {
   registerExportIpc()
   registerImageIpc()
   registerDraftsIpc()
+  registerSearchIpc()
 }

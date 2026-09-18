@@ -5,7 +5,7 @@ import { dialog } from '../components/Dialog'
 import { WELCOME_MD } from '../content'
 import { addRecentFile, patchSession } from '../preferences/store'
 
-export type SidebarMode = 'outline' | 'files'
+export type SidebarMode = 'outline' | 'files' | 'search'
 
 interface Args {
   viewRef: RefObject<EditorView | null>
@@ -212,6 +212,35 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRe
     return window.api.onOpenPath((path) => void openFromSystem(path))
   }, [openFromSystem])
 
+  /**
+   * P13: open a workspace path (search results, deep links) under the same
+   * dirty gate as every other open. Unlike openFileFromTree this leaves the
+   * sidebar mode untouched — the search panel stays visible while results
+   * are reviewed — and optionally places the cursor at a byte offset.
+   */
+  const openFileByPath = useCallback(
+    async (path: string, pos?: number): Promise<boolean> => {
+      if (!(await confirmDiscard())) return false
+      if (filePathRef.current !== path) {
+        const content = await window.api.readFile(path)
+        setBaseDir(path)
+        loadContent(content, path)
+      }
+      const view = viewRef.current
+      if (view && pos != null) {
+        const anchor = Math.min(Math.max(pos, 0), view.state.doc.length)
+        view.dispatch({
+          selection: { anchor },
+          effects: EditorView.scrollIntoView(anchor, { y: 'center' }),
+          scrollIntoView: true
+        })
+        view.focus()
+      }
+      return true
+    },
+    [confirmDiscard, loadContent, setBaseDir, viewRef, filePathRef]
+  )
+
   return {
     filePath,
     dirty,
@@ -230,6 +259,7 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRe
     openFile,
     openFromSystem,
     openRecentFile,
+    openFileByPath,
     saveFile,
     saveFileAs
   }

@@ -11,7 +11,11 @@ import type {
   RecentFileItem,
   RendererApi,
   ResolvedImageSrc,
-  SaveClipboardImageResult
+  SaveClipboardImageResult,
+  SearchOptions,
+  SearchReplaceRequest,
+  SearchReplaceResult,
+  SearchRunPayload
 } from './shared/api'
 
 const api: RendererApi = {
@@ -97,6 +101,20 @@ const api: RendererApi = {
   draftDiscard: (path: string | null): Promise<void> =>
     ipcRenderer.invoke('draft:discard', path),
   draftList: (): Promise<DraftListItem[]> => ipcRenderer.invoke('draft:list'),
+  // P13 folder-wide search/replace (streaming results on search:results).
+  searchRun: (
+    rootPath: string,
+    pattern: string,
+    options: SearchOptions
+  ): Promise<{ searchId: number; error?: string }> =>
+    ipcRenderer.invoke('search:run', rootPath, pattern, options),
+  onSearchResults: (callback: (payload: SearchRunPayload) => void): (() => void) => {
+    const listener = (_e: unknown, payload: SearchRunPayload): void => callback(payload)
+    ipcRenderer.on('search:results', listener)
+    return () => ipcRenderer.removeListener('search:results', listener)
+  },
+  searchReplace: (req: SearchReplaceRequest): Promise<SearchReplaceResult> =>
+    ipcRenderer.invoke('search:replace', req),
   clipboardRead: (): Promise<string> => ipcRenderer.invoke('clipboard:read'),
   clipboardWrite: (text: string): Promise<void> =>
     ipcRenderer.invoke('clipboard:write', text),

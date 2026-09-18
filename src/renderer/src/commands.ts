@@ -51,6 +51,8 @@ export interface CommandOps {
   exportDocument: (format: 'pdf' | 'html') => void
   /** P07: open the Quick Open (fuzzy file search) modal. */
   openQuickOpen: () => void
+  /** P13: open the sidebar Search view and focus its query box. */
+  openGlobalSearch: () => void
 }
 
 /** One validated Open Recent entry (existence decided by the App). */
@@ -213,6 +215,13 @@ export function buildCommands(ops: CommandOps): Command[] {
     },
     // ---- View --------------------------------------------------------------
     { id: 'toggleOutline', label: 'Toggle Outline', run: () => ops.toggleOutline() },
+    {
+      id: 'globalSearch',
+      label: 'Search in Folder…',
+      shortcut: 'Ctrl+Shift+F',
+      bindGlobal: true,
+      run: () => ops.openGlobalSearch()
+    },
     // P08 writing modes — state lives in preferences; the App effect pushes
     // it into the editor config facet (single write path, survives restart).
     {
@@ -310,6 +319,8 @@ const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
     label: 'View',
     items: [
       'toggleOutline',
+      { separator: true },
+      'globalSearch',
       { separator: true },
       'toggleFocusMode',
       'toggleTypewriterMode',
