@@ -36,6 +36,8 @@ export interface Command {
   bindGlobal?: boolean
   /** P08: toggle commands show a checkmark in the in-app menu when on. */
   checked?: () => boolean
+  /** P22: grey the menu item when a precondition fails (e.g. empty selection). */
+  isDisabled?: () => boolean
 }
 
 /** Runtime operations the registry binds to — supplied by the App hooks. */
@@ -62,6 +64,10 @@ export interface CommandOps {
   openMermaidInsert: () => void
   /** P21: open the callout-type picker (ListPickDialog). */
   openCalloutInsert: () => void
+  /** P22: open the table dialog ('insert' blank grid / 'convert' selection). */
+  openTableInsert: (mode: 'insert' | 'convert') => void
+  /** P22: whether the editor has a non-empty selection (menu enablement). */
+  hasSelection: () => boolean
   /** P20: transient status-bar message (auto-clears in the App). */
   showToast: (message: string) => void
 }
@@ -311,6 +317,18 @@ export function buildCommands(ops: CommandOps): Command[] {
       label: 'cmd.insertCallout',
       run: () => ops.openCalloutInsert()
     },
+    // ---- Insert/Edit (P22) --------------------------------------------------
+    {
+      id: 'insertTable',
+      label: 'cmd.insertTable',
+      run: () => ops.openTableInsert('insert')
+    },
+    {
+      id: 'convertToTable',
+      label: 'cmd.convertToTable',
+      isDisabled: () => !ops.hasSelection(),
+      run: () => ops.openTableInsert('convert')
+    },
     // ---- Help --------------------------------------------------------------
     {
       id: 'showHelp',
@@ -366,7 +384,10 @@ const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
       { separator: true },
       'find',
       { separator: true },
-      'exportSelectionHtml'
+      'exportSelectionHtml',
+      { separator: true },
+      'insertTable',
+      'convertToTable'
     ]
   },
   {
@@ -389,7 +410,7 @@ const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
       'toggleTheme'
     ]
   },
-  { label: 'menu.insert', items: ['insertMermaidDiagram', 'insertCallout'] },
+  { label: 'menu.insert', items: ['insertMermaidDiagram', 'insertCallout', 'insertTable'] },
   { label: 'menu.help', items: ['showHelp'] }
 ]
 
@@ -424,6 +445,7 @@ export function buildMenus(
         label: t(cmd.label),
         shortcut: cmd.shortcut ? fmtShortcut(cmd.shortcut, isMac) : undefined,
         checked: cmd.checked?.(),
+        disabled: cmd.isDisabled?.(),
         action: cmd.run
       }
     })

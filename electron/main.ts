@@ -220,6 +220,7 @@ const NATIVE_MENU_STRINGS: Record<UiLang, Record<string, string>> = {
     del: 'Delete', selectAll: 'Select All',
     copyRichText: 'Copy as Rich Text', copyAsHtml: 'Copy as HTML',
     exportSelectionHtml: 'Export Selection as HTML…',
+    insertTable: 'Insert Table…', convertToTable: 'Convert Selection to Table…',
     view: 'View', toggleOutline: 'Toggle Outline', globalSearch: 'Search in Folder…',
     focusMode: 'Focus Mode', typewriterMode: 'Typewriter Mode', sourceMode: 'Source Mode',
     zoomIn: 'Zoom In', zoomOut: 'Zoom Out', zoomReset: 'Reset Zoom',
@@ -241,6 +242,7 @@ const NATIVE_MENU_STRINGS: Record<UiLang, Record<string, string>> = {
     del: '删除', selectAll: '全选',
     copyRichText: '复制为富文本', copyAsHtml: '复制为 HTML',
     exportSelectionHtml: '导出选区为 HTML…',
+    insertTable: '插入表格…', convertToTable: '选区转表格…',
     view: '视图', toggleOutline: '切换大纲', globalSearch: '文件夹内搜索…',
     focusMode: '专注模式', typewriterMode: '打字机模式', sourceMode: '源码模式',
     zoomIn: '放大', zoomOut: '缩小', zoomReset: '重置缩放',
@@ -365,7 +367,10 @@ function buildDarwinMenu(): Menu {
         { role: 'delete', label: S.del },
         { role: 'selectAll', label: S.selectAll },
         { type: 'separator' },
-        commandItem('exportSelectionHtml', S.exportSelectionHtml)
+        commandItem('exportSelectionHtml', S.exportSelectionHtml),
+        { type: 'separator' },
+        commandItem('insertTable', S.insertTable),
+        commandItem('convertToTable', S.convertToTable)
       ]
     },
     {
@@ -397,7 +402,8 @@ function buildDarwinMenu(): Menu {
       label: S.insert,
       submenu: [
         commandItem('insertMermaidDiagram', S.insertMermaidDiagram),
-        commandItem('insertCallout', S.insertCallout)
+        commandItem('insertCallout', S.insertCallout),
+        commandItem('insertTable', S.insertTable)
       ]
     },
     {

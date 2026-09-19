@@ -209,3 +209,57 @@ export function pasteCellOp(model: TableModel, row: number, col: number, text: s
 function escapeForCell(text: string): string {
   return text.replace(/\r\n|\r|\n/g, '<br>').replace(/(?<!\\)\|/g, '\\|')
 }
+
+// ---- P22: delimited-text conversion (convert-selection-to-table) -------------
+
+export type DelimKind = 'tab' | 'comma' | 'pipe' | 'spaces'
+
+/** Split one CSV line — no quote handling (documented: content delimiters may split cells). */
+function splitCsvLine(line: string): string[] {
+  return line.split(',').map((c) => c.trim())
+}
+
+/**
+ * P22: split delimited plain text into a cell matrix. Empty lines are
+ * ignored; cell contents are kept raw (delimiters inside a cell may split
+ * it — GFM has no CSV quoting, documented in P22.md). Tab mode goes through
+ * the P10 TSV parser so Excel quotes/newlines survive.
+ */
+export function parseDelimited(text: string, delim: DelimKind): string[][] {
+  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  const lines = normalized.split('\n').filter((l) => l.trim() !== '')
+  if (lines.length === 0) return []
+  if (delim === 'tab') return parseTsv(lines.join('\n'))
+  return lines.map((line) => {
+    if (delim === 'comma') return splitCsvLine(line)
+    if (delim === 'pipe') {
+      let s = line.trim()
+      if (s.startsWith('|')) s = s.slice(1)
+      if (s.endsWith('|')) s = s.slice(0, -1)
+      return s.split('|').map((c) => c.trim())
+    }
+    return line
+      .trim()
+      .split(/\s{2,}|\t+/)
+      .map((c) => c.trim())
+  })
+}
+
+/**
+ * P22 default delimiter for the convert dialog: Tab wins when any line has
+ * one; else comma when ≥50% of lines contain commas (and commas beat pipes);
+ * else pipe when ≥50% have them; else multi-space; else a comma-ish fallback.
+ */
+export function sniffDelimiter(text: string): DelimKind {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n').filter((l) => l.trim() !== '')
+  if (lines.length === 0) return 'tab'
+  const n = lines.length
+  const count = (re: RegExp): number => lines.filter((l) => re.test(l)).length
+  if (count(/\t/) > 0) return 'tab'
+  const commaLines = count(/,/)
+  const pipeLines = count(/\|/)
+  if (commaLines / n >= 0.5 && commaLines >= pipeLines) return 'comma'
+  if (pipeLines / n >= 0.5) return 'pipe'
+  if (count(/\s{2,}/) > 0) return 'spaces'
+  return commaLines > 0 ? 'comma' : 'tab'
+}

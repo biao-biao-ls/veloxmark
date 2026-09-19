@@ -2259,3 +2259,39 @@ body {
   color: var(--fg-dim);
   white-space: nowrap;
 }
+
+/* ---- P22: table insert dialog ---- */
+.table-insert-dialog { min-width: 420px; max-width: 520px; }
+.table-insert-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 16px);
+  gap: 2px;
+  margin: 8px 0 10px;
+  outline: none;
+  width: fit-content;
+}
+.table-insert-grid:focus-visible { outline: 1px solid var(--accent); }
+.table-insert-cell {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+}
+.table-insert-cell.is-hover { background: var(--accent); border-color: var(--accent); }
+.table-insert-preview {
+  margin: 8px 0;
+  padding: 8px;
+  max-height: 140px;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+  background: var(--bg-secondary, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.table-insert-delim { flex-wrap: wrap; }
+.table-insert-sniff { opacity: 0.7; font-size: 12px; margin-left: auto; }

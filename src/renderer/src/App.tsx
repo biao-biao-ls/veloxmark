@@ -32,6 +32,14 @@ import ExportDialog from './components/ExportDialog'
 import QuickOpen from './components/QuickOpen'
 import SearchPanel from './components/SearchPanel'
 import ListPickDialog from './components/ListPickDialog'
+import {
+  TableInsertDialog,
+  defaultTableForm,
+  type TableDialogMode,
+  type TableInsertForm
+} from './components/TableInsertDialog'
+import { insertTableAtCursor, convertSelectionAtCursor, buildTableMarkdown } from './editor/table/insert'
+import { sniffDelimiter } from './editor/table/ops'
 import MermaidLightbox from './components/MermaidLightbox'
 import { DialogHost, dialog } from './components/Dialog'
 import { SearchIcon } from './components/Icons'
@@ -185,6 +193,16 @@ declare global {
       pressEnter: () => boolean
       getCalloutFoldOverrides: () => Array<[string, boolean]>
     } | null
+    /** P22 e2e handle: table insert dialog + convert flow. */
+    __veloxP22: {
+      getDoc: () => string
+      setSelection: (from: number, to?: number) => void
+      openDialog: (mode: 'insert' | 'convert') => void
+      getDialogMode: () => string | null
+      setDialogForm: (patch: Partial<TableInsertForm>) => void
+      getDialogForm: () => TableInsertForm
+      confirm: () => void
+    } | null
   }
 }
 window.__veloxEditor = null
@@ -198,6 +216,7 @@ window.__veloxP18 = null
 window.__veloxP19 = null
 window.__veloxP20 = null
 window.__veloxP21 = null
+window.__veloxP22 = null
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -1040,6 +1059,88 @@ export default function App(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [insertCalloutTemplate])
 
+  // ---- P22: table insert / convert dialog --------------------------------------
+  const [tableDialog, setTableDialog] = useState<TableDialogMode | null>(null)
+  const [tableForm, setTableFormState] = useState<TableInsertForm>(defaultTableForm)
+  const [tableSelText, setTableSelText] = useState('')
+  const tableDialogRef = useRef<TableDialogMode | null>(null)
+  tableDialogRef.current = tableDialog
+  const tableFormRef = useRef(tableForm)
+  tableFormRef.current = tableForm
+
+  const patchTableForm = useCallback((patch: Partial<TableInsertForm>) => {
+    setTableFormState((f) => ({ ...f, ...patch }))
+  }, [])
+
+  const openTableInsert = useCallback(
+    (mode: 'insert' | 'convert') => {
+      const view = viewRef.current
+      if (!view) return
+      const { from, to } = view.state.selection.main
+      const selText = from === to ? '' : view.state.doc.sliceString(from, to)
+      if (mode === 'convert' && selText.trim() === '') {
+        showToast(t('tableInsert.noSelection'))
+        return
+      }
+      setTableSelText(selText)
+      setTableFormState((f) => ({
+        ...defaultTableForm(),
+        align: f.align,
+        headerPrefix: f.headerPrefix
+      }))
+      setTableDialog(mode)
+    },
+    [showToast]
+  )
+
+  const confirmTableDialog = useCallback(() => {
+    const view = viewRef.current
+    if (!view) return
+    const mode = tableDialogRef.current
+    const form = tableFormRef.current
+    setTableDialog(null)
+    if (!mode) return
+    if (mode === 'insert') {
+      const md = buildTableMarkdown(form.rows, form.cols, form.align, form.headerPrefix)
+      const res = insertTableAtCursor(view, md)
+      if (res.movedAfterBlock) showToast(t('tableInsert.movedAfterBlock'))
+      view.focus()
+      return
+    }
+    // Selection text captured at open may be stale — re-read live selection.
+    const { from, to } = view.state.selection.main
+    const text = from === to ? tableSelText : view.state.doc.sliceString(from, to)
+    const delim = form.delim ?? sniffDelimiter(text)
+    const res = convertSelectionAtCursor(view, text, delim)
+    if (!res.ok && res.reason === 'in-block') showToast(t('tableInsert.noConvertInBlock'))
+    else if (!res.ok) showToast(t('tableInsert.noSelection'))
+    view.focus()
+  }, [showToast, tableSelText])
+
+  // P22 e2e handle
+  useEffect(() => {
+    window.__veloxP22 = {
+      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
+      setSelection: (from, to) => {
+        const view = viewRef.current
+        if (!view) return
+        const len = view.state.doc.length
+        view.dispatch({
+          selection: {
+            anchor: Math.min(from, len),
+            head: Math.min(to ?? from, len)
+          }
+        })
+      },
+      openDialog: (mode) => openTableInsert(mode),
+      getDialogMode: () => tableDialogRef.current,
+      setDialogForm: (patch) => patchTableForm(patch),
+      getDialogForm: () => tableFormRef.current,
+      confirm: () => confirmTableDialog()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openTableInsert, confirmTableDialog, patchTableForm])
+
   // ---- P17: link navigation ---------------------------------------------------
   // openExternal goes through a seam so e2e can capture URLs instead of
   // launching the real browser (contextBridge window.api is frozen).
@@ -1363,6 +1464,11 @@ export default function App(): React.JSX.Element {
     openQuickOpen: () => setShowQuickOpen(true),
     openMermaidInsert,
     openCalloutInsert,
+    openTableInsert,
+    hasSelection: () => {
+      const v = viewRef.current
+      return !!v && v.state.selection.main.from !== v.state.selection.main.to
+    },
     showToast
   })
 
@@ -1529,6 +1635,14 @@ export default function App(): React.JSX.Element {
         items={CALLOUT_TYPES.map((tp) => ({ id: tp, labelKey: `callout.${tp}` }))}
         onPick={insertCalloutTemplate}
         onClose={() => setShowCalloutInsert(false)}
+      />
+      <TableInsertDialog
+        open={tableDialog}
+        form={tableForm}
+        selectionText={tableSelText}
+        onClose={() => setTableDialog(null)}
+        onFormChange={patchTableForm}
+        onConfirm={confirmTableDialog}
       />
       <MermaidLightbox />
       <DialogHost />
