@@ -154,6 +154,15 @@ export default function Preferences({ open, onClose }: Props): React.JSX.Element
             />
             <span>{t('prefs.wrapUrl')}</span>
           </label>
+          <label className={`prefs-row prefs-check prefs-sub${prefs.typingAssistsEnabled ? '' : ' prefs-disabled'}`}>
+            <input
+              type="checkbox"
+              disabled={!prefs.typingAssistsEnabled}
+              checked={prefs.pasteHtmlToMd}
+              onChange={(e) => setPreferences({ pasteHtmlToMd: e.target.checked })}
+            />
+            <span>{t('prefs.pasteHtmlToMd')}</span>
+          </label>
           <label className="prefs-row prefs-check">
             <input
               type="checkbox"

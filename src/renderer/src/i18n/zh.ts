@@ -148,6 +148,7 @@ export const ZH: Record<string, string> = {
   'prefs.editing': '编辑',
   'prefs.typingAssists': '输入辅助（列表、标题、粘贴转换）',
   'prefs.wrapUrl': '将粘贴的 URL 包装为 <url>',
+  'prefs.pasteHtmlToMd': '粘贴 HTML 转 Markdown',
   'prefs.showLineNumbers': '显示行号',
   'prefs.images': '图片',
   'prefs.attachmentDir': '附件文件夹',

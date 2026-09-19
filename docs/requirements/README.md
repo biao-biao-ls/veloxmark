@@ -26,7 +26,7 @@
 | P16 | [Mermaid 图表体验增强](P16-mermaid-ux.md)（已完成） | UX/功能 | 错误不清屏、模板插入、PNG/图片剪贴板、大图 lightbox | M |
 | P17 | [链接导航与文档间跳转](P17-link-navigation.md)（已完成） | UX/功能 | 相对路径/锚点跳转，文件夹工作区闭环的最后一环 | S–M |
 | P18 | [标题折叠](P18-heading-fold.md)（已完成） | UX | 长文按章节折叠，大纲联动、会话记忆 | S–M |
-| P19 | [粘贴 HTML 转 Markdown](P19-paste-html-to-md.md) | UX/功能 | 网页/公众号富文本粘贴得到干净 Markdown | S–M |
+| P19 | [粘贴 HTML 转 Markdown](P19-paste-html-to-md.md)（已完成） | UX/功能 | 网页/公众号富文本粘贴得到干净 Markdown | S–M |
 | P20 | [复制为富文本与选区导出](P20-copy-rich-text.md) | 功能 | 选区/全文复制富文本，直接贴微信/飞书 | S |
 | P21 | [Callout 提示块](P21-callouts.md) | 功能 | `> [!NOTE]` GitHub/Obsidian 风格提示块 | S |
 | P22 | [表格插入辅助](P22-table-insert.md) | UX/功能 | 行列选择器一键插表，TSV/CSV 选区转表 | S |

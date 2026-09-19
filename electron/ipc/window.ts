@@ -25,6 +25,12 @@ export function registerWindowIpc(getWindow: GetWindow): void {
 
   ipcMain.handle('clipboard:read', () => clipboard.readText())
   ipcMain.handle('clipboard:write', (_e, text: string) => clipboard.writeText(text))
+  // P19: menu Edit>Paste needs the HTML flavor (browsers put both on the clipboard).
+  ipcMain.handle('clipboard:readHtml', () => clipboard.readHTML())
+  // P19 e2e + P20 rich copy: place an HTML flavor alongside plain text.
+  ipcMain.handle('clipboard:writeHtml', (_e, html: string, text: string) => {
+    clipboard.write({ text: String(text ?? ''), html: String(html ?? '') })
+  })
   // P05: cheap bitmap probe so the menu Paste path can skip the image flow
   // (and any Save As prompt) when the clipboard only holds text.
   ipcMain.handle('clipboard:hasImage', () => !clipboard.readImage().isEmpty())

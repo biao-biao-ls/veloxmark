@@ -37,7 +37,7 @@ import { DialogHost, dialog } from './components/Dialog'
 import { SearchIcon } from './components/Icons'
 import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch, bumpLinkEpoch, updateLivePreviewConfig } from './editor/setup'
 import { invalidateImageCache, setMermaidExportIo } from './editor/widgets'
-import { readEditingAssistsConfig } from './editor/assists'
+import { readEditingAssistsConfig, htmlToMarkdownSafe, runMenuPaste } from './editor/assists'
 import { extractOutline, findHeadingBySlug, type OutlineItem } from './outline/extract'
 import { MERMAID_TEMPLATES, isCursorInMermaidFence } from './editor/mermaidTemplates'
 import { getWelcomeMd, WELCOME_MD_EN, WELCOME_MD_ZH } from './content'
@@ -144,6 +144,17 @@ declare global {
       getSessionFolds: () => string[]
       benchToggle: (key: string, n?: number) => { ms: number; avg: number }
     } | null
+    /** P19 e2e handle: HTML→Markdown paste — transform probe, DOM-event + menu paths. */
+    __veloxP19: {
+      transform: (html: string) => string | null
+      /** Synthesize a ClipboardEvent paste on the editor; returns defaultPrevented. */
+      pasteHtmlEvent: (html: string, plain?: string) => boolean
+      /** Menu Edit>Paste through the shared runMenuPaste; true when doc changed. */
+      pasteFromClipboard: () => Promise<boolean>
+      setPasteHtmlToMd: (v: boolean) => void
+      writeClipboardHtml: (html: string, text: string) => Promise<void>
+      getDoc: () => string
+    } | null
   }
 }
 window.__veloxEditor = null
@@ -154,6 +165,7 @@ window.__veloxP15 = null
 window.__veloxP16 = null
 window.__veloxP17 = null
 window.__veloxP18 = null
+window.__veloxP19 = null
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -516,10 +528,11 @@ export default function App(): React.JSX.Element {
     if (view) {
       updateEditingAssists(view, {
         enabled: prefs.typingAssistsEnabled,
-        wrapBareUrlOnPaste: prefs.wrapBareUrlOnPaste
+        wrapBareUrlOnPaste: prefs.wrapBareUrlOnPaste,
+        pasteHtmlToMd: prefs.pasteHtmlToMd
       })
     }
-  }, [prefs.typingAssistsEnabled, prefs.wrapBareUrlOnPaste])
+  }, [prefs.typingAssistsEnabled, prefs.wrapBareUrlOnPaste, prefs.pasteHtmlToMd])
 
   // P08: focus / typewriter / source modes — the command registry only writes
   // preferences; this effect is the single path that pushes them into the
@@ -1160,6 +1173,39 @@ export default function App(): React.JSX.Element {
       }
     }
   }, [viewRef, filePathRef])
+
+  // P19 e2e handle: HTML→Markdown paste pipeline.
+  useEffect(() => {
+    window.__veloxP19 = {
+      transform: (html) => htmlToMarkdownSafe(html),
+      pasteHtmlEvent: (html, plain) => {
+        const view = viewRef.current
+        if (!view) return false
+        const dt = new DataTransfer()
+        if (html) dt.setData('text/html', html)
+        if (plain != null) dt.setData('text/plain', plain)
+        const ev = new ClipboardEvent('paste', { bubbles: true, cancelable: true })
+        // Some Chromium builds drop clipboardData from the constructor init.
+        if (!ev.clipboardData || ev.clipboardData.getData('text/html') !== (html || '')) {
+          Object.defineProperty(ev, 'clipboardData', { value: dt })
+        }
+        view.contentDOM.dispatchEvent(ev)
+        return ev.defaultPrevented
+      },
+      pasteFromClipboard: async () => {
+        const view = viewRef.current
+        if (!view) return false
+        const before = view.state.doc.toString()
+        await runMenuPaste(view, () =>
+          getLivePreviewConfig(view.state).baseDir ? Promise.resolve(true) : fileOps.saveFileAs()
+        )
+        return view.state.doc.toString() !== before
+      },
+      setPasteHtmlToMd: (v) => setPreferences({ pasteHtmlToMd: v }),
+      writeClipboardHtml: (html, text) => window.api.clipboardWriteHtml(html, text),
+      getDoc: () => viewRef.current?.state.doc.toString() ?? ''
+    }
+  }, [viewRef, fileOps.saveFileAs])
 
   const { menus, formatShortcut } = useMenus({
     viewRef,

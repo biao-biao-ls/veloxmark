@@ -127,6 +127,11 @@ const api: RendererApi = {
   clipboardRead: (): Promise<string> => ipcRenderer.invoke('clipboard:read'),
   clipboardWrite: (text: string): Promise<void> =>
     ipcRenderer.invoke('clipboard:write', text),
+  /** P19: HTML flavor of the clipboard (empty string when absent). */
+  clipboardReadHtml: (): Promise<string> => ipcRenderer.invoke('clipboard:readHtml'),
+  /** P19/P20: write plain text + HTML flavors in one clipboard write. */
+  clipboardWriteHtml: (html: string, text: string): Promise<void> =>
+    ipcRenderer.invoke('clipboard:writeHtml', html, text),
   clipboardHasImage: (): Promise<boolean> => ipcRenderer.invoke('clipboard:hasImage'),
   clipboardWriteImage: (dataUrl: string): Promise<void> =>
     ipcRenderer.invoke('clipboard:writeImage', dataUrl),

@@ -254,6 +254,10 @@ export interface RendererApi {
   searchReplace(req: SearchReplaceRequest): Promise<SearchReplaceResult>
   clipboardRead(): Promise<string>
   clipboardWrite(text: string): Promise<void>
+  /** P19: HTML flavor of the clipboard (empty string when absent). */
+  clipboardReadHtml(): Promise<string>
+  /** P19/P20: write plain text + HTML flavors in one clipboard write. */
+  clipboardWriteHtml(html: string, text: string): Promise<void>
   /** P05: true when the clipboard holds a bitmap (screenshot / copied image). */
   clipboardHasImage(): Promise<boolean>
   /** P16: place a data-URL bitmap on the OS clipboard (Mermaid Copy Image). */

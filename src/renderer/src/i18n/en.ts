@@ -150,6 +150,7 @@ export const EN: Record<string, string> = {
   'prefs.editing': 'Editing',
   'prefs.typingAssists': 'Typing assists (lists, headings, paste transforms)',
   'prefs.wrapUrl': 'Wrap pasted URLs as <url>',
+  'prefs.pasteHtmlToMd': 'Convert HTML on paste',
   'prefs.showLineNumbers': 'Show line numbers',
   'prefs.images': 'Images',
   'prefs.attachmentDir': 'Attachment folder',

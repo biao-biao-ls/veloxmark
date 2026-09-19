@@ -74,14 +74,18 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRe
       syncAppState(path, false)
       updateOutline()
       // P03: any successful open lands in Recent Files and session memory.
+      // P19: programmatic loads (recent files, e2e, drafts) must also point
+      // relative image/link resolution at the file's directory — saveFileAs/
+      // openFile already did this, but loadContent alone left baseDir stale.
       if (path) {
+        setBaseDir(path)
         addRecentFile(path)
         patchSession({ lastFilePath: path, lastCursor: 0 })
       } else {
         patchSession({ lastCursor: 0 })
       }
     },
-    [viewRef, syncAppState, updateOutline]
+    [viewRef, syncAppState, setBaseDir, updateOutline]
   )
 
   const saveFileAs = useCallback(async (): Promise<boolean> => {

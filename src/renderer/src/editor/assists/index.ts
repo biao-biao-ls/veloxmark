@@ -4,6 +4,7 @@ import { editingAssistsConfigFacet, type EditingAssistsConfig } from './config'
 import { insertHorizontalRule } from './enter'
 import { upgradeHeading } from './heading'
 import { indentListItem } from './lists'
+import { htmlPasteEventHandler } from './htmlPaste'
 import { pasteEventHandler } from './paste'
 import { wrapSelectionWith } from './wrap'
 
@@ -29,7 +30,12 @@ export function editingAssistsExtension(config: EditingAssistsConfig): Extension
         { key: '#', run: upgradeHeading }
       ])
     ),
-    EditorView.domEventHandlers({ paste: pasteEventHandler })
+    // P19 before P01: a text/html payload claims the paste when `pasteHtmlToMd`
+    // is on; both handlers fall through on a null transform, so plain-text URL
+    // rules still apply to pure-text clipboards.
+    EditorView.domEventHandlers({
+      paste: (event, view) => htmlPasteEventHandler(event, view) || pasteEventHandler(event, view)
+    })
   ]
   return [editingAssistsConfigFacet.of(config), ...(config.enabled ? [behavior] : [])]
 }
@@ -43,5 +49,11 @@ export {
   readEditingAssistsConfig,
   type EditingAssistsConfig
 } from './config'
+export {
+  applyHtmlPaste,
+  htmlPasteEventHandler,
+  runMenuPaste
+} from './htmlPaste'
+export { collectImageSrcs, htmlToMarkdown, htmlToMarkdownSafe } from './htmlToMd'
 export { transformPaste } from './paste'
 export { wrapSelectionWith } from './wrap'

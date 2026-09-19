@@ -4,8 +4,7 @@ import { redo, undo } from '@codemirror/commands'
 import type { EditorView } from '@codemirror/view'
 import type { MenuDef, MenuItem } from './components/MenuBar'
 import { getHelpMd } from './content'
-import { transformPaste } from './editor/assists'
-import { insertClipboardImage } from './editor/images'
+import { runMenuPaste } from './editor/assists'
 import { livePreviewConfigFacet } from './editor/livePreview'
 import { getLang, t } from './i18n'
 import { getPreferences, setPreferences } from './preferences/store'
@@ -179,22 +178,13 @@ export function buildCommands(ops: CommandOps): Command[] {
       run: () => {
         const v = view()
         if (!v) return
-        // The menu paste goes through IPC (no DOM event), so the P05 clipboard
-        // bitmap check must run here too — a screenshot paste lands in assets/.
-        void insertClipboardImage(v, () =>
+        // Shared with the e2e hook so menu-paste and Ctrl+V cannot drift:
+        // P05 bitmap → P19 HTML→MD → P01 URL transform → plain insert.
+        void runMenuPaste(v, () =>
           v.state.facet(livePreviewConfigFacet).baseDir
             ? Promise.resolve(true)
             : ops.saveFileAs()
-        ).then((handled) => {
-          if (handled) return
-          void window.api.clipboardRead().then((text) => {
-            if (!text) return
-            // Same transform as the DOM paste handler (URL → link / <url>).
-            const changes = transformPaste(v.state, text)
-            if (changes) v.dispatch({ changes, userEvent: 'input.paste', scrollIntoView: true })
-            else v.dispatch(v.state.replaceSelection(text))
-          })
-        })
+        )
       }
     },
     {

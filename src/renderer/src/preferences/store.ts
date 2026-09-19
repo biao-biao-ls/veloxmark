@@ -31,6 +31,8 @@ export interface Preferences {
   editorMaxWidth: number
   typingAssistsEnabled: boolean
   wrapBareUrlOnPaste: boolean
+  /** P19: convert rich-text (text/html) paste payloads to Markdown. */
+  pasteHtmlToMd: boolean
   showLineNumbers: boolean
   restoreLastSession: boolean
   /** Initial sidebar visibility when no session memory exists. */
@@ -103,6 +105,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   editorMaxWidth: 0,
   typingAssistsEnabled: true,
   wrapBareUrlOnPaste: true,
+  pasteHtmlToMd: true,
   showLineNumbers: true,
   restoreLastSession: true,
   sidebarDefaultOpen: true,
@@ -198,6 +201,7 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
     editorMaxWidth: num(p.editorMaxWidth, 0, 0, 4000),
     typingAssistsEnabled: p.typingAssistsEnabled !== false,
     wrapBareUrlOnPaste: p.wrapBareUrlOnPaste !== false,
+    pasteHtmlToMd: p.pasteHtmlToMd !== false,
     showLineNumbers: p.showLineNumbers !== false,
     restoreLastSession: p.restoreLastSession !== false,
     sidebarDefaultOpen: p.sidebarDefaultOpen !== false,
