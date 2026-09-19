@@ -23,9 +23,11 @@ interface Props {
   prefs: Preferences
   /** P12 autosave timestamp (ms) — mirrored into the right-side slot. */
   autoSaveAt: number | null
+  /** P20 transient command feedback ("已复制为富文本"); null hides the chip. */
+  toast: string | null
 }
 
-export default function StatusBar({ stats, prefs, autoSaveAt }: Props): React.JSX.Element {
+export default function StatusBar({ stats, prefs, autoSaveAt, toast }: Props): React.JSX.Element {
   // Spaces re-derived from the live doc when the detail dialog opens.
   const countSpaces = (): number => {
     const view = window.__veloxEditor?.view
@@ -66,6 +68,7 @@ export default function StatusBar({ stats, prefs, autoSaveAt }: Props): React.JS
         {stats.selChars > 0 && (
           <span className="sb-sel">{t('status.selected', { n: stats.selChars })}</span>
         )}
+        {toast != null && <span className="sb-toast">{toast}</span>}
       </div>
       <div className="sb-right">
         {savedLabel && <span className="sb-autosave">{savedLabel}</span>}

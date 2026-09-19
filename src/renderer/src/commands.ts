@@ -5,6 +5,11 @@ import type { EditorView } from '@codemirror/view'
 import type { MenuDef, MenuItem } from './components/MenuBar'
 import { getHelpMd } from './content'
 import { runMenuPaste } from './editor/assists'
+import {
+  copyHtmlToClipboard,
+  copyRichTextToClipboard,
+  exportSelectionHtmlFile
+} from './export/copyRichText'
 import { livePreviewConfigFacet } from './editor/livePreview'
 import { getLang, t } from './i18n'
 import { getPreferences, setPreferences } from './preferences/store'
@@ -55,6 +60,8 @@ export interface CommandOps {
   openGlobalSearch: () => void
   /** P16: open the Mermaid template picker (App no-ops inside a fence). */
   openMermaidInsert: () => void
+  /** P20: transient status-bar message (auto-clears in the App). */
+  showToast: (message: string) => void
 }
 
 /** One validated Open Recent entry (existence decided by the App). */
@@ -187,6 +194,42 @@ export function buildCommands(ops: CommandOps): Command[] {
         )
       }
     },
+    // ---- P20 rich-text clipboard ---------------------------------------------
+    {
+      id: 'copyRichText',
+      label: 'cmd.copyRichText',
+      shortcut: 'Ctrl+Shift+C',
+      bindGlobal: true,
+      run: () => {
+        const v = view()
+        if (!v) return
+        void copyRichTextToClipboard(v).then((ok) => {
+          if (ok) ops.showToast(t('toast.copiedRich'))
+        })
+      }
+    },
+    {
+      id: 'copyAsHtml',
+      label: 'cmd.copyAsHtml',
+      run: () => {
+        const v = view()
+        if (!v) return
+        void copyHtmlToClipboard(v).then((ok) => {
+          if (ok) ops.showToast(t('toast.copiedHtml'))
+        })
+      }
+    },
+    {
+      id: 'exportSelectionHtml',
+      label: 'cmd.exportSelectionHtml',
+      run: () => {
+        const v = view()
+        if (!v) return
+        void exportSelectionHtmlFile(v).then((ok) => {
+          if (ok) ops.showToast(t('toast.exportedSelection'))
+        })
+      }
+    },
     {
       id: 'selectAll',
       label: 'cmd.selectAll',
@@ -309,9 +352,13 @@ const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
       'cut',
       'copy',
       'paste',
+      'copyRichText',
+      'copyAsHtml',
       'selectAll',
       { separator: true },
-      'find'
+      'find',
+      { separator: true },
+      'exportSelectionHtml'
     ]
   },
   {

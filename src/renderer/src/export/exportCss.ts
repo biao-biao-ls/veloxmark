@@ -3,35 +3,14 @@
  *
  * Mirrors the visual values of the editor's `cm-md-*` styles in styles.css,
  * but targets semantic tags (h1/p/table/…) inside `.export-doc` so the output
- * has no CodeMirror dependency. Theme variables are duplicated from
- * `.theme-light` / `.theme-dark` — keep the two palettes in sync by hand.
+ * has no CodeMirror dependency. Theme variables come from export/palette.ts
+ * (P20) — shared with the rich-text clipboard inline styles.
  */
 
-const lightVars = `
-  --bg: #ffffff;
-  --bg-alt: #fafafa;
-  --fg: #333333;
-  --fg-dim: #888888;
-  --border: #e5e5e5;
-  --accent: #0969da;
-  --quote-border: #d0d7de;
-  --code-bg: rgba(175, 184, 193, 0.2);
-  --hr-color: #d8dee4;
-  --highlight-bg: #fff8c5;
-`
+import { DARK_PALETTE, LIGHT_PALETTE, paletteToCssVars } from './palette'
 
-const darkVars = `
-  --bg: #1e1e1e;
-  --bg-alt: #252526;
-  --fg: #d4d4d4;
-  --fg-dim: #888888;
-  --border: #333333;
-  --accent: #58a6ff;
-  --quote-border: #444444;
-  --code-bg: rgba(110, 118, 129, 0.25);
-  --hr-color: #444444;
-  --highlight-bg: rgba(187, 128, 9, 0.45);
-`
+const lightVars = `\n${paletteToCssVars(LIGHT_PALETTE)}\n`
+const darkVars = `\n${paletteToCssVars(DARK_PALETTE)}\n`
 
 export const EXPORT_DOC_CSS = `
 .export-theme-light {${lightVars}}

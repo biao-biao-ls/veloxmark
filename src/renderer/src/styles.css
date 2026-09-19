@@ -2134,6 +2134,19 @@ body {
   color: var(--accent);
 }
 
+/* P20 transient command feedback chip. */
+.sb-toast {
+  color: var(--accent);
+  margin-left: 10px;
+  white-space: nowrap;
+  animation: sb-toast-fade 2.5s ease forwards;
+}
+
+@keyframes sb-toast-fade {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0.35; }
+}
+
 .sb-stat {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;

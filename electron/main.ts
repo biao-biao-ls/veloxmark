@@ -194,7 +194,9 @@ const DARWIN_COMMAND_ACCELERATORS: Record<string, string> = {
   toggleFocusMode: 'F8',
   toggleSourceMode: 'Cmd+/',
   // P13 folder-wide search.
-  globalSearch: 'Cmd+Shift+F'
+  globalSearch: 'Cmd+Shift+F',
+  // P20 rich-text clipboard (no conflicting registered accelerator).
+  copyRichText: 'CmdOrCtrl+Shift+C'
 }
 
 // P03: recent files, pushed from the renderer (which owns the store) whenever
@@ -216,6 +218,8 @@ const NATIVE_MENU_STRINGS: Record<UiLang, Record<string, string>> = {
     pdf: 'PDF…', html: 'HTML…', close: 'Close',
     edit: 'Edit', cut: 'Cut', copy: 'Copy', paste: 'Paste', pasteMatch: 'Paste and Match Style',
     del: 'Delete', selectAll: 'Select All',
+    copyRichText: 'Copy as Rich Text', copyAsHtml: 'Copy as HTML',
+    exportSelectionHtml: 'Export Selection as HTML…',
     view: 'View', toggleOutline: 'Toggle Outline', globalSearch: 'Search in Folder…',
     focusMode: 'Focus Mode', typewriterMode: 'Typewriter Mode', sourceMode: 'Source Mode',
     zoomIn: 'Zoom In', zoomOut: 'Zoom Out', zoomReset: 'Reset Zoom',
@@ -234,6 +238,8 @@ const NATIVE_MENU_STRINGS: Record<UiLang, Record<string, string>> = {
     pdf: 'PDF…', html: 'HTML…', close: '关闭',
     edit: '编辑', cut: '剪切', copy: '复制', paste: '粘贴', pasteMatch: '粘贴并匹配样式',
     del: '删除', selectAll: '全选',
+    copyRichText: '复制为富文本', copyAsHtml: '复制为 HTML',
+    exportSelectionHtml: '导出选区为 HTML…',
     view: '视图', toggleOutline: '切换大纲', globalSearch: '文件夹内搜索…',
     focusMode: '专注模式', typewriterMode: '打字机模式', sourceMode: '源码模式',
     zoomIn: '放大', zoomOut: '缩小', zoomReset: '重置缩放',
@@ -351,8 +357,13 @@ function buildDarwinMenu(): Menu {
         { role: 'copy', label: S.copy },
         { role: 'paste', label: S.paste },
         { role: 'pasteAndMatchStyle', label: S.pasteMatch },
+        // P20 — rendered by the same command registry as the in-app menu.
+        commandItem('copyRichText', S.copyRichText),
+        commandItem('copyAsHtml', S.copyAsHtml),
         { role: 'delete', label: S.del },
-        { role: 'selectAll', label: S.selectAll }
+        { role: 'selectAll', label: S.selectAll },
+        { type: 'separator' },
+        commandItem('exportSelectionHtml', S.exportSelectionHtml)
       ]
     },
     {

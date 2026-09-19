@@ -38,6 +38,11 @@ import { SearchIcon } from './components/Icons'
 import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch, bumpLinkEpoch, updateLivePreviewConfig } from './editor/setup'
 import { invalidateImageCache, setMermaidExportIo } from './editor/widgets'
 import { readEditingAssistsConfig, htmlToMarkdownSafe, runMenuPaste } from './editor/assists'
+import {
+  copyHtmlToClipboard,
+  copyRichTextToClipboard,
+  renderSelectionHtmlDocument
+} from './export/copyRichText'
 import { extractOutline, findHeadingBySlug, type OutlineItem } from './outline/extract'
 import { MERMAID_TEMPLATES, isCursorInMermaidFence } from './editor/mermaidTemplates'
 import { getWelcomeMd, WELCOME_MD_EN, WELCOME_MD_ZH } from './content'
@@ -155,6 +160,16 @@ declare global {
       writeClipboardHtml: (html: string, text: string) => Promise<void>
       getDoc: () => string
     } | null
+    /** P20 e2e handle: rich-text clipboard commands + flavor read-back. */
+    __veloxP20: {
+      copyRichText: () => Promise<boolean>
+      copyAsHtml: () => Promise<boolean>
+      /** Render current selection/doc → standalone HTML written to `target`. */
+      exportSelectionTo: (target: string) => Promise<boolean>
+      getClipboard: () => Promise<{ html: string; text: string }>
+      getToast: () => string | null
+      setThemePref: (mode: 'light' | 'dark') => void
+    } | null
   }
 }
 window.__veloxEditor = null
@@ -166,6 +181,7 @@ window.__veloxP16 = null
 window.__veloxP17 = null
 window.__veloxP18 = null
 window.__veloxP19 = null
+window.__veloxP20 = null
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -188,6 +204,19 @@ export default function App(): React.JSX.Element {
   // P14: subscribes App (and therefore all t() descendants) to language flips.
   const { lang } = useTranslation()
   const [stats, setStats] = useState<DocStats>(EMPTY_STATS)
+  // P20 transient command feedback chip in the status bar.
+  const [toast, setToast] = useState<string | null>(null)
+  const toastRef = useRef<string | null>(null)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const showToast = useCallback((message: string) => {
+    toastRef.current = message
+    setToast(message)
+    clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = setTimeout(() => {
+      toastRef.current = null
+      setToast(null)
+    }, 2500)
+  }, [])
   const session = useSession()
   const [outline, setOutline] = useState<OutlineItem[]>([])
   const [activePos, setActivePos] = useState<number | null>(null)
@@ -1207,6 +1236,32 @@ export default function App(): React.JSX.Element {
     }
   }, [viewRef, fileOps.saveFileAs])
 
+  // P20 e2e handle: rich-text clipboard.
+  useEffect(() => {
+    window.__veloxP20 = {
+      copyRichText: () => {
+        const view = viewRef.current
+        return view ? copyRichTextToClipboard(view) : Promise.resolve(false)
+      },
+      copyAsHtml: () => {
+        const view = viewRef.current
+        return view ? copyHtmlToClipboard(view) : Promise.resolve(false)
+      },
+      exportSelectionTo: async (target) => {
+        const view = viewRef.current
+        if (!view) return false
+        const html = await renderSelectionHtmlDocument(view)
+        return window.api.exportHtml(target, html)
+      },
+      getClipboard: async () => ({
+        html: await window.api.clipboardReadHtml(),
+        text: await window.api.clipboardRead()
+      }),
+      getToast: () => toastRef.current,
+      setThemePref: (mode) => setPreferences({ theme: mode })
+    }
+  }, [viewRef])
+
   const { menus, formatShortcut } = useMenus({
     viewRef,
     isMac,
@@ -1227,7 +1282,8 @@ export default function App(): React.JSX.Element {
     clearRecentFiles,
     exportDocument: exportOps.openExport,
     openQuickOpen: () => setShowQuickOpen(true),
-    openMermaidInsert
+    openMermaidInsert,
+    showToast
   })
 
   // Fullscreen state is pushed from main (traffic-light / F11 transitions).
@@ -1364,7 +1420,7 @@ export default function App(): React.JSX.Element {
         <div className="editor-host" ref={hostRef} />
       </div>
       {prefs.showStatusBar !== false && (
-        <StatusBar stats={stats} prefs={prefs} autoSaveAt={autoSave.lastAutoSaveAt} />
+        <StatusBar stats={stats} prefs={prefs} autoSaveAt={autoSave.lastAutoSaveAt} toast={toast} />
       )}
       <Preferences open={showPreferences} onClose={() => setShowPreferences(false)} />
       <QuickOpen
