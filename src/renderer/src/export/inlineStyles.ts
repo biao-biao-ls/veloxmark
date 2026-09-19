@@ -1,4 +1,4 @@
-import { paletteFor, type Palette } from './palette'
+import { DARK_PALETTE, paletteFor, type Palette } from './palette'
 
 /**
  * P20 rich-text clipboard styling.
@@ -52,6 +52,31 @@ export function tagStyles(p: Palette): Record<string, string> {
 
 /** Class-level styles (renderDoc helpers) for one palette (pure). */
 export function classStyles(p: Palette): Record<string, string> {
+  // P21 callout cards — WeChat strips classes, so each type gets an inline
+  // border-left/background pair; the generic rule runs first so the type
+  // rule's later declarations win the style-attribute cascade.
+  const co =
+    p === DARK_PALETTE
+      ? {
+          note: ['#4493f8', '#1c2b3a'],
+          tip: ['#3fb950', '#1c2e1e'],
+          important: ['#a371f7', '#2a2140'],
+          warning: ['#d29922', '#3a2e12'],
+          caution: ['#f85149', '#3d1c20'],
+          info: ['#58a6ff', '#1c2b3a'],
+          success: ['#3fb950', '#1c2e1e'],
+          danger: ['#f85149', '#3d1418']
+        }
+      : {
+          note: ['#0969da', '#f0f6fc'],
+          tip: ['#1a7f37', '#eef8f2'],
+          important: ['#8250df', '#f5e9f7'],
+          warning: ['#9a6700', '#fff6e0'],
+          caution: ['#cf222e', '#fff0ee'],
+          info: ['#0a7ea4', '#e7f3ff'],
+          success: ['#1a7f37', '#e6f6ec'],
+          danger: ['#cf222e', '#ffebe9']
+        }
   return {
     'export-code': `margin:0.75em 0`,
     'export-code-lang': `font-family:${MONO};font-size:12px;color:${p.fgDim};margin-bottom:4px`,
@@ -64,7 +89,18 @@ export function classStyles(p: Palette): Record<string, string> {
     'export-footnotes-sep': `border:none;border-top:1px solid ${p.hrColor};margin:1.2em 0`,
     'export-footnotes': `color:${p.fgDim};font-size:0.9em;padding-left:1.4em`,
     'export-dl': `margin:0.75em 0;color:${p.fg}`,
-    'export-fm-title': `font-size:2em;font-weight:650;margin:0.67em 0;color:${p.fg}`
+    'export-fm-title': `font-size:2em;font-weight:650;margin:0.67em 0;color:${p.fg}`,
+    'export-callout': `margin:0.75em 0;padding:10px 14px;border-left:4px solid ${co.note[0]};background:${co.note[1]};border-radius:0 6px 6px 0;color:${p.fg};font-style:normal;font-family:${SANS}`,
+    'export-callout-head': `font-weight:600;margin:0 0 0.35em;color:${p.fg}`,
+    'export-callout-body': `margin:0;color:${p.fg}`,
+    'export-callout-note': `border-left-color:${co.note[0]};background:${co.note[1]}`,
+    'export-callout-tip': `border-left-color:${co.tip[0]};background:${co.tip[1]}`,
+    'export-callout-important': `border-left-color:${co.important[0]};background:${co.important[1]}`,
+    'export-callout-warning': `border-left-color:${co.warning[0]};background:${co.warning[1]}`,
+    'export-callout-caution': `border-left-color:${co.caution[0]};background:${co.caution[1]}`,
+    'export-callout-info': `border-left-color:${co.info[0]};background:${co.info[1]}`,
+    'export-callout-success': `border-left-color:${co.success[0]};background:${co.success[1]}`,
+    'export-callout-danger': `border-left-color:${co.danger[0]};background:${co.danger[1]}`
   }
 }
 

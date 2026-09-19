@@ -5,6 +5,7 @@ import { tableEditField } from '../table/state'
 import { buildDecorations } from './build'
 import { getLivePreviewConfig } from './config'
 import { foldField } from './fold'
+import { calloutFoldField } from './calloutFold'
 
 /**
  * Live-preview decorations.
@@ -34,13 +35,17 @@ export const livePreviewField = StateField.define<DecorationSet>({
     // P18: fold toggles arrive as effect-only transactions (no doc/selection
     // change) — rebuild whenever the fold set identity changes.
     const foldChanged = tr.state.field(foldField, false) !== tr.startState.field(foldField, false)
+    // P21: callout fold overrides — same effect-only identity signal.
+    const calloutFoldChanged =
+      tr.state.field(calloutFoldField, false) !== tr.startState.field(calloutFoldField, false)
     if (
       tr.docChanged ||
       tr.selection ||
       treeChanged ||
       configChanged ||
       tableEditChanged ||
-      foldChanged
+      foldChanged ||
+      calloutFoldChanged
     ) {
       return buildDecorations(tr.state, getLivePreviewConfig(tr.state))
     }

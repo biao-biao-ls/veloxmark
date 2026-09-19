@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { EditorView } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
 import { ensureSyntaxTree } from '@codemirror/language'
-import { markdown } from '@codemirror/lang-markdown'
+import { insertNewlineContinueMarkup, markdown } from '@codemirror/lang-markdown'
 import { buildDecorations } from './editor/livePreview/build'
 import { DEFAULT_LIVE_PREVIEW_CONFIG, getLivePreviewConfig } from './editor/livePreview/config'
 import {
@@ -45,6 +45,8 @@ import {
 } from './export/copyRichText'
 import { extractOutline, findHeadingBySlug, type OutlineItem } from './outline/extract'
 import { MERMAID_TEMPLATES, isCursorInMermaidFence } from './editor/mermaidTemplates'
+import { CALLOUT_TYPES } from './editor/livePreview/callout'
+import { getCalloutFoldOverrides } from './editor/livePreview/calloutFold'
 import { getWelcomeMd, WELCOME_MD_EN, WELCOME_MD_ZH } from './content'
 import { getLang, resolveLang, setLang, t, useTranslation } from './i18n'
 import StatusBar, { EMPTY_STATS, computeDocStats, type DocStats } from './components/StatusBar'
@@ -170,6 +172,19 @@ declare global {
       getToast: () => string | null
       setThemePref: (mode: 'light' | 'dark') => void
     } | null
+    /** P21 e2e handle: callout probe + insert dialog + export/quote seams. */
+    __veloxP21: {
+      getDoc: () => string
+      setSelection: (pos: number) => void
+      openCalloutInsert: () => void
+      getCalloutDialogOpen: () => boolean
+      insertCallout: (type: string) => void
+      /** Full-doc (or selection) standalone export HTML via P04 renderer. */
+      renderExportHtml: () => Promise<string>
+      /** lang-markdown Enter continuation — quote/callout line prefixes. */
+      pressEnter: () => boolean
+      getCalloutFoldOverrides: () => Array<[string, boolean]>
+    } | null
   }
 }
 window.__veloxEditor = null
@@ -182,6 +197,7 @@ window.__veloxP17 = null
 window.__veloxP18 = null
 window.__veloxP19 = null
 window.__veloxP20 = null
+window.__veloxP21 = null
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -961,6 +977,69 @@ export default function App(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [insertMermaidTemplate, openMermaidInsert])
 
+  // ---- P21: callout insert dialog + template application ---------------------
+  const [showCalloutInsert, setShowCalloutInsert] = useState(false)
+  const calloutDialogOpenRef = useRef(false)
+  calloutDialogOpenRef.current = showCalloutInsert
+
+  const openCalloutInsert = useCallback(() => setShowCalloutInsert(true), [])
+
+  const insertCalloutTemplate = useCallback(
+    (id: string) => {
+      setShowCalloutInsert(false)
+      const view = viewRef.current
+      if (!view) return
+      const type = id.toUpperCase()
+      let text = `> [!${type}] \n> \n`
+      let lead = 0
+      const { from, to } = view.state.selection.main
+      if (from > 0 && view.state.doc.sliceString(from - 1, from) !== '\n') {
+        text = `\n\n${text}`
+        lead = 2
+      }
+      if (to < view.state.doc.length && view.state.doc.sliceString(to, to + 1) !== '\n') {
+        text = `${text}\n`
+      }
+      // Cursor lands right after `[!TYPE] ` — the title slot.
+      const cursor = from + lead + `> [!${type}] `.length
+      view.dispatch({
+        changes: { from, to, insert: text },
+        selection: { anchor: cursor },
+        scrollIntoView: true
+      })
+      view.focus()
+    },
+    [viewRef]
+  )
+
+  // P21 e2e handle: callout probe + export/quote continuation seams.
+  useEffect(() => {
+    window.__veloxP21 = {
+      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
+      setSelection: (pos) => {
+        const view = viewRef.current
+        if (!view) return
+        view.dispatch({ selection: { anchor: Math.min(pos, view.state.doc.length) } })
+      },
+      openCalloutInsert: () => setShowCalloutInsert(true),
+      getCalloutDialogOpen: () => calloutDialogOpenRef.current,
+      insertCallout: (type) => insertCalloutTemplate(type),
+      renderExportHtml: async () => {
+        const view = viewRef.current
+        return view ? await renderSelectionHtmlDocument(view) : ''
+      },
+      pressEnter: () => {
+        const view = viewRef.current
+        return view ? insertNewlineContinueMarkup(view) : false
+      },
+      getCalloutFoldOverrides: () => {
+        const view = viewRef.current
+        return view ? [...getCalloutFoldOverrides(view.state).entries()] : []
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [insertCalloutTemplate])
+
   // ---- P17: link navigation ---------------------------------------------------
   // openExternal goes through a seam so e2e can capture URLs instead of
   // launching the real browser (contextBridge window.api is frozen).
@@ -1283,6 +1362,7 @@ export default function App(): React.JSX.Element {
     exportDocument: exportOps.openExport,
     openQuickOpen: () => setShowQuickOpen(true),
     openMermaidInsert,
+    openCalloutInsert,
     showToast
   })
 
@@ -1442,6 +1522,13 @@ export default function App(): React.JSX.Element {
         items={MERMAID_TEMPLATES.map((x) => ({ id: x.id, labelKey: x.labelKey }))}
         onPick={insertMermaidTemplate}
         onClose={() => setShowMermaidInsert(false)}
+      />
+      <ListPickDialog
+        open={showCalloutInsert}
+        title={t('callout.insertTitle')}
+        items={CALLOUT_TYPES.map((tp) => ({ id: tp, labelKey: `callout.${tp}` }))}
+        onPick={insertCalloutTemplate}
+        onClose={() => setShowCalloutInsert(false)}
       />
       <MermaidLightbox />
       <DialogHost />

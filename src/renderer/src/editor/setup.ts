@@ -15,6 +15,7 @@ import {
 import { imageInputExtension } from './images'
 import { imageSizeMarkdown } from './markdown-image-ext'
 import { foldField, foldGutterExtension, foldPlaceholderClickExtension, getFoldedKeys, toggleFold, restoreFolds, expandFolds } from './livePreview/fold'
+import { calloutClickExtension, calloutFoldField } from './livePreview/calloutFold'
 import { linkNavExtension } from './livePreview/linkNav'
 import { modeClassesExtension, typewriterExtension } from './modes'
 import { getPreferences } from '../preferences/store'
@@ -76,6 +77,8 @@ export function createExtensions(
     // own compartment above.
     foldGutterExtension,
     foldPlaceholderClickExtension,
+    // P21 callouts: head-line/`⋯ N 行` chip click toggles the body fold.
+    calloutClickExtension,
     history(),
     drawSelection(),
     highlightActiveLine(),
@@ -87,6 +90,9 @@ export function createExtensions(
     // P18: folded heading keys (`level:text`) — the field the gutter, fold
     // decorations and session restore all read/write.
     foldField,
+    // P21: callout fold overrides (Map key = `lineFrom|TYPE`); defaults still
+    // parse from the source `+/-` markers at build time.
+    calloutFoldField,
     // P10: active table cell / session column widths — drives enterTable.
     tableEditField,
     // P08 mode flags are read from the store (not the args): this runs once at

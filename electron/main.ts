@@ -225,6 +225,7 @@ const NATIVE_MENU_STRINGS: Record<UiLang, Record<string, string>> = {
     zoomIn: 'Zoom In', zoomOut: 'Zoom Out', zoomReset: 'Reset Zoom',
     devTools: 'Toggle Developer Tools', toggleTheme: 'Toggle Theme',
     insert: 'Insert', insertMermaidDiagram: 'Mermaid Diagram…',
+    insertCallout: 'Insert Callout…',
     window: 'Window', minimize: 'Minimize', zoom: 'Zoom', fullscreen: 'Enter Full Screen',
     front: 'Bring All to Front',
     help: 'Help', showHelp: 'Markdown Syntax Reference'
@@ -245,6 +246,7 @@ const NATIVE_MENU_STRINGS: Record<UiLang, Record<string, string>> = {
     zoomIn: '放大', zoomOut: '缩小', zoomReset: '重置缩放',
     devTools: '开发者工具', toggleTheme: '切换主题',
     insert: '插入', insertMermaidDiagram: 'Mermaid 图表…',
+    insertCallout: '插入 Callout…',
     window: '窗口', minimize: '最小化', zoom: '缩放', fullscreen: '进入全屏幕',
     front: '前置所有窗口',
     help: '帮助', showHelp: 'Markdown 语法参考'
@@ -393,7 +395,10 @@ function buildDarwinMenu(): Menu {
     },
     {
       label: S.insert,
-      submenu: [commandItem('insertMermaidDiagram', S.insertMermaidDiagram)]
+      submenu: [
+        commandItem('insertMermaidDiagram', S.insertMermaidDiagram),
+        commandItem('insertCallout', S.insertCallout)
+      ]
     },
     {
       label: S.window,

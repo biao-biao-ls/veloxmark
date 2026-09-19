@@ -271,4 +271,46 @@ export const EXPORT_DOC_CSS = `
   margin: 0.15em 0 0.15em 1.5em;
   color: var(--fg-dim);
 }
+
+/* ---- P21 callouts ------------------------------------------------------------ */
+
+.export-doc .export-callout {
+  margin: 0.75em 0;
+  padding: 10px 14px;
+  border-left: 4px solid var(--co-bar, var(--quote-border));
+  background: var(--co-bg, var(--bg-alt));
+  border-radius: 0 6px 6px 0;
+  color: var(--fg);
+  font-style: normal;
+}
+
+.export-doc .export-callout-head {
+  font-weight: 600;
+  margin: 0 0 0.35em;
+}
+
+.export-doc .export-callout-body {
+  margin: 0;
+}
+
+.export-doc .export-callout-body > :first-child { margin-top: 0; }
+.export-doc .export-callout-body > :last-child { margin-bottom: 0; }
+
+.export-doc .export-callout-note { --co-bar: #0969da; --co-bg: #f0f6fc; }
+.export-doc .export-callout-tip { --co-bar: #1a7f37; --co-bg: #eef8f2; }
+.export-doc .export-callout-important { --co-bar: #8250df; --co-bg: #f5e9f7; }
+.export-doc .export-callout-warning { --co-bar: #9a6700; --co-bg: #fff6e0; }
+.export-doc .export-callout-caution { --co-bar: #cf222e; --co-bg: #fff0ee; }
+.export-doc .export-callout-info { --co-bar: #0a7ea4; --co-bg: #e7f3ff; }
+.export-doc .export-callout-success { --co-bar: #1a7f37; --co-bg: #e6f6ec; }
+.export-doc .export-callout-danger { --co-bar: #cf222e; --co-bg: #ffebe9; }
+
+.export-theme-dark .export-callout-note { --co-bar: #4493f8; --co-bg: #1c2b3a; }
+.export-theme-dark .export-callout-tip { --co-bar: #3fb950; --co-bg: #1c2e1e; }
+.export-theme-dark .export-callout-important { --co-bar: #a371f7; --co-bg: #2a2140; }
+.export-theme-dark .export-callout-warning { --co-bar: #d29922; --co-bg: #3a2e12; }
+.export-theme-dark .export-callout-caution { --co-bar: #f85149; --co-bg: #3d1c20; }
+.export-theme-dark .export-callout-info { --co-bar: #58a6ff; --co-bg: #1c2b3a; }
+.export-theme-dark .export-callout-success { --co-bar: #3fb950; --co-bg: #1c2e1e; }
+.export-theme-dark .export-callout-danger { --co-bar: #f85149; --co-bg: #3d1418; }
 `

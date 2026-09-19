@@ -20,6 +20,12 @@ import {
   parseAttrString,
   parseFrontMatter
 } from '../editor/livePreview/extendedSyntax'
+import {
+  CALLOUT_ICON,
+  calloutDisplayTitle,
+  parseCalloutMarker,
+  type CalloutMarker
+} from '../editor/livePreview/callout'
 
 /**
  * Static-document renderer (P04 export).
@@ -115,6 +121,33 @@ function escapeHtml(text: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
+}
+
+/**
+ * P21: strip the callout head line (marker + title) from the first rendered
+ * part of a blockquote body — that content is re-homed into the export head
+ * element. The head line and following body lines usually share one <p>
+ * (soft line breaks), so only the head-line segment is removed.
+ */
+function dropCalloutHeadHtml(parts: string[], marker: CalloutMarker): string[] {
+  const out = parts.slice()
+  if (out.length === 0) return out
+  const m = /^(<p[^>]*>)([\s\S]*)(<\/p>)$/.exec(out[0])
+  if (!m) return out
+  const text = m[2]
+  const idx = text.indexOf(marker.markerText)
+  if (idx === -1) return out
+  const after = text.slice(idx + marker.markerText.length)
+  // Body content starts after the first newline / <br> — everything before it
+  // on the head segment is the title, consumed by export-callout-head.
+  const nl = /(?:<br\s*\/?>|\n)([\s\S]*)$/.exec(after)
+  const bodyRest = nl ? nl[1].replace(/^\s+/, '') : ''
+  if (!bodyRest) {
+    out.shift()
+  } else {
+    out[0] = m[1] + bodyRest + m[3]
+  }
+  return out
 }
 
 /**
@@ -366,9 +399,28 @@ async function renderBlock(node: SyntaxNode, ctx: RenderCtx): Promise<void> {
       return
     }
     case 'Blockquote': {
+      const firstLine = textOf(ctx, node).split('\n', 1)[0]
+      const callout = parseCalloutMarker(firstLine)
       const inner = new RenderCtxParts()
       const sub: RenderCtx = { ...ctx, parts: inner.parts }
       await renderBlockChildren(node, sub)
+      if (callout) {
+        // P21: callout → styled div. Fold markers export expanded; the head
+        // line's marker + title are consumed by export-callout-head, body
+        // keeps everything after the first line (nested content rendered by
+        // the normal walkers).
+        const title = calloutDisplayTitle(callout)
+        const icon = CALLOUT_ICON[callout.type]
+        const bodyParts = dropCalloutHeadHtml(inner.parts, callout)
+        const head = `<div class="export-callout-head">${icon} ${escapeHtml(title)}</div>`
+        const body = bodyParts.length
+          ? `<div class="export-callout-body">\n${bodyParts.join('\n')}\n</div>`
+          : ''
+        ctx.parts.push(
+          `<div class="export-callout export-callout-${callout.type}">\n${head}\n${body}\n</div>`
+        )
+        return
+      }
       ctx.parts.push(`<blockquote>\n${inner.parts.join('\n')}\n</blockquote>`)
       return
     }

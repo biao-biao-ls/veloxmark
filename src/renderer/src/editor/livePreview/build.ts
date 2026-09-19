@@ -3,9 +3,11 @@ import type { EditorState } from '@codemirror/state'
 import { Decoration, type DecorationSet } from '@codemirror/view'
 import type { LivePreviewConfig } from './config'
 import { FoldPlaceholder, collectFoldRanges, getFoldedKeys } from './fold'
+import { CalloutFoldPlaceholder } from './calloutFold'
 import {
   collectExtendedDecos,
   collectMathDecos,
+  enterCallout,
   enterEmphasisMark,
   enterFencedCode,
   enterHeaderMark,
@@ -68,7 +70,15 @@ export function buildDecorations(state: EditorState, config: LivePreviewConfig):
   const markTouched = (from: number, to: number): boolean =>
     selections.some((r) => r.from <= to && r.to >= from)
 
-  const ctx: BuildCtx = { state, config, decos, touched, blockTouched, markTouched }
+  const ctx: BuildCtx = {
+    state,
+    config,
+    decos,
+    touched,
+    blockTouched,
+    markTouched,
+    calloutFoldRanges: []
+  }
 
   // tree.iterate's enter only dispatches; each syntax kind lives in handlers.ts
   tree.iterate({
@@ -90,6 +100,9 @@ export function buildDecorations(state: EditorState, config: LivePreviewConfig):
       if (name === 'Link' || name === 'Autolink') return enterLink(node, ctx)
       if (name === 'Image') return enterImage(node, ctx)
       if (name === 'ListMark') return enterListMark(node, ctx)
+      // P21: `> [!TYPE]` callout container — always descends; QuoteMark `>`
+      // handling below (and nested inline/block previews) stays unchanged.
+      if (name === 'Blockquote') return enterCallout(node, ctx)
       if (name === 'QuoteMark') return enterQuoteMark(node, ctx)
       if (name === 'Table') return enterTable(node, ctx)
       if (name === 'FencedCode') return enterFencedCode(node, ctx)
@@ -123,6 +136,24 @@ export function buildDecorations(state: EditorState, config: LivePreviewConfig):
         break
       }
       block = block.nextSibling
+    }
+  }
+
+  // P21 callout folds: same overlap rule as P18 — CM6 forbids overlapping
+  // replace decorations, so decos inside a collapsed callout body (quote-mark
+  // hides, inline marks, body line classes, focus lines) drop first, then the
+  // body-range `⋯ N 行` placeholder is pushed.
+  const cfRanges = ctx.calloutFoldRanges ?? []
+  if (cfRanges.length > 0) {
+    const keptCF = decos.filter((d) => !cfRanges.some((r) => d.from < r.to && d.to > r.from))
+    decos.length = 0
+    decos.push(...keptCF)
+    for (const r of cfRanges) {
+      decos.push({
+        from: r.from,
+        to: r.to,
+        value: Decoration.replace({ widget: new CalloutFoldPlaceholder(r.key, r.lines) })
+      })
     }
   }
 

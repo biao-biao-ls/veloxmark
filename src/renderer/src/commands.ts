@@ -60,6 +60,8 @@ export interface CommandOps {
   openGlobalSearch: () => void
   /** P16: open the Mermaid template picker (App no-ops inside a fence). */
   openMermaidInsert: () => void
+  /** P21: open the callout-type picker (ListPickDialog). */
+  openCalloutInsert: () => void
   /** P20: transient status-bar message (auto-clears in the App). */
   showToast: (message: string) => void
 }
@@ -303,6 +305,12 @@ export function buildCommands(ops: CommandOps): Command[] {
       label: 'cmd.insertMermaidDiagram',
       run: () => ops.openMermaidInsert()
     },
+    // ---- Insert (P21) -------------------------------------------------------
+    {
+      id: 'insertCallout',
+      label: 'cmd.insertCallout',
+      run: () => ops.openCalloutInsert()
+    },
     // ---- Help --------------------------------------------------------------
     {
       id: 'showHelp',
@@ -381,7 +389,7 @@ const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
       'toggleTheme'
     ]
   },
-  { label: 'menu.insert', items: ['insertMermaidDiagram'] },
+  { label: 'menu.insert', items: ['insertMermaidDiagram', 'insertCallout'] },
   { label: 'menu.help', items: ['showHelp'] }
 ]
 

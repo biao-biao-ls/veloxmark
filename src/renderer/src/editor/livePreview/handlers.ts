@@ -29,6 +29,8 @@ import { TableWidget } from '../table/widget'
 import { getTableEdit } from '../table/state'
 import type { LivePreviewConfig } from './config'
 import { extractLinkUrl, isBrokenCached, isSkippableHref } from './linkNav'
+import { calloutDisplayTitle, parseCalloutMarker } from './callout'
+import { CalloutTitleWidget, calloutKey, isCalloutFolded } from './calloutFold'
 
 /**
  * Per-syntax decoration handlers.
@@ -60,6 +62,12 @@ export interface BuildCtx {
    * Inline marks — delimiters show only while the cursor is on/in the span.
    */
   markTouched: (from: number, to: number) => boolean
+  /**
+   * P21: collapsed callout body ranges recorded by enterCallout; build.ts
+   * filters overlapping decos then pushes the fold placeholders (CM6 forbids
+   * overlapping replaces — same pattern as P18 heading folds).
+   */
+  calloutFoldRanges?: Array<{ from: number; to: number; key: string; lines: number }>
 }
 
 const hide = Decoration.replace({})
@@ -276,6 +284,79 @@ export function enterQuoteMark(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
     value: Decoration.line({ class: `cm-md-quote cm-md-quote-d${quoteDepth(node)}` })
   })
   return false
+}
+
+// ---- callouts (P21) ---------------------------------------------------------
+
+/**
+ * `> [!TYPE]` callout container styling on a Blockquote node. Always returns
+ * true so children keep flowing through the normal handlers (QuoteMark `>`
+ * hide, nested lists/code/links unchanged). A Blockquote whose first line is
+ * not a callout marker produces zero decos here — acceptance ⑤.
+ */
+export function enterCallout(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
+  const doc = ctx.state.doc
+  const line = doc.lineAt(node.from)
+  const parsed = parseCalloutMarker(line.text)
+  if (!parsed) return true
+  const type = parsed.type
+  const key = calloutKey(line.from, parsed)
+  // Reveal the body while the cursor/selection is anywhere in the block —
+  // P18-style auto-reveal without writing a fold override (moving away
+  // re-collapses; the source `+/-` default stays intact).
+  const sel = ctx.state.selection.main
+  const selectionInside = sel.from <= node.to && sel.to >= node.from
+  const folded = !selectionInside && isCalloutFolded(ctx.state, key, parsed)
+  const hasBody = node.to > line.to
+
+  const mFrom = line.from + parsed.markerStart
+  const mTo = line.from + parsed.markerEnd
+  // P09: `[!TYPE]` marker source shows while the cursor touches it.
+  const markerShown = ctx.markTouched(mFrom, mTo)
+
+  // Line classes across the whole block; folded body lines stay out of the
+  // deco list (they fall inside the replace range pushed by build.ts).
+  for (let l = line; ; ) {
+    const isHead = l.from === line.from
+    if (!(folded && hasBody && !isHead)) {
+      const cls = isHead
+        ? `cm-md-callout cm-md-callout-${type} cm-md-callout-head` +
+          (markerShown ? ' cm-md-callout-src' : '')
+        : `cm-md-callout cm-md-callout-${type}`
+      ctx.decos.push({ from: l.from, to: l.from, value: Decoration.line({ class: cls }) })
+    }
+    if (l.to >= node.to || l.to >= doc.length) break
+    l = doc.lineAt(l.to + 1)
+  }
+
+  // Marker hide + default-title widget. Custom source title needs only the
+  // marker hidden (title text is already in the doc); otherwise the marker
+  // range is replaced with the display title (default zh/en name, or the
+  // raw TYPE for unknown markers).
+  if (!markerShown) {
+    if (parsed.title !== '') {
+      ctx.decos.push({ from: mFrom, to: mTo, value: hide })
+    } else {
+      ctx.decos.push({
+        from: mFrom,
+        to: mTo,
+        value: Decoration.replace({
+          widget: new CalloutTitleWidget(calloutDisplayTitle(parsed), type)
+        })
+      })
+    }
+  }
+
+  if (folded && hasBody) {
+    let lines = 0
+    for (let l = doc.lineAt(line.to + 1); ; ) {
+      lines++
+      if (l.to >= node.to || l.to >= doc.length) break
+      l = doc.lineAt(l.to + 1)
+    }
+    ctx.calloutFoldRanges?.push({ from: line.to, to: node.to, key, lines })
+  }
+  return true
 }
 
 // ---- tables -----------------------------------------------------------------

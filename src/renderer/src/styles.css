@@ -1215,6 +1215,86 @@ body {
   margin-left: 72px;
 }
 
+/* P21 callouts — `> [!TYPE]` cards. Line classes stack on top of cm-md-quote
+   (enterQuoteMark still runs on the QuoteMark children); later rules win the
+   shared border/color/font-style properties. */
+
+.cm-md-callout {
+  border-left: 4px solid var(--co-bar, var(--quote-border));
+  background: var(--co-bg, transparent);
+  color: var(--fg);
+  font-style: normal;
+  padding-left: 10px;
+}
+
+.cm-md-callout-head {
+  font-weight: 600;
+}
+
+.cm-md-callout-head::before {
+  margin-right: 6px;
+  font-style: normal;
+}
+
+/* P09: marker showing in source form — suppress the CSS icon so `[!TYPE]`
+   and the icon don't double up on the head line. */
+.cm-md-callout-src.cm-md-callout-head::before {
+  content: none !important;
+}
+
+.cm-md-callout-title {
+  font-weight: 600;
+}
+
+.cm-md-callout-fold-text {
+  color: var(--fg-dim);
+  font-weight: 400;
+  font-size: 0.85em;
+  margin-left: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cm-md-callout-fold-text:hover {
+  color: var(--accent);
+}
+
+/* light theme — 8 types: bar + light bg + Unicode icon via ::before */
+.theme-light .cm-md-callout-note { --co-bar: #0969da; --co-bg: #f0f6fc; }
+.theme-light .cm-md-callout-tip { --co-bar: #1a7f37; --co-bg: #eef8f2; }
+.theme-light .cm-md-callout-important { --co-bar: #8250df; --co-bg: #f5e9f7; }
+.theme-light .cm-md-callout-warning { --co-bar: #9a6700; --co-bg: #fff6e0; }
+.theme-light .cm-md-callout-caution { --co-bar: #cf222e; --co-bg: #fff0ee; }
+.theme-light .cm-md-callout-info { --co-bar: #0a7ea4; --co-bg: #e7f3ff; }
+.theme-light .cm-md-callout-success { --co-bar: #1a7f37; --co-bg: #e6f6ec; }
+.theme-light .cm-md-callout-danger { --co-bar: #cf222e; --co-bg: #ffebe9; }
+.theme-light .cm-md-callout-note.cm-md-callout-head::before { content: 'ℹ'; color: #0969da; }
+.theme-light .cm-md-callout-tip.cm-md-callout-head::before { content: '💡'; color: #1a7f37; }
+.theme-light .cm-md-callout-important.cm-md-callout-head::before { content: '❗'; color: #8250df; }
+.theme-light .cm-md-callout-warning.cm-md-callout-head::before { content: '⚠'; color: #9a6700; }
+.theme-light .cm-md-callout-caution.cm-md-callout-head::before { content: '⚡'; color: #cf222e; }
+.theme-light .cm-md-callout-info.cm-md-callout-head::before { content: '📌'; color: #0a7ea4; }
+.theme-light .cm-md-callout-success.cm-md-callout-head::before { content: '✅'; color: #1a7f37; }
+.theme-light .cm-md-callout-danger.cm-md-callout-head::before { content: '⛔'; color: #cf222e; }
+
+/* dark theme — same 8 types on muted dark backgrounds */
+.theme-dark .cm-md-callout-note { --co-bar: #4493f8; --co-bg: #1c2b3a; }
+.theme-dark .cm-md-callout-tip { --co-bar: #3fb950; --co-bg: #1c2e1e; }
+.theme-dark .cm-md-callout-important { --co-bar: #a371f7; --co-bg: #2a2140; }
+.theme-dark .cm-md-callout-warning { --co-bar: #d29922; --co-bg: #3a2e12; }
+.theme-dark .cm-md-callout-caution { --co-bar: #f85149; --co-bg: #3d1c20; }
+.theme-dark .cm-md-callout-info { --co-bar: #58a6ff; --co-bg: #1c2b3a; }
+.theme-dark .cm-md-callout-success { --co-bar: #3fb950; --co-bg: #1c2e1e; }
+.theme-dark .cm-md-callout-danger { --co-bar: #f85149; --co-bg: #3d1418; }
+.theme-dark .cm-md-callout-note.cm-md-callout-head::before { content: 'ℹ'; color: #4493f8; }
+.theme-dark .cm-md-callout-tip.cm-md-callout-head::before { content: '💡'; color: #3fb950; }
+.theme-dark .cm-md-callout-important.cm-md-callout-head::before { content: '❗'; color: #a371f7; }
+.theme-dark .cm-md-callout-warning.cm-md-callout-head::before { content: '⚠'; color: #d29922; }
+.theme-dark .cm-md-callout-caution.cm-md-callout-head::before { content: '⚡'; color: #f85149; }
+.theme-dark .cm-md-callout-info.cm-md-callout-head::before { content: '📌'; color: #58a6ff; }
+.theme-dark .cm-md-callout-success.cm-md-callout-head::before { content: '✅'; color: #3fb950; }
+.theme-dark .cm-md-callout-danger.cm-md-callout-head::before { content: '⛔'; color: #f85149; }
+
 /* horizontal rule */
 
 .cm-md-hr {
