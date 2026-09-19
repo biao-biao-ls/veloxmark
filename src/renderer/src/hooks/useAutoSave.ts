@@ -30,6 +30,8 @@ interface Args {
   crashRecoveryEnabled: boolean
   /** Reuse useFileOps.saveFile (writes the file, clears dirty). */
   saveFile: () => Promise<boolean>
+  /** P26: write EVERY dirty tab (autosave covers all tabs, not just active). */
+  saveAllDirtyTabs?: () => Promise<void>
   setDirty: (dirty: boolean) => void
   syncAppState: (path: string | null, dirty: boolean) => void
 }
@@ -50,6 +52,14 @@ export function useAutoSave(args: Args): {
   const performAutoSave = useCallback(async (): Promise<void> => {
     const a = argsRef.current
     const view = a.viewRef.current
+    // P26: autosave walks all dirty tabs; falls back to active-only when the
+    // tab layer has not registered the helper (single-doc contexts).
+    if (a.saveAllDirtyTabs) {
+      const hadDirty = a.dirtyRef.current
+      await a.saveAllDirtyTabs()
+      if (hadDirty) setLastAutoSaveAt(Date.now())
+      return
+    }
     if (!view || !a.dirtyRef.current) return
     const path = a.filePathRef.current
     if (path) {

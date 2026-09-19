@@ -111,6 +111,21 @@ function createWindow(): void {
   })
   attachWindowStatePersistence(mainWindow)
 
+  // P26: Cmd/Ctrl+W is tab-aware — main never decides, the renderer does
+  // (tabs>1 → close tab; else window:close → P12 close intercept). before-
+  // input runs ahead of native-menu accelerators, so the window-close role
+  // never races the tab command.
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    const win = getWindow()
+    if (!win) return
+    if (input.type !== 'keyDown') return
+    const wKey = input.key === 'w' || input.key === 'W'
+    if (!wKey || input.shift || input.alt) return
+    if (!(input.meta || input.control)) return
+    event.preventDefault()
+    win.webContents.send('menu:closeTabOrWindow')
+  })
+
   // P12 close intercept: ask the renderer whether the close may proceed. The
   // renderer shows the three-option dialog when dirty and answers via
   // `app:closeResponse`; `closeApproved` lets the retried close through.
@@ -217,7 +232,7 @@ const NATIVE_MENU_STRINGS: Record<UiLang, Record<string, string>> = {
     file: 'File', newFile: 'New', openFile: 'Open…', openFolder: 'Open Folder…',
     quickOpen: 'Quick Open…', openRecent: 'Open Recent', noRecent: 'No Recent Files',
     clearMenu: 'Clear Menu', save: 'Save', saveAs: 'Save As…', export: 'Export',
-    pdf: 'PDF…', html: 'HTML…', close: 'Close',
+    pdf: 'PDF…', html: 'HTML…', close: 'Close', closeTab: 'Close Tab', reopenClosedTab: 'Reopen Closed Tab', nextTab: 'Next Tab',
     edit: 'Edit', cut: 'Cut', copy: 'Copy', paste: 'Paste', pasteMatch: 'Paste and Match Style',
     del: 'Delete', selectAll: 'Select All',
     copyRichText: 'Copy as Rich Text', copyAsHtml: 'Copy as HTML',
@@ -240,7 +255,7 @@ const NATIVE_MENU_STRINGS: Record<UiLang, Record<string, string>> = {
     file: '文件', newFile: '新建', openFile: '打开…', openFolder: '打开文件夹…',
     quickOpen: '快速打开…', openRecent: '打开最近', noRecent: '暂无最近文件',
     clearMenu: '清空列表', save: '保存', saveAs: '另存为…', export: '导出',
-    pdf: 'PDF…', html: 'HTML…', close: '关闭',
+    pdf: 'PDF…', html: 'HTML…', close: '关闭', closeTab: '关闭标签', reopenClosedTab: '重新打开已关标签', nextTab: '下一个标签',
     edit: '编辑', cut: '剪切', copy: '复制', paste: '粘贴', pasteMatch: '粘贴并匹配样式',
     del: '删除', selectAll: '全选',
     copyRichText: '复制为富文本', copyAsHtml: '复制为 HTML',
@@ -346,6 +361,13 @@ function buildDarwinMenu(): Menu {
         { type: 'separator' },
         commandItem('saveFile', S.save),
         commandItem('saveFileAs', S.saveAs),
+        { type: 'separator' },
+        // P26 tab commands. No accelerator entries: Cmd/Ctrl+W is routed by
+        // the before-input handler above (tab-aware), Cmd/Ctrl+Tab and
+        // Cmd+Shift+T are bound in the renderer command registry.
+        commandItem('closeTab', S.closeTab),
+        commandItem('reopenClosedTab', S.reopenClosedTab),
+        commandItem('nextTab', S.nextTab),
         { type: 'separator' },
         {
           label: S.export,

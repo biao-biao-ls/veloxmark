@@ -48,6 +48,7 @@ import {
   type MermaidFence
 } from './editor/mermaidPreview'
 import { MermaidPreviewPanel } from './components/MermaidPreviewPanel'
+import { TabsBar } from './components/TabsBar'
 import { undo } from '@codemirror/commands'
 import MermaidLightbox from './components/MermaidLightbox'
 import { DialogHost, dialog } from './components/Dialog'
@@ -272,6 +273,40 @@ declare global {
       getPinSession: () => boolean
       probeNow: () => void
     } | null
+    /** P26 e2e handle: multi-document tab seams. */
+    __veloxP26: {
+      getDoc: () => string
+      loadDoc: (text: string, path: string | null) => void
+      openPath: (path: string) => Promise<boolean>
+      tabs: () => Array<{ id: string; path: string | null; name: string; dirty: boolean; active: boolean }>
+      activeIndex: () => number
+      activate: (id: string) => void
+      activateIndex: (i: number) => void
+      closeActive: (opts?: { force?: boolean }) => Promise<boolean>
+      closeId: (id: string, opts?: { force?: boolean }) => Promise<boolean>
+      nextTab: () => void
+      reopenClosed: () => Promise<void>
+      hasClosedTabs: () => boolean
+      reorder: (dragId: string, targetId: string) => void
+      getFilePath: () => string | null
+      getDirty: () => boolean
+      insertText: (pos: number, text: string) => void
+      setCursor: (pos: number) => void
+      getCursor: () => number
+      undo: () => boolean
+      getBaseDir: () => string
+      getToast: () => string | null
+      persistTabs: () => void
+      getSessionTabs: () => { openTabs: string[]; activePath: string | null }
+      saveAllDirty: () => Promise<void>
+      newUntitled: () => void
+      closeOthers: (id: string) => void
+      closeRight: (id: string) => void
+      queryClose: () => Promise<boolean>
+      dialogOpen: () => boolean
+      setPrefs: (patch: Record<string, unknown>) => void
+      getScrollTop: () => number
+    } | null
   }
 }
 window.__veloxEditor = null
@@ -289,6 +324,7 @@ window.__veloxP22 = null
 window.__veloxP23 = null
 window.__veloxP24 = null
 window.__veloxP25 = null
+window.__veloxP26 = null
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -431,6 +467,7 @@ export default function App(): React.JSX.Element {
     intervalMin: prefs.autoSaveIntervalMin,
     crashRecoveryEnabled: prefs.crashRecoveryEnabled,
     saveFile: fileOps.saveFile,
+    saveAllDirtyTabs: fileOps.saveAllDirtyTabs,
     setDirty,
     syncAppState
   })
@@ -444,6 +481,7 @@ export default function App(): React.JSX.Element {
     dirty,
     confirmDiscard: fileOps.confirmDiscard,
     loadContent: fileOps.loadContent,
+    openDocPath: fileOps.openDocPath,
     setBaseDir: fileOps.setBaseDir,
     setFilePath: fileOps.setFilePath,
     syncAppState,
@@ -471,6 +509,12 @@ export default function App(): React.JSX.Element {
     if (!sessionSynced) return
     patchSession({ sidebarWidth })
   }, [sessionSynced, sidebarWidth])
+  // P26: tab set persistence (paths + active) — fires when tabs change.
+  useEffect(() => {
+    if (!sessionSynced) return
+    fileOps.persistTabsSession()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionSynced, fileOps.tabInfos])
 
   // Validated Recent Files entries for the File menu (and the macOS native
   // menu, which receives the same list over IPC).
@@ -503,11 +547,35 @@ export default function App(): React.JSX.Element {
       if (path) void fileOps.openRecentFile(path)
     })
     const offClear = window.api.onMenu('menu:clearRecent', () => clearRecentFiles())
+    // P26 native-menu tab commands (darwin File menu + Cmd/Ctrl+W routing).
+    const offCloseTab = window.api.onMenu('menu:closeTab', () => {
+      void fileOps.closeTab(fileOps.getActiveTabId())
+    })
+    const offReopenTab = window.api.onMenu('menu:reopenClosedTab', () => {
+      void fileOps.reopenClosedTab()
+    })
+    const offNextTab = window.api.onMenu('menu:nextTab', () => fileOps.nextTab())
+    const offCloseOrWindow = window.api.onMenu('menu:closeTabOrWindow', () => {
+      // Spec: Cmd/Ctrl+W closes a tab only when tabs>1; otherwise it keeps
+      // the window-close semantics (P12 intercept runs on window:close).
+      if (fileOps.getTabCount() > 1) {
+        void fileOps.closeTab(fileOps.getActiveTabId())
+      } else {
+        void fileOps.queryClose().then((allow) => {
+          if (allow) window.api.windowClose()
+        })
+      }
+    })
     return () => {
       offOpen()
       offClear()
+      offCloseTab()
+      offReopenTab()
+      offNextTab()
+      offCloseOrWindow()
     }
-  }, [fileOps.openRecentFile])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileOps])
 
   // Minimal session restore (full snapshot restore belongs to P12): reopen the
   // last folder workspace and file. System open-file events queued in main
@@ -527,8 +595,35 @@ export default function App(): React.JSX.Element {
         if (saved.lastFolderPath && (await window.api.pathExists(saved.lastFolderPath))) {
           await workspace.loadFolder(saved.lastFolderPath)
         }
-        if (saved.lastFilePath && (await window.api.pathExists(saved.lastFilePath))) {
-          await fileOps.openRecentFile(saved.lastFilePath)
+        // P26: restore the whole tab set; missing files are skipped with a
+        // toast (acceptance 4). Falls back to lastFilePath for old sessions.
+        const openTabs =
+          saved.openTabs && saved.openTabs.length > 0
+            ? saved.openTabs
+            : saved.lastFilePath
+              ? [saved.lastFilePath]
+              : []
+        let missingCount = 0
+        for (const p of openTabs) {
+          if (await window.api.pathExists(p)) {
+            await fileOps.openDocPath(p, { activate: false, quiet: true })
+          } else {
+            missingCount += 1
+          }
+        }
+        if (saved.activePath && (await window.api.pathExists(saved.activePath))) {
+          await fileOps.openDocPath(saved.activePath, { quiet: true })
+        } else if (openTabs.length > 0) {
+          // Activate the first restored tab that exists.
+          for (const p of openTabs) {
+            if (await window.api.pathExists(p)) {
+              await fileOps.openDocPath(p, { quiet: true })
+              break
+            }
+          }
+        }
+        if (missingCount > 0) showToast(t('tabs.missingRestored', { n: missingCount }))
+        {
           // P12: reapply the saved cursor position with the restored file.
           const view = viewRef.current
           const cursor = saved.lastCursor
@@ -723,10 +818,9 @@ export default function App(): React.JSX.Element {
     if (!hostRef.current || viewRef.current) return
     let cursorPersistTimer: ReturnType<typeof setTimeout> | undefined
 
-    const view = new EditorView({
-      state: EditorState.create({
-        doc: getWelcomeMd(getLang()),
-        extensions: createExtensions(
+    // P26: one extensions array serves the initial state AND every DocTab
+    // state — view.setState requires the same extension configuration.
+    const extensions = createExtensions(
           {
             onChange: () => {
               // P12 dirty flag: set on change, cleared on save — no per-change
@@ -782,11 +876,17 @@ export default function App(): React.JSX.Element {
           getPreferences().theme === 'dark' ? 'dark' : 'light',
           readEditingAssistsConfig(),
           getPreferences().showLineNumbers
-        )
+    )
+    const view = new EditorView({
+      state: EditorState.create({
+        doc: getWelcomeMd(getLang()),
+        extensions
       }),
       parent: hostRef.current
     })
     viewRef.current = view
+    // P26: register the shared extension array + seed the welcome tab.
+    fileOps.initTabs(extensions, view.state.doc.toString())
     // CDP smoke-test handle (scripts/cdp-p05.mjs) — no other runtime consumers.
     // applyLivePreviewConfig lets CDP toggle source/focus/typewriter modes the
     // same way the prefs effect below does, without going through the store.
@@ -1002,11 +1102,11 @@ export default function App(): React.JSX.Element {
   /** Re-read an open file from disk after a replace wrote it. */
   const reloadOpenFile = useCallback(
     async (path: string) => {
-      if (filePathRef.current !== path) return
-      const content = await window.api.readFile(path)
-      fileOps.loadContent(content, path)
+      // P07/P26: external change reload — per-tab; inactive clean tabs swap
+      // their stored state, dirty inactive tabs keep their edits (documented).
+      await fileOps.reloadTabFromDisk(path)
     },
-    [filePathRef, fileOps]
+    [fileOps]
   )
 
   const sidebarModeRef = useRef<SidebarMode>(sidebarMode)
@@ -1481,6 +1581,72 @@ export default function App(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileOps])
 
+  // P26 e2e handle — multi-document tab seams.
+  useEffect(() => {
+    window.__veloxP26 = {
+      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
+      loadDoc: (text, path) => fileOps.loadContent(text, path),
+      openPath: (path) => fileOps.openDocPath(path),
+      tabs: () => fileOps.tabInfos,
+      activeIndex: () => fileOps.tabInfos.findIndex((x) => x.active),
+      activate: (id) => fileOps.activateTab(id),
+      activateIndex: (i) => {
+        const list = fileOps.tabInfos
+        if (i >= 0 && i < list.length) fileOps.activateTab(list[i].id)
+      },
+      closeActive: (opts) => fileOps.closeTab(fileOps.getActiveTabId(), opts),
+      closeId: (id, opts) => fileOps.closeTab(id, opts),
+      nextTab: () => fileOps.nextTab(),
+      reopenClosed: () => fileOps.reopenClosedTab(),
+      hasClosedTabs: () => fileOps.hasClosedTabs(),
+      reorder: (dragId, targetId) => fileOps.reorderTab(dragId, targetId),
+      getFilePath: () => filePathRef.current,
+      getDirty: () => fileOps.dirtyRef.current,
+      insertText: (pos, text) => {
+        const view = viewRef.current
+        if (!view) return
+        const p = Math.min(Math.max(0, pos), view.state.doc.length)
+        view.dispatch({
+          changes: { from: p, insert: text },
+          selection: { anchor: p + text.length }
+        })
+      },
+      setCursor: (pos) => {
+        const view = viewRef.current
+        if (!view) return
+        const p = Math.min(Math.max(0, pos), view.state.doc.length)
+        view.dispatch({ selection: { anchor: p } })
+      },
+      getCursor: () => viewRef.current?.state.selection.main.from ?? -1,
+      undo: () => {
+        const view = viewRef.current
+        return view ? undo(view) : false
+      },
+      getBaseDir: () => fileOps.getActiveBaseDir(),
+      getToast: () => toast,
+      persistTabs: () => fileOps.persistTabsSession(),
+      getSessionTabs: () => {
+        const sess = getSession()
+        return { openTabs: sess.openTabs ?? [], activePath: sess.activePath ?? null }
+      },
+      saveAllDirty: () => fileOps.saveAllDirtyTabs(),
+      newUntitled: () => {
+        void fileOps.newFile()
+      },
+      closeOthers: (id) => {
+        void fileOps.closeOtherTabs(id)
+      },
+      closeRight: (id) => {
+        void fileOps.closeTabsRight(id)
+      },
+      queryClose: () => fileOps.queryClose(),
+      dialogOpen: () => !!document.querySelector('.dialog'),
+      setPrefs: (patch) => setPreferences(patch),
+      getScrollTop: () => viewRef.current?.scrollDOM.scrollTop ?? -1
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileOps, toast])
+
   // ---- P17: link navigation ---------------------------------------------------
   // openExternal goes through a seam so e2e can capture URLs instead of
   // launching the real browser (contextBridge window.api is frozen).
@@ -1806,6 +1972,15 @@ export default function App(): React.JSX.Element {
     openCalloutInsert,
     openTableInsert,
     formatDocument,
+    nextTab: () => fileOps.nextTab(),
+    closeTab: () => {
+      void fileOps.closeTab(fileOps.getActiveTabId())
+    },
+    reopenClosedTab: () => {
+      void fileOps.reopenClosedTab()
+    },
+    getTabCount: () => fileOps.getTabCount(),
+    hasClosedTabs: () => fileOps.hasClosedTabs(),
     hasSelection: () => {
       const v = viewRef.current
       return !!v && v.state.selection.main.from !== v.state.selection.main.to
@@ -1818,7 +1993,8 @@ export default function App(): React.JSX.Element {
     return window.api.onFullScreen((full) => setIsFullScreen(full))
   }, [])
 
-  const fileName = filePath ? filePath.replace(/^.*[\\/]/, '') : 'Untitled'
+  const activeTab = fileOps.tabInfos.find((x) => x.active)
+  const fileName = activeTab ? activeTab.name : filePath ? filePath.replace(/^.*[\/]/, '') : 'Untitled'
   const folderName = workspace.folderPath
     ? workspace.folderPath.replace(/^.*[\\/]/, '') || workspace.folderPath
     : null
@@ -1945,6 +2121,22 @@ export default function App(): React.JSX.Element {
           />
         )}
         <div className="editor-column">
+          {fileOps.tabInfos.length > 0 && (
+            <TabsBar
+              tabs={fileOps.tabInfos}
+              onActivate={(id) => fileOps.activateTab(id)}
+              onClose={(id) => {
+                void fileOps.closeTab(id)
+              }}
+              onCloseOthers={(id) => {
+                void fileOps.closeOtherTabs(id)
+              }}
+              onCloseRight={(id) => {
+                void fileOps.closeTabsRight(id)
+              }}
+              onReorder={(dragId, targetId) => fileOps.reorderTab(dragId, targetId)}
+            />
+          )}
           <div className="editor-host" ref={hostRef} />
           {mpFence && (
             <MermaidPreviewPanel

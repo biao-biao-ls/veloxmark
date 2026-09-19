@@ -12,6 +12,8 @@ interface Args {
   dirty: boolean
   confirmDiscard: () => Promise<boolean>
   loadContent: (content: string, path: string | null) => void
+  /** P26: unified tab open — already-open paths activate their tab. */
+  openDocPath?: (path: string) => Promise<boolean>
   setBaseDir: (path: string) => void
   setFilePath: (path: string | null) => void
   syncAppState: (path: string | null, dirty: boolean) => void
@@ -34,6 +36,7 @@ export function useWorkspaceTree({
   dirty,
   confirmDiscard,
   loadContent,
+  openDocPath,
   setBaseDir,
   setFilePath,
   syncAppState,
@@ -78,6 +81,13 @@ export function useWorkspaceTree({
   // Open a file picked from the folder tree — switches the sidebar to outline.
   const openFileFromTree = useCallback(
     async (path: string) => {
+      // P26: tree opens go through the tab layer — already-open files just
+      // activate; new files become a tab (no content replacement, no gate).
+      if (openDocPath) {
+        await openDocPath(path)
+        setSidebarMode('outline')
+        return
+      }
       if (filePathRef.current === path) {
         setSidebarMode('outline')
         return
@@ -88,7 +98,7 @@ export function useWorkspaceTree({
       loadContent(content, path)
       setSidebarMode('outline')
     },
-    [filePathRef, confirmDiscard, loadContent, setSidebarMode, setBaseDir]
+    [openDocPath, filePathRef, confirmDiscard, loadContent, setSidebarMode, setBaseDir]
   )
 
   const joinPath = useCallback((dir: string, name: string): string => {

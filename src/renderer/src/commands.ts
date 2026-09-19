@@ -70,6 +70,12 @@ export interface CommandOps {
   hasSelection: () => boolean
   /** P23: format the whole document (single undoable transaction). */
   formatDocument: () => void
+  /** P26 tabs. */
+  nextTab: () => void
+  closeTab: () => void
+  reopenClosedTab: () => void
+  getTabCount: () => number
+  hasClosedTabs: () => boolean
   /** P20: transient status-bar message (auto-clears in the App). */
   showToast: (message: string) => void
 }
@@ -266,6 +272,30 @@ export function buildCommands(ops: CommandOps): Command[] {
       bindGlobal: true,
       run: () => ops.formatDocument()
     },
+    // ---- P26 tabs ----------------------------------------------------------
+    {
+      id: 'nextTab',
+      label: 'cmd.nextTab',
+      shortcut: 'Ctrl+Tab',
+      bindGlobal: true,
+      isDisabled: () => ops.getTabCount() < 2,
+      run: () => ops.nextTab()
+    },
+    {
+      id: 'closeTab',
+      label: 'cmd.closeTab',
+      shortcut: 'Ctrl+W',
+      bindGlobal: true,
+      run: () => ops.closeTab()
+    },
+    {
+      id: 'reopenClosedTab',
+      label: 'cmd.reopenClosedTab',
+      shortcut: 'Ctrl+Shift+T',
+      bindGlobal: true,
+      isDisabled: () => !ops.hasClosedTabs(),
+      run: () => ops.reopenClosedTab()
+    },
     // ---- View --------------------------------------------------------------
     { id: 'toggleOutline', label: 'cmd.toggleOutline', run: () => ops.toggleOutline() },
     {
@@ -372,6 +402,10 @@ const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
       { separator: true },
       'saveFile',
       'saveFileAs',
+      { separator: true },
+      'closeTab',
+      'reopenClosedTab',
+      'nextTab',
       { separator: true },
       { export: true },
       { separator: true },

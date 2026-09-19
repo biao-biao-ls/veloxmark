@@ -104,6 +104,10 @@ export interface SessionState {
   headingFolds: Record<string, string[]>
   /** P25: mermaid preview panel pinned (session-only). */
   mermaidPreviewPin: boolean
+  /** P26: open document tabs (file paths, tab order). */
+  openTabs: string[]
+  /** P26: active tab path at session end (null = untitled). */
+  activePath: string | null
 }
 
 export const RECENT_FILES_MAX = 10
@@ -156,7 +160,9 @@ const DEFAULT_SESSION: SessionState = {
   recentFiles: [],
   lastCursor: null,
   headingFolds: {},
-  mermaidPreviewPin: false
+  mermaidPreviewPin: false,
+  openTabs: [],
+  activePath: null
 }
 
 const PREFS_KEY = 'veloxmark.preferences'
@@ -312,6 +318,10 @@ let session: SessionState = (() => {
         ? raw.lastCursor
         : null,
     mermaidPreviewPin: raw.mermaidPreviewPin === true,
+    openTabs: Array.isArray(raw.openTabs)
+      ? raw.openTabs.filter((p): p is string => typeof p === 'string')
+      : [],
+    activePath: typeof raw.activePath === 'string' ? raw.activePath : null,
     headingFolds:
       raw.headingFolds && typeof raw.headingFolds === 'object'
         ? Object.fromEntries(

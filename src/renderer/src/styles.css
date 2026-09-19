@@ -2438,3 +2438,92 @@ body {
   border-radius: 4px;
   white-space: pre-wrap;
 }
+
+/* ---- P26: document tab bar ---- */
+.tabs-bar {
+  display: flex;
+  flex: none;
+  align-items: stretch;
+  height: 34px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  user-select: none;
+}
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  max-width: 200px;
+  min-width: 96px;
+  padding: 0 8px 0 12px;
+  font-size: 12px;
+  color: var(--fg-dim);
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  position: relative;
+}
+.tab-item.is-active {
+  color: var(--fg);
+  background: var(--bg);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.tab-item .tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.tab-dirty-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.tab-close {
+  flex: none;
+  border: none;
+  background: transparent;
+  color: var(--fg-dim);
+  font-size: 14px;
+  line-height: 1;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+.tab-close:hover {
+  color: var(--fg);
+  background: var(--border);
+}
+.tab-context-menu {
+  position: fixed;
+  z-index: 3000;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+  padding: 4px;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+}
+.tab-context-menu button {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--fg);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.tab-context-menu button:hover {
+  background: var(--bg-sidebar);
+  color: var(--accent);
+}
