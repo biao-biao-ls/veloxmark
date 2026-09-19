@@ -108,7 +108,7 @@ export async function renderMermaid(code: string, theme: ThemeName): Promise<str
  * Serialize a rendered mermaid <svg> and save it to a file chosen by the user.
  * Mermaid inlines its theme CSS into the SVG, so the output is self-contained.
  */
-async function exportSvg(svgEl: SVGSVGElement): Promise<void> {
+export async function exportSvg(svgEl: SVGSVGElement): Promise<void> {
   const clone = svgEl.cloneNode(true) as SVGSVGElement
   clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
   if (!clone.getAttribute('viewBox')) {
@@ -158,7 +158,7 @@ async function rasterizeSvgToPng(svgEl: SVGSVGElement, scale = 2): Promise<strin
 }
 
 /** P16: PNG export — 2× raster + native save dialog (default name diagram.png). */
-async function exportPng(svgEl: SVGSVGElement): Promise<void> {
+export async function exportPng(svgEl: SVGSVGElement): Promise<void> {
   const dataUrl = await rasterizeSvgToPng(svgEl, 2)
   if (!dataUrl) return
   const target = await mermaidIo.showSaveDialog('diagram.png', [
@@ -171,7 +171,7 @@ async function exportPng(svgEl: SVGSVGElement): Promise<void> {
 }
 
 /** P16: Copy Image — PNG data URL onto the OS clipboard. */
-async function copyPngImage(svgEl: SVGSVGElement): Promise<void> {
+export async function copyPngImage(svgEl: SVGSVGElement): Promise<void> {
   const dataUrl = await rasterizeSvgToPng(svgEl, 2)
   if (!dataUrl) return
   await mermaidIo.clipboardWriteImage(dataUrl)

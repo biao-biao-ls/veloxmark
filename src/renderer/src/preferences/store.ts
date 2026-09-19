@@ -85,6 +85,9 @@ export interface Preferences {
   codeBlockShowLineNumbers: boolean
   /** Soft-wrap long lines inside code blocks. */
   codeBlockWrap: boolean
+  // ---- P25 mermaid live preview ---------------------------------------------
+  /** Height (px) of the mermaid source-preview panel split. */
+  mermaidPreviewHeight: number
 }
 
 export interface SessionState {
@@ -99,6 +102,8 @@ export interface SessionState {
   lastCursor: number | null
   /** P18: heading-fold keys (`level:text`) per file path. */
   headingFolds: Record<string, string[]>
+  /** P25: mermaid preview panel pinned (session-only). */
+  mermaidPreviewPin: boolean
 }
 
 export const RECENT_FILES_MAX = 10
@@ -138,7 +143,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   formatOnSave: false,
   codeBlockCollapseLines: 20,
   codeBlockShowLineNumbers: false,
-  codeBlockWrap: true
+  codeBlockWrap: true,
+  mermaidPreviewHeight: 240
 }
 
 const DEFAULT_SESSION: SessionState = {
@@ -149,7 +155,8 @@ const DEFAULT_SESSION: SessionState = {
   lastFolderPath: null,
   recentFiles: [],
   lastCursor: null,
-  headingFolds: {}
+  headingFolds: {},
+  mermaidPreviewPin: false
 }
 
 const PREFS_KEY = 'veloxmark.preferences'
@@ -248,6 +255,10 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
         : 20,
     codeBlockShowLineNumbers: p.codeBlockShowLineNumbers === true,
     codeBlockWrap: p.codeBlockWrap !== false,
+    mermaidPreviewHeight:
+      typeof p.mermaidPreviewHeight === 'number' && Number.isFinite(p.mermaidPreviewHeight)
+        ? Math.min(800, Math.max(120, p.mermaidPreviewHeight))
+        : 240,
     typewriterMode: p.typewriterMode === true,
     sourceMode: p.sourceMode === true,
     autoSaveMode:
@@ -300,6 +311,7 @@ let session: SessionState = (() => {
       typeof raw.lastCursor === 'number' && Number.isFinite(raw.lastCursor) && raw.lastCursor >= 0
         ? raw.lastCursor
         : null,
+    mermaidPreviewPin: raw.mermaidPreviewPin === true,
     headingFolds:
       raw.headingFolds && typeof raw.headingFolds === 'object'
         ? Object.fromEntries(

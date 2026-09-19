@@ -42,6 +42,12 @@ import { insertTableAtCursor, convertSelectionAtCursor, buildTableMarkdown } fro
 import { sniffDelimiter } from './editor/table/ops'
 import { formatMarkdown } from './editor/format'
 import { getCodeBlockExpanded, toggleCodeBlockFold } from './editor/livePreview/codeBlockUi'
+import {
+  mermaidFenceAt,
+  resolvePinnedFence,
+  type MermaidFence
+} from './editor/mermaidPreview'
+import { MermaidPreviewPanel } from './components/MermaidPreviewPanel'
 import { undo } from '@codemirror/commands'
 import MermaidLightbox from './components/MermaidLightbox'
 import { DialogHost, dialog } from './components/Dialog'
@@ -244,6 +250,28 @@ declare global {
       clickFold: () => boolean
       clearExpanded: () => void
     } | null
+    /** P25 e2e handle: mermaid source live-preview panel seams. */
+    __veloxP25: {
+      getDoc: () => string
+      loadDoc: (text: string, path: string | null) => void
+      setCursor: (pos: number) => void
+      insertText: (pos: number, text: string) => void
+      undo: () => boolean
+      panel: () => {
+        visible: boolean
+        hasSvg?: boolean
+        errorText?: string | null
+        pinOn?: boolean
+        editableCount?: number
+        svgText?: string
+        height?: number
+      }
+      clickPin: () => boolean
+      setPrefs: (patch: Record<string, unknown>) => void
+      getPrefs: () => { mermaidPreviewHeight: number }
+      getPinSession: () => boolean
+      probeNow: () => void
+    } | null
   }
 }
 window.__veloxEditor = null
@@ -260,6 +288,7 @@ window.__veloxP21 = null
 window.__veloxP22 = null
 window.__veloxP23 = null
 window.__veloxP24 = null
+window.__veloxP25 = null
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -716,6 +745,8 @@ export default function App(): React.JSX.Element {
               // P14 status bar: cursor immediate + full stats debounced.
               updateCursorStatsRef.current()
               scheduleDocStatsRef.current()
+              // P25: mermaid preview follows doc edits under the cursor/pin.
+              mpProbeRef.current(view.state)
             },
             onSelectionChanged: () => {
               updateActiveHeading()
@@ -726,6 +757,8 @@ export default function App(): React.JSX.Element {
               const head = view.state.selection.main.head
               clearTimeout(cursorPersistTimer)
               cursorPersistTimer = setTimeout(() => patchSession({ lastCursor: head }), 500)
+              // P25: fence-entry/exit detection is selection-driven.
+              mpProbeRef.current(view.state)
             },
             onTreeChanged: () => {
               updateOutline()
@@ -1325,6 +1358,129 @@ export default function App(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileOps])
 
+  // ---- P25: mermaid source live preview (route B) ----------------------------
+  const mpPinRef = useRef(false)
+  const mpFenceRef = useRef<MermaidFence | null>(null)
+  const mpPinnedFenceRef = useRef<MermaidFence | null>(null)
+  const mpHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const mpProbeRef = useRef<(state: EditorState) => void>(() => {})
+  const [mpFence, setMpFence] = useState<MermaidFence | null>(null)
+  const [mpPin, setMpPin] = useState(false)
+
+  const setMpFenceBoth = useCallback((f: MermaidFence | null) => {
+    mpFenceRef.current = f
+    setMpFence(f)
+  }, [])
+
+  const toggleMpPin = useCallback(() => {
+    const next = !mpPinRef.current
+    mpPinRef.current = next
+    setMpPin(next)
+    patchSession({ mermaidPreviewPin: next })
+    if (next) {
+      mpPinnedFenceRef.current = mpFenceRef.current
+    } else {
+      mpPinnedFenceRef.current = null
+      const view = viewRef.current
+      if (view) mpProbeRef.current(view.state)
+    }
+  }, [])
+
+  // Probe body lives in an effect so createExtensions callbacks (registered
+  // once at editor mount) always run the latest closure through the ref.
+  useEffect(() => {
+    mpProbeRef.current = (state: EditorState) => {
+      if (mpPinRef.current) {
+        const resolved = resolvePinnedFence(state, mpPinnedFenceRef.current)
+        mpPinnedFenceRef.current = resolved
+        setMpFenceBoth(resolved)
+        return
+      }
+      const head = state.selection.main.head
+      const inFence = mermaidFenceAt(state, head)
+      if (inFence) {
+        if (mpHideTimerRef.current) {
+          clearTimeout(mpHideTimerRef.current)
+          mpHideTimerRef.current = null
+        }
+        setMpFenceBoth(inFence)
+        return
+      }
+      // Leaving a fence: collapse after 2s; re-entering cancels the timer.
+      if (mpFenceRef.current && !mpHideTimerRef.current) {
+        mpHideTimerRef.current = setTimeout(() => {
+          mpHideTimerRef.current = null
+          const view = viewRef.current
+          if (!view) return
+          if (mpPinRef.current) return
+          if (mermaidFenceAt(view.state, view.state.selection.main.head)) return
+          setMpFenceBoth(null)
+        }, 2000)
+      }
+    }
+  }, [setMpFenceBoth])
+
+  // Session pin restore (P03) — mount-time only.
+  useEffect(() => {
+    const pin = getSession().mermaidPreviewPin === true
+    mpPinRef.current = pin
+    setMpPin(pin)
+  }, [])
+
+  // P25 e2e handle
+  useEffect(() => {
+    window.__veloxP25 = {
+      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
+      loadDoc: (text, path) => fileOps.loadContent(text, path),
+      setCursor: (pos) => {
+        const view = viewRef.current
+        if (!view) return
+        const p = Math.min(Math.max(0, pos), view.state.doc.length)
+        view.dispatch({ selection: { anchor: p } })
+      },
+      insertText: (pos, text) => {
+        const view = viewRef.current
+        if (!view) return
+        const p = Math.min(Math.max(0, pos), view.state.doc.length)
+        view.dispatch({
+          changes: { from: p, insert: text },
+          selection: { anchor: p + text.length }
+        })
+      },
+      undo: () => {
+        const view = viewRef.current
+        return view ? undo(view) : false
+      },
+      panel: () => {
+        const el = document.querySelector('.mermaid-preview-panel')
+        if (!el) return { visible: false }
+        return {
+          visible: true,
+          hasSvg: !!el.querySelector('.mermaid-preview-svg svg'),
+          errorText: el.querySelector('.mermaid-preview-error')?.textContent ?? null,
+          pinOn: !!el.querySelector('.mermaid-preview-pin.is-on'),
+          editableCount: el.querySelectorAll('[contenteditable="true"]').length,
+          svgText: el.querySelector('.mermaid-preview-svg')?.innerHTML ?? '',
+          height: el.getBoundingClientRect().height
+        }
+      },
+      clickPin: () => {
+        const btn = document.querySelector('.mermaid-preview-pin')
+        if (!btn) return false
+        btn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        return true
+      },
+      setPrefs: (patch) => setPreferences(patch),
+      getPrefs: () => ({ mermaidPreviewHeight: getPreferences().mermaidPreviewHeight }),
+      getPinSession: () => getSession().mermaidPreviewPin === true,
+      probeNow: () => {
+        const view = viewRef.current
+        if (view) mpProbeRef.current(view.state)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileOps])
+
   // ---- P17: link navigation ---------------------------------------------------
   // openExternal goes through a seam so e2e can capture URLs instead of
   // launching the real browser (contextBridge window.api is frozen).
@@ -1788,7 +1944,28 @@ export default function App(): React.JSX.Element {
             onMouseDown={startSidebarResize}
           />
         )}
-        <div className="editor-host" ref={hostRef} />
+        <div className="editor-column">
+          <div className="editor-host" ref={hostRef} />
+          {mpFence && (
+            <MermaidPreviewPanel
+              code={mpFence.code}
+              theme={prefs.theme === 'dark' ? 'dark' : 'light'}
+              pin={mpPin}
+              height={prefs.mermaidPreviewHeight}
+              onTogglePin={toggleMpPin}
+              onHeightChange={(h) => setPreferences({ mermaidPreviewHeight: h })}
+              onClose={() => {
+                // Manual close acts like an unpinned hide; pin flag untouched
+                // only when the user unpins explicitly via the pin button.
+                if (mpHideTimerRef.current) {
+                  clearTimeout(mpHideTimerRef.current)
+                  mpHideTimerRef.current = null
+                }
+                setMpFenceBoth(null)
+              }}
+            />
+          )}
+        </div>
       </div>
       {prefs.showStatusBar !== false && (
         <StatusBar stats={stats} prefs={prefs} autoSaveAt={autoSave.lastAutoSaveAt} toast={toast} />

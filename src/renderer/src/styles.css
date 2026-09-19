@@ -2345,3 +2345,96 @@ body {
   mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
 }
+
+/* ---- P25: mermaid source-preview panel (below the editor) ---- */
+.editor-column {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.mermaid-preview-panel {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  flex: none;
+  min-height: 0;
+  position: relative;
+  z-index: 5;
+}
+.mermaid-preview-resize {
+  height: 5px;
+  cursor: ns-resize;
+  background: transparent;
+  flex: none;
+}
+.mermaid-preview-resize:hover {
+  background: var(--accent);
+  opacity: 0.4;
+}
+.mermaid-preview-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--fg-dim);
+  flex: none;
+}
+.mermaid-preview-bar .mermaid-preview-title {
+  font-weight: 600;
+  color: var(--fg);
+  margin-right: auto;
+}
+.mermaid-preview-bar button {
+  border: 1px solid var(--border);
+  background: var(--bg-sidebar);
+  color: var(--fg-dim);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.mermaid-preview-bar button:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.mermaid-preview-bar button.is-on {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--bg);
+}
+.mermaid-preview-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mermaid-preview-svg {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.mermaid-preview-svg.is-dim {
+  opacity: 0.45;
+}
+.mermaid-preview-svg svg {
+  max-width: 100%;
+  height: auto;
+}
+.mermaid-preview-error {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--danger, #d33);
+  background: var(--bg-sidebar);
+  color: var(--fg);
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+  white-space: pre-wrap;
+}
