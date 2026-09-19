@@ -14,6 +14,7 @@ import {
 } from './assists'
 import { imageInputExtension } from './images'
 import { imageSizeMarkdown } from './markdown-image-ext'
+import { linkNavExtension } from './livePreview/linkNav'
 import { modeClassesExtension, typewriterExtension } from './modes'
 import { getPreferences } from '../preferences/store'
 import {
@@ -83,6 +84,7 @@ export function createExtensions(
       theme,
       baseDir: '',
       imageEpoch: 0,
+      linkEpoch: 0,
       mode: getPreferences().sourceMode ? 'source' : 'live',
       focusMode: getPreferences().focusMode,
       typewriterMode: getPreferences().typewriterMode
@@ -90,6 +92,8 @@ export function createExtensions(
     modeClassesExtension,
     typewriterExtension(),
     editingAssistsCompartment.of(editingAssistsExtension(assists)),
+    // P17: modifier-click navigation + hover tooltip for rendered links.
+    linkNavExtension,
     // Image paste/drop is core behavior — always on (Prec.high inside).
     imageInputExtension(callbacks.ensureSaved),
     themeCompartment.of(compartmentThemes[theme]),
@@ -136,6 +140,19 @@ export function bumpImageEpoch(view: EditorView): void {
   view.dispatch({
     effects: livePreviewConfigCompartment.reconfigure(
       livePreviewConfigFacet.of({ ...config, imageEpoch: config.imageEpoch + 1 })
+    )
+  })
+}
+
+/**
+ * P17: force a decoration rebuild after link-existence cache updates
+ * (folder watcher / save / window focus — 仿 bumpImageEpoch).
+ */
+export function bumpLinkEpoch(view: EditorView): void {
+  const config = getLivePreviewConfig(view.state)
+  view.dispatch({
+    effects: livePreviewConfigCompartment.reconfigure(
+      livePreviewConfigFacet.of({ ...config, linkEpoch: config.linkEpoch + 1 })
     )
   })
 }

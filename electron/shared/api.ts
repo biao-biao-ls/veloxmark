@@ -159,6 +159,18 @@ export interface SearchReplaceResult {
   error?: string
 }
 
+/** P17: result of classifying a markdown link href (link:resolve IPC). */
+export interface LinkResolveResult {
+  /** file/dir = local target that exists; anchor = in-doc #frag;
+   *  external = URL or other scheme; broken = local target missing. */
+  kind: 'file' | 'dir' | 'anchor' | 'external' | 'broken'
+  /** Absolute local path (file/dir/broken) or the URL (external). */
+  absPath?: string
+  exists?: boolean
+  /** Fragment without '#', present whenever the href carried one. */
+  anchor?: string
+}
+
 /** Shape of the object preload exposes as `window.api`. */
 export interface RendererApi {
   platform: string
@@ -179,6 +191,10 @@ export interface RendererApi {
   movePath(srcPath: string, destDir: string): Promise<string>
   pathExists(filePath: string): Promise<boolean>
   onFolderTree(callback: (tree: DirNode[]) => void): () => void
+  /** P17: classify a markdown link target against a document baseDir. */
+  resolveLink(baseDir: string, href: string): Promise<LinkResolveResult>
+  /** P17: open an external URL in the system browser (http/https only). */
+  openExternal(url: string): Promise<boolean>
   showSaveDialog(defaultPath?: string, filters?: FileFilter[]): Promise<string | null>
   readFile(filePath: string): Promise<string>
   writeFile(filePath: string, content: string): Promise<boolean>

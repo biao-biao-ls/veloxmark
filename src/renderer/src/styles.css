@@ -1055,6 +1055,40 @@ body {
   cursor: pointer;
 }
 
+/* P17: broken link target (existence cache said the path is missing) */
+.cm-md-link-broken {
+  color: #d1242f;
+  text-decoration: underline dashed;
+  text-decoration-color: #d1242f;
+}
+
+.theme-dark .cm-md-link-broken {
+  color: #f85149;
+  text-decoration-color: #f85149;
+}
+
+/* P17: hover tooltip for rendered links (editor-level singleton) */
+.vm-link-tooltip {
+  position: fixed;
+  z-index: 4000;
+  pointer-events: none;
+  max-width: 480px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  background: #1f2328;
+  color: #e6edf3;
+  border: 1px solid #30363d;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.theme-dark .vm-link-tooltip {
+  background: #0d1117;
+}
+
 /* lists */
 
 .cm-md-list {

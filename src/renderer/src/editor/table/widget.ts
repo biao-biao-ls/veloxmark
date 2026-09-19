@@ -540,6 +540,7 @@ function mountCellEditor(
           theme,
           baseDir: '',
           imageEpoch: 0,
+          linkEpoch: 0,
           mode: 'live',
           focusMode: false,
           typewriterMode: false

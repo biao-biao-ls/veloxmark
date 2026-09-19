@@ -6,6 +6,7 @@ import type {
   FileFilter,
   FolderScanOptions,
   ImageSaveOptions,
+  LinkResolveResult,
   OpenFileResult,
   PdfExportOptions,
   RecentFileItem,
@@ -42,6 +43,10 @@ const api: RendererApi = {
     ipcRenderer.invoke('path:move', srcPath, destDir),
   pathExists: (filePath: string): Promise<boolean> =>
     ipcRenderer.invoke('file:pathExists', filePath),
+  resolveLink: (baseDir: string, href: string): Promise<LinkResolveResult> =>
+    ipcRenderer.invoke('link:resolve', baseDir, href),
+  openExternal: (url: string): Promise<boolean> =>
+    ipcRenderer.invoke('shell:openExternal', url),
   onFolderTree: (callback: (tree: DirNode[]) => void): (() => void) => {
     const listener = (_e: unknown, tree: DirNode[]): void => callback(tree)
     ipcRenderer.on('folder:tree', listener)

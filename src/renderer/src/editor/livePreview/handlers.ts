@@ -28,6 +28,7 @@ import {
 import { TableWidget } from '../table/widget'
 import { getTableEdit } from '../table/state'
 import type { LivePreviewConfig } from './config'
+import { extractLinkUrl, isBrokenCached, isSkippableHref } from './linkNav'
 
 /**
  * Per-syntax decoration handlers.
@@ -67,6 +68,8 @@ const markStrong = Decoration.mark({ class: 'cm-md-strong' })
 const markDel = Decoration.mark({ class: 'cm-md-del' })
 const markCode = Decoration.mark({ class: 'cm-md-inline-code' })
 const markLink = Decoration.mark({ class: 'cm-md-link' })
+/** P17: dashed red — the cache said this relative target does not exist. */
+const markLinkBroken = Decoration.mark({ class: 'cm-md-link cm-md-link-broken' })
 
 function nodeText(state: EditorState, node: SyntaxNodeRef): string {
   return state.sliceDoc(node.from, node.to)
@@ -166,7 +169,17 @@ export function enterLink(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
   // P11: `[^id]` parses as a GFM reference-link when a definition line exists
   // — leave those to collectExtendedDecos (superscript widget, not a link).
   if (/^\[\^[^\]\s]+\]$/.test(nodeText(ctx.state, node))) return false
-  ctx.decos.push({ from: node.from, to: node.to, value: markLink })
+  // P17: broken-link decoration — only meaningful with a baseDir and only
+  // for path-like hrefs (external schemes / #anchors never mark broken).
+  let mark = markLink
+  const baseDir = ctx.config.baseDir
+  if (baseDir) {
+    const url = extractLinkUrl(ctx.state, node.node)
+    if (url && !isSkippableHref(url) && isBrokenCached(baseDir, url)) {
+      mark = markLinkBroken
+    }
+  }
+  ctx.decos.push({ from: node.from, to: node.to, value: mark })
   // P09: brackets/URL show only while the cursor/selection is within the span.
   if (!ctx.markTouched(node.from, node.to)) {
     for (let c = node.node.firstChild; c; c = c.nextSibling) {

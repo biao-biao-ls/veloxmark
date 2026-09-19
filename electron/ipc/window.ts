@@ -1,4 +1,4 @@
-import { clipboard, ipcMain, nativeImage, type BrowserWindow } from 'electron'
+import { clipboard, ipcMain, nativeImage, shell, type BrowserWindow } from 'electron'
 import { basename } from 'node:path'
 import type { AppWindowState } from '../shared/api'
 import type { GetWindow } from './index'
@@ -32,6 +32,12 @@ export function registerWindowIpc(getWindow: GetWindow): void {
   ipcMain.handle('clipboard:writeImage', (_e, dataUrl: string) => {
     const img = nativeImage.createFromDataURL(dataUrl)
     if (!img.isEmpty()) clipboard.write({ image: img })
+  })
+  // P17: external links — http/https only (mailto: & friends stay in-app tips).
+  ipcMain.handle('shell:openExternal', (_e, url: string) => {
+    if (!/^https?:\/\//i.test(String(url ?? ''))) return false
+    void shell.openExternal(url)
+    return true
   })
 
   // Renderer -> main state sync so the OS window title tracks the document.

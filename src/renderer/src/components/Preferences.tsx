@@ -319,6 +319,14 @@ export default function Preferences({ open, onClose }: Props): React.JSX.Element
           <label className="prefs-row prefs-check">
             <input
               type="checkbox"
+              checked={prefs.externalLinkConfirm}
+              onChange={(e) => setPreferences({ externalLinkConfirm: e.target.checked })}
+            />
+            <span>{t('prefs.externalLinkConfirm')}</span>
+          </label>
+          <label className="prefs-row prefs-check">
+            <input
+              type="checkbox"
               checked={prefs.restoreLastSession}
               onChange={(e) => setPreferences({ restoreLastSession: e.target.checked })}
             />

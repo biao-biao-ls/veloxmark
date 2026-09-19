@@ -18,28 +18,28 @@
 ## 功能需求
 
 ### 文档内与文档间跳转
-- [ ] Ctrl（macOS Cmd）+ 点击渲染态链接文本 → 解析目标：
+- [x] Ctrl（macOS Cmd）+ 点击渲染态链接文本 → 解析目标：
       - 相对/绝对路径指向 `.md`：打开该文档（工作区内走
         `openFileFromTree` 同款路径；工作区外的本地文件读入也允许）
       - `path.md#锚点`：打开后滚动到对应标题
       - 纯 `#锚点`：当前文档内跳转（标题 slug 匹配，GitHub 规则：
         小写、空格转 `-`、去标点、重复加 `-n` 后缀）
-  - 点击目录路径：若为目录则在侧栏文件树中定位（可选，低优）
-- [ ] 普通单击仍是"定位光标"（便于编辑链接文本/URL），不触发导航
-- [ ] hover 链接：浮动提示显示解析后的目标路径 + 锚点标题（有则显示）
+  - [ ] 点击目录路径：若为目录则在侧栏文件树中定位（可选，低优）
+- [x] 普通单击仍是"定位光标"（便于编辑链接文本/URL），不触发导航
+- [x] hover 链接：浮动提示显示解析后的目标路径 + 锚点标题（有则显示）
 
 ### 外部链接
-- [ ] Ctrl/Cmd+点击 `http(s)://` 链接：弹确认（P02 对话框，显示目标
+- [x] Ctrl/Cmd+点击 `http(s)://` 链接：弹确认（P02 对话框，显示目标
       URL）→ 确认后系统默认浏览器打开
-- [ ] 设置项：`externalLinkConfirm: boolean`（默认开），关闭后直接打开
-- [ ] `mailto:` 等其他协议首版仅显示提示，不打开
+- [x] 设置项：`externalLinkConfirm: boolean`（默认开），关闭后直接打开
+- [x] `mailto:` 等其他协议首版仅显示提示，不打开
 
 ### 失效链接标注
-- [ ] 指向不存在文件的相对路径链接：渲染态虚线下划线
+- [x] 指向不存在文件的相对路径链接：渲染态虚线下划线
       （`cm-md-link-broken`），hover 提示 "目标不存在"
-- [ ] 检测结果缓存 + epoch 失效（仿 `imageEpoch` 模式）：文件 watcher
+- [x] 检测结果缓存 + epoch 失效（仿 `imageEpoch` 模式）：文件 watcher
       （P07）推送与保存文档时 bump epoch 重检
-- [ ] 仅在文件夹工作区打开时启用检测（无 baseDir 时跳过）
+- [x] 仅在文件夹工作区打开时启用检测（无 baseDir 时跳过）
 
 ### 链接目标编辑（低优）
 - [ ] 光标在链接内时（P09 已显示完整标记）：浮动小按钮 "打开" / "编辑
@@ -88,3 +88,58 @@
 - Wiki 风格 `[[双链]]` 语法、反向链接面板
 - 全库链接图谱、链接自动重命名联动（改文件名批量改引用）
 - PDF/HTML 导出中链接策略变更（导出保持原样 href，由浏览器处理）
+
+---
+
+## 实施状态（已完成）
+
+实施分支：`feat/P11-P26-scenarios`。e2e：`scripts/cdp-p17.mjs`（端口 9234，
+30 项全部 PASS）；单测 73/73；冒烟 5/5；typecheck 通过。
+
+**核心实现**
+
+- **IPC**：`link:resolve`（`electron/ipc/files.ts`，主进程完成
+  percent-decode、`..` 归一化、`stat` 存在性探测，返回
+  `LinkResolveResult{kind,absPath,exists,anchor}`）；`shell:openExternal`
+  （`electron/ipc/window.ts`，仅放行 `http(s)://`，其余协议返回 false）。
+  类型/预加载同步扩展 `api.ts` / `preload.ts`。
+- **slug**：`outline/extract.ts` 新增 `slugify`（GitHub 规则：小写、去
+  标点、空白逐字符转 `-`，CJK 保留）与 `findHeadingBySlug`（文档序重复
+  标题 `-n` 后缀消歧）。
+- **导航**：新模块 `editor/livePreview/linkNav.ts`——
+  `EditorView.domEventHandlers` 捕获 mousedown（darwin `metaKey`，其余
+  `ctrlKey`，经 `window.api.platform` 判定），语法树向上找
+  `Link/URL/Autolink` 取 href，经 nav-bus 回调 App 的
+  `resolveAndNavigate`：anchor → `findHeadingBySlug`+`goToHeading`；
+  file → `openFileByPath`（P12 dirty 闸门原样保留）后按 `#anchor` 二跳；
+  external → 非 http(s) 提示，否则按 `externalLinkConfirm` 偏好弹
+  P02 confirm（消息内嵌目标 URL）→ `openExternal`；broken → alert。
+  普通单击不拦截（handler 仅在修饰键命中时 `return true`）。
+- **失效标注**：渲染进程 `Map<'${baseDir}\n${href}', broken>` 缓存
+  （`rememberLinkStatus` 仅在状态翻转时返回 true）；`LivePreviewConfig`
+  增加 `linkEpoch`，翻转时 `bumpLinkEpoch`（仿 `bumpImageEpoch`）触发
+  装饰重建；`handlers.ts` `enterLink` 按缓存改用
+  `cm-md-link cm-md-link-broken` 装饰（scheme/`#anchor` 永不标破）。
+  重检触发：打开/切换文件、`folder:tree` watcher 事件、autosave 落盘、
+  窗口 focus，统一 200ms 防抖。
+- **hover 提示**：编辑器级单例 `.vm-link-tooltip`（懒创建、
+  `pointer-events:none`），mousemove 命中 `.cm-md-link` span 时显示；
+  broken 即时显示本地化文案，否则异步 `resolveLink` 补全
+  绝对路径 + 锚点标题（当前文档大纲或目标文件大纲解析）。
+- **偏好**：`externalLinkConfirm`（默认 true，sanitize 兜底）+
+  Preferences 行为区复选框 + zh/en 文案（`prefs.externalLinkConfirm`、
+  `link.*` 四键）。
+
+**e2e 纪律（沿用 P16 经验）**
+
+- `window.api` contextBridge 冻结 → `openExternal` 走
+  `__veloxP17.setOpenExternalImpl` 产品接缝；捕获数组挂在独立全局
+  `__veloxP17Capture`（App 重渲染会整体重建 `__veloxP17` 钩子对象）。
+- P09 触发态：未触碰链接的 URL 半段被装饰隐藏，e2e 以可见标签文本命中
+  span，光标位置断言放宽至链接区间 ±1。
+
+**低优未做（如实记录）**
+
+- 「链接目标编辑」浮动按钮（打开/编辑 URL）——低优，未实现。
+- 点击目录路径在侧栏文件树定位——需求标注"可选，低优"，未实现；
+  `LinkResolveResult.kind==='dir'` 已由 IPC 返回，后续可直接接线。

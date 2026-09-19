@@ -183,6 +183,7 @@ export const EN: Record<string, string> = {
   'prefs.langZh': '中文',
   'prefs.langEn': 'English',
   'prefs.showStatusBar': 'Show status bar',
+  'prefs.externalLinkConfirm': 'Confirm before opening external links',
 
   // ---- outline / sidebar -----------------------------------------------------
   'outline.empty': 'No headings yet',
@@ -228,5 +229,11 @@ export const EN: Record<string, string> = {
   'mermaid.errorLabel': 'Mermaid error',
   'mermaid.jumpToSource': 'Jump to source',
   'mermaid.copyImage': 'Copy Image',
-  'mermaid.png': 'PNG'
+  'mermaid.png': 'PNG',
+
+  // ---- P17 link navigation ---------------------------------------------------
+  'link.openExternalTitle': 'Open External Link',
+  'link.openExternalMsg': 'Open this link in your browser?\n{url}',
+  'link.brokenTip': 'Target does not exist',
+  'link.otherProtocol': 'Only http(s) links can be opened'
 }

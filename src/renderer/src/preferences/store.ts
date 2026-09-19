@@ -70,6 +70,9 @@ export interface Preferences {
   language: LanguagePref
   /** Bottom status bar (cursor / word count / mode lamps). */
   showStatusBar: boolean
+  // ---- link navigation (P17) -------------------------------------------------
+  /** Confirm before shell.openExternal on http(s) links (default on). */
+  externalLinkConfirm: boolean
 }
 
 export interface SessionState {
@@ -115,7 +118,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   autoSaveIntervalMin: 5,
   crashRecoveryEnabled: true,
   language: 'system',
-  showStatusBar: true
+  showStatusBar: true,
+  externalLinkConfirm: true
 }
 
 const DEFAULT_SESSION: SessionState = {
@@ -226,7 +230,8 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
     autoSaveIntervalMin: num(p.autoSaveIntervalMin, 5, 1, 60),
     crashRecoveryEnabled: p.crashRecoveryEnabled !== false,
     language: p.language === 'zh' || p.language === 'en' ? p.language : 'system',
-    showStatusBar: p.showStatusBar !== false
+    showStatusBar: p.showStatusBar !== false,
+    externalLinkConfirm: p.externalLinkConfirm !== false
   }
 }
 

@@ -4,7 +4,16 @@ import { EditorState } from '@codemirror/state'
 import { ensureSyntaxTree } from '@codemirror/language'
 import { markdown } from '@codemirror/lang-markdown'
 import { buildDecorations } from './editor/livePreview/build'
-import { DEFAULT_LIVE_PREVIEW_CONFIG } from './editor/livePreview/config'
+import { DEFAULT_LIVE_PREVIEW_CONFIG, getLivePreviewConfig } from './editor/livePreview/config'
+import {
+  collectLinkHrefs,
+  getBrokenHrefs as getBrokenHrefsFromCache,
+  invalidateLinkTipCache,
+  isSkippableHref,
+  rememberLinkStatus,
+  setLinkNavHandler,
+  setLinkTipResolver
+} from './editor/livePreview/linkNav'
 import Outline from './components/Outline'
 import FileTree from './components/FileTree'
 import TreeMenu from './components/TreeMenu'
@@ -17,10 +26,10 @@ import ListPickDialog from './components/ListPickDialog'
 import MermaidLightbox from './components/MermaidLightbox'
 import { DialogHost, dialog } from './components/Dialog'
 import { SearchIcon } from './components/Icons'
-import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch, updateLivePreviewConfig } from './editor/setup'
+import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch, bumpLinkEpoch, updateLivePreviewConfig } from './editor/setup'
 import { invalidateImageCache, setMermaidExportIo } from './editor/widgets'
 import { readEditingAssistsConfig } from './editor/assists'
-import { extractOutline, type OutlineItem } from './outline/extract'
+import { extractOutline, findHeadingBySlug, type OutlineItem } from './outline/extract'
 import { MERMAID_TEMPLATES, isCursorInMermaidFence } from './editor/mermaidTemplates'
 import { getWelcomeMd, WELCOME_MD_EN, WELCOME_MD_ZH } from './content'
 import { getLang, resolveLang, setLang, t, useTranslation } from './i18n'
@@ -40,7 +49,7 @@ import {
   setPreferences
 } from './preferences/store'
 import type { SidebarMode } from './preferences/store'
-import type { SearchOptions, SearchReplaceRequest, SearchReplaceResult } from '../../../electron/shared/api'
+import type { LinkResolveResult, SearchOptions, SearchReplaceRequest, SearchReplaceResult } from '../../../electron/shared/api'
 import type { RecentItem } from './commands'
 
 // Handle for CDP smoke tests (scripts/cdp-p05.mjs) — mirrors the __veloxPrefs
@@ -105,6 +114,16 @@ declare global {
       isCursorInMermaidFence: () => boolean
       setExportIo: (io: Parameters<typeof setMermaidExportIo>[0]) => void
     } | null
+    /** P17 e2e handle: link resolve / navigate / revalidate / openExternal seam. */
+    __veloxP17: {
+      resolve: (href: string, baseDir?: string) => Promise<LinkResolveResult>
+      navigate: (href: string) => Promise<void>
+      revalidate: () => Promise<void>
+      getBrokenHrefs: () => string[]
+      getLinkEpoch: () => number
+      setExternalConfirm: (v: boolean) => void
+      setOpenExternalImpl: (fn: ((url: string) => Promise<boolean>) | null) => void
+    } | null
   }
 }
 window.__veloxEditor = null
@@ -113,6 +132,7 @@ window.__veloxP13 = null
 window.__veloxP14 = null
 window.__veloxP15 = null
 window.__veloxP16 = null
+window.__veloxP17 = null
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -800,6 +820,200 @@ export default function App(): React.JSX.Element {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [insertMermaidTemplate, openMermaidInsert])
+
+  // ---- P17: link navigation ---------------------------------------------------
+  // openExternal goes through a seam so e2e can capture URLs instead of
+  // launching the real browser (contextBridge window.api is frozen).
+  const openExternalImplRef = useRef<((url: string) => Promise<boolean>) | null>(null)
+
+  /** Scroll to the heading whose GitHub slug matches `anchor`; false if none. */
+  const jumpToAnchor = useCallback(
+    (anchor: string): boolean => {
+      const view = viewRef.current
+      if (!view || !anchor) return false
+      // The target document may have just loaded — force a parse before lookup.
+      ensureSyntaxTree(view.state, view.state.doc.length, 5000)
+      const hit = findHeadingBySlug(extractOutline(view.state), anchor)
+      if (!hit) return false
+      goToHeading(hit.pos)
+      return true
+    },
+    [goToHeading, viewRef]
+  )
+
+  const resolveAndNavigate = useCallback(
+    async (href: string) => {
+      const view = viewRef.current
+      if (!view) return
+      const baseDir = getLivePreviewConfig(view.state).baseDir
+      let res: LinkResolveResult
+      try {
+        res = await window.api.resolveLink(baseDir, href)
+      } catch {
+        return
+      }
+      // Keep the existence cache warm; decorations rebuild only on a flip.
+      if (baseDir && !isSkippableHref(href)) {
+        if (rememberLinkStatus(baseDir, href, res.kind !== 'broken')) {
+          invalidateLinkTipCache()
+          bumpLinkEpoch(view)
+        }
+      }
+      if (res.kind === 'anchor') {
+        jumpToAnchor(res.anchor ?? href.replace(/^#/, ''))
+        return
+      }
+      if (res.kind === 'file') {
+        // Dirty gate intact: openFileByPath runs the P12 confirm flow.
+        const ok = await fileOps.openFileByPath(res.absPath ?? href)
+        if (!ok) return
+        if (res.anchor) jumpToAnchor(res.anchor)
+        return
+      }
+      if (res.kind === 'external') {
+        const url = res.absPath ?? href
+        if (!/^https?:\/\//i.test(url)) {
+          await dialog.alert({ message: t('link.otherProtocol') })
+          return
+        }
+        if (getPreferences().externalLinkConfirm) {
+          const yes = await dialog.confirm({
+            title: t('link.openExternalTitle'),
+            message: t('link.openExternalMsg', { url })
+          })
+          if (!yes) return
+        }
+        const impl = openExternalImplRef.current
+        if (impl) await impl(url)
+        else await window.api.openExternal(url)
+        return
+      }
+      if (res.kind === 'broken') {
+        await dialog.alert({ message: t('link.brokenTip') })
+        return
+      }
+      // kind === 'dir': sidebar locate is a 低优 item — not implemented in v1.
+    },
+    [fileOps, jumpToAnchor, viewRef]
+  )
+
+  /** Re-resolve every path-like href; bump linkEpoch when statuses flip. */
+  const revalidateLinks = useCallback(async () => {
+    const view = viewRef.current
+    if (!view) return
+    const baseDir = getLivePreviewConfig(view.state).baseDir
+    if (!baseDir) return
+    const hrefs = collectLinkHrefs(view.state).filter((h) => !isSkippableHref(h))
+    let changed = false
+    await Promise.all(
+      hrefs.map(async (href) => {
+        try {
+          const res = await window.api.resolveLink(baseDir, href)
+          if (rememberLinkStatus(baseDir, href, res.kind !== 'broken')) changed = true
+        } catch {
+          /* transient IPC failure — keep the previous cache entry */
+        }
+      })
+    )
+    if (changed) {
+      invalidateLinkTipCache()
+      bumpLinkEpoch(view)
+    }
+  }, [viewRef])
+
+  const revalidateTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const scheduleRevalidate = useCallback(() => {
+    clearTimeout(revalidateTimerRef.current)
+    revalidateTimerRef.current = setTimeout(() => {
+      void revalidateLinks()
+    }, 200)
+  }, [revalidateLinks])
+
+  // Navigation bus: linkNavExtension mousedown → resolveAndNavigate.
+  useEffect(() => {
+    setLinkNavHandler((href) => {
+      void resolveAndNavigate(href)
+    })
+    return () => setLinkNavHandler(null)
+  }, [resolveAndNavigate])
+
+  // Hover tips: anchor slugs resolve to heading text via the current outline.
+  useEffect(() => {
+    setLinkTipResolver(async (href, baseDir) => {
+      try {
+        const res = await window.api.resolveLink(baseDir, href)
+        if (res.kind === 'external') return res.absPath ?? href
+        if (res.kind === 'broken') return t('link.brokenTip')
+        if (res.kind === 'anchor') {
+          const view = viewRef.current
+          if (!view) return `#${res.anchor ?? ''}`
+          ensureSyntaxTree(view.state, view.state.doc.length, 5000)
+          const hit = findHeadingBySlug(extractOutline(view.state), res.anchor ?? '')
+          return hit ? `#${res.anchor} — ${hit.text}` : `#${res.anchor ?? ''}`
+        }
+        if (res.kind === 'file' || res.kind === 'dir') {
+          let text = res.absPath ?? href
+          if (res.anchor) {
+            text += ` #${res.anchor}`
+            try {
+              const content = await window.api.readFile(res.absPath ?? '')
+              const state = EditorState.create({ doc: content, extensions: [markdown()] })
+              ensureSyntaxTree(state, state.doc.length, 5000)
+              const hit = findHeadingBySlug(extractOutline(state), res.anchor)
+              if (hit) text += ` — ${hit.text}`
+            } catch {
+              /* unreadable target — path alone is enough */
+            }
+          }
+          return text
+        }
+      } catch {
+        /* fall through */
+      }
+      return href
+    })
+    return () => setLinkTipResolver(null)
+  }, [viewRef])
+
+  // Revalidation triggers: open/switch file, folder watcher, autosave, focus.
+  useEffect(() => {
+    scheduleRevalidate()
+  }, [filePath, scheduleRevalidate])
+  useEffect(() => window.api.onFolderTree(() => scheduleRevalidate()), [scheduleRevalidate])
+  useEffect(() => {
+    if (autoSave.lastAutoSaveAt) scheduleRevalidate()
+  }, [autoSave.lastAutoSaveAt, scheduleRevalidate])
+  useEffect(() => {
+    const onFocus = (): void => scheduleRevalidate()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [scheduleRevalidate])
+
+  // P17 e2e handle.
+  useEffect(() => {
+    window.__veloxP17 = {
+      resolve: (href, baseDir) => {
+        const view = viewRef.current
+        const bd = baseDir ?? (view ? getLivePreviewConfig(view.state).baseDir : '')
+        return window.api.resolveLink(bd, href)
+      },
+      navigate: (href) => resolveAndNavigate(href),
+      revalidate: () => revalidateLinks(),
+      getBrokenHrefs: () => {
+        const view = viewRef.current
+        const bd = view ? getLivePreviewConfig(view.state).baseDir : ''
+        return getBrokenHrefsFromCache(bd)
+      },
+      getLinkEpoch: () => {
+        const view = viewRef.current
+        return view ? getLivePreviewConfig(view.state).linkEpoch : -1
+      },
+      setExternalConfirm: (v) => setPreferences({ externalLinkConfirm: v }),
+      setOpenExternalImpl: (fn) => {
+        openExternalImplRef.current = fn
+      }
+    }
+  }, [resolveAndNavigate, revalidateLinks, viewRef])
 
   const { menus, formatShortcut } = useMenus({
     viewRef,

@@ -17,6 +17,11 @@ export interface LivePreviewConfig {
    * rebuilds and ImageWidgets re-resolve their srcs (mtime check / reload).
    */
   imageEpoch: number
+  /**
+   * P17: bumped after link-existence revalidation (仿 imageEpoch) so the
+   * decoration StateField rebuilds and links pick up cm-md-link-broken.
+   */
+  linkEpoch: number
   /** P08: 'source' disables all live-preview decorations (raw Markdown view). */
   mode: 'live' | 'source'
   /** P08: dim every top-level block the cursor is not in. */
@@ -29,6 +34,7 @@ export const DEFAULT_LIVE_PREVIEW_CONFIG: LivePreviewConfig = {
   theme: 'light',
   baseDir: '',
   imageEpoch: 0,
+  linkEpoch: 0,
   mode: 'live',
   focusMode: false,
   typewriterMode: false

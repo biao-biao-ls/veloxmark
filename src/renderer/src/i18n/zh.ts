@@ -180,6 +180,7 @@ export const ZH: Record<string, string> = {
   'prefs.langZh': '中文',
   'prefs.langEn': 'English',
   'prefs.showStatusBar': '显示状态栏',
+  'prefs.externalLinkConfirm': '打开外部链接前确认',
 
   // ---- outline / sidebar -----------------------------------------------------
   'outline.empty': '暂无标题',
@@ -225,5 +226,11 @@ export const ZH: Record<string, string> = {
   'mermaid.errorLabel': 'Mermaid 错误',
   'mermaid.jumpToSource': '跳到源码',
   'mermaid.copyImage': '复制图片',
-  'mermaid.png': 'PNG'
+  'mermaid.png': 'PNG',
+
+  // ---- P17 link navigation ---------------------------------------------------
+  'link.openExternalTitle': '打开外部链接',
+  'link.openExternalMsg': '在浏览器中打开此链接？\n{url}',
+  'link.brokenTip': '目标不存在',
+  'link.otherProtocol': '仅支持打开 http(s) 链接'
 }

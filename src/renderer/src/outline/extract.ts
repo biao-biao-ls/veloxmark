@@ -43,3 +43,34 @@ export function extractOutline(state: EditorState): OutlineItem[] {
   })
   return items
 }
+
+/**
+ * P17: GitHub-style heading slug — lowercase, drop punctuation, each
+ * whitespace run character becomes '-' (CJK passes through untouched).
+ */
+export function slugify(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s\-_]/gu, '')
+    .replace(/\s/g, '-')
+}
+
+/**
+ * P17: find the heading a `#anchor` refers to. Duplicate headings follow the
+ * GitHub rule: first occurrence keeps the bare slug, later ones get `-1`,
+ * `-2`, … suffixes in document order.
+ */
+export function findHeadingBySlug(items: OutlineItem[], rawSlug: string): OutlineItem | null {
+  const target = rawSlug.replace(/^#/, '').toLowerCase()
+  if (!target) return null
+  const seen = new Map<string, number>()
+  for (const item of items) {
+    const base = slugify(item.text)
+    const n = seen.get(base) ?? 0
+    seen.set(base, n + 1)
+    const key = n === 0 ? base : `${base}-${n}`
+    if (key === target) return item
+  }
+  return null
+}
