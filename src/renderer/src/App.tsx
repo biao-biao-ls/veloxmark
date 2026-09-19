@@ -40,6 +40,8 @@ import {
 } from './components/TableInsertDialog'
 import { insertTableAtCursor, convertSelectionAtCursor, buildTableMarkdown } from './editor/table/insert'
 import { sniffDelimiter } from './editor/table/ops'
+import { formatMarkdown } from './editor/format'
+import { undo } from '@codemirror/commands'
 import MermaidLightbox from './components/MermaidLightbox'
 import { DialogHost, dialog } from './components/Dialog'
 import { SearchIcon } from './components/Icons'
@@ -203,6 +205,19 @@ declare global {
       getDialogForm: () => TableInsertForm
       confirm: () => void
     } | null
+    /** P23 e2e handle: format command + format-on-save seams. */
+    __veloxP23: {
+      getDoc: () => string
+      setSelection: (from: number, to?: number) => void
+      loadDoc: (text: string, path: string | null) => void
+      format: () => { changed: number; warnings: string[] }
+      undo: () => boolean
+      getToast: () => string | null
+      setFormatOnSave: (v: boolean) => void
+      getFormatOnSave: () => boolean
+      saveFile: () => Promise<boolean>
+      getFilePath: () => string | null
+    } | null
   }
 }
 window.__veloxEditor = null
@@ -217,6 +232,7 @@ window.__veloxP19 = null
 window.__veloxP20 = null
 window.__veloxP21 = null
 window.__veloxP22 = null
+window.__veloxP23 = null
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -1141,6 +1157,69 @@ export default function App(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openTableInsert, confirmTableDialog, patchTableForm])
 
+  // ---- P23: format document ---------------------------------------------------
+  const lastFormatRef = useRef<{ changed: number; warnings: string[] }>({
+    changed: 0,
+    warnings: []
+  })
+
+  const formatDocument = useCallback(() => {
+    const view = viewRef.current
+    if (!view) return
+    const before = view.state.doc.toString()
+    const { text, warnings, changed } = formatMarkdown(before)
+    lastFormatRef.current = { changed, warnings }
+    if (text === before) return // silent when nothing to change
+    // Best-effort cursor keep: map by line number, clamp into the new doc.
+    const oldLine = view.state.doc.lineAt(view.state.selection.main.from).number
+    const newLines = text.split('\n')
+    const targetLine = Math.min(oldLine, Math.max(1, newLines.length))
+    let pos = 0
+    for (let i = 0; i < targetLine - 1 && i < newLines.length; i++) pos += newLines[i].length + 1
+    pos = Math.min(pos, text.length)
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: text },
+      selection: { anchor: pos },
+      userEvent: 'format',
+      scrollIntoView: true
+    })
+    if (warnings.length > 0) {
+      showToast(t('format.changedWarn', { n: changed, w: warnings.length }))
+    } else {
+      showToast(t('format.changed', { n: changed }))
+    }
+  }, [showToast])
+
+  // P23 e2e handle
+  useEffect(() => {
+    window.__veloxP23 = {
+      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
+      setSelection: (from, to) => {
+        const view = viewRef.current
+        if (!view) return
+        const len = view.state.doc.length
+        view.dispatch({
+          selection: { anchor: Math.min(from, len), head: Math.min(to ?? from, len) }
+        })
+      },
+      loadDoc: (text, path) => fileOps.loadContent(text, path),
+      format: () => {
+        formatDocument()
+        return lastFormatRef.current
+      },
+      undo: () => {
+        const view = viewRef.current
+        return view ? undo(view) : false
+      },
+      getToast: () => toast,
+      setFormatOnSave: (v) => setPreferences({ formatOnSave: v }),
+      getFormatOnSave: () => getPreferences().formatOnSave,
+      saveFile: () => fileOps.saveFile(),
+      getFilePath: () => fileOps.filePath
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formatDocument, fileOps, toast])
+
   // ---- P17: link navigation ---------------------------------------------------
   // openExternal goes through a seam so e2e can capture URLs instead of
   // launching the real browser (contextBridge window.api is frozen).
@@ -1465,6 +1544,7 @@ export default function App(): React.JSX.Element {
     openMermaidInsert,
     openCalloutInsert,
     openTableInsert,
+    formatDocument,
     hasSelection: () => {
       const v = viewRef.current
       return !!v && v.state.selection.main.from !== v.state.selection.main.to

@@ -3,7 +3,8 @@ import { EditorView } from '@codemirror/view'
 import { updateLivePreviewConfig } from '../editor/setup'
 import { dialog } from '../components/Dialog'
 import { WELCOME_MD } from '../content'
-import { addRecentFile, patchSession } from '../preferences/store'
+import { addRecentFile, getPreferences, patchSession } from '../preferences/store'
+import { formatMarkdown } from '../editor/format'
 import { t } from '../i18n'
 
 export type SidebarMode = 'outline' | 'files' | 'search'
@@ -88,11 +89,29 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRe
     [viewRef, syncAppState, setBaseDir, updateOutline]
   )
 
+  /** P23: apply formatMarkdown in-editor before a save when the pref is on. */
+  const maybeFormatForSave = useCallback(() => {
+    const view = viewRef.current
+    if (!view) return
+    if (!getPreferences().formatOnSave) return
+    const before = view.state.doc.toString()
+    const { text } = formatMarkdown(before)
+    if (text === before) return
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: text },
+      selection: {
+        anchor: Math.min(view.state.selection.main.from, text.length)
+      },
+      userEvent: 'format'
+    })
+  }, [viewRef])
+
   const saveFileAs = useCallback(async (): Promise<boolean> => {
     const view = viewRef.current
     if (!view) return false
     const target = await window.api.showSaveDialog(filePathRef.current ?? 'untitled.md')
     if (!target) return false
+    maybeFormatForSave()
     const content = view.state.doc.toString()
     await window.api.writeFile(target, content)
     savedContentRef.current = content
@@ -108,13 +127,14 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRe
     addRecentFile(target)
     patchSession({ lastFilePath: target })
     return true
-  }, [viewRef, syncAppState, setBaseDir])
+  }, [viewRef, syncAppState, setBaseDir, maybeFormatForSave])
 
   /** Save the current document; false when a Save As dialog is cancelled. */
   const saveFile = useCallback(async (): Promise<boolean> => {
     const view = viewRef.current
     if (!view) return false
     if (!filePathRef.current) return saveFileAs()
+    maybeFormatForSave()
     const content = view.state.doc.toString()
     await window.api.writeFile(filePathRef.current, content)
     savedContentRef.current = content
@@ -123,7 +143,7 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRe
     syncAppState(filePathRef.current, false)
     void window.api.draftDiscard(filePathRef.current)
     return true
-  }, [viewRef, saveFileAs, syncAppState])
+  }, [viewRef, saveFileAs, syncAppState, maybeFormatForSave])
 
   /**
    * P12 three-option gate before discarding dirty content (open/new/switch).

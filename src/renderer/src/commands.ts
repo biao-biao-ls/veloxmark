@@ -68,6 +68,8 @@ export interface CommandOps {
   openTableInsert: (mode: 'insert' | 'convert') => void
   /** P22: whether the editor has a non-empty selection (menu enablement). */
   hasSelection: () => boolean
+  /** P23: format the whole document (single undoable transaction). */
+  formatDocument: () => void
   /** P20: transient status-bar message (auto-clears in the App). */
   showToast: (message: string) => void
 }
@@ -257,6 +259,13 @@ export function buildCommands(ops: CommandOps): Command[] {
         if (v) openSearchPanel(v)
       }
     },
+    {
+      id: 'formatDocument',
+      label: 'cmd.formatDocument',
+      shortcut: 'Shift+Alt+F',
+      bindGlobal: true,
+      run: () => ops.formatDocument()
+    },
     // ---- View --------------------------------------------------------------
     { id: 'toggleOutline', label: 'cmd.toggleOutline', run: () => ops.toggleOutline() },
     {
@@ -383,6 +392,7 @@ const MENU_LAYOUT: { label: string; items: LayoutItem[] }[] = [
       'selectAll',
       { separator: true },
       'find',
+      'formatDocument',
       { separator: true },
       'exportSelectionHtml',
       { separator: true },
@@ -481,19 +491,25 @@ function buildRecentSubmenu(
 export function matchGlobalShortcut(e: KeyboardEvent, commands: Command[]): Command | null {
   const k = e.key.toLowerCase()
   const hasChordMod = e.ctrlKey || e.metaKey || e.altKey
+  // P23: Option+F on macOS yields 'ƒ' — also match the physical KeyF code.
+  const codeKey = e.code && /^Key[A-Z]$/.test(e.code) ? e.code.slice(3).toLowerCase() : null
   for (const cmd of commands) {
     if (!cmd.bindGlobal || !cmd.shortcut) continue
     const parts = cmd.shortcut.split('+')
     const key = parts[parts.length - 1].toLowerCase()
     const needShift = parts.includes('Shift')
     const needCtrl = parts.includes('Ctrl')
+    const needAlt = parts.includes('Alt')
     if (needCtrl) {
       if (!(e.ctrlKey || e.metaKey) || needShift !== e.shiftKey) continue
+    } else if (needAlt) {
+      // P23 Shift+Alt+F — no Ctrl/Cmd, Alt required, Shift exact.
+      if (!e.altKey || e.ctrlKey || e.metaKey || needShift !== e.shiftKey) continue
     } else {
       // Bare shortcuts are function keys only — reject any modifier.
       if (hasChordMod || e.shiftKey || !/^f\d{1,2}$/.test(key)) continue
     }
-    if (key === k) return cmd
+    if (key === k || (codeKey && key === codeKey)) return cmd
   }
   return null
 }

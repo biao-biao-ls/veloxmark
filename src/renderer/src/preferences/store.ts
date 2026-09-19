@@ -75,6 +75,9 @@ export interface Preferences {
   // ---- link navigation (P17) -------------------------------------------------
   /** Confirm before shell.openExternal on http(s) links (default on). */
   externalLinkConfirm: boolean
+  // ---- P23 document formatting ---------------------------------------------
+  /** Run formatMarkdown before every save (default off). */
+  formatOnSave: boolean
 }
 
 export interface SessionState {
@@ -124,7 +127,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   crashRecoveryEnabled: true,
   language: 'system',
   showStatusBar: true,
-  externalLinkConfirm: true
+  externalLinkConfirm: true,
+  formatOnSave: false
 }
 
 const DEFAULT_SESSION: SessionState = {
@@ -227,6 +231,7 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
       : [...DEFAULT_PREFERENCES.folderIgnoreNames],
     showHiddenFiles: p.showHiddenFiles === true,
     focusMode: p.focusMode === true,
+    formatOnSave: p.formatOnSave === true,
     typewriterMode: p.typewriterMode === true,
     sourceMode: p.sourceMode === true,
     autoSaveMode:

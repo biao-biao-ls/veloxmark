@@ -301,6 +301,14 @@ export default function Preferences({ open, onClose }: Props): React.JSX.Element
             />
             <span>{t('prefs.crashRecovery')}</span>
           </label>
+          <label className="prefs-row prefs-check">
+            <input
+              type="checkbox"
+              checked={prefs.formatOnSave}
+              onChange={(e) => setPreferences({ formatOnSave: e.target.checked })}
+            />
+            <span>{t('prefs.formatOnSave')}</span>
+          </label>
         </div>
 
         <div className="prefs-section">
