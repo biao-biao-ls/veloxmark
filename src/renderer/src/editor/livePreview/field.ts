@@ -4,6 +4,7 @@ import { Decoration, DecorationSet, EditorView } from '@codemirror/view'
 import { tableEditField } from '../table/state'
 import { buildDecorations } from './build'
 import { getLivePreviewConfig } from './config'
+import { foldField } from './fold'
 
 /**
  * Live-preview decorations.
@@ -30,7 +31,17 @@ export const livePreviewField = StateField.define<DecorationSet>({
     // Optional field access: DOM-less snapshot states may omit tableEditField.
     const tableEditChanged =
       tr.state.field(tableEditField, false) !== tr.startState.field(tableEditField, false)
-    if (tr.docChanged || tr.selection || treeChanged || configChanged || tableEditChanged) {
+    // P18: fold toggles arrive as effect-only transactions (no doc/selection
+    // change) — rebuild whenever the fold set identity changes.
+    const foldChanged = tr.state.field(foldField, false) !== tr.startState.field(foldField, false)
+    if (
+      tr.docChanged ||
+      tr.selection ||
+      treeChanged ||
+      configChanged ||
+      tableEditChanged ||
+      foldChanged
+    ) {
       return buildDecorations(tr.state, getLivePreviewConfig(tr.state))
     }
     return value.map(tr.changes)

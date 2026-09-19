@@ -6,6 +6,15 @@ import { markdown } from '@codemirror/lang-markdown'
 import { buildDecorations } from './editor/livePreview/build'
 import { DEFAULT_LIVE_PREVIEW_CONFIG, getLivePreviewConfig } from './editor/livePreview/config'
 import {
+  collectFoldRanges,
+  expandFolds,
+  foldKey,
+  getFoldedKeys,
+  headingAtLine,
+  restoreFolds,
+  toggleFold
+} from './editor/livePreview/fold'
+import {
   collectLinkHrefs,
   getBrokenHrefs as getBrokenHrefsFromCache,
   invalidateLinkTipCache,
@@ -124,6 +133,17 @@ declare global {
       setExternalConfirm: (v: boolean) => void
       setOpenExternalImpl: (fn: ((url: string) => Promise<boolean>) | null) => void
     } | null
+    /** P18 e2e handle: heading folds — keys, ranges, restore, bench. */
+    __veloxP18: {
+      getFoldedKeys: () => string[]
+      toggleKey: (key: string) => void
+      getRanges: () => { key: string; from: number; to: number; lines: number }[]
+      getHeadingKeys: () => string[]
+      restoreFromSession: () => void
+      restoreKeys: (keys: string[]) => void
+      getSessionFolds: () => string[]
+      benchToggle: (key: string, n?: number) => { ms: number; avg: number }
+    } | null
   }
 }
 window.__veloxEditor = null
@@ -133,6 +153,7 @@ window.__veloxP14 = null
 window.__veloxP15 = null
 window.__veloxP16 = null
 window.__veloxP17 = null
+window.__veloxP18 = null
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -195,6 +216,60 @@ export default function App(): React.JSX.Element {
 
   const fileOps = useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRef })
   const { dirty, setDirty, filePath, filePathRef, syncAppState, savedContentRef } = fileOps
+
+  // ---- P18: heading folds ------------------------------------------------------
+  const [foldedKeys, setFoldedKeys] = useState<ReadonlySet<string>>(() => new Set())
+  const foldSigRef = useRef<string>('')
+
+  /**
+   * Mirror the editor fold set into React (Outline triangles) and persist it
+   * under SessionState.headingFolds[filePath]. Signature-gated so frequent
+   * selection transactions stay cheap and do not spam localStorage.
+   */
+  const syncFoldedKeys = useCallback(() => {
+    const view = viewRef.current
+    if (!view) return
+    const keys = getFoldedKeys(view.state)
+    const sig = [...keys].sort().join('\n')
+    if (sig === foldSigRef.current) return
+    foldSigRef.current = sig
+    setFoldedKeys(new Set(keys))
+    // Programmatic document replacement (file open/switch) drops the outgoing
+    // file's keys inside foldField — that is not a user unfold. Persisting it
+    // would wipe the target path's session folds mid-switch, so loads skip
+    // the session write (see useFileOps suppressDirtyRef).
+    if (fileOps.suppressDirtyRef.current) return
+    const path = filePathRef.current
+    if (!path) return
+    const have = new Set(extractOutline(view.state).map((i) => foldKey(i.level, i.text)))
+    const valid = [...keys].filter((k) => have.has(k))
+    const all = getSession().headingFolds ?? {}
+    patchSession({ headingFolds: { ...all, [path]: valid } })
+  }, [viewRef, filePathRef, fileOps.suppressDirtyRef])
+  const syncFoldedKeysRef = useRef(syncFoldedKeys)
+  syncFoldedKeysRef.current = syncFoldedKeys
+
+  /** Restore session folds for `path` — keys must still match live headings. */
+  const restoreFoldsFor = useCallback(
+    (path: string | null) => {
+      const view = viewRef.current
+      if (!view) return
+      const saved = path ? getSession().headingFolds?.[path] : undefined
+      const have = new Set(extractOutline(view.state).map((i) => foldKey(i.level, i.text)))
+      const valid = new Set((saved ?? []).filter((k) => have.has(k)))
+      view.dispatch({ effects: restoreFolds.of(valid) })
+    },
+    [viewRef]
+  )
+  const restoreFoldsForRef = useRef(restoreFoldsFor)
+  restoreFoldsForRef.current = restoreFoldsFor
+
+  // File open/switch → apply that file's remembered folds.
+  // loadContent dispatches the new doc synchronously before setFilePath, so
+  // this effect (post-render) always reads outlines of the new document.
+  useEffect(() => {
+    restoreFoldsForRef.current(filePath)
+  }, [filePath])
 
   // P12: autosave + draft pipeline. notifyChange is read through a ref from
   // the editor's once-mounted onChange (see createExtensions below).
@@ -502,6 +577,9 @@ export default function App(): React.JSX.Element {
                 syncAppState(filePathRef.current, true)
               }
               updateOutline()
+              // P18: heading renames drop fold keys inside foldField (docChanged
+              // filter) without emitting fold effects — mirror into React.
+              syncFoldedKeysRef.current()
               // P12 autosave + draft debounce pipelines.
               autoSaveNotifyRef.current()
               // P14 status bar: cursor immediate + full stats debounced.
@@ -511,6 +589,8 @@ export default function App(): React.JSX.Element {
             onSelectionChanged: () => {
               updateActiveHeading()
               updateCursorStatsRef.current()
+              // P18: auto-expand folds live in foldField.update — mirror on selection.
+              syncFoldedKeysRef.current()
               // P12: persist the cursor for session restore (throttled).
               const head = view.state.selection.main.head
               clearTimeout(cursorPersistTimer)
@@ -519,7 +599,11 @@ export default function App(): React.JSX.Element {
             onTreeChanged: () => {
               updateOutline()
               updateActiveHeading()
+              syncFoldedKeysRef.current()
               scheduleDocStatsRef.current()
+            },
+            onFoldChanged: () => {
+              syncFoldedKeysRef.current()
             },
             // P05: images need the document's directory for assets/ — resolve
             // true when a path exists, otherwise run Save As first.
@@ -586,9 +670,23 @@ export default function App(): React.JSX.Element {
   const goToHeading = useCallback((pos: number) => {
     const view = viewRef.current
     if (!view) return
+    // P18: jumping to a folded heading unfolds it first; a heading hidden
+    // inside a folded parent auto-expands via foldField's selection rule.
+    const item = headingAtLine(view.state, pos)
+    const effects: Parameters<typeof view.dispatch>[0] extends { effects?: infer E }
+      ? E extends readonly (infer U)[]
+        ? U[]
+        : never
+      : never = [EditorView.scrollIntoView(pos, { y: 'center' })]
+    if (item) {
+      const key = foldKey(item.level, item.text)
+      if (getFoldedKeys(view.state).has(key)) {
+        effects.unshift(expandFolds.of([key]))
+      }
+    }
     view.dispatch({
       selection: { anchor: pos },
-      effects: EditorView.scrollIntoView(pos, { y: 'center' }),
+      effects,
       scrollIntoView: true
     })
     view.focus()
@@ -1015,6 +1113,54 @@ export default function App(): React.JSX.Element {
     }
   }, [resolveAndNavigate, revalidateLinks, viewRef])
 
+  // P18 e2e handle: heading folds.
+  useEffect(() => {
+    window.__veloxP18 = {
+      getFoldedKeys: () => {
+        const view = viewRef.current
+        return view ? [...getFoldedKeys(view.state)] : []
+      },
+      toggleKey: (key) => {
+        viewRef.current?.dispatch({ effects: toggleFold.of(key) })
+      },
+      getRanges: () => {
+        const view = viewRef.current
+        if (!view) return []
+        return collectFoldRanges(view.state, getFoldedKeys(view.state)).map((r) => ({
+          key: r.key,
+          from: r.from,
+          to: r.to,
+          lines: r.lines
+        }))
+      },
+      getHeadingKeys: () => {
+        const view = viewRef.current
+        if (!view) return []
+        return extractOutline(view.state).map((i) => foldKey(i.level, i.text))
+      },
+      restoreFromSession: () => {
+        restoreFoldsForRef.current(filePathRef.current)
+      },
+      restoreKeys: (keys) => {
+        viewRef.current?.dispatch({ effects: restoreFolds.of(new Set(keys)) })
+      },
+      getSessionFolds: () => {
+        const path = filePathRef.current
+        return path ? (getSession().headingFolds?.[path] ?? []) : []
+      },
+      benchToggle: (key, n = 20) => {
+        const view = viewRef.current
+        if (!view) return { ms: 0, avg: 0 }
+        const t0 = performance.now()
+        for (let i = 0; i < n; i++) {
+          view.dispatch({ effects: toggleFold.of(key) })
+        }
+        const ms = performance.now() - t0
+        return { ms, avg: ms / n }
+      }
+    }
+  }, [viewRef, filePathRef])
+
   const { menus, formatShortcut } = useMenus({
     viewRef,
     isMac,
@@ -1150,7 +1296,15 @@ export default function App(): React.JSX.Element {
                     </button>
                   )}
                 </div>
-                <Outline items={outline} activePos={activePos} onSelect={goToHeading} />
+                <Outline
+                  items={outline}
+                  activePos={activePos}
+                  onSelect={goToHeading}
+                  foldedKeys={foldedKeys}
+                  onToggleFold={(_pos, key) => {
+                    viewRef.current?.dispatch({ effects: toggleFold.of(key) })
+                  }}
+                />
               </>
             )}
           </aside>

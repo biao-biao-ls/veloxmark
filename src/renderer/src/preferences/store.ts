@@ -85,6 +85,8 @@ export interface SessionState {
   recentFiles: string[]
   /** P12: editor cursor offset restored with the last file. */
   lastCursor: number | null
+  /** P18: heading-fold keys (`level:text`) per file path. */
+  headingFolds: Record<string, string[]>
 }
 
 export const RECENT_FILES_MAX = 10
@@ -129,7 +131,8 @@ const DEFAULT_SESSION: SessionState = {
   lastFilePath: null,
   lastFolderPath: null,
   recentFiles: [],
-  lastCursor: null
+  lastCursor: null,
+  headingFolds: {}
 }
 
 const PREFS_KEY = 'veloxmark.preferences'
@@ -271,7 +274,18 @@ let session: SessionState = (() => {
     lastCursor:
       typeof raw.lastCursor === 'number' && Number.isFinite(raw.lastCursor) && raw.lastCursor >= 0
         ? raw.lastCursor
-        : null
+        : null,
+    headingFolds:
+      raw.headingFolds && typeof raw.headingFolds === 'object'
+        ? Object.fromEntries(
+            Object.entries(raw.headingFolds)
+              .filter(([, v]) => Array.isArray(v))
+              .map(([k, v]) => [
+                k,
+                (v as unknown[]).filter((x): x is string => typeof x === 'string')
+              ])
+          )
+        : {}
   }
 })()
 

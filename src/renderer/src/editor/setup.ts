@@ -14,6 +14,7 @@ import {
 } from './assists'
 import { imageInputExtension } from './images'
 import { imageSizeMarkdown } from './markdown-image-ext'
+import { foldField, foldGutterExtension, foldPlaceholderClickExtension, getFoldedKeys, toggleFold, restoreFolds, expandFolds } from './livePreview/fold'
 import { linkNavExtension } from './livePreview/linkNav'
 import { modeClassesExtension, typewriterExtension } from './modes'
 import { getPreferences } from '../preferences/store'
@@ -39,6 +40,8 @@ export interface EditorCallbacks {
   onSelectionChanged: () => void
   /** Fired when the syntax tree advanced (async parse chunks completing). */
   onTreeChanged: () => void
+  /** P18: fold set changed via toggle/restore/expand effects. */
+  onFoldChanged?: () => void
   /**
    * P05: assets need a document directory — resolves true once the document
    * has a path (Save As ran), false when the user cancelled.
@@ -68,6 +71,11 @@ export function createExtensions(
 ): Extension[] {
   return [
     gutterCompartment.of(showLineNumbers ? lineNumbers() : []),
+    // P18 heading folds: dedicated gutter (arrows on heading lines) +
+    // placeholder-click reopen. lineNumbers toggles independently via its
+    // own compartment above.
+    foldGutterExtension,
+    foldPlaceholderClickExtension,
     history(),
     drawSelection(),
     highlightActiveLine(),
@@ -76,6 +84,9 @@ export function createExtensions(
     EditorState.allowMultipleSelections.of(true),
     EditorView.lineWrapping,
     livePreviewField,
+    // P18: folded heading keys (`level:text`) — the field the gutter, fold
+    // decorations and session restore all read/write.
+    foldField,
     // P10: active table cell / session column widths — drives enterTable.
     tableEditField,
     // P08 mode flags are read from the store (not the args): this runs once at
@@ -104,6 +115,14 @@ export function createExtensions(
       if (syntaxTree(update.startState) !== syntaxTree(update.state)) {
         callbacks.onTreeChanged()
       }
+      // P18: fold set changes — effect-driven toggles/restores (no doc or
+      // selection change) plus identity flips from auto-expand (selection
+      // jumps) and the docChanged key-drop filter, which emit no effects.
+      const foldTouched =
+        update.transactions.some((tr) =>
+          tr.effects.some((e) => e.is(toggleFold) || e.is(restoreFolds) || e.is(expandFolds))
+        ) || getFoldedKeys(update.startState) !== getFoldedKeys(update.state)
+      if (foldTouched) callbacks.onFoldChanged?.()
     })
   ]
 }

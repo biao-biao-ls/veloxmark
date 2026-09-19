@@ -54,6 +54,13 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRe
     (content: string, path: string | null) => {
       const view = viewRef.current
       if (!view) return
+      // P18: set the path BEFORE the replace dispatch. foldField drops the
+      // outgoing document's fold keys inside that transaction (their headings
+      // are gone) and fold sync persists the current set under
+      // filePathRef.current — if the ref still named the outgoing file, its
+      // session folds would be wiped by the switch itself.
+      filePathRef.current = path
+      setFilePath(path)
       suppressDirtyRef.current = true
       view.dispatch({
         changes: { from: 0, to: view.state.doc.length, insert: content },
@@ -63,7 +70,6 @@ export function useFileOps({ viewRef, updateOutline, setSidebarMode, restoringRe
       suppressDirtyRef.current = false
       savedContentRef.current = content
       dirtyRef.current = false
-      setFilePath(path)
       setDirty(false)
       syncAppState(path, false)
       updateOutline()

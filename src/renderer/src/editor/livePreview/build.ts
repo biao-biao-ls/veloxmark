@@ -2,6 +2,7 @@ import { syntaxTree } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
 import { Decoration, type DecorationSet } from '@codemirror/view'
 import type { LivePreviewConfig } from './config'
+import { FoldPlaceholder, collectFoldRanges, getFoldedKeys } from './fold'
 import {
   collectExtendedDecos,
   collectMathDecos,
@@ -122,6 +123,24 @@ export function buildDecorations(state: EditorState, config: LivePreviewConfig):
         break
       }
       block = block.nextSibling
+    }
+  }
+
+  // P18 heading folds: drop anything inside a collapsed range (CM6 forbids
+  // overlapping replace decorations — image/code widgets inside a folded
+  // section would throw), then push fold replaces + `⋯ N 行` placeholders.
+  // Field read is optional so snapshot states without foldField keep working.
+  const foldRanges = collectFoldRanges(state, getFoldedKeys(state))
+  if (foldRanges.length > 0) {
+    const kept = decos.filter((d) => !foldRanges.some((r) => d.from < r.to && d.to > r.from))
+    decos.length = 0
+    decos.push(...kept)
+    for (const r of foldRanges) {
+      decos.push({
+        from: r.from,
+        to: r.to,
+        value: Decoration.replace({ widget: new FoldPlaceholder(r.key, r.lines) })
+      })
     }
   }
 

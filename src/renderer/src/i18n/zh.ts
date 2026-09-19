@@ -232,5 +232,9 @@ export const ZH: Record<string, string> = {
   'link.openExternalTitle': '打开外部链接',
   'link.openExternalMsg': '在浏览器中打开此链接？\n{url}',
   'link.brokenTip': '目标不存在',
-  'link.otherProtocol': '仅支持打开 http(s) 链接'
+  'link.otherProtocol': '仅支持打开 http(s) 链接',
+
+  // ---- P18 heading fold ------------------------------------------------------
+  'fold.placeholder': '⋯ {n} 行',
+  'fold.toggle': '折叠 / 展开章节'
 }

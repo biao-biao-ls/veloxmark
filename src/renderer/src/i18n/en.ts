@@ -235,5 +235,9 @@ export const EN: Record<string, string> = {
   'link.openExternalTitle': 'Open External Link',
   'link.openExternalMsg': 'Open this link in your browser?\n{url}',
   'link.brokenTip': 'Target does not exist',
-  'link.otherProtocol': 'Only http(s) links can be opened'
+  'link.otherProtocol': 'Only http(s) links can be opened',
+
+  // ---- P18 heading fold ------------------------------------------------------
+  'fold.placeholder': '⋯ {n} lines',
+  'fold.toggle': 'Fold / unfold section'
 }

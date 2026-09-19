@@ -1067,6 +1067,70 @@ body {
   text-decoration-color: #f85149;
 }
 
+/* P18 heading fold: gutter arrows, line-end placeholder, outline triangles */
+.cm-fold-gutter {
+  width: 18px;
+}
+
+.cm-md-fold-gutter .cm-gutterElement {
+  padding: 0 2px;
+  cursor: default;
+}
+
+.cm-md-fold-arrow {
+  display: inline-block;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--fg);
+  opacity: 0.55;
+  cursor: pointer;
+  visibility: hidden;
+  user-select: none;
+}
+
+.cm-md-fold-gutter .cm-gutterElement:hover .cm-md-fold-arrow,
+.cm-md-fold-arrow.is-folded {
+  visibility: visible;
+}
+
+.cm-md-fold-arrow:hover {
+  opacity: 1;
+}
+
+.cm-md-fold-placeholder {
+  color: #8b949e;
+  font-size: 12px;
+  padding: 0 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cm-md-fold-placeholder:hover {
+  color: var(--accent);
+}
+
+.outline-fold {
+  display: inline-block;
+  width: 14px;
+  margin-left: -12px;
+  margin-right: 2px;
+  font-size: 9px;
+  color: var(--fg);
+  opacity: 0.5;
+  cursor: pointer;
+  user-select: none;
+  transform-origin: 45% 50%;
+}
+
+.outline-fold:hover {
+  opacity: 1;
+}
+
+.outline-fold.is-folded {
+  opacity: 0.9;
+  transform: rotate(90deg);
+}
+
 /* P17: hover tooltip for rendered links (editor-level singleton) */
 .vm-link-tooltip {
   position: fixed;
