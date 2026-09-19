@@ -17,32 +17,32 @@ fence/行内代码内容零触碰。
 ## 功能需求
 
 ### 格式化规则（v1）
-- [ ] 去除行尾空白；恰好 2 个空格的硬换行保留，>2 规范为 2
-- [ ] ATX 标题规范化：`#标题` → `# Title`（补空格）；`#` 后多空格压为
+- [x] 去除行尾空白；恰好 2 个空格的硬换行保留，>2 规范为 2
+- [x] ATX 标题规范化：`#标题` → `# Title`（补空格）；`#` 后多空格压为
       1 个；标题后 `#` 闭合序列去除
-- [ ] 标题/围栏代码块/表格前缺失空行时补 1 空行（文档首行除外）
-- [ ] 连续 ≥2 空行压缩为 1 空行
-- [ ] 无序列表标记统一为 `-`（fence 外）；同层缩进对齐子级（保留层级
+- [x] 标题/围栏代码块/表格前缺失空行时补 1 空行（文档首行除外）
+- [x] 连续 ≥2 空行压缩为 1 空行
+- [x] 无序列表标记统一为 `-`（fence 外）；同层缩进对齐子级（保留层级
       结构，仅符号统一）
-- [ ] 有序列表：连续项重新编号 1..n（fence 外；嵌套各自编号）
-- [ ] GFM 表格：全部经 `formatTable` 重排 `|` 对齐（保留对齐行语义与
+- [x] 有序列表：连续项重新编号 1..n（fence 外；嵌套各自编号）
+- [x] GFM 表格：全部经 `formatTable` 重排 `|` 对齐（保留对齐行语义与
       单元格内容原样）
-- [ ] 围栏代码：开 fence 语言标记去首尾空白；**fence 内容与行尾空白
+- [x] 围栏代码：开 fence 语言标记去首尾空白；**fence 内容与行尾空白
       一律不动**；缺失闭合 fence 的块跳过并计入警告
-- [ ] 文件尾保证恰好 1 个换行
-- [ ] 引用行 `>` 后规范化为单空格（`>文本` → `> 文本`）
+- [x] 文件尾保证恰好 1 个换行
+- [x] 引用行 `>` 后规范化为单空格（`>文本` → `> 文本`）
 
 ### 行为
-- [ ] 命令 `formatDocument`：Edit 菜单（Format Document），默认键
+- [x] 命令 `formatDocument`：Edit 菜单（Format Document），默认键
       `Shift+Alt+F`（与 VS Code 一致）
-- [ ] 整次格式化为**单 transaction**：一次 Ctrl+Z 完整回退
-- [ ] 光标/选区 best-effort 保持：按行号映射（行数变化时钳制到合法
+- [x] 整次格式化为**单 transaction**：一次 Ctrl+Z 完整回退
+- [x] 光标/选区 best-effort 保持：按行号映射（行数变化时钳制到合法
       行）；滚动位置尽量保持
-- [ ] 无可改动时命令静默（无 toast 刷屏）；可选状态栏显示 "已格式化
+- [x] 无可改动时命令静默（无 toast 刷屏）；可选状态栏显示 "已格式化
       N 处"（对接 P14）
-- [ ] （可选）format-on-save：偏好 `formatOnSave: boolean`（默认
+- [x] （可选）format-on-save：偏好 `formatOnSave: boolean`（默认
       **关**），开启后保存前先格式化；与 P12 自动保存共用同一入口
-- [ ] 格式化警告（缺闭合 fence 等）汇总后一次性提示，不阻塞执行
+- [x] 格式化警告（缺闭合 fence 等）汇总后一次性提示，不阻塞执行
 
 ## 实现要点
 
@@ -83,3 +83,36 @@ fence/行内代码内容零触碰。
 - Prettier 级全量规则（段落折行 80 列、引用风格统一等）
 - Markdown 自动修复（断链修复、拼写）
 - 格式化范围限定选区（首版全文；后续可加 Format Selection）
+
+## 实施状态（已完成）
+
+- 纯函数 `editor/format.ts` `formatMarkdown(text) → {text, warnings[], changed}`：
+  fence 状态机（``` / ~~~，含缩进；fence 内零触碰；缺闭合跳过并 warning
+  「unclosed code fence starting at line N」）；v1 规则全部实现——行尾空白
+  （恰好 2 空格硬换行保留、>2 压为 2、其余去除）、ATX 规范化（补空格/压
+  多空格/去闭合 `#` 序列）、标题/fence/表格前补空行（首行除外）、空行
+  压缩、无序标记统一 `-`（thematic break 如 `* * *` 跳过）、有序重编号
+  （按缩进分栈、嵌套各自编号）、表格经 `formatTable` 重排（保留对齐语义与
+  单元格原文，`\|` 不裂列）、fence 语言标记 trim（开 fence 行
+  ` ```  js  ` → ` ```js `，不强加空格——实施注明）、文尾恰好 1 换行、
+  引用 `>` 后单空格。
+- **有序列表与空行**：CommonMark 空行不拆列表（loose list），故重编号
+  跨空行连续（1,2,3 空行后 4,5…）；嵌套层级各自从 1 起。夹具与 e2e
+  按此口径断言。
+- 命令 `formatDocument`：Edit 菜单 + `Shift+Alt+F`（bindGlobal + darwin
+  accelerator）；`matchGlobalShortcut` 扩展支持 Alt 前缀 chord（原逻辑只认
+  Ctrl 或裸 F 键）且用 `e.code` 兜底 macOS Option 键产生的变体字符；单
+  transaction（`from:0` 全文替换 + `userEvent:'format'` 一步 undo + 行号
+  映射钳制光标）；无改动静默；有改动 StatusBar toast「已格式化 N 处」，
+  带警告时「已格式化 N 处（w 条警告）」（warnings 走 toast 而非弹窗，
+  保持不阻塞——实施取舍）；e2e 经 `__veloxP23.format()` 可读 warnings 数组。
+- format-on-save：偏好 `formatOnSave`（默认关，Preferences 自动保存区新增
+  开关「保存时格式化」）；`useFileOps.saveFile/saveFileAs` 在 writeFile 前
+  按开关格式化再取内容写出（格式化后的 dirty 状态由随后的写出清除）。
+- 单测 `format.test.ts` 12 例覆盖需求全部规则 + fence 内脏表格/行尾空白
+  不动 + 缺闭合 fence 警告；`npm run test:unit` 148/148。
+- e2e `cdp-p23.mjs`（9240）13/13 ALL PASS：脏文档逐规则断言、Ctrl+Z 一步
+  回原文、fence 内原样、有序重编号+嵌套、硬换行 2/压2、干净文档静默、
+  Shift+Alt+F 快捷键、缺闭合 fence 其余规则正常+警告 toast、format-on-save
+  开/关两种磁盘内容断言。
+- 未做项：无（弹窗提示 warnings 按不阻塞原则改走状态栏，已注明）。

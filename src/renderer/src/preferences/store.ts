@@ -14,8 +14,11 @@
 export const PREFERENCES_VERSION = 1
 
 export type ThemeMode = 'light' | 'dark' | 'system'
-export type SidebarMode = 'outline' | 'files'
+export type SidebarMode = 'outline' | 'files' | 'search'
 export type ImageRenameMode = 'timestamp' | 'keep'
+export type AutoSaveMode = 'off' | 'debounce' | 'interval'
+/** P14: UI language — 'system' follows navigator.language. */
+export type LanguagePref = 'system' | 'zh' | 'en'
 
 export interface Preferences {
   version: number
@@ -28,6 +31,8 @@ export interface Preferences {
   editorMaxWidth: number
   typingAssistsEnabled: boolean
   wrapBareUrlOnPaste: boolean
+  /** P19: convert rich-text (text/html) paste payloads to Markdown. */
+  pasteHtmlToMd: boolean
   showLineNumbers: boolean
   restoreLastSession: boolean
   /** Initial sidebar visibility when no session memory exists. */
@@ -53,6 +58,36 @@ export interface Preferences {
   typewriterMode: boolean
   /** Raw Markdown view — live-preview decorations off. */
   sourceMode: boolean
+  // ---- autosave & crash recovery (P12) ---------------------------------------
+  /** off | input-debounce (N seconds) | fixed interval (N minutes). */
+  autoSaveMode: AutoSaveMode
+  /** Debounce delay in seconds when autoSaveMode === 'debounce'. */
+  autoSaveDelaySec: number
+  /** Interval in minutes when autoSaveMode === 'interval'. */
+  autoSaveIntervalMin: number
+  /** Write crash-recovery drafts + offer restore on startup. */
+  crashRecoveryEnabled: boolean
+  // ---- i18n & status bar (P14) ----------------------------------------------
+  /** UI language; 'system' resolves via navigator.language at boot. */
+  language: LanguagePref
+  /** Bottom status bar (cursor / word count / mode lamps). */
+  showStatusBar: boolean
+  // ---- link navigation (P17) -------------------------------------------------
+  /** Confirm before shell.openExternal on http(s) links (default on). */
+  externalLinkConfirm: boolean
+  // ---- P23 document formatting ---------------------------------------------
+  /** Run formatMarkdown before every save (default off). */
+  formatOnSave: boolean
+  // ---- P24 code-block display ----------------------------------------------
+  /** Collapse code blocks longer than N lines (0 = never). */
+  codeBlockCollapseLines: number
+  /** Line-number column inside rendered code blocks. */
+  codeBlockShowLineNumbers: boolean
+  /** Soft-wrap long lines inside code blocks. */
+  codeBlockWrap: boolean
+  // ---- P25 mermaid live preview ---------------------------------------------
+  /** Height (px) of the mermaid source-preview panel split. */
+  mermaidPreviewHeight: number
 }
 
 export interface SessionState {
@@ -63,6 +98,16 @@ export interface SessionState {
   lastFolderPath: string | null
   /** Most-recent-first, max 10. */
   recentFiles: string[]
+  /** P12: editor cursor offset restored with the last file. */
+  lastCursor: number | null
+  /** P18: heading-fold keys (`level:text`) per file path. */
+  headingFolds: Record<string, string[]>
+  /** P25: mermaid preview panel pinned (session-only). */
+  mermaidPreviewPin: boolean
+  /** P26: open document tabs (file paths, tab order). */
+  openTabs: string[]
+  /** P26: active tab path at session end (null = untitled). */
+  activePath: string | null
 }
 
 export const RECENT_FILES_MAX = 10
@@ -79,6 +124,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   editorMaxWidth: 0,
   typingAssistsEnabled: true,
   wrapBareUrlOnPaste: true,
+  pasteHtmlToMd: true,
   showLineNumbers: true,
   restoreLastSession: true,
   sidebarDefaultOpen: true,
@@ -90,7 +136,19 @@ export const DEFAULT_PREFERENCES: Preferences = {
   showHiddenFiles: false,
   focusMode: false,
   typewriterMode: false,
-  sourceMode: false
+  sourceMode: false,
+  autoSaveMode: 'debounce',
+  autoSaveDelaySec: 3,
+  autoSaveIntervalMin: 5,
+  crashRecoveryEnabled: true,
+  language: 'system',
+  showStatusBar: true,
+  externalLinkConfirm: true,
+  formatOnSave: false,
+  codeBlockCollapseLines: 20,
+  codeBlockShowLineNumbers: false,
+  codeBlockWrap: true,
+  mermaidPreviewHeight: 240
 }
 
 const DEFAULT_SESSION: SessionState = {
@@ -99,7 +157,12 @@ const DEFAULT_SESSION: SessionState = {
   sidebarWidth: null,
   lastFilePath: null,
   lastFolderPath: null,
-  recentFiles: []
+  recentFiles: [],
+  lastCursor: null,
+  headingFolds: {},
+  mermaidPreviewPin: false,
+  openTabs: [],
+  activePath: null
 }
 
 const PREFS_KEY = 'veloxmark.preferences'
@@ -129,21 +192,24 @@ export function subscribeSession(listener: () => void): () => void {
 /** One-time import of the pre-P03 standalone localStorage keys. */
 function migrateLegacyKeys(raw: Partial<Preferences>): Partial<Preferences> {
   const next = { ...raw }
-  if (next.theme == null) {
-    const legacyTheme = localStorage.getItem('theme')
+  // P15: unit tests import this module in a DOM-less node environment —
+  // guard the legacy-key reads the same way readJson guards its own.
+  const ls = typeof localStorage !== 'undefined' ? localStorage : null
+  if (next.theme == null && ls) {
+    const legacyTheme = ls.getItem('theme')
     if (legacyTheme === 'dark' || legacyTheme === 'light') next.theme = legacyTheme
   }
-  if (next.typingAssistsEnabled == null) {
-    const stored = localStorage.getItem('enabled')
+  if (next.typingAssistsEnabled == null && ls) {
+    const stored = ls.getItem('enabled')
     if (stored != null) next.typingAssistsEnabled = stored !== 'false'
   }
-  if (next.wrapBareUrlOnPaste == null) {
-    const stored = localStorage.getItem('wrapBareUrlOnPaste')
+  if (next.wrapBareUrlOnPaste == null && ls) {
+    const stored = ls.getItem('wrapBareUrlOnPaste')
     if (stored != null) next.wrapBareUrlOnPaste = stored !== 'false'
   }
-  localStorage.removeItem('theme')
-  localStorage.removeItem('enabled')
-  localStorage.removeItem('wrapBareUrlOnPaste')
+  ls?.removeItem('theme')
+  ls?.removeItem('enabled')
+  ls?.removeItem('wrapBareUrlOnPaste')
   return next
 }
 
@@ -162,6 +228,7 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
     editorMaxWidth: num(p.editorMaxWidth, 0, 0, 4000),
     typingAssistsEnabled: p.typingAssistsEnabled !== false,
     wrapBareUrlOnPaste: p.wrapBareUrlOnPaste !== false,
+    pasteHtmlToMd: p.pasteHtmlToMd !== false,
     showLineNumbers: p.showLineNumbers !== false,
     restoreLastSession: p.restoreLastSession !== false,
     sidebarDefaultOpen: p.sidebarDefaultOpen !== false,
@@ -187,8 +254,29 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
       : [...DEFAULT_PREFERENCES.folderIgnoreNames],
     showHiddenFiles: p.showHiddenFiles === true,
     focusMode: p.focusMode === true,
+    formatOnSave: p.formatOnSave === true,
+    codeBlockCollapseLines:
+      typeof p.codeBlockCollapseLines === 'number' && p.codeBlockCollapseLines >= 0
+        ? Math.floor(p.codeBlockCollapseLines)
+        : 20,
+    codeBlockShowLineNumbers: p.codeBlockShowLineNumbers === true,
+    codeBlockWrap: p.codeBlockWrap !== false,
+    mermaidPreviewHeight:
+      typeof p.mermaidPreviewHeight === 'number' && Number.isFinite(p.mermaidPreviewHeight)
+        ? Math.min(800, Math.max(120, p.mermaidPreviewHeight))
+        : 240,
     typewriterMode: p.typewriterMode === true,
-    sourceMode: p.sourceMode === true
+    sourceMode: p.sourceMode === true,
+    autoSaveMode:
+      p.autoSaveMode === 'off' || p.autoSaveMode === 'interval' || p.autoSaveMode === 'debounce'
+        ? p.autoSaveMode
+        : DEFAULT_PREFERENCES.autoSaveMode,
+    autoSaveDelaySec: num(p.autoSaveDelaySec, 3, 1, 60),
+    autoSaveIntervalMin: num(p.autoSaveIntervalMin, 5, 1, 60),
+    crashRecoveryEnabled: p.crashRecoveryEnabled !== false,
+    language: p.language === 'zh' || p.language === 'en' ? p.language : 'system',
+    showStatusBar: p.showStatusBar !== false,
+    externalLinkConfirm: p.externalLinkConfirm !== false
   }
 }
 
@@ -212,7 +300,10 @@ let session: SessionState = (() => {
   if (!raw) return { ...DEFAULT_SESSION }
   return {
     sidebarVisible: typeof raw.sidebarVisible === 'boolean' ? raw.sidebarVisible : null,
-    sidebarMode: raw.sidebarMode === 'files' || raw.sidebarMode === 'outline' ? raw.sidebarMode : null,
+    sidebarMode:
+      raw.sidebarMode === 'files' || raw.sidebarMode === 'outline' || raw.sidebarMode === 'search'
+        ? raw.sidebarMode
+        : null,
     sidebarWidth:
       typeof raw.sidebarWidth === 'number' && Number.isFinite(raw.sidebarWidth)
         ? Math.min(480, Math.max(160, raw.sidebarWidth))
@@ -221,13 +312,35 @@ let session: SessionState = (() => {
     lastFolderPath: typeof raw.lastFolderPath === 'string' ? raw.lastFolderPath : null,
     recentFiles: Array.isArray(raw.recentFiles)
       ? raw.recentFiles.filter((p): p is string => typeof p === 'string').slice(0, RECENT_FILES_MAX)
-      : []
+      : [],
+    lastCursor:
+      typeof raw.lastCursor === 'number' && Number.isFinite(raw.lastCursor) && raw.lastCursor >= 0
+        ? raw.lastCursor
+        : null,
+    mermaidPreviewPin: raw.mermaidPreviewPin === true,
+    openTabs: Array.isArray(raw.openTabs)
+      ? raw.openTabs.filter((p): p is string => typeof p === 'string')
+      : [],
+    activePath: typeof raw.activePath === 'string' ? raw.activePath : null,
+    headingFolds:
+      raw.headingFolds && typeof raw.headingFolds === 'object'
+        ? Object.fromEntries(
+            Object.entries(raw.headingFolds)
+              .filter(([, v]) => Array.isArray(v))
+              .map(([k, v]) => [
+                k,
+                (v as unknown[]).filter((x): x is string => typeof x === 'string')
+              ])
+          )
+        : {}
   }
 })()
 
 // ---- CSS variable injection (live appearance preview) -----------------------
 
 export function applyPreferencesCssVars(p: Preferences = preferences): void {
+  // P15: DOM-less vitest imports pull this module in — no document, no-op.
+  if (typeof document === 'undefined') return
   const root = document.documentElement
   root.style.setProperty('--editor-font-family', p.editorFontFamily)
   root.style.setProperty('--editor-font-size', `${p.editorFontSize}px`)
@@ -284,9 +397,19 @@ declare global {
     __veloxPrefs: {
       getPreferences: typeof getPreferences
       getSession: typeof getSession
+      setPreferences: typeof setPreferences
       addRecentFile: typeof addRecentFile
       clearRecentFiles: typeof clearRecentFiles
     }
   }
 }
-window.__veloxPrefs = { getPreferences, getSession, addRecentFile, clearRecentFiles }
+// P15: guarded — vitest imports this module in a DOM-less node environment.
+if (typeof window !== 'undefined') {
+  window.__veloxPrefs = {
+    getPreferences,
+    getSession,
+    setPreferences,
+    addRecentFile,
+    clearRecentFiles
+  }
+}

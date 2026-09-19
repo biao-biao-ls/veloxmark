@@ -50,6 +50,16 @@ export function PanelIcon(props: IconProps) {
   )
 }
 
+/** P13 folder-wide search. */
+export function SearchIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </Svg>
+  )
+}
+
 export function MinimizeIcon({ size = 14, ...rest }: IconProps) {
   return (
     <Svg size={size} {...rest}>

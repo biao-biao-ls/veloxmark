@@ -1,7 +1,7 @@
 import { dialog, ipcMain } from 'electron'
 import { cp, mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, isAbsolute, join, normalize } from 'node:path'
-import type { FileFilter } from '../shared/api'
+import type { FileFilter, LinkResolveResult } from '../shared/api'
 import type { GetWindow } from './index'
 
 const FILE_FILTERS: FileFilter[] = [
@@ -53,6 +53,13 @@ export function registerFilesIpc(getWindow: GetWindow): void {
 
   ipcMain.handle('file:write', async (_e, filePath: string, content: string) => {
     await writeFile(filePath, content, 'utf-8')
+    return true
+  })
+
+  // P16: binary-safe sibling of file:write (Mermaid PNG export sends the
+  // base64 payload only — the renderer strips any data: prefix).
+  ipcMain.handle('file:writeBase64', async (_e, filePath: string, base64: string) => {
+    await writeFile(filePath, Buffer.from(base64, 'base64'))
     return true
   })
 
@@ -130,6 +137,42 @@ export function registerFilesIpc(getWindow: GetWindow): void {
       return true
     } catch {
       return false
+    }
+  })
+
+  // P17: classify a markdown link href (paths resolved against the document's
+  // baseDir). Percent-decoding + `..` normalization + existence probe all run
+  // here so the renderer stays free of Node path semantics.
+  ipcMain.handle('link:resolve', async (_e, baseDir: string, href: string): Promise<LinkResolveResult> => {
+    try {
+      let target = String(href ?? '').trim().replace(/^<|>$/g, '')
+      if (!target) return { kind: 'broken' }
+      // URL schemes win before decoding mangles them.
+      if (/^https?:\/\//i.test(target)) return { kind: 'external', absPath: target }
+      if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(target)) return { kind: 'external', absPath: target }
+      try {
+        target = decodeURIComponent(target)
+      } catch {
+        // malformed escape sequences — keep the raw text
+      }
+      let anchor: string | undefined
+      const hash = target.indexOf('#')
+      if (hash >= 0) {
+        anchor = target.slice(hash + 1)
+        target = target.slice(0, hash)
+      }
+      if (!target) return { kind: 'anchor', anchor: anchor ?? '' }
+      if (!baseDir && !isAbsolute(target)) return { kind: 'broken', exists: false, anchor }
+      const abs = normalize(isAbsolute(target) ? target : join(baseDir, target))
+      try {
+        const st = await stat(abs)
+        if (st.isDirectory()) return { kind: 'dir', absPath: abs, exists: true, anchor }
+        return { kind: 'file', absPath: abs, exists: true, anchor }
+      } catch {
+        return { kind: 'broken', absPath: abs, exists: false, anchor }
+      }
+    } catch {
+      return { kind: 'broken' }
     }
   })
 

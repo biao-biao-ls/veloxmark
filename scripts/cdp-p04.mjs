@@ -13,7 +13,12 @@ import { fileURLToPath } from 'node:url'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const CDP_PORT = 9224
 const CDP = `http://127.0.0.1:${CDP_PORT}`
-const ELECTRON_BIN = join(ROOT, 'node_modules', 'electron', 'dist', 'electron.exe')
+const electronPkg = join(ROOT, 'node_modules', 'electron', 'dist')
+const ELECTRON_BIN = [
+  join(electronPkg, 'Electron.app', 'Contents', 'MacOS', 'Electron'),
+  join(electronPkg, 'electron.exe'),
+  join(electronPkg, 'electron')
+].find((p) => existsSync(p))
 const TMP = join(ROOT, 'scripts', 'tmp-p04')
 const OUT_HTML = join(TMP, 'out.html')
 const OUT_PDF = join(TMP, 'out.pdf')
@@ -163,6 +168,14 @@ async function main() {
     if ((await evaluate('typeof window.__veloxExport')) === 'object') break
     await new Promise((r) => setTimeout(r, 500))
   }
+
+  // Pin UI language to English — OS locale may be zh; menu/dialog asserts are English.
+  await evaluate(`(() => {
+    const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') || '{}')
+    localStorage.setItem('veloxmark.preferences', JSON.stringify({ ...raw, language: 'en' }))
+    window.__veloxPrefs?.setPreferences({ language: 'en' })
+    return true
+  })()`)
 
   const failures = []
   const check = (name, ok, detail = '') => {

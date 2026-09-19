@@ -2,15 +2,21 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
   AppWindowState,
   DirNode,
+  DraftListItem,
   FileFilter,
   FolderScanOptions,
   ImageSaveOptions,
+  LinkResolveResult,
   OpenFileResult,
   PdfExportOptions,
   RecentFileItem,
   RendererApi,
   ResolvedImageSrc,
-  SaveClipboardImageResult
+  SaveClipboardImageResult,
+  SearchOptions,
+  SearchReplaceRequest,
+  SearchReplaceResult,
+  SearchRunPayload
 } from './shared/api'
 
 const api: RendererApi = {
@@ -37,6 +43,10 @@ const api: RendererApi = {
     ipcRenderer.invoke('path:move', srcPath, destDir),
   pathExists: (filePath: string): Promise<boolean> =>
     ipcRenderer.invoke('file:pathExists', filePath),
+  resolveLink: (baseDir: string, href: string): Promise<LinkResolveResult> =>
+    ipcRenderer.invoke('link:resolve', baseDir, href),
+  openExternal: (url: string): Promise<boolean> =>
+    ipcRenderer.invoke('shell:openExternal', url),
   onFolderTree: (callback: (tree: DirNode[]) => void): (() => void) => {
     const listener = (_e: unknown, tree: DirNode[]): void => callback(tree)
     ipcRenderer.on('folder:tree', listener)
@@ -47,10 +57,14 @@ const api: RendererApi = {
   readFile: (filePath: string): Promise<string> => ipcRenderer.invoke('file:read', filePath),
   writeFile: (filePath: string, content: string): Promise<boolean> =>
     ipcRenderer.invoke('file:write', filePath, content),
+  writeFileBase64: (filePath: string, base64: string): Promise<boolean> =>
+    ipcRenderer.invoke('file:writeBase64', filePath, base64),
   setAppState: (state: AppWindowState): Promise<void> =>
     ipcRenderer.invoke('app:setState', state),
   setRecentFiles: (files: RecentFileItem[]): Promise<void> =>
     ipcRenderer.invoke('app:setRecentFiles', files),
+  setUiLanguage: (lang: 'zh' | 'en'): Promise<void> =>
+    ipcRenderer.invoke('app:setLanguage', lang),
   resolveImageSrc: (dir: string, src: string): Promise<ResolvedImageSrc> =>
     ipcRenderer.invoke('file:resolveImageSrc', dir, src),
   saveClipboardImage: (
@@ -83,10 +97,44 @@ const api: RendererApi = {
   windowToggleDevTools: (): void => ipcRenderer.send('window:toggleDevTools'),
   windowZoom: (action: 'in' | 'out' | 'reset'): void =>
     ipcRenderer.send('window:zoom', action),
+  // P12 close intercept: verdict back to main's close handler.
+  closeResponse: (allow: boolean): void => ipcRenderer.send('app:closeResponse', allow),
+  onQueryClose: (callback: () => void): (() => void) => {
+    const listener = (): void => callback()
+    ipcRenderer.on('app:queryClose', listener)
+    return () => ipcRenderer.removeListener('app:queryClose', listener)
+  },
+  // P12 crash-recovery drafts (main-process storage under userData/drafts).
+  draftWrite: (path: string | null, content: string): Promise<void> =>
+    ipcRenderer.invoke('draft:write', path, content),
+  draftDiscard: (path: string | null): Promise<void> =>
+    ipcRenderer.invoke('draft:discard', path),
+  draftList: (): Promise<DraftListItem[]> => ipcRenderer.invoke('draft:list'),
+  // P13 folder-wide search/replace (streaming results on search:results).
+  searchRun: (
+    rootPath: string,
+    pattern: string,
+    options: SearchOptions
+  ): Promise<{ searchId: number; error?: string }> =>
+    ipcRenderer.invoke('search:run', rootPath, pattern, options),
+  onSearchResults: (callback: (payload: SearchRunPayload) => void): (() => void) => {
+    const listener = (_e: unknown, payload: SearchRunPayload): void => callback(payload)
+    ipcRenderer.on('search:results', listener)
+    return () => ipcRenderer.removeListener('search:results', listener)
+  },
+  searchReplace: (req: SearchReplaceRequest): Promise<SearchReplaceResult> =>
+    ipcRenderer.invoke('search:replace', req),
   clipboardRead: (): Promise<string> => ipcRenderer.invoke('clipboard:read'),
   clipboardWrite: (text: string): Promise<void> =>
     ipcRenderer.invoke('clipboard:write', text),
+  /** P19: HTML flavor of the clipboard (empty string when absent). */
+  clipboardReadHtml: (): Promise<string> => ipcRenderer.invoke('clipboard:readHtml'),
+  /** P19/P20: write plain text + HTML flavors in one clipboard write. */
+  clipboardWriteHtml: (html: string, text: string): Promise<void> =>
+    ipcRenderer.invoke('clipboard:writeHtml', html, text),
   clipboardHasImage: (): Promise<boolean> => ipcRenderer.invoke('clipboard:hasImage'),
+  clipboardWriteImage: (dataUrl: string): Promise<void> =>
+    ipcRenderer.invoke('clipboard:writeImage', dataUrl),
   // Tell main the editor is mounted so queued system open-file paths are sent.
   rendererReady: (): void => ipcRenderer.send('app:rendererReady'),
   // macOS Finder "Open With" / double-clicking a registered .md file.

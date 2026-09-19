@@ -18,23 +18,23 @@ P06 给代码块补了悬停 Copy 与语言标签，但**显示控制**仍缺失
 ## 功能需求
 
 ### 长代码块折叠
-- [ ] 行数超过阈值（偏好 `codeBlockCollapseLines`，默认 20；0 = 从不
+- [x] 行数超过阈值（偏好 `codeBlockCollapseLines`，默认 20；0 = 从不
       折叠）的代码块默认折叠：显示前 N 行 + 底部渐变遮罩 +
       "展开 N 行" 按钮（N = 隐藏行数）
-- [ ] 点击按钮/遮罩展开完整代码；工具条新增 "Fold" 按钮手动折叠
-- [ ] 展开状态按**代码内容**记忆（内容不变的块在装饰重建/主题切换后
+- [x] 点击按钮/遮罩展开完整代码；工具条新增 "Fold" 按钮手动折叠
+- [x] 展开状态按**代码内容**记忆（内容不变的块在装饰重建/主题切换后
       保持展开）；重启应用重置为默认折叠（不持久化）
-- [ ] Copy 行为不变：复制完整代码（折叠不影响）
-- [ ] 折叠块的高度计入 CM6 heightmap（展开/折叠后下方文档点击映射
+- [x] Copy 行为不变：复制完整代码（折叠不影响）
+- [x] 折叠块的高度计入 CM6 heightmap（展开/折叠后下方文档点击映射
       正确——widget 高度变化需 `requestMeasure`/装饰重建路径验证）
 
 ### 行号与换行
-- [ ] 偏好 `codeBlockShowLineNumbers: boolean`（默认关）：代码块内左侧
+- [x] 偏好 `codeBlockShowLineNumbers: boolean`（默认关）：代码块内左侧
       显示行号列（与编辑器 gutter 行号独立）
-- [ ] 偏好 `codeBlockWrap: boolean`（默认开）：长行软换行；关闭时横向
+- [x] 偏好 `codeBlockWrap: boolean`（默认开）：长行软换行；关闭时横向
       滚动（现状行为）
-- [ ] 行号在折叠态只对可见行编号，展开后完整编号
-- [ ] 偏好改动即时生效于所有已渲染块（新装饰重建带新配置，无需重开
+- [x] 行号在折叠态只对可见行编号，展开后完整编号
+- [x] 偏好改动即时生效于所有已渲染块（新装饰重建带新配置，无需重开
       文档）
 
 ## 实现要点
@@ -72,6 +72,31 @@ P06 给代码块补了悬停 Copy 与语言标签，但**显示控制**仍缺失
 4. 关闭 wrap：长单行出现块内横向滚动；开启后软换行且行号不错位。
 5. 折叠/展开后点击下方文档行：光标落点正确（heightmap 验证）。
 6. `codeBlockCollapseLines=0` 时所有块不折叠。
+
+
+## 实施状态（已完成）
+
+- e2e：`scripts/cdp-p24.mjs`（port 9241）**28/28 PASS**；单测
+  `editor/widgets.p24.test.ts`（span-aware 切分器 5 例 + key 稳定性）全绿；
+  smoke 5/5。
+- 折叠/展开/Fold/Copy/主题记忆/内容重判/行号开关/wrap 开关/heightmap/
+  阈值 0 全部按验收 1–6 实现并 e2e 断言（折叠块 Copy 剪贴板仍为 50 行全量；
+  posAtCoords 在折叠与展开两态下均映射到下方段落正确行）。
+- 实现架构偏差（记录）：需求要点写"widget 内直接 getPreferences()"，实际
+  按计划走 **config facet 线程化**——三偏好经 App prefs effect 推入
+  `LivePreviewConfig`（字段为可选，嵌套表格单元格编辑器的部分字面量不配置
+  时按 `??` 落默认），`field.ts` 重建条件增加 `codeBlockUiChanged`（field
+  同一性）分支；偏好改动因此与主题同路径即时生效，e2e 已验证无需重开文档。
+- 行号采用**完整 span-aware 方案**（`splitHighlightedLines`：扫描 span 深度，
+  跨行 token 在行边界闭合/重开标签），未降级；折叠态对可见前 N 行编号 1..N，
+  展开后 1..total，行号列 flex 布局与 wrap 兼容（`.cm-md-code-line` 行）。
+- 展开记忆键 = FNV-1a 内容 hash（`codeBlockUi.ts`），存于 `codeBlockUiField`
+  的 `Set<string>`（effect 更新，无模块级可变对象）；不持久化，重启即默认
+  折叠（符合非目标）。装饰重建/主题切换内容不变则键不变 → 保持展开；
+  内容变化键失效 → 按阈值重新判定，e2e 均覆盖。
+- 高度变化走装饰重建路径（toggle effect → field 更新 → buildDecorations
+  重出 widget，eq 比较含 ui 五字段），CM6 自动重测 heightmap；expander/
+  Fold 按钮 stopPropagation，不触发点击回源码。
 
 ## 非目标
 

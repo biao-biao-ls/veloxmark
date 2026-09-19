@@ -4,6 +4,9 @@ import { Decoration, DecorationSet, EditorView } from '@codemirror/view'
 import { tableEditField } from '../table/state'
 import { buildDecorations } from './build'
 import { getLivePreviewConfig } from './config'
+import { foldField } from './fold'
+import { calloutFoldField } from './calloutFold'
+import { codeBlockUiField } from './codeBlockUi'
 
 /**
  * Live-preview decorations.
@@ -30,7 +33,25 @@ export const livePreviewField = StateField.define<DecorationSet>({
     // Optional field access: DOM-less snapshot states may omit tableEditField.
     const tableEditChanged =
       tr.state.field(tableEditField, false) !== tr.startState.field(tableEditField, false)
-    if (tr.docChanged || tr.selection || treeChanged || configChanged || tableEditChanged) {
+    // P18: fold toggles arrive as effect-only transactions (no doc/selection
+    // change) — rebuild whenever the fold set identity changes.
+    const foldChanged = tr.state.field(foldField, false) !== tr.startState.field(foldField, false)
+    // P21: callout fold overrides — same effect-only identity signal.
+    const calloutFoldChanged =
+      tr.state.field(calloutFoldField, false) !== tr.startState.field(calloutFoldField, false)
+    // P24: code-block expand/fold toggles are effect-only — identity signal.
+    const codeBlockUiChanged =
+      tr.state.field(codeBlockUiField, false) !== tr.startState.field(codeBlockUiField, false)
+    if (
+      tr.docChanged ||
+      tr.selection ||
+      treeChanged ||
+      configChanged ||
+      tableEditChanged ||
+      foldChanged ||
+      calloutFoldChanged ||
+      codeBlockUiChanged
+    ) {
       return buildDecorations(tr.state, getLivePreviewConfig(tr.state))
     }
     return value.map(tr.changes)

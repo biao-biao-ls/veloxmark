@@ -1,6 +1,7 @@
 import MenuBar, { type MenuDef } from './MenuBar'
-import { CloseIcon, MaximizeIcon, MinimizeIcon, MoonIcon, PanelIcon, SunIcon } from './Icons'
+import { CloseIcon, MaximizeIcon, MinimizeIcon, MoonIcon, PanelIcon, SearchIcon, SunIcon } from './Icons'
 import type { ThemeName } from '../editor/theme'
+import { t } from '../i18n'
 
 interface Props {
   menus: MenuDef[]
@@ -10,6 +11,10 @@ interface Props {
   toggleOutline: () => void
   toggleTheme: () => void
   formatShortcut: (shortcut: string) => string
+  /** P12: ms timestamp of the last autosave/draft-save; null = none yet. */
+  autoSaveAt?: number | null
+  /** P13: open the sidebar folder-search view (Ctrl+Shift+F). */
+  openSearch?: () => void
 }
 
 /**
@@ -24,8 +29,16 @@ export default function Titlebar({
   theme,
   toggleOutline,
   toggleTheme,
-  formatShortcut
+  formatShortcut,
+  autoSaveAt,
+  openSearch
 }: Props): React.JSX.Element {
+  const autoSaveLabel =
+    autoSaveAt != null
+      ? t('tb.autoSaved', {
+          time: new Date(autoSaveAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        })
+      : null
   return (
     <div
       className="titlebar"
@@ -40,33 +53,41 @@ export default function Titlebar({
       <span className="tb-title">
         {dirty && <span className="tb-dirty">• </span>}
         {fileName} — VeloxMark
+        {autoSaveLabel && <span className="tb-autosave"> {autoSaveLabel}</span>}
       </span>
       <span className="tb-spacer" />
-      <button className="tb-btn" onClick={toggleOutline} title="Toggle outline">
+      <button
+        className="tb-btn"
+        onClick={openSearch}
+        title={t('app.searchInFolder')}
+      >
+        <SearchIcon />
+      </button>
+      <button className="tb-btn" onClick={toggleOutline} title={t('tb.outline')}>
         <PanelIcon />
       </button>
       <button
         className="tb-btn"
         onClick={toggleTheme}
-        title={`Toggle theme (${formatShortcut('Ctrl+Shift+T')})`}
+        title={t('tb.theme')}
       >
         {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
       </button>
       <div className="window-controls">
-        <button className="wc-btn" onClick={() => window.api.windowMinimize()} title="Minimize">
+        <button className="wc-btn" onClick={() => window.api.windowMinimize()} title={t('tb.minimize')}>
           <MinimizeIcon />
         </button>
         <button
           className="wc-btn"
           onClick={() => window.api.windowMaximizeRestore()}
-          title="Maximize / Restore"
+          title={t('tb.maximize')}
         >
           <MaximizeIcon />
         </button>
         <button
           className="wc-btn wc-close"
           onClick={() => window.api.windowClose()}
-          title="Close"
+          title={t('tb.close')}
         >
           <CloseIcon />
         </button>

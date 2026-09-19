@@ -14,6 +14,10 @@ import {
 } from './assists'
 import { imageInputExtension } from './images'
 import { imageSizeMarkdown } from './markdown-image-ext'
+import { foldField, foldGutterExtension, foldPlaceholderClickExtension, getFoldedKeys, toggleFold, restoreFolds, expandFolds } from './livePreview/fold'
+import { calloutClickExtension, calloutFoldField } from './livePreview/calloutFold'
+import { codeBlockUiField } from './livePreview/codeBlockUi'
+import { linkNavExtension } from './livePreview/linkNav'
 import { modeClassesExtension, typewriterExtension } from './modes'
 import { getPreferences } from '../preferences/store'
 import {
@@ -38,6 +42,8 @@ export interface EditorCallbacks {
   onSelectionChanged: () => void
   /** Fired when the syntax tree advanced (async parse chunks completing). */
   onTreeChanged: () => void
+  /** P18: fold set changed via toggle/restore/expand effects. */
+  onFoldChanged?: () => void
   /**
    * P05: assets need a document directory — resolves true once the document
    * has a path (Save As ran), false when the user cancelled.
@@ -67,6 +73,13 @@ export function createExtensions(
 ): Extension[] {
   return [
     gutterCompartment.of(showLineNumbers ? lineNumbers() : []),
+    // P18 heading folds: dedicated gutter (arrows on heading lines) +
+    // placeholder-click reopen. lineNumbers toggles independently via its
+    // own compartment above.
+    foldGutterExtension,
+    foldPlaceholderClickExtension,
+    // P21 callouts: head-line/`⋯ N 行` chip click toggles the body fold.
+    calloutClickExtension,
     history(),
     drawSelection(),
     highlightActiveLine(),
@@ -75,21 +88,35 @@ export function createExtensions(
     EditorState.allowMultipleSelections.of(true),
     EditorView.lineWrapping,
     livePreviewField,
+    // P18: folded heading keys (`level:text`) — the field the gutter, fold
+    // decorations and session restore all read/write.
+    foldField,
+    // P21: callout fold overrides (Map key = `lineFrom|TYPE`); defaults still
+    // parse from the source `+/-` markers at build time.
+    calloutFoldField,
     // P10: active table cell / session column widths — drives enterTable.
     tableEditField,
+    // P24: code-block expand memory (content-hash keyed, session-only).
+    codeBlockUiField,
     // P08 mode flags are read from the store (not the args): this runs once at
     // editor creation, and the App effect keeps them in sync afterwards.
     livePreviewConfigExtension({
       theme,
       baseDir: '',
       imageEpoch: 0,
+      linkEpoch: 0,
       mode: getPreferences().sourceMode ? 'source' : 'live',
       focusMode: getPreferences().focusMode,
-      typewriterMode: getPreferences().typewriterMode
+      typewriterMode: getPreferences().typewriterMode,
+      codeBlockCollapseLines: getPreferences().codeBlockCollapseLines,
+      codeBlockShowLineNumbers: getPreferences().codeBlockShowLineNumbers,
+      codeBlockWrap: getPreferences().codeBlockWrap
     }),
     modeClassesExtension,
     typewriterExtension(),
     editingAssistsCompartment.of(editingAssistsExtension(assists)),
+    // P17: modifier-click navigation + hover tooltip for rendered links.
+    linkNavExtension,
     // Image paste/drop is core behavior — always on (Prec.high inside).
     imageInputExtension(callbacks.ensureSaved),
     themeCompartment.of(compartmentThemes[theme]),
@@ -100,6 +127,14 @@ export function createExtensions(
       if (syntaxTree(update.startState) !== syntaxTree(update.state)) {
         callbacks.onTreeChanged()
       }
+      // P18: fold set changes — effect-driven toggles/restores (no doc or
+      // selection change) plus identity flips from auto-expand (selection
+      // jumps) and the docChanged key-drop filter, which emit no effects.
+      const foldTouched =
+        update.transactions.some((tr) =>
+          tr.effects.some((e) => e.is(toggleFold) || e.is(restoreFolds) || e.is(expandFolds))
+        ) || getFoldedKeys(update.startState) !== getFoldedKeys(update.state)
+      if (foldTouched) callbacks.onFoldChanged?.()
     })
   ]
 }
@@ -136,6 +171,19 @@ export function bumpImageEpoch(view: EditorView): void {
   view.dispatch({
     effects: livePreviewConfigCompartment.reconfigure(
       livePreviewConfigFacet.of({ ...config, imageEpoch: config.imageEpoch + 1 })
+    )
+  })
+}
+
+/**
+ * P17: force a decoration rebuild after link-existence cache updates
+ * (folder watcher / save / window focus — 仿 bumpImageEpoch).
+ */
+export function bumpLinkEpoch(view: EditorView): void {
+  const config = getLivePreviewConfig(view.state)
+  view.dispatch({
+    effects: livePreviewConfigCompartment.reconfigure(
+      livePreviewConfigFacet.of({ ...config, linkEpoch: config.linkEpoch + 1 })
     )
   })
 }

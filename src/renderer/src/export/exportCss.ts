@@ -3,33 +3,14 @@
  *
  * Mirrors the visual values of the editor's `cm-md-*` styles in styles.css,
  * but targets semantic tags (h1/p/table/…) inside `.export-doc` so the output
- * has no CodeMirror dependency. Theme variables are duplicated from
- * `.theme-light` / `.theme-dark` — keep the two palettes in sync by hand.
+ * has no CodeMirror dependency. Theme variables come from export/palette.ts
+ * (P20) — shared with the rich-text clipboard inline styles.
  */
 
-const lightVars = `
-  --bg: #ffffff;
-  --bg-alt: #fafafa;
-  --fg: #333333;
-  --fg-dim: #888888;
-  --border: #e5e5e5;
-  --accent: #0969da;
-  --quote-border: #d0d7de;
-  --code-bg: rgba(175, 184, 193, 0.2);
-  --hr-color: #d8dee4;
-`
+import { DARK_PALETTE, LIGHT_PALETTE, paletteToCssVars } from './palette'
 
-const darkVars = `
-  --bg: #1e1e1e;
-  --bg-alt: #252526;
-  --fg: #d4d4d4;
-  --fg-dim: #888888;
-  --border: #333333;
-  --accent: #58a6ff;
-  --quote-border: #444444;
-  --code-bg: rgba(110, 118, 129, 0.25);
-  --hr-color: #444444;
-`
+const lightVars = `\n${paletteToCssVars(LIGHT_PALETTE)}\n`
+const darkVars = `\n${paletteToCssVars(DARK_PALETTE)}\n`
 
 export const EXPORT_DOC_CSS = `
 .export-theme-light {${lightVars}}
@@ -217,4 +198,119 @@ export const EXPORT_DOC_CSS = `
 .export-theme-dark .katex {
   color: #d4d4d4;
 }
+
+/* ---- P11 extended syntax ---------------------------------------------------- */
+
+.export-doc .export-fm-title {
+  margin-top: 0;
+}
+
+.export-doc mark.export-mark,
+.export-doc .export-mark {
+  background: var(--highlight-bg);
+  border-radius: 2px;
+  padding: 0 1px;
+  color: inherit;
+}
+
+.export-doc sup.export-sup,
+.export-doc .export-sup {
+  font-size: 0.75em;
+  vertical-align: super;
+}
+
+.export-doc sub.export-sub,
+.export-doc .export-sub {
+  font-size: 0.75em;
+  vertical-align: sub;
+}
+
+.export-doc .export-footnote-ref {
+  font-size: 0.75em;
+}
+
+.export-doc .export-footnote-ref a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.export-doc .export-footnotes-sep {
+  margin-top: 2em;
+}
+
+.export-doc ol.export-footnotes {
+  font-size: 0.9em;
+  color: var(--fg-dim);
+}
+
+.export-doc ol.export-footnotes li {
+  margin: 0.25em 0;
+}
+
+.export-doc .export-footnote-backref {
+  color: var(--accent);
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.export-doc abbr {
+  text-decoration: underline dotted var(--fg-dim);
+  cursor: help;
+}
+
+.export-doc dl.export-dl {
+  margin: 0.5em 0;
+}
+
+.export-doc dl.export-dl dt {
+  font-weight: 600;
+  margin-top: 0.4em;
+}
+
+.export-doc dl.export-dl dd {
+  margin: 0.15em 0 0.15em 1.5em;
+  color: var(--fg-dim);
+}
+
+/* ---- P21 callouts ------------------------------------------------------------ */
+
+.export-doc .export-callout {
+  margin: 0.75em 0;
+  padding: 10px 14px;
+  border-left: 4px solid var(--co-bar, var(--quote-border));
+  background: var(--co-bg, var(--bg-alt));
+  border-radius: 0 6px 6px 0;
+  color: var(--fg);
+  font-style: normal;
+}
+
+.export-doc .export-callout-head {
+  font-weight: 600;
+  margin: 0 0 0.35em;
+}
+
+.export-doc .export-callout-body {
+  margin: 0;
+}
+
+.export-doc .export-callout-body > :first-child { margin-top: 0; }
+.export-doc .export-callout-body > :last-child { margin-bottom: 0; }
+
+.export-doc .export-callout-note { --co-bar: #0969da; --co-bg: #f0f6fc; }
+.export-doc .export-callout-tip { --co-bar: #1a7f37; --co-bg: #eef8f2; }
+.export-doc .export-callout-important { --co-bar: #8250df; --co-bg: #f5e9f7; }
+.export-doc .export-callout-warning { --co-bar: #9a6700; --co-bg: #fff6e0; }
+.export-doc .export-callout-caution { --co-bar: #cf222e; --co-bg: #fff0ee; }
+.export-doc .export-callout-info { --co-bar: #0a7ea4; --co-bg: #e7f3ff; }
+.export-doc .export-callout-success { --co-bar: #1a7f37; --co-bg: #e6f6ec; }
+.export-doc .export-callout-danger { --co-bar: #cf222e; --co-bg: #ffebe9; }
+
+.export-theme-dark .export-callout-note { --co-bar: #4493f8; --co-bg: #1c2b3a; }
+.export-theme-dark .export-callout-tip { --co-bar: #3fb950; --co-bg: #1c2e1e; }
+.export-theme-dark .export-callout-important { --co-bar: #a371f7; --co-bg: #2a2140; }
+.export-theme-dark .export-callout-warning { --co-bar: #d29922; --co-bg: #3a2e12; }
+.export-theme-dark .export-callout-caution { --co-bar: #f85149; --co-bg: #3d1c20; }
+.export-theme-dark .export-callout-info { --co-bar: #58a6ff; --co-bg: #1c2b3a; }
+.export-theme-dark .export-callout-success { --co-bar: #3fb950; --co-bg: #1c2e1e; }
+.export-theme-dark .export-callout-danger { --co-bar: #f85149; --co-bg: #3d1418; }
 `

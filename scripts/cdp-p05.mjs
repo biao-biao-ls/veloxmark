@@ -15,7 +15,12 @@ import { fileURLToPath } from 'node:url'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const CDP_PORT = 9224
 const CDP = `http://127.0.0.1:${CDP_PORT}`
-const ELECTRON_BIN = join(ROOT, 'node_modules', 'electron', 'dist', 'electron.exe')
+const electronPkg = join(ROOT, 'node_modules', 'electron', 'dist')
+const ELECTRON_BIN = [
+  join(electronPkg, 'Electron.app', 'Contents', 'MacOS', 'Electron'),
+  join(electronPkg, 'electron.exe'),
+  join(electronPkg, 'electron')
+].find((p) => existsSync(p))
 const TMP = join(ROOT, 'scripts', 'tmp-p05')
 const OUTSIDE = join(ROOT, 'scripts', 'tmp-p05-outside')
 const FIXTURE_PATH = join(TMP, 'fixture.md')
@@ -128,6 +133,20 @@ async function main() {
   // folder workspace (watcher active for the image:changed test).
   check('boot: window.api', await waitFor(`!!window.api`))
   check('boot: editor', await waitFor(`!!window.__veloxEditor?.view`))
+  // P12 hygiene: disable autosave/crash-recovery so draft dialogs and
+  // mid-test autosaves never interfere with the image/session checks.
+  await evaluate(`(() => {
+    const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') ?? '{}')
+    localStorage.setItem('veloxmark.preferences', JSON.stringify({
+      ...raw, language: 'en', crashRecoveryEnabled: false, autoSaveMode: 'off'
+    }))
+  })()`)
+  try {
+    const drafts = await evaluate(`window.api.draftList()`)
+    for (const d of drafts ?? []) {
+      await evaluate(`window.api.draftDiscard(${JSON.stringify(d.path)})`)
+    }
+  } catch { /* drafts API unavailable — nothing to clean */ }
   // The app's own session-persist effect may still be flushing shortly after
   // boot; seed, then verify the seed survived before reloading.
   const seeded = await (async () => {

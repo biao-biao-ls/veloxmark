@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { t } from '../i18n'
 
 export interface TreeMenuItem {
   label: string
@@ -67,7 +68,7 @@ export default function TreeMenu({ x, y, items, onClose }: Props): React.JSX.Ele
             item.action()
           }}
         >
-          {item.label}
+          {t(item.label)}
         </button>
       ))}
     </div>

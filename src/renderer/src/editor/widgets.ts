@@ -7,6 +7,10 @@ import mermaid from 'mermaid'
 import githubCss from 'highlight.js/styles/github.css?raw'
 import githubDarkCss from 'highlight.js/styles/github-dark.css?raw'
 import type { ThemeName } from './theme'
+import type { FrontMatterSummary } from './livePreview/extendedSyntax'
+import { t } from '../i18n'
+import { toggleCodeBlockFold } from './livePreview/codeBlockUi'
+import { openMermaidLightbox } from '../components/mermaidLightboxBus'
 
 // ---- highlight.js themes, scoped under the app theme class ------------------
 // Injected lazily on first widget render so importing this module in a
@@ -34,6 +38,30 @@ const mermaidCache = new Map<string, string>()
 let mermaidSeq = 0
 let mermaidBaseInitialized = false
 
+// P15: mermaid.render is main-thread heavy — a large document full of
+// diagrams would otherwise kick off dozens of concurrent renders on one
+// rebuild. Cap concurrency at 2; excess callers queue FIFO.
+const MERMAID_MAX_CONCURRENCY = 2
+let mermaidActive = 0
+const mermaidWaiters: Array<() => void> = []
+
+async function acquireMermaidSlot(): Promise<void> {
+  if (mermaidActive < MERMAID_MAX_CONCURRENCY) {
+    mermaidActive++
+    return
+  }
+  await new Promise<void>((resolve) => {
+    mermaidWaiters.push(resolve)
+  })
+  // Slot was transferred to us by releaseMermaidSlot — already counted.
+}
+
+function releaseMermaidSlot(): void {
+  const next = mermaidWaiters.shift()
+  if (next) next()
+  else mermaidActive--
+}
+
 function ensureMermaidBase(): void {
   if (mermaidBaseInitialized) return
   mermaidBaseInitialized = true
@@ -51,27 +79,36 @@ export function clearMermaidCache(): void {
 }
 
 export async function renderMermaid(code: string, theme: ThemeName): Promise<string> {
-  ensureMermaidBase()
   const key = `${theme}\n${code}`
+  // Cache hits skip the queue entirely.
   const cached = mermaidCache.get(key)
   if (cached) return cached
-  mermaid.initialize({
-    startOnLoad: false,
-    suppressErrorRendering: true,
-    theme: theme === 'dark' ? 'dark' : 'neutral',
-    fontFamily:
-      "'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, sans-serif"
-  })
-  const { svg } = await mermaid.render(`mmd-${mermaidSeq++}`, code)
-  mermaidCache.set(key, svg)
-  return svg
+  await acquireMermaidSlot()
+  try {
+    ensureMermaidBase()
+    // Re-check: a queued predecessor may have rendered the same diagram.
+    const again = mermaidCache.get(key)
+    if (again) return again
+    mermaid.initialize({
+      startOnLoad: false,
+      suppressErrorRendering: true,
+      theme: theme === 'dark' ? 'dark' : 'neutral',
+      fontFamily:
+        "'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, sans-serif"
+    })
+    const { svg } = await mermaid.render(`mmd-${mermaidSeq++}`, code)
+    mermaidCache.set(key, svg)
+    return svg
+  } finally {
+    releaseMermaidSlot()
+  }
 }
 
 /**
  * Serialize a rendered mermaid <svg> and save it to a file chosen by the user.
  * Mermaid inlines its theme CSS into the SVG, so the output is self-contained.
  */
-async function exportSvg(svgEl: SVGSVGElement): Promise<void> {
+export async function exportSvg(svgEl: SVGSVGElement): Promise<void> {
   const clone = svgEl.cloneNode(true) as SVGSVGElement
   clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
   if (!clone.getAttribute('viewBox')) {
@@ -86,6 +123,137 @@ async function exportSvg(svgEl: SVGSVGElement): Promise<void> {
   ])
   if (!target) return
   await window.api.writeFile(target, content)
+}
+
+/**
+ * P16: rasterize a rendered SVG to a PNG data URL at `scale`× (default 2×,
+ * matching the Typora-quality bar). Returns null when the canvas or the SVG
+ * image fails to load.
+ */
+async function rasterizeSvgToPng(svgEl: SVGSVGElement, scale = 2): Promise<string | null> {
+  const clone = svgEl.cloneNode(true) as SVGSVGElement
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+  const w = svgEl.clientWidth || Number(clone.getAttribute('width')) || 800
+  const h = svgEl.clientHeight || Number(clone.getAttribute('height')) || 600
+  if (!clone.getAttribute('viewBox')) clone.setAttribute('viewBox', `0 0 ${w} ${h}`)
+  const svgText = new XMLSerializer().serializeToString(clone)
+  const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgText)}`
+  const img = new Image()
+  try {
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve()
+      img.onerror = () => reject(new Error('svg image failed to load'))
+      img.src = url
+    })
+  } catch {
+    return null
+  }
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round((img.width || w) * scale))
+  canvas.height = Math.max(1, Math.round((img.height || h) * scale))
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+  return canvas.toDataURL('image/png')
+}
+
+/** P16: PNG export — 2× raster + native save dialog (default name diagram.png). */
+export async function exportPng(svgEl: SVGSVGElement): Promise<void> {
+  const dataUrl = await rasterizeSvgToPng(svgEl, 2)
+  if (!dataUrl) return
+  const target = await mermaidIo.showSaveDialog('diagram.png', [
+    { name: 'PNG', extensions: ['png'] },
+    { name: 'All Files', extensions: ['*'] }
+  ])
+  if (!target) return
+  const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1)
+  await mermaidIo.writeFileBase64(target, b64)
+}
+
+/** P16: Copy Image — PNG data URL onto the OS clipboard. */
+export async function copyPngImage(svgEl: SVGSVGElement): Promise<void> {
+  const dataUrl = await rasterizeSvgToPng(svgEl, 2)
+  if (!dataUrl) return
+  await mermaidIo.clipboardWriteImage(dataUrl)
+}
+
+// ---- P16 export IO seam ------------------------------------------------------
+// contextBridge's `window.api` is frozen (non-configurable, non-writable) in
+// current Electron builds, so e2e suites inject capture stubs here instead —
+// same test-hook convention as window.__veloxTable / __veloxEditor. Product
+// code always falls through to window.api when no override is installed.
+
+interface MermaidExportIo {
+  showSaveDialog: (defaultPath?: string, filters?: { name: string; extensions: string[] }[]) => Promise<string | null>
+  writeFileBase64: (filePath: string, base64: string) => Promise<boolean>
+  clipboardWriteImage: (dataUrl: string) => Promise<void>
+}
+
+let mermaidIoOverride: Partial<MermaidExportIo> | null = null
+
+export function setMermaidExportIo(io: Partial<MermaidExportIo> | null): void {
+  mermaidIoOverride = io
+}
+
+const mermaidIo: MermaidExportIo = {
+  showSaveDialog: (defaultPath, filters) =>
+    mermaidIoOverride?.showSaveDialog
+      ? mermaidIoOverride.showSaveDialog(defaultPath, filters)
+      : window.api.showSaveDialog(defaultPath, filters),
+  writeFileBase64: (filePath, base64) =>
+    mermaidIoOverride?.writeFileBase64
+      ? mermaidIoOverride.writeFileBase64(filePath, base64)
+      : window.api.writeFileBase64(filePath, base64),
+  clipboardWriteImage: (dataUrl) =>
+    mermaidIoOverride?.clipboardWriteImage
+      ? mermaidIoOverride.clipboardWriteImage(dataUrl)
+      : window.api.clipboardWriteImage(dataUrl)
+}
+
+// ---- P16 mermaid error-state memory -----------------------------------------
+// Live preview recreates the widget whenever the fence text changes, so an
+// in-DOM "old SVG" would be lost exactly when it is needed (user breaks the
+// syntax). Remember the last good render per fence start; on failure the new
+// widget shows that SVG dimmed instead of wiping the diagram.
+
+interface MermaidGoodRender {
+  svg: string
+  code: string
+  theme: ThemeName
+}
+
+const mermaidLastGood = new Map<number, MermaidGoodRender>()
+
+function rememberMermaidGood(pos: number, entry: MermaidGoodRender): void {
+  mermaidLastGood.set(pos, entry)
+  // Bounded: drop oldest entries when the document churns a lot.
+  if (mermaidLastGood.size > 64) {
+    const first = mermaidLastGood.keys().next().value
+    if (first !== undefined) mermaidLastGood.delete(first)
+  }
+}
+
+/** Test hook / theme switch hook: clear remembered mermaid renders. */
+export function clearMermaidLastGood(): void {
+  mermaidLastGood.clear()
+}
+
+/**
+ * P16: jump-to-source for a mermaid parse error. Mermaid messages carry
+ * `Parse error on line N` (or `line N: …`) — N is 1-based within the fence
+ * body. Returns the doc position when a line can be extracted.
+ */
+function mermaidErrorDocPos(view: EditorView, sourceFrom: number, msg: string): number | null {
+  const m = /line\s+(\d+)/i.exec(msg)
+  const state = view.state
+  if (state.doc.length === 0 || sourceFrom >= state.doc.length) return null
+  // Body starts on the line after the ```mermaid opener.
+  const opener = state.doc.lineAt(Math.min(sourceFrom, state.doc.length - 1))
+  const bodyStartLine = opener.number + 1
+  const targetLine = m ? bodyStartLine + (Number(m[1]) - 1) : bodyStartLine
+  const lineCount = state.doc.lines
+  const clamped = Math.min(Math.max(targetLine, 1), lineCount)
+  return state.doc.line(clamped).from
 }
 
 // ---- shared render helpers (P04 export reuses these for static DOM) --------
@@ -226,28 +394,102 @@ export abstract class BlockWidget extends WidgetType {
   }
 }
 
+/** P24: UI options threaded from LivePreviewConfig into the code-block widget. */
+export interface CodeBlockUiOptions {
+  collapseLines: number
+  showLineNumbers: boolean
+  wrap: boolean
+  expanded: boolean
+  key: string
+}
+
+/**
+ * P24: span-aware highlighted-line splitter. hljs output wraps tokens in
+ * <span>s that may cross line breaks; splitting on '\n' alone would leave
+ * unbalanced tags and wreck the line-number layout. Close every open span at
+ * a newline and reopen the active tag stack on the next line.
+ */
+export function splitHighlightedLines(html: string): string[] {
+  const lines: string[] = []
+  const stack: string[] = []
+  let cur = ''
+  let i = 0
+  while (i < html.length) {
+    const ch = html[i]
+    if (ch === '<') {
+      const end = html.indexOf('>', i)
+      if (end === -1) {
+        cur += html.slice(i)
+        break
+      }
+      const tag = html.slice(i, end + 1)
+      if (tag.startsWith('</')) stack.pop()
+      else if (!tag.endsWith('/>')) stack.push(tag)
+      cur += tag
+      i = end + 1
+    } else if (ch === '\n') {
+      for (let k = 0; k < stack.length; k++) cur += '</span>'
+      lines.push(cur)
+      cur = stack.join('')
+      i += 1
+    } else {
+      const nextNl = html.indexOf('\n', i)
+      const nextTag = html.indexOf('<', i)
+      let stop = html.length
+      if (nextTag !== -1) stop = Math.min(stop, nextTag)
+      if (nextNl !== -1) stop = Math.min(stop, nextNl)
+      cur += html.slice(i, stop)
+      i = stop
+    }
+  }
+  lines.push(cur)
+  return lines
+}
+
+/** P04/P24: fenced code widget — Copy (always the FULL code), optional line
+ * collapse (expand memory per content hash), line numbers and soft wrap. */
 export class CodeBlockWidget extends BlockWidget {
   constructor(
     readonly code: string,
     readonly lang: string,
     sourceFrom: number,
-    sourceTo: number
+    sourceTo: number,
+    readonly ui?: CodeBlockUiOptions
   ) {
     super(sourceFrom, sourceTo)
   }
 
   eq(other: CodeBlockWidget): boolean {
+    if (
+      other.code !== this.code ||
+      other.lang !== this.lang ||
+      other.sourceFrom !== this.sourceFrom
+    ) {
+      return false
+    }
+    const a = this.ui
+    const b = other.ui
+    if (!a && !b) return true
+    if (!a || !b) return false
     return (
-      other.code === this.code &&
-      other.lang === this.lang &&
-      other.sourceFrom === this.sourceFrom
+      a.collapseLines === b.collapseLines &&
+      a.showLineNumbers === b.showLineNumbers &&
+      a.wrap === b.wrap &&
+      a.expanded === b.expanded &&
+      a.key === b.key
     )
   }
 
   toDOM(view: EditorView): HTMLElement {
     ensureScopedCss()
+    const lines = this.code.split('\n')
+    const threshold = this.ui?.collapseLines ?? 0
+    const collapsed = threshold > 0 && lines.length > threshold && !this.ui?.expanded
+
     const wrap = document.createElement('div')
     wrap.className = 'cm-md-code-block'
+    if (this.ui?.wrap) wrap.classList.add('cm-md-code-block-wrap')
+    if (collapsed) wrap.classList.add('cm-md-code-block-collapsed')
 
     const label = document.createElement('div')
     label.className = 'cm-md-code-lang'
@@ -257,17 +499,63 @@ export class CodeBlockWidget extends BlockWidget {
     const pre = document.createElement('pre')
     const codeEl = document.createElement('code')
     codeEl.className = 'hljs'
-    codeEl.innerHTML = highlightCodeHtml(this.code, this.lang)
+    const fullHtml = highlightCodeHtml(this.code, this.lang)
+    const htmlLines = splitHighlightedLines(fullHtml)
+    // Collapsed blocks render the FIRST `threshold` lines, so numbering 1..N
+    // is correct in both states (expanded numbers the full range 1..total).
+    const visible = collapsed ? htmlLines.slice(0, threshold) : htmlLines
+    if (this.ui?.showLineNumbers) {
+      codeEl.classList.add('cm-md-code-lines')
+      codeEl.innerHTML = visible
+        .map(
+          (h, i) =>
+            `<span class="cm-md-code-line"><span class="cm-md-code-line-no">${i + 1}</span><span class="cm-md-code-line-src">${h}</span></span>`
+        )
+        .join('')
+    } else {
+      codeEl.innerHTML = visible.join('\n')
+    }
     pre.appendChild(codeEl)
     wrap.appendChild(pre)
 
-    this.attachBlockToolbar(wrap, [
-      {
-        label: 'Copy',
-        title: 'Copy code',
-        onClick: (btn) => void this.copyWithFeedback(this.code, btn)
+    const items: BlockToolbarItem[] = []
+    // P24: Fold re-collapses an expanded long block (memory key cleared).
+    if (!collapsed && threshold > 0 && lines.length > threshold && this.ui) {
+      const ui = this.ui
+      items.push({
+        label: t('codeBlock.fold'),
+        title: t('codeBlock.fold'),
+        onClick: () => {
+          view.dispatch({ effects: toggleCodeBlockFold.of({ key: ui.key, expanded: false }) })
+        }
+      })
+    }
+    items.push({
+      label: 'Copy',
+      title: 'Copy code',
+      onClick: (btn) => void this.copyWithFeedback(this.code, btn)
+    })
+    this.attachBlockToolbar(wrap, items)
+
+    // P24: expander chip — revealed lines on click. stopPropagation keeps the
+    // press away from wrapWithGap's click-to-source listener.
+    if (collapsed && this.ui) {
+      const hidden = lines.length - threshold
+      const btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'cm-md-code-expander'
+      btn.textContent = t('codeBlock.expand', { n: hidden })
+      const stop = (e: Event) => {
+        e.stopPropagation()
+        e.preventDefault()
       }
-    ])
+      btn.addEventListener('mousedown', stop)
+      btn.addEventListener('click', (e) => {
+        stop(e)
+        view.dispatch({ effects: toggleCodeBlockFold.of({ key: this.ui!.key, expanded: true }) })
+      })
+      wrap.appendChild(btn)
+    }
     return this.wrapWithGap(wrap, view)
   }
 }
@@ -293,10 +581,60 @@ export class MermaidWidget extends BlockWidget {
   toDOM(view: EditorView): HTMLElement {
     const wrap = document.createElement('div')
     wrap.className = 'cm-md-mermaid'
-    const body = document.createElement('div')
-    body.className = 'cm-md-mermaid-body'
-    body.textContent = 'Rendering diagram…'
-    wrap.appendChild(body)
+    const svgHost = document.createElement('div')
+    svgHost.className = 'cm-md-mermaid-svg'
+    const badge = document.createElement('div')
+    badge.className = 'cm-md-mermaid-badge'
+    badge.hidden = true
+    const errorBar = document.createElement('div')
+    errorBar.className = 'cm-md-mermaid-error'
+    errorBar.hidden = true
+    wrap.appendChild(svgHost)
+    wrap.appendChild(badge)
+    wrap.appendChild(errorBar)
+
+    // Restore the last good render for this fence (if any) so a broken edit
+    // dims the previous SVG instead of blanking the block.
+    const prev = mermaidLastGood.get(this.sourceFrom)
+    const showPlaceholder = (): void => {
+      svgHost.textContent = ''
+      const ph = document.createElement('div')
+      ph.className = 'cm-md-mermaid-placeholder'
+      ph.textContent = t('mermaid.failed')
+      svgHost.appendChild(ph)
+    }
+    if (prev && prev.svg) {
+      svgHost.innerHTML = prev.svg
+      svgHost.classList.add('is-dim')
+      badge.hidden = false
+      badge.textContent = t('mermaid.updating')
+    } else if (this.code.trim() === '') {
+      showPlaceholder()
+    } else {
+      svgHost.textContent = t('mermaid.rendering')
+    }
+
+    const setError = (msg: string): void => {
+      errorBar.hidden = false
+      errorBar.textContent = `${t('mermaid.errorLabel')}: ${msg}`
+      const jump = document.createElement('button')
+      jump.type = 'button'
+      jump.className = 'cm-md-mermaid-jump'
+      jump.textContent = t('mermaid.jumpToSource')
+      jump.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      })
+      jump.addEventListener('click', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        const pos = mermaidErrorDocPos(view, this.sourceFrom, msg)
+        view.dispatch({ selection: { anchor: pos ?? this.sourceFrom }, scrollIntoView: true })
+        view.focus()
+      })
+      errorBar.appendChild(jump)
+      badge.hidden = true
+    }
 
     this.attachBlockToolbar(wrap, [
       {
@@ -308,18 +646,62 @@ export class MermaidWidget extends BlockWidget {
         label: 'SVG',
         title: 'Export diagram as SVG',
         onClick: () => {
-          const svgEl = body.querySelector('svg')
+          const svgEl = svgHost.querySelector('svg')
           if (svgEl) void exportSvg(svgEl)
+        }
+      },
+      {
+        label: t('mermaid.png'),
+        title: 'Export diagram as PNG (2x)',
+        onClick: () => {
+          const svgEl = svgHost.querySelector('svg')
+          if (svgEl) void exportPng(svgEl)
+        }
+      },
+      {
+        label: t('mermaid.copyImage'),
+        title: 'Copy diagram image to clipboard',
+        onClick: () => {
+          const svgEl = svgHost.querySelector('svg')
+          if (svgEl) void copyPngImage(svgEl)
         }
       }
     ])
 
+    // svg-body click opens the fullscreen lightbox; clicks on padding,
+    // the error bar or the placeholder still fall through to click-to-source.
+    wrap.addEventListener('mousedown', (e) => {
+      if (e.target instanceof Element && e.target.closest('svg') && !e.target.closest('.cm-md-block-toolbar')) {
+        e.stopPropagation()
+      }
+    })
+    wrap.addEventListener('click', (e) => {
+      if (!(e.target instanceof Element)) return
+      if (!e.target.closest('svg') || e.target.closest('.cm-md-block-toolbar')) return
+      e.stopPropagation()
+      const svgEl = svgHost.querySelector('svg')
+      if (svgEl) openMermaidLightbox(svgEl.outerHTML)
+    })
+
     void renderMermaid(this.code, this.theme)
       .then((svg) => {
-        body.innerHTML = svg
+        rememberMermaidGood(this.sourceFrom, { svg, code: this.code, theme: this.theme })
+        svgHost.classList.remove('is-dim')
+        svgHost.innerHTML = svg
+        badge.hidden = true
+        errorBar.hidden = true
+        errorBar.textContent = ''
       })
       .catch((err: unknown) => {
-        body.textContent = `Mermaid error: ${err instanceof Error ? err.message : String(err)}`
+        const msg = err instanceof Error ? err.message : String(err)
+        if (prev && prev.svg) {
+          // Keep the old SVG visible-but-dimmed + error overlay (P16 ①).
+          svgHost.innerHTML = prev.svg
+          svgHost.classList.add('is-dim')
+        } else {
+          showPlaceholder()
+        }
+        setError(msg)
       })
 
     return this.wrapWithGap(wrap, view)
@@ -372,6 +754,130 @@ export class InlineMathWidget extends WidgetType {
 
   ignoreEvent(): boolean {
     return false
+  }
+}
+
+// ---- P11 extended syntax widgets ----------------------------------------------
+
+/**
+ * Collapsed YAML front-matter card. Clicking anywhere puts the cursor inside
+ * the `---` source range — the blockTouched rule then drops the widget and
+ * reveals the raw source, same edit loop as code blocks.
+ */
+export class FrontMatterWidget extends WidgetType {
+  constructor(
+    readonly summary: FrontMatterSummary,
+    readonly yaml: string,
+    readonly sourceFrom: number,
+    readonly sourceTo: number
+  ) {
+    super()
+  }
+
+  eq(other: FrontMatterWidget): boolean {
+    return other.yaml === this.yaml && other.sourceFrom === this.sourceFrom
+  }
+
+  toDOM(view: EditorView): HTMLElement {
+    const outer = document.createElement('div')
+    outer.className = 'cm-md-block-gap'
+    const card = document.createElement('div')
+    card.className = 'cm-md-frontmatter'
+
+    const head = document.createElement('div')
+    head.className = 'cm-md-frontmatter-head'
+    head.textContent = 'Front Matter'
+    card.appendChild(head)
+
+    const bodyEl = document.createElement('div')
+    bodyEl.className = 'cm-md-frontmatter-body'
+    const s = this.summary
+    const rows: Array<[string, string]> = []
+    if (s.title) rows.push(['title', s.title])
+    if (s.date) rows.push(['date', s.date])
+    if (s.tags && s.tags.length) rows.push(['tags', s.tags.join(', ')])
+    if (rows.length === 0) {
+      // No recognized summary keys — show a compact key listing instead.
+      const keys = s.keys.length ? s.keys.join(', ') : this.yaml.split(/\r?\n/).length + ' lines'
+      rows.push(['keys', keys])
+    }
+    for (const [k, v] of rows) {
+      const kv = document.createElement('div')
+      kv.className = 'cm-md-frontmatter-kv'
+      const keyEl = document.createElement('span')
+      keyEl.className = 'cm-md-frontmatter-key'
+      keyEl.textContent = k
+      const valEl = document.createElement('span')
+      valEl.className = 'cm-md-frontmatter-val'
+      valEl.textContent = v
+      kv.appendChild(keyEl)
+      kv.appendChild(valEl)
+      bodyEl.appendChild(kv)
+    }
+    card.appendChild(bodyEl)
+    outer.appendChild(card)
+
+    outer.addEventListener('mousedown', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      // Cursor into the YAML body → blockTouched → source shows for editing.
+      view.dispatch({
+        selection: { anchor: Math.min(this.sourceFrom + 4, this.sourceTo) },
+        scrollIntoView: true
+      })
+      view.focus()
+    })
+    return outer
+  }
+
+  ignoreEvent(): boolean {
+    return true
+  }
+}
+
+/**
+ * Footnote reference `[^id]` → superscript number. Click jumps to the
+ * definition line when one exists.
+ */
+export class FootnoteRefWidget extends WidgetType {
+  constructor(
+    readonly id: string,
+    readonly num: number | undefined,
+    readonly defPos: number | undefined
+  ) {
+    super()
+  }
+
+  eq(other: FootnoteRefWidget): boolean {
+    return other.id === this.id && other.num === this.num && other.defPos === this.defPos
+  }
+
+  toDOM(view: EditorView): HTMLElement {
+    const el = document.createElement('sup')
+    el.className = 'cm-md-footnote-ref'
+    el.textContent = this.num != null && this.num > 0 ? `[${this.num}]` : `[${this.id}]`
+    if (this.defPos != null) {
+      el.classList.add('cm-md-footnote-ref-clickable')
+      el.title = `跳转到脚注 [^${this.id}]`
+      const defPos = this.defPos
+      el.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        view.dispatch({
+          selection: { anchor: defPos },
+          effects: EditorView.scrollIntoView(defPos, { y: 'center' }),
+          scrollIntoView: true
+        })
+        view.focus()
+      })
+    } else {
+      el.title = `未找到脚注定义 [^${this.id}]`
+    }
+    return el
+  }
+
+  ignoreEvent(): boolean {
+    return true
   }
 }
 

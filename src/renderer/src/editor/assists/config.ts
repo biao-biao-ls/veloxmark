@@ -18,11 +18,14 @@ export interface EditingAssistsConfig {
   enabled: boolean
   /** Wrap a bare pasted URL as `<url>` (otherwise paste it as-is). */
   wrapBareUrlOnPaste: boolean
+  /** P19: convert text/html clipboard payloads to Markdown on paste. */
+  pasteHtmlToMd: boolean
 }
 
 export const DEFAULT_EDITING_ASSISTS_CONFIG: EditingAssistsConfig = {
   enabled: true,
-  wrapBareUrlOnPaste: true
+  wrapBareUrlOnPaste: true,
+  pasteHtmlToMd: true
 }
 
 export const editingAssistsConfigFacet = Facet.define<EditingAssistsConfig, EditingAssistsConfig>(
@@ -41,12 +44,17 @@ export function getEditingAssists(state: EditorState): EditingAssistsConfig {
 /** Restore persisted config (backed by the P03 preferences store). */
 export function readEditingAssistsConfig(): EditingAssistsConfig {
   const prefs = getPreferences()
-  return { enabled: prefs.typingAssistsEnabled, wrapBareUrlOnPaste: prefs.wrapBareUrlOnPaste }
+  return {
+    enabled: prefs.typingAssistsEnabled,
+    wrapBareUrlOnPaste: prefs.wrapBareUrlOnPaste,
+    pasteHtmlToMd: prefs.pasteHtmlToMd
+  }
 }
 
 export function persistEditingAssistsConfig(patch: Partial<EditingAssistsConfig>): void {
   const next: Partial<Preferences> = {}
   if (patch.enabled != null) next.typingAssistsEnabled = patch.enabled
   if (patch.wrapBareUrlOnPaste != null) next.wrapBareUrlOnPaste = patch.wrapBareUrlOnPaste
+  if (patch.pasteHtmlToMd != null) next.pasteHtmlToMd = patch.pasteHtmlToMd
   setPreferences(next)
 }

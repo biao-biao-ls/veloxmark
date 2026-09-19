@@ -4,7 +4,7 @@
 //   npx electron . --remote-debugging-port=9223
 //   node scripts/cdp-p03.mjs a && (restart electron) && node scripts/cdp-p03.mjs b
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { spawn } from 'node:child_process'
+import { spawn, execSync } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -14,9 +14,14 @@ const CDP_PORT = 9223
 const CDP = `http://127.0.0.1:${CDP_PORT}`
 // Point straight at dist/electron.exe: the .bin/electron.cmd shim is a batch
 // file, and Node's spawn rejects it with EINVAL on this platform.
-const ELECTRON_BIN = join(ROOT, 'node_modules', 'electron', 'dist', 'electron.exe')
-const OUT = 'D:/code/typora/scripts'
-const TMP = 'D:/code/typora/scripts/tmp-p03'
+const electronPkg = join(ROOT, 'node_modules', 'electron', 'dist')
+const ELECTRON_BIN = [
+  join(electronPkg, 'Electron.app', 'Contents', 'MacOS', 'Electron'),
+  join(electronPkg, 'electron.exe'),
+  join(electronPkg, 'electron')
+].find((p) => existsSync(p))
+const OUT = join(ROOT, 'scripts')
+const TMP = join(OUT, 'tmp-p03')
 const GEOM_PROBE_PATH = join(TMP, 'window-state-path.json')
 
 // The geometry file lives in the OS userData dir under a profile folder whose
@@ -26,6 +31,8 @@ function geometryCandidates() {
     process.env.APPDATA,
     process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, 'Roaming'),
     join(process.env.HOME ?? '', 'AppData', 'Roaming'),
+    // macOS Electron userData: ~/Library/Application Support/<AppName>/window-state.json
+    join(process.env.HOME ?? '', 'Library', 'Application Support'),
     join(process.env.HOME ?? '', '.config')
   ].filter(Boolean)
   const out = []
@@ -62,6 +69,8 @@ function leveldbLogText() {
     process.env.APPDATA,
     process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, 'Roaming'),
     join(process.env.HOME ?? '', 'AppData', 'Roaming'),
+    // macOS Electron userData: ~/Library/Application Support/<AppName>/window-state.json
+    join(process.env.HOME ?? '', 'Library', 'Application Support'),
     join(process.env.HOME ?? '', '.config')
   ].filter(Boolean)
   for (const root of roots) {
@@ -125,13 +134,28 @@ async function getTarget(timeoutMs = 15000) {
 // Used to repopulate the store after a Phase A flush, and to recover if the
 // app is not running when the script starts.
 function startApp() {
+  if (!ELECTRON_BIN) {
+    console.error('startApp: ELECTRON_BIN not found under', electronPkg)
+    return Promise.reject(new Error('ELECTRON_BIN missing'))
+  }
   app = spawn(ELECTRON_BIN, ['.', `--remote-debugging-port=${CDP_PORT}`], {
     cwd: ROOT,
     stdio: 'ignore',
     windowsHide: true,
     shell: false
   })
-  return getTarget(30000)
+  app.on('error', (e) => console.error('startApp spawn error:', e.message))
+  app.on('exit', (code, sig) => console.error('startApp spawn exit:', code, sig))
+  return getTarget(30000).catch(async (e) => {
+    try {
+      const r = await fetch(`${CDP}/json`)
+      const t = await r.text()
+      console.error('startApp getTarget failed; /json =', t.slice(0, 200))
+    } catch (e2) {
+      console.error('startApp getTarget failed; /json unreachable:', e2.message)
+    }
+    throw e
+  })
 }
 
 let target = await getTarget()
@@ -252,16 +276,56 @@ async function flushLocalStorage() {
     await app.kill().catch(() => {})
     app = null
   }
+  // macOS: closing the page target does not reliably quit the process, and a
+  // still-bound debugging port makes the relaunch fail to bind (no CDP). Kill
+  // anything holding the port before relaunching.
+  try {
+    execSync(
+      `ps -axo pid,command | grep 'remote-debugging-port=${CDP_PORT}' | grep -v grep | awk '{print $1}' | xargs kill -9`,
+      { stdio: 'ignore' }
+    )
+  } catch {}
+  await new Promise((r) => setTimeout(r, 1000))
   pending = new Map() // replies from the dead socket are abandoned on purpose
-  await startApp()
-
-  target = await getTarget(30000)
+  // Fresh instances occasionally come up with the debugging port bound but no
+  // page target yet (empty /json) — retry the launch cycle rather than crash.
+  target = null
+  const killPortHolders = () => {
+    try {
+      execSync(
+        `ps -axo pid,command | grep 'remote-debugging-port=${CDP_PORT}' | grep -v grep | awk '{print $1}' | xargs kill -9`,
+        { stdio: 'ignore' }
+      )
+    } catch {}
+  }
+  for (let attempt = 1; attempt <= 3 && !target; attempt++) {
+    console.error(`flush: relaunch attempt ${attempt}`)
+    try {
+      target = await startApp()
+    } catch (e) {
+      console.error(`flush: attempt ${attempt} failed:`, e.message)
+      target = null
+    }
+    if (!target) {
+      killPortHolders()
+      await new Promise((r) => setTimeout(r, 1200))
+    }
+  }
+  if (!target) throw new Error('no CDP page target after 3 launch attempts')
   const nextWs = new WebSocket(target.webSocketDebuggerUrl)
   await new Promise((resolve) => nextWs.addEventListener('open', resolve))
   wireSocket(nextWs)
   await send('Page.enable')
   await send('Runtime.enable')
   await waitFor('.cm-content')
+// Pin UI language to English — OS locale may be zh; the asserts below are English.
+await evaluate(`(() => {
+  const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') || '{}')
+  localStorage.setItem('veloxmark.preferences', JSON.stringify({ ...raw, language: 'en' }))
+  window.__veloxPrefs?.setPreferences({ language: 'en' })
+  return true
+})()`)
+
   APP_URL = target.url
 }
 
@@ -280,6 +344,24 @@ await send('Runtime.enable')
 await wait(2500)
 await waitFor('.cm-content')
 
+// P12 hygiene: wipe any leftover crash-recovery drafts so a recovery dialog
+// can never appear over the preferences/session assertions.
+await evaluate(`(async () => {
+  try {
+    const drafts = await window.api.draftList()
+    for (const d of drafts ?? []) await window.api.draftDiscard(d.path)
+  } catch { /* older build without drafts API */ }
+  return true
+})()`)
+
+// Pin UI language to English — OS locale may be zh; the asserts below are English.
+await evaluate(`(() => {
+  const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') || '{}')
+  localStorage.setItem('veloxmark.preferences', JSON.stringify({ ...raw, language: 'en' }))
+  window.__veloxPrefs?.setPreferences({ language: 'en' })
+  return true
+})()`)
+
 if (PHASE === 'a') {
   // Wipe profile state and reload so defaults are actually tested.
   await evaluate(`(() => {
@@ -292,6 +374,13 @@ if (PHASE === 'a') {
   })()`)
   await wait(3000)
   await waitFor('.cm-content')
+// Pin UI language to English — OS locale may be zh; the asserts below are English.
+await evaluate(`(() => {
+  const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') || '{}')
+  localStorage.setItem('veloxmark.preferences', JSON.stringify({ ...raw, language: 'en' }))
+  window.__veloxPrefs?.setPreferences({ language: 'en' })
+  return true
+})()`)
 
   // --- defaults on a clean profile ------------------------------------------
   const initial = await evaluate(`(() => ({
@@ -329,8 +418,15 @@ if (PHASE === 'a') {
   }))()`)
   assert(panel.open, 'Ctrl+, opens the preferences panel', panel)
   assert(
-    JSON.stringify(panel.sections) === JSON.stringify(['Appearance', 'Editing', 'Behavior']),
-    'panel groups are Appearance/Editing/Behavior',
+    JSON.stringify(panel.sections) === JSON.stringify([
+      'Appearance',
+      'Editing',
+      'Images',
+      'Workspace',
+      'Autosave & Recovery',
+      'Behavior'
+    ]),
+    'panel groups are the six current sections (en)',
     panel
   )
   await screenshot(`${OUT}/p03-prefs-panel.png`)
@@ -351,18 +447,32 @@ if (PHASE === 'a') {
   assert(afterFontSize.stored === 18, 'font size 18 written to store', afterFontSize)
 
   // --- line-number toggle reconfigures the editor ----------------------------
-  await evaluate(`(() => {
+  // Click by label text, not checkbox index — P24 added more editing-section
+  // checkboxes, so positional selectors are stale.
+  const toggleLineNumbers = () => evaluate(`(() => {
     const boxes = [...document.querySelectorAll('.prefs-dialog input[type=checkbox]')]
-    boxes[2].click() // Show line numbers
+    const box = boxes.find((b) => {
+      const row = b.closest('label') ?? b.parentElement
+      return /line number/i.test(row?.textContent ?? '')
+    })
+    if (!box) return false
+    box.click()
+    return true
   })()`)
-  await wait(300)
-  const guttersOff = await evaluate(`!document.querySelector('.cm-gutters')`)
-  assert(guttersOff, 'line numbers toggle removes gutters')
-  await evaluate(`(() => {
-    const boxes = [...document.querySelectorAll('.prefs-dialog input[type=checkbox]')]
-    boxes[2].click()
-  })()`)
-  await wait(200)
+  const toggledOff = await toggleLineNumbers()
+  assert(toggledOff, 'line-numbers checkbox found by label')
+  await wait(400)
+  // P21 added the fold gutter (`cm-md-fold-gutter`) — `.cm-gutters` CONTAINER
+  // always exists now; toggling line numbers off removes only the CM6
+  // lineNumbers gutter element (`.cm-gutter.cm-lineNumbers`).
+  const lineNumGutterOff = await evaluate(`!document.querySelector('.cm-gutter.cm-lineNumbers')`)
+  assert(lineNumGutterOff, 'line numbers toggle removes line-number gutter', await evaluate(`(() => {
+    return [...document.querySelectorAll('.cm-gutters > *')].map((n) => n.className)
+  })()`))
+  await toggleLineNumbers()
+  await wait(400)
+  const lineNumGutterBack = await evaluate(`!!document.querySelector('.cm-gutter.cm-lineNumbers')`)
+  assert(lineNumGutterBack, 'line numbers toggle restores line-number gutter')
 
   // --- theme: dark, persisted as preference ----------------------------------
   await evaluate(`(() => {
@@ -387,7 +497,7 @@ if (PHASE === 'a') {
   // --- recording: openRecentFile path records via addRecentFile (loadContent) -
   // Drive a real open through the session-restore code path is restart-only;
   // here we assert the store helper directly, then verify sidebar persistence.
-  await evaluate(`window.__veloxPrefs.addRecentFile('D:/code/typora/scripts/tmp-p03/seed.md')`)
+  await evaluate(`window.__veloxPrefs.addRecentFile(${JSON.stringify(join(TMP, 'seed.md'))})`)
   const recents = await evaluate(`window.__veloxPrefs.getSession().recentFiles`)
   assert(recents.length === 1 && recents[0].endsWith('seed.md'), 'addRecentFile records', recents)
 
@@ -421,25 +531,25 @@ if (PHASE === 'a') {
   const seeded = await evaluate(`(() => {
     const s = window.__veloxPrefs.getSession()
     const files = [
-      'D:/code/typora/scripts/tmp-p03/a.md',
-      'D:/code/typora/scripts/tmp-p03/missing-1.md',
-      'D:/code/typora/scripts/tmp-p03/missing-2.md',
-      'D:/code/typora/scripts/tmp-p03/b.md',
-      'D:/code/typora/scripts/tmp-p03/missing-3.md',
-      'D:/code/typora/scripts/tmp-p03/missing-4.md',
-      'D:/code/typora/scripts/tmp-p03/missing-5.md',
-      'D:/code/typora/scripts/tmp-p03/missing-6.md',
-      'D:/code/typora/scripts/tmp-p03/missing-7.md',
-      'D:/code/typora/scripts/tmp-p03/missing-8.md',
-      'D:/code/typora/scripts/tmp-p03/missing-9.md',
-      'D:/code/typora/scripts/tmp-p03/missing-10.md'
+      ${JSON.stringify(join(TMP, 'a.md'))},
+      ${JSON.stringify(join(TMP, 'missing-1.md'))},
+      ${JSON.stringify(join(TMP, 'missing-2.md'))},
+      ${JSON.stringify(join(TMP, 'b.md'))},
+      ${JSON.stringify(join(TMP, 'missing-3.md'))},
+      ${JSON.stringify(join(TMP, 'missing-4.md'))},
+      ${JSON.stringify(join(TMP, 'missing-5.md'))},
+      ${JSON.stringify(join(TMP, 'missing-6.md'))},
+      ${JSON.stringify(join(TMP, 'missing-7.md'))},
+      ${JSON.stringify(join(TMP, 'missing-8.md'))},
+      ${JSON.stringify(join(TMP, 'missing-9.md'))},
+      ${JSON.stringify(join(TMP, 'missing-10.md'))}
     ]
     const next = {
       ...s,
       recentFiles: files,
       lastFilePath: files[0],
       // Acceptance criterion 2: an opened folder comes back in files mode.
-      lastFolderPath: 'D:/code/typora/scripts/tmp-p03',
+      lastFolderPath: ${JSON.stringify(TMP)},
       sidebarMode: 'files'
     }
     localStorage.setItem('veloxmark.session', JSON.stringify(next))

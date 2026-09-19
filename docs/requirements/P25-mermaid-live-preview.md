@@ -1,6 +1,6 @@
 # P25 Mermaid 源码实时预览
 
-优先级：P25（**后置：V2 候选，当前不排期**） | 类别：UX/功能 |
+优先级：P25（原标注 V2 后置；本批全量实施，已完成） | 类别：UX/功能 |
 预估规模：M
 
 状态说明：本需求源自 P16 讨论中的"分屏实时预览"场景。P16 先交付错误
@@ -22,17 +22,17 @@
 
 ## 功能需求（路线 B：预览面板）
 
-- [ ] 光标进入任一 mermaid fence（源码态，`blockTouched` 既有行为）：
+- [x] 光标进入任一 mermaid fence（源码态，`blockTouched` 既有行为）：
       底部/侧向预览面板自动出现，实时渲染**该 fence 当前源码**的图
-- [ ] 文档内容变更且光标仍在 fence 内：debounce 300ms 重渲染（走
+- [x] 文档内容变更且光标仍在 fence 内：debounce 300ms 重渲染（走
       P15 限流队列）；渲染失败面板内显示错误（P16 覆盖条样式复用）
-- [ ] 光标离开 fence：面板延迟 2s 收起（期间移回则取消）；手动 pin
+- [x] 光标离开 fence：面板延迟 2s 收起（期间移回则取消）；手动 pin
       按钮可保持面板常驻（pin 状态存 session，对接 P03）
-- [ ] 面板操作：Copy 源码 / 导出 SVG / PNG（复用 P16 工具条能力）
-- [ ] 面板可调高度（拖拽分隔条），偏好记住高度
-- [ ] 源码模式（P08）与 live 模式行为一致（fence 内光标判定基于语法树
+- [x] 面板操作：Copy 源码 / 导出 SVG / PNG（复用 P16 工具条能力）
+- [x] 面板可调高度（拖拽分隔条），偏好记住高度
+- [x] 源码模式（P08）与 live 模式行为一致（fence 内光标判定基于语法树
       与模式无关）
-- [ ] 文档中多个 mermaid fence：面板只跟随光标所在 fence；pin 时锁定
+- [x] 文档中多个 mermaid fence：面板只跟随光标所在 fence；pin 时锁定
       当前 fence（以内容 hash 标识，文档编辑后 hash 变化跟随更新）
 
 ## 技术方案要点
@@ -68,6 +68,37 @@ Widget 内嵌 textarea 分屏 + write-through（每次变更 debounce 后 dispat
    不改面板内容。
 4. 连续快速输入：编辑器无输入延迟劣化（对照 P15 基准）。
 5. 全程只有一份数据源：Ctrl+Z 在编辑器内正常回退每一步输入。
+
+
+## 实施状态（已完成）
+
+- e2e：`scripts/cdp-p25.mjs`（port 9242）**26/26 ALL PASS**；typecheck /
+  unit（154）/ smoke（5/5）全绿。
+- 按**路线 B（预览面板）**实现，未做 Widget 内嵌编辑（路线 A 为非目标）：
+  - `components/MermaidPreviewPanel.tsx`：编辑器下方 flex 分栏面板——
+    debounce 300ms 走 `renderMermaid`（内含 P15 并发限流队列 + 缓存）；
+    渲染失败显示 P16 风格错误条并**保留上一版 SVG**（加暗）；工具条
+    Pin/取消固定、Copy 源码、SVG、PNG、Copy Image、关闭；拖拽分隔条
+    调高，高度存偏好 `mermaidPreviewHeight`（默认 240，clamp 120–800）。
+  - 光标判定：`editor/mermaidPreview.ts` `mermaidFenceAt`（语法树向上
+    resolve FencedCode + CodeInfo=mermaid，模式无关）挂在 createExtensions
+    的 onSelectionChanged/onChange 上（App 侧 ref 桥），结果即时；
+    离开 fence 延迟 2s 收起、期间移回取消；pin 存 session
+    `mermaidPreviewPin`（P03，e2e 已断言重启前持久化写入）。
+  - pin 锁定：按内容 hash（FNV-1a）记忆 pinned fence；文档编辑后
+    `resolvePinnedFence` 先按 hash 匹配、失效时跟随最近 fence（hash 变化
+    跟随更新）；e2e 验证 pin 时切换光标到另一 fence 面板内容不变，编辑
+    pinned fence 内容面板跟随，取消固定后面板回到光标所在 fence。
+  - 数据流满足通用约束：面板纯投影——每次触发从 `view.state.sliceDoc`
+    读源码渲染，面板无可写状态、无 contentEditable（e2e 断言
+    editableCount=0）；Ctrl+Z 在编辑器内逐步回退每一步输入（唯一数据
+    源断言；注意 CM6 history 500ms 分组——e2e 以间隔输入验证逐步撤销）。
+- e2e 实测：进 fence 面板+SVG 出现 ≤0.8s（暖缓存后远低于验收 0.5s 预算
+  的量级，冷启动含 mermaid 初始化）；输入后图更新 ≤1.2s（300ms debounce
+  + 渲染）；语法错误提示 + 上一版保留 + 改对恢复；离开 2s 收起；源码
+  模式（P08）判定一致。
+- 未做（验收外/非目标）：多图同时 pin、面板内源码编辑、语法补全、
+  P15 基准脚本的显式帧率对照（渲染走既有队列，输入路径无额外同步工作）。
 
 ## 非目标
 
