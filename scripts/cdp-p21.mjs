@@ -244,7 +244,12 @@ async function main() {
       restoreLastSession: false,
       showStatusBar: true,
       theme: 'light',
-      typingAssistsEnabled: true
+      typingAssistsEnabled: true,
+      // Clean writing modes — SIGKILL teardown of earlier cdp runs can leave
+      // typewriter/focus/source latched in shared userData localStorage.
+      typewriterMode: false,
+      focusMode: false,
+      sourceMode: false
     }))
     const sess = JSON.parse(localStorage.getItem('veloxmark.session') || '{}')
     localStorage.setItem('veloxmark.session', JSON.stringify({ ...sess, sidebarVisible: false }))
@@ -479,14 +484,36 @@ async function main() {
   await evaluate(`window.__veloxP20.setThemePref('dark')`)
   const darkApplied = await waitFor(`!!document.querySelector('.app.theme-dark')`, 8000)
   await wait(300)
-  const darkCheck = await evaluate(`(() => {
-    const missing = ${JSON.stringify(TYPES8)}.filter(
-      (tp) => !document.querySelector('.cm-md-callout-' + tp)
-    )
+  const darkCheck = await evaluate(`(async () => {
+    // CM6 viewport recycling: block widgets vanish from DOM when scrolled
+    // out — step through the doc and accumulate callout classes seen.
+    const found = new Set()
+    const scroll = window.__veloxEditor.view.scrollDOM
+    scroll.scrollTop = 0
+    const scan = () => {
+      for (const el of document.querySelectorAll('[class*="cm-md-callout-"]')) {
+        for (const c of el.classList) {
+          const m = c.match(/^cm-md-callout-([a-z]+)$/)
+          if (m) found.add(m[1])
+        }
+      }
+    }
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+    for (let i = 0; i <= 24; i++) {
+      scroll.scrollTop = (scroll.scrollHeight * i) / 24
+      await new Promise((r) => requestAnimationFrame(r))
+      await sleep(40)
+      scan()
+    }
+    scroll.scrollTop = 0
+    await sleep(80)
+    scan()
+    const missing = ${JSON.stringify(TYPES8)}.filter((tp) => !found.has(tp))
     const warn = document.querySelector('.cm-md-callout-warning')
     const note = document.querySelector('.cm-md-callout-note')
     return {
       missing,
+      found: [...found],
       warnBg: warn ? getComputedStyle(warn).backgroundColor : null,
       noteBg: note ? getComputedStyle(note).backgroundColor : null,
       appClass: document.querySelector('.app')?.className ?? ''

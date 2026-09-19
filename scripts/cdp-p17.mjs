@@ -513,20 +513,26 @@ async function main() {
   })()`)
   await waitFor(`window.__veloxP12.getDirty() === true`)
   check('doc dirty before link click', (await evaluate(`window.__veloxP12.getDirty()`)) === true)
+  // P26 multi-doc semantics: navigation away from a dirty doc must NOT gate —
+  // the dirty doc stays open in its own tab; the link target becomes active.
+  // (Pre-P26 single-doc flow prompted "Save changes" here — obsolete.)
   await clickLink('goB')
-  const dirtyDialog = await waitFor(`document.querySelector('.dialog') !== null`, 8000)
-  const dirtyMsg = await dialogMessage()
-  check(
-    'dirty navigation shows unsaved-changes gate',
-    dirtyDialog === true && dirtyMsg.includes('Save changes'),
-    dirtyMsg
-  )
-  check('click "Don\'t Save" proceeds', (await clickDialogBtn("Don't Save")) === true)
+  const dirtyDialog = await waitFor(`document.querySelector('.dialog') !== null`, 2500)
+  check('P26: dirty navigation shows NO unsaved-changes gate', dirtyDialog === false,
+    dirtyDialog ? (await dialogMessage()) : '')
   const dirtyNavOk = await waitFor(
     `window.__veloxP13.getFilePath() !== null && window.__veloxP13.getFilePath().endsWith('b.md')`,
     8000
   )
-  check('link navigation proceeds after discard', dirtyNavOk, String(await evaluate(`window.__veloxP13.getFilePath()`)))
+  check('link navigation proceeds without a dialog', dirtyNavOk,
+    String(await evaluate(`window.__veloxP13.getFilePath()`)))
+  const dirtyPreserved = await waitFor(`(() => {
+    if (!window.__veloxP26) return false
+    const tabs = window.__veloxP26.tabs()
+    return tabs.some((t) => t.path && t.path.endsWith('a.md') && t.dirty === true)
+  })()`, 5000)
+  check('dirty a.md preserved in its own tab after navigation', dirtyPreserved,
+    JSON.stringify(await evaluate(`window.__veloxP26 ? window.__veloxP26.tabs().map(t=>({n:t.name,d:t.dirty})) : 'no-p26-hook'`)))
 
   // ---- summary ----------------------------------------------------------------
   console.log(`\n${failures.length === 0 ? 'ALL PASS' : `${failures.length} FAILURE(S)`}`)

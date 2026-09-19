@@ -358,6 +358,12 @@ async function main() {
   console.log('\n--- debounce autosave ---')
   await pinPrefs(`autoSaveMode: 'debounce', autoSaveDelaySec: 3, crashRecoveryEnabled: true`)
   await evaluate(`window.__veloxPrefs.setPreferences({ autoSaveMode: 'debounce', autoSaveDelaySec: 3, crashRecoveryEnabled: true, restoreLastSession: false })`)
+  // React must commit the prefs change before the next editor change —
+  // notifyChange reads argsRef.current.mode; a same-tick edit sees the OLD
+  // mode and never arms the debounce timer (probed: settle fixes it).
+  await new Promise((r) => setTimeout(r, 450))
+  check('autosave: prefs mode visible before edit',
+    (await evaluate(`window.__veloxPrefs.getPreferences().autoSaveMode`)) === 'debounce')
   writeFileSync(AS_PATH, 'v0\n')
   const mtimeBefore = statSync(AS_PATH).mtimeMs
   await evaluate(`window.__veloxP12.loadDoc(${JSON.stringify('v0\n')}, ${JSON.stringify(AS_PATH)})`)
@@ -513,15 +519,13 @@ async function main() {
   check('cleanup: no recovery dialog', !(await evaluate(`!!document.querySelector('.dialog')`)))
 
   console.log(`\n${failures.length === 0 ? 'ALL PASS' : `${failures.length} FAILURES`}`)
-  if (failures.length) {
-    console.log(failures.join('\n'))
-    process.exitCode = 1
-  }
-  if (app) app.kill()
+  if (failures.length) console.log(failures.join('\n'))
+  if (app) app.kill('SIGKILL')
+  process.exit(failures.length ? 1 : 0)
 }
 
 main().catch((err) => {
   console.error(err)
-  if (app) app.kill()
-  process.exitCode = 1
+  if (app) app.kill('SIGKILL')
+  process.exit(1)
 })

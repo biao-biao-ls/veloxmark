@@ -4,7 +4,7 @@
 //   node scripts/cdp-p08.mjs
 // Launches Electron itself if no target is listening. Drives the real editor
 // (window.__veloxEditor) against scripts/tmp-p08/.
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync, existsSync} from 'node:fs'
 import { spawn } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -12,7 +12,12 @@ import { fileURLToPath } from 'node:url'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const CDP_PORT = 9225
 const CDP = `http://127.0.0.1:${CDP_PORT}`
-const ELECTRON_BIN = join(ROOT, 'node_modules', 'electron', 'dist', 'electron.exe')
+const electronPkg = join(ROOT, 'node_modules', 'electron', 'dist')
+const ELECTRON_BIN = [
+  join(electronPkg, 'Electron.app', 'Contents', 'MacOS', 'Electron'),
+  join(electronPkg, 'electron.exe'),
+  join(electronPkg, 'electron')
+].find((p) => existsSync(p))
 const TMP = join(ROOT, 'scripts', 'tmp-p08')
 const FIXTURE_PATH = join(TMP, 'fixture.md')
 
@@ -148,40 +153,31 @@ async function main() {
   ))
 
   // ---- View menu shows the three mode items ------------------------------------
+  // macOS hides the renderer menubar (`.platform-mac .menubar { display:none }`;
+  // the native menu bar owns File/Edit/View there). Coordinate-based CDP clicks
+  // therefore land at 0,0 and never open the dropdown. Drive the SAME MenuBar
+  // component handlers via programmatic el.click() — hit-testing is skipped for
+  // display:none nodes, but React onClick still fires, so command wiring
+  // (buildMenus → MenuItem.action → cmd.run) is what these steps exercise.
   const openViewMenu = async () => {
-    // Click the "View" top-level label, then read the dropdown.
-    const rect = await evaluate(`(() => {
+    const clicked = await evaluate(`(() => {
       const btns = [...document.querySelectorAll('.menubar-label')]
       const view = btns.find((b) => b.textContent.trim() === 'View')
-      if (!view) return null
-      const r = view.getBoundingClientRect()
-      return { x: r.x + r.width / 2, y: r.y + r.height / 2 }
+      if (!view) return false
+      view.click()
+      return true
     })()`)
-    if (!rect) return false
-    await send('Input.dispatchMouseEvent', {
-      type: 'mousePressed', x: rect.x, y: rect.y, button: 'left', buttons: 1, clickCount: 1
-    })
-    await send('Input.dispatchMouseEvent', {
-      type: 'mouseReleased', x: rect.x, y: rect.y, button: 'left', buttons: 1, clickCount: 1
-    })
+    if (!clicked) return false
     return waitFor(`!!document.querySelector('.menu-dropdown')`, 2000)
   }
   const clickMenuItem = async (label) => {
-    const rect = await evaluate(`(() => {
+    return evaluate(`(() => {
       const items = [...document.querySelectorAll('.menu-dropdown .menu-item')]
       const item = items.find((b) => b.querySelector('.menu-item-label')?.textContent.trim() === ${JSON.stringify(label)})
-      if (!item) return null
-      const r = item.getBoundingClientRect()
-      return { x: r.x + r.width / 2, y: r.y + r.height / 2 }
+      if (!item) return false
+      item.click()
+      return true
     })()`)
-    if (!rect) return false
-    await send('Input.dispatchMouseEvent', {
-      type: 'mousePressed', x: rect.x, y: rect.y, button: 'left', buttons: 1, clickCount: 1
-    })
-    await send('Input.dispatchMouseEvent', {
-      type: 'mouseReleased', x: rect.x, y: rect.y, button: 'left', buttons: 1, clickCount: 1
-    })
-    return true
   }
   const menuItemChecked = (label) => evaluate(`(() => {
     const items = [...document.querySelectorAll('.menu-dropdown .menu-item')]

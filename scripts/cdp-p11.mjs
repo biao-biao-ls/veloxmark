@@ -396,11 +396,14 @@ async function main() {
   }
 
   ws.close()
-  if (app) app.kill()
+  // SIGTERM + natural drain hangs when the helper keeps handles open —
+  // SIGKILL + explicit exit keeps the regress runner moving.
+  if (app) app.kill('SIGKILL')
+  process.exit(failures.length ? 1 : 0)
 }
 
 main().catch((err) => {
   console.error('P11 e2e crashed:', err)
-  if (app) app.kill()
-  process.exitCode = 1
+  if (app) app.kill('SIGKILL')
+  process.exit(1)
 })

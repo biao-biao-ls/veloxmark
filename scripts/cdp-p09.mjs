@@ -327,7 +327,10 @@ async function main() {
     await setDoc(FIXTURE, 0)
     await settle()
     t = await visibleText()
-    const decoCount = await evaluate(`document.querySelectorAll('.cm-editor [class*="cm-md-"]').length`)
+    // Content-layer scope (parity with cdp-p08): the fold gutter's empty
+    // `cm-md-fold-gutter` container is gutter chrome that always renders —
+    // source mode disables live-preview *decorations*, which live in .cm-content.
+    const decoCount = await evaluate(`document.querySelectorAll('.cm-content [class*="cm-md-"]').length`)
     check('regress: source mode shows raw ** in DOM text', t.includes('**bold**'), t.split('\n')[0])
     check('regress: source mode zero cm-md-* nodes', decoCount === 0, String(decoCount))
     check('regress: cm-source-mode class on editor root',

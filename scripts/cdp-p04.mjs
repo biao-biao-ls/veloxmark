@@ -13,7 +13,12 @@ import { fileURLToPath } from 'node:url'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const CDP_PORT = 9224
 const CDP = `http://127.0.0.1:${CDP_PORT}`
-const ELECTRON_BIN = join(ROOT, 'node_modules', 'electron', 'dist', 'electron.exe')
+const electronPkg = join(ROOT, 'node_modules', 'electron', 'dist')
+const ELECTRON_BIN = [
+  join(electronPkg, 'Electron.app', 'Contents', 'MacOS', 'Electron'),
+  join(electronPkg, 'electron.exe'),
+  join(electronPkg, 'electron')
+].find((p) => existsSync(p))
 const TMP = join(ROOT, 'scripts', 'tmp-p04')
 const OUT_HTML = join(TMP, 'out.html')
 const OUT_PDF = join(TMP, 'out.pdf')

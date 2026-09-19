@@ -7,7 +7,7 @@
 //
 // Text selection is verified with real CDP mouse drags: synthetic
 // dispatchEvent cannot prove mousedown's default action survived.
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync, existsSync} from 'node:fs'
 import { spawn } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -15,7 +15,12 @@ import { fileURLToPath } from 'node:url'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const CDP_PORT = 9224
 const CDP = `http://127.0.0.1:${CDP_PORT}`
-const ELECTRON_BIN = join(ROOT, 'node_modules', 'electron', 'dist', 'electron.exe')
+const electronPkg = join(ROOT, 'node_modules', 'electron', 'dist')
+const ELECTRON_BIN = [
+  join(electronPkg, 'Electron.app', 'Contents', 'MacOS', 'Electron'),
+  join(electronPkg, 'electron.exe'),
+  join(electronPkg, 'electron')
+].find((p) => existsSync(p))
 const TMP = join(ROOT, 'scripts', 'tmp-p06')
 const FIXTURE_PATH = join(TMP, 'fixture.md')
 
@@ -292,14 +297,22 @@ async function main() {
   await send('Input.dispatchMouseEvent', {
     type: 'mouseReleased', x: cellRect.x, y: cellRect.y, button: 'left', buttons: 1, clickCount: 1
   })
-  check('click on table cell jumps to source', await waitFor(`
-    !document.querySelector('.cm-md-table-wrap table')
-  `, 3000))
+  // P09/P22 product evolution: clicking a cell activates in-place cell
+  // editing (tableEditField) — it no longer jumps to markdown source.
+  check(
+    'click on table cell activates cell editing (P22 semantics)',
+    await waitFor(`!!document.querySelector('.cm-md-table-wrap.cm-md-table-editing, .cm-md-table-cell-editing')`, 3000)
+  )
+  check('table widget still live after cell click', await evaluate(`!!document.querySelector('.cm-md-table-wrap table')`))
 
   // ---- click on block padding still jumps to source ---------------------------
   // Use the code block's bottom padding strip (inside the container, outside pre).
+  // CM6 recycles out-of-viewport block widgets — bring the code block back
+  // into the DOM before measuring it.
+  await waitFor(`!!document.querySelector('.cm-md-code-block')`, 5000).catch(() => false)
   const pad = await evaluate(`(() => {
     const block = document.querySelector('.cm-md-code-block')
+    if (!block) return null
     block.scrollIntoView({ block: 'center' })
     const pre = block.querySelector('pre')
     const br = block.getBoundingClientRect()
@@ -309,35 +322,70 @@ async function main() {
   })()`)
   // The code block has no horizontal padding (pre fills it), so click the
   // lang label strip — it is container chrome, not pre/code content.
+  // Re-anchor the code block after the table-cell click: CM6 recycles block
+  // widgets out of the DOM — scrollIntoView on a detached node is a no-op, so
+  // drive CM6 itself: select the first fence line + scrollIntoView:true.
+  await evaluate(`(() => {
+    const view = window.__veloxEditor.view
+    const doc = view.state.doc.toString()
+    const fence = doc.indexOf(String.fromCharCode(96, 96, 96))
+    if (fence < 0) return false
+    // P09 semantics: cursor INSIDE the fence shows raw source, not the widget.
+    // Anchor just BEFORE the fence line so the block renders as a widget.
+    view.dispatch({ selection: { anchor: Math.max(0, fence - 1) }, scrollIntoView: true })
+    return true
+  })()`)
+  const labelBack = await waitFor(`!!document.querySelector('.cm-md-code-block .cm-md-code-lang')`, 5000).catch(() => false)
+  if (!labelBack) {
+    // One more attempt after a settle — CM6 mounts widgets on the next frame.
+    await new Promise((r) => setTimeout(r, 300))
+    await evaluate(`(() => {
+      const view = window.__veloxEditor.view
+      const doc = view.state.doc.toString()
+      const fence = doc.indexOf(String.fromCharCode(96, 96, 96))
+      if (fence < 0) return false
+      view.dispatch({ selection: { anchor: Math.max(0, fence - 1) }, scrollIntoView: true })
+      return true
+    })()`)
+    await waitFor(`!!document.querySelector('.cm-md-code-block .cm-md-code-lang')`, 4000).catch(() => false)
+  }
   const langRect = await evaluate(`(() => {
     const label = document.querySelector('.cm-md-code-block .cm-md-code-lang')
+    if (!label) return null
     const r = label.getBoundingClientRect()
     return { x: r.x + r.width / 2, y: r.y + r.height / 2 }
   })()`)
-  await send('Input.dispatchMouseEvent', {
-    type: 'mousePressed', x: langRect.x, y: langRect.y, button: 'left', buttons: 1, clickCount: 1
-  })
-  await send('Input.dispatchMouseEvent', {
-    type: 'mouseReleased', x: langRect.x, y: langRect.y, button: 'left', buttons: 1, clickCount: 1
-  })
-  check('click on code chrome jumps to source', await waitFor(`(() => {
-    const view = window.__veloxEditor.view
-    const head = view.state.selection.main.head
-    const doc = view.state.doc.toString()
-    return !document.querySelector('.cm-md-code-block') && doc.slice(head, head + 3) === '\`\`\`'
-  })()`, 3000), await evaluate(`(() => {
-    const view = window.__veloxEditor.view
-    return JSON.stringify({
-      head: view.state.selection.main.head,
-      hasBlock: !!document.querySelector('.cm-md-code-block'),
-      around: view.state.doc.slice(Math.max(0, view.state.selection.main.head - 2), view.state.selection.main.head + 5)
+  if (!langRect) {
+    check('click on code chrome jumps to source', false,
+      'code-lang label absent after table scroll (viewport recycled the block)')
+  } else {
+    await send('Input.dispatchMouseEvent', {
+      type: 'mousePressed', x: langRect.x, y: langRect.y, button: 'left', buttons: 1, clickCount: 1
     })
-  })()`))
+    await send('Input.dispatchMouseEvent', {
+      type: 'mouseReleased', x: langRect.x, y: langRect.y, button: 'left', buttons: 1, clickCount: 1
+    })
+    check('click on code chrome jumps to source', await waitFor(`(() => {
+      const view = window.__veloxEditor.view
+      const head = view.state.selection.main.head
+      const doc = view.state.doc.toString()
+      return !document.querySelector('.cm-md-code-block') && doc.slice(head, head + 3) === '\`\`\`'
+    })()`, 3000), await evaluate(`(() => {
+      const view = window.__veloxEditor.view
+      return JSON.stringify({
+        head: view.state.selection.main.head,
+        hasBlock: !!document.querySelector('.cm-md-code-block'),
+        around: view.state.doc.slice(Math.max(0, view.state.selection.main.head - 2), view.state.selection.main.head + 5)
+      })
+    })()`))
+  }
 
   // Table: click the wrap's margin area (tables have no cell padding outside
   // the table element — use the wrap's left edge beyond the table when the
   // table is narrower, else skip to the wrap bottom). Fallback: math block
   // side padding always exists (padding: 8px 0 with centered content).
+  // scrollIntoView happens BEFORE measuring; still null-guard — CM6 may keep
+  // the block out of DOM until the viewport settles.
   const mathPad = await evaluate(`(() => {
     const el = document.querySelector('.cm-md-math-block')
     if (!el) return null
@@ -349,15 +397,21 @@ async function main() {
     const x = kr ? kr.x - 12 : r.x + 4
     return { x: Math.max(r.x + 2, x), y: r.y + r.height / 2 }
   })()`)
-  await send('Input.dispatchMouseEvent', {
-    type: 'mousePressed', x: mathPad.x, y: mathPad.y, button: 'left', buttons: 1, clickCount: 1
-  })
-  await send('Input.dispatchMouseEvent', {
-    type: 'mouseReleased', x: mathPad.x, y: mathPad.y, button: 'left', buttons: 1, clickCount: 1
-  })
-  check('click on math padding jumps to source', await waitFor(`
-    !document.querySelector('.cm-md-math-block')
-  `, 3000))
+  if (!mathPad) {
+    const present = await waitFor(`!!document.querySelector('.cm-md-math-block')`, 3000).catch(() => false)
+    check('click on math padding jumps to source', false,
+      `math block absent (waitFor recheck: ${present})`)
+  } else {
+    await send('Input.dispatchMouseEvent', {
+      type: 'mousePressed', x: mathPad.x, y: mathPad.y, button: 'left', buttons: 1, clickCount: 1
+    })
+    await send('Input.dispatchMouseEvent', {
+      type: 'mouseReleased', x: mathPad.x, y: mathPad.y, button: 'left', buttons: 1, clickCount: 1
+    })
+    check('click on math padding jumps to source', await waitFor(`
+      !document.querySelector('.cm-md-math-block')
+    `, 3000))
+  }
 
   ws.close()
   if (app) app.kill()
