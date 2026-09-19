@@ -171,6 +171,36 @@ export default function Preferences({ open, onClose }: Props): React.JSX.Element
             />
             <span>{t('prefs.showLineNumbers')}</span>
           </label>
+          <label className="prefs-row">
+            <span className="prefs-label">{t('prefs.codeBlockCollapse')}</span>
+            <input
+              className="prefs-input prefs-input-num"
+              type="number"
+              min={0}
+              max={500}
+              value={prefs.codeBlockCollapseLines}
+              onChange={(e) =>
+                setPreferences({ codeBlockCollapseLines: Math.max(0, Number(e.target.value) || 0) })
+              }
+            />
+            <span className="prefs-unit">{t('prefs.codeBlockCollapseUnit')}</span>
+          </label>
+          <label className="prefs-row prefs-check">
+            <input
+              type="checkbox"
+              checked={prefs.codeBlockShowLineNumbers}
+              onChange={(e) => setPreferences({ codeBlockShowLineNumbers: e.target.checked })}
+            />
+            <span>{t('prefs.codeBlockLineNumbers')}</span>
+          </label>
+          <label className="prefs-row prefs-check">
+            <input
+              type="checkbox"
+              checked={prefs.codeBlockWrap}
+              onChange={(e) => setPreferences({ codeBlockWrap: e.target.checked })}
+            />
+            <span>{t('prefs.codeBlockWrap')}</span>
+          </label>
         </div>
 
         <div className="prefs-section">

@@ -78,6 +78,13 @@ export interface Preferences {
   // ---- P23 document formatting ---------------------------------------------
   /** Run formatMarkdown before every save (default off). */
   formatOnSave: boolean
+  // ---- P24 code-block display ----------------------------------------------
+  /** Collapse code blocks longer than N lines (0 = never). */
+  codeBlockCollapseLines: number
+  /** Line-number column inside rendered code blocks. */
+  codeBlockShowLineNumbers: boolean
+  /** Soft-wrap long lines inside code blocks. */
+  codeBlockWrap: boolean
 }
 
 export interface SessionState {
@@ -128,7 +135,10 @@ export const DEFAULT_PREFERENCES: Preferences = {
   language: 'system',
   showStatusBar: true,
   externalLinkConfirm: true,
-  formatOnSave: false
+  formatOnSave: false,
+  codeBlockCollapseLines: 20,
+  codeBlockShowLineNumbers: false,
+  codeBlockWrap: true
 }
 
 const DEFAULT_SESSION: SessionState = {
@@ -232,6 +242,12 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
     showHiddenFiles: p.showHiddenFiles === true,
     focusMode: p.focusMode === true,
     formatOnSave: p.formatOnSave === true,
+    codeBlockCollapseLines:
+      typeof p.codeBlockCollapseLines === 'number' && p.codeBlockCollapseLines >= 0
+        ? Math.floor(p.codeBlockCollapseLines)
+        : 20,
+    codeBlockShowLineNumbers: p.codeBlockShowLineNumbers === true,
+    codeBlockWrap: p.codeBlockWrap !== false,
     typewriterMode: p.typewriterMode === true,
     sourceMode: p.sourceMode === true,
     autoSaveMode:

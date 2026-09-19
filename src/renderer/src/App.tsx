@@ -41,6 +41,7 @@ import {
 import { insertTableAtCursor, convertSelectionAtCursor, buildTableMarkdown } from './editor/table/insert'
 import { sniffDelimiter } from './editor/table/ops'
 import { formatMarkdown } from './editor/format'
+import { getCodeBlockExpanded, toggleCodeBlockFold } from './editor/livePreview/codeBlockUi'
 import { undo } from '@codemirror/commands'
 import MermaidLightbox from './components/MermaidLightbox'
 import { DialogHost, dialog } from './components/Dialog'
@@ -218,6 +219,31 @@ declare global {
       saveFile: () => Promise<boolean>
       getFilePath: () => string | null
     } | null
+    /** P24 e2e handle: code-block collapse / line numbers / wrap seams. */
+    __veloxP24: {
+      getDoc: () => string
+      loadDoc: (text: string, path: string | null) => void
+      setPrefs: (patch: Record<string, unknown>) => void
+      getPrefs: () => {
+        codeBlockCollapseLines: number
+        codeBlockShowLineNumbers: boolean
+        codeBlockWrap: boolean
+      }
+      getExpandedKeys: () => string[]
+      codeBlockInfo: () => {
+        count: number
+        collapsedCount: number
+        expanderText: string | null
+        hasFoldBtn: boolean
+        lineNoCount: number
+        wrapCount: number
+        renderedCodeLines: number
+        hasCollapsedClass: boolean
+      } | null
+      clickExpander: () => boolean
+      clickFold: () => boolean
+      clearExpanded: () => void
+    } | null
   }
 }
 window.__veloxEditor = null
@@ -233,6 +259,7 @@ window.__veloxP20 = null
 window.__veloxP21 = null
 window.__veloxP22 = null
 window.__veloxP23 = null
+window.__veloxP24 = null
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -624,7 +651,11 @@ export default function App(): React.JSX.Element {
     updateLivePreviewConfig(view, {
       mode: prefs.sourceMode ? 'source' : 'live',
       focusMode: prefs.focusMode,
-      typewriterMode: prefs.typewriterMode
+      typewriterMode: prefs.typewriterMode,
+      // P24: code-block display prefs — facet identity change rebuilds widgets.
+      codeBlockCollapseLines: prefs.codeBlockCollapseLines,
+      codeBlockShowLineNumbers: prefs.codeBlockShowLineNumbers,
+      codeBlockWrap: prefs.codeBlockWrap
     })
     // Line heights change when live-preview decorations drop (source) or
     // return (live); the doc offsets are identical either way, so re-centering
@@ -634,7 +665,14 @@ export default function App(): React.JSX.Element {
       const head = view.state.selection.main.head
       view.dispatch({ effects: EditorView.scrollIntoView(head) })
     }
-  }, [prefs.sourceMode, prefs.focusMode, prefs.typewriterMode])
+  }, [
+    prefs.sourceMode,
+    prefs.focusMode,
+    prefs.typewriterMode,
+    prefs.codeBlockCollapseLines,
+    prefs.codeBlockShowLineNumbers,
+    prefs.codeBlockWrap
+  ])
 
   // ---- sidebar drag-resize ---------------------------------------------------
   const startSidebarResize = useCallback((e: React.MouseEvent) => {
@@ -1219,6 +1257,73 @@ export default function App(): React.JSX.Element {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formatDocument, fileOps, toast])
+
+  // P24 e2e handle — code-block display seams.
+  useEffect(() => {
+    const info = () => {
+      const blocks = Array.from(document.querySelectorAll('.cm-md-code-block'))
+      if (blocks.length === 0) return null
+      const block = blocks[0]
+      const expander = block.querySelector('.cm-md-code-expander')
+      const codeEl = block.querySelector('pre code')
+      // Numbered mode renders one span per line (no \n text nodes); fall back
+      // to textContent splitting for the plain pre-render path.
+      const numbered = codeEl ? codeEl.querySelectorAll('.cm-md-code-line').length : 0
+      const textNodes = codeEl ? codeEl.textContent ?? '' : ''
+      return {
+        count: blocks.length,
+        collapsedCount: document.querySelectorAll('.cm-md-code-block-collapsed').length,
+        expanderText: expander ? expander.textContent : null,
+        hasFoldBtn: Array.from(document.querySelectorAll('.cm-md-block-toolbar-btn')).some(
+          (b) => b.textContent && b.textContent !== 'Copy' && b.textContent !== '✓'
+        ),
+        lineNoCount: document.querySelectorAll('.cm-md-code-line-no').length,
+        wrapCount: document.querySelectorAll('.cm-md-code-block-wrap').length,
+        renderedCodeLines: numbered > 0 ? numbered : textNodes.length === 0 ? 0 : textNodes.split('\n').length,
+        hasCollapsedClass: block.classList.contains('cm-md-code-block-collapsed')
+      }
+    }
+    window.__veloxP24 = {
+      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
+      loadDoc: (text, path) => fileOps.loadContent(text, path),
+      setPrefs: (patch) => setPreferences(patch),
+      getPrefs: () => {
+        const p = getPreferences()
+        return {
+          codeBlockCollapseLines: p.codeBlockCollapseLines,
+          codeBlockShowLineNumbers: p.codeBlockShowLineNumbers,
+          codeBlockWrap: p.codeBlockWrap
+        }
+      },
+      getExpandedKeys: () => {
+        const view = viewRef.current
+        return view ? Array.from(getCodeBlockExpanded(view.state)) : []
+      },
+      clearExpanded: () => {
+        const view = viewRef.current
+        if (!view) return
+        const keys = Array.from(getCodeBlockExpanded(view.state))
+        if (keys.length === 0) return
+        view.dispatch({ effects: keys.map((key) => toggleCodeBlockFold.of({ key, expanded: false })) })
+      },
+      codeBlockInfo: info,
+      clickExpander: () => {
+        const btn = document.querySelector('.cm-md-code-expander')
+        if (!btn) return false
+        btn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        return true
+      },
+      clickFold: () => {
+        const btns = Array.from(document.querySelectorAll('.cm-md-block-toolbar-btn'))
+        // Fold is the first toolbar button on expanded long blocks (before Copy).
+        const fold = btns.find((b) => b.textContent && b.textContent !== 'Copy' && b.textContent !== '✓')
+        if (!fold) return false
+        fold.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        return true
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileOps])
 
   // ---- P17: link navigation ---------------------------------------------------
   // openExternal goes through a seam so e2e can capture URLs instead of

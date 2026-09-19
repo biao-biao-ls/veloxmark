@@ -31,7 +31,7 @@
 | P21 | [Callout 提示块](P21-callouts.md)（已完成） | 功能 | `> [!NOTE]` GitHub/Obsidian 风格提示块 | S |
 | P22 | [表格插入辅助](P22-table-insert.md)（已完成） | UX/功能 | 行列选择器一键插表，TSV/CSV 选区转表 | S |
 | P23 | [文档格式化](P23-format-document.md)（已完成） | UX/工程 | 保守规则一键整形全文，单 transaction 可回退 | S–M |
-| P24 | [代码块显示增强](P24-code-block-display.md) | UX | 超长代码块折叠、行号、软换行 | S |
+| P24 | [代码块显示增强](P24-code-block-display.md) | UX | 超长代码块折叠、行号、软换行 | S（已完成） |
 | P25 | [Mermaid 源码实时预览](P25-mermaid-live-preview.md)（V2 后置） | UX/功能 | 编辑 fence 时预览面板实时跟随图 | M |
 | P26 | [多文档标签页](P26-multi-doc-tabs.md)（V2 后置） | UX/工程 | 多文档并存切换，各自保留编辑状态 | L |
 

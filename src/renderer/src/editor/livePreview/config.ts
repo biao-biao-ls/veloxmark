@@ -28,6 +28,14 @@ export interface LivePreviewConfig {
   focusMode: boolean
   /** P08: keep the cursor line vertically centered while editing. */
   typewriterMode: boolean
+  /** P24: collapse code blocks longer than N lines (0 = never). Optional —
+   *  partial facet literals (nested cell editor) omit these; consumers fall
+   *  back to the documented defaults via `??`. */
+  codeBlockCollapseLines?: number
+  /** P24: show a line-number column inside rendered code blocks. */
+  codeBlockShowLineNumbers?: boolean
+  /** P24: soft-wrap long lines inside code blocks. */
+  codeBlockWrap?: boolean
 }
 
 export const DEFAULT_LIVE_PREVIEW_CONFIG: LivePreviewConfig = {
@@ -37,7 +45,10 @@ export const DEFAULT_LIVE_PREVIEW_CONFIG: LivePreviewConfig = {
   linkEpoch: 0,
   mode: 'live',
   focusMode: false,
-  typewriterMode: false
+  typewriterMode: false,
+  codeBlockCollapseLines: 20,
+  codeBlockShowLineNumbers: false,
+  codeBlockWrap: true
 }
 
 export const livePreviewConfigFacet = Facet.define<LivePreviewConfig, LivePreviewConfig>({

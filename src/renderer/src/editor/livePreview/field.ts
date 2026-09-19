@@ -6,6 +6,7 @@ import { buildDecorations } from './build'
 import { getLivePreviewConfig } from './config'
 import { foldField } from './fold'
 import { calloutFoldField } from './calloutFold'
+import { codeBlockUiField } from './codeBlockUi'
 
 /**
  * Live-preview decorations.
@@ -38,6 +39,9 @@ export const livePreviewField = StateField.define<DecorationSet>({
     // P21: callout fold overrides — same effect-only identity signal.
     const calloutFoldChanged =
       tr.state.field(calloutFoldField, false) !== tr.startState.field(calloutFoldField, false)
+    // P24: code-block expand/fold toggles are effect-only — identity signal.
+    const codeBlockUiChanged =
+      tr.state.field(codeBlockUiField, false) !== tr.startState.field(codeBlockUiField, false)
     if (
       tr.docChanged ||
       tr.selection ||
@@ -45,7 +49,8 @@ export const livePreviewField = StateField.define<DecorationSet>({
       configChanged ||
       tableEditChanged ||
       foldChanged ||
-      calloutFoldChanged
+      calloutFoldChanged ||
+      codeBlockUiChanged
     ) {
       return buildDecorations(tr.state, getLivePreviewConfig(tr.state))
     }

@@ -2295,3 +2295,53 @@ body {
 }
 .table-insert-delim { flex-wrap: wrap; }
 .table-insert-sniff { opacity: 0.7; font-size: 12px; margin-left: auto; }
+
+/* ---- P24: code block display enhancements ---- */
+.cm-md-code-block-wrap code,
+.cm-md-code-block-wrap .cm-md-code-line-src {
+  white-space: pre-wrap !important;
+  word-break: break-all;
+}
+.cm-md-code-block code.cm-md-code-lines .cm-md-code-line {
+  display: flex;
+  align-items: flex-start;
+}
+.cm-md-code-line-no {
+  flex: none;
+  width: 3.2em;
+  padding-right: 12px;
+  text-align: right;
+  color: var(--fg-dim);
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+.cm-md-code-line-src {
+  flex: 1;
+  min-width: 0;
+  white-space: pre;
+}
+.cm-md-code-block-collapsed pre {
+  position: relative;
+  max-height: none;
+}
+.cm-md-code-expander {
+  display: block;
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--border);
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--fg-dim);
+  background: linear-gradient(to bottom, transparent, var(--bg-sidebar) 40%);
+  cursor: pointer;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.cm-md-code-expander:hover {
+  color: var(--accent);
+}
+.cm-md-code-block-collapsed pre code {
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+}

@@ -9,6 +9,7 @@ import githubDarkCss from 'highlight.js/styles/github-dark.css?raw'
 import type { ThemeName } from './theme'
 import type { FrontMatterSummary } from './livePreview/extendedSyntax'
 import { t } from '../i18n'
+import { toggleCodeBlockFold } from './livePreview/codeBlockUi'
 import { openMermaidLightbox } from '../components/mermaidLightboxBus'
 
 // ---- highlight.js themes, scoped under the app theme class ------------------
@@ -393,28 +394,102 @@ export abstract class BlockWidget extends WidgetType {
   }
 }
 
+/** P24: UI options threaded from LivePreviewConfig into the code-block widget. */
+export interface CodeBlockUiOptions {
+  collapseLines: number
+  showLineNumbers: boolean
+  wrap: boolean
+  expanded: boolean
+  key: string
+}
+
+/**
+ * P24: span-aware highlighted-line splitter. hljs output wraps tokens in
+ * <span>s that may cross line breaks; splitting on '\n' alone would leave
+ * unbalanced tags and wreck the line-number layout. Close every open span at
+ * a newline and reopen the active tag stack on the next line.
+ */
+export function splitHighlightedLines(html: string): string[] {
+  const lines: string[] = []
+  const stack: string[] = []
+  let cur = ''
+  let i = 0
+  while (i < html.length) {
+    const ch = html[i]
+    if (ch === '<') {
+      const end = html.indexOf('>', i)
+      if (end === -1) {
+        cur += html.slice(i)
+        break
+      }
+      const tag = html.slice(i, end + 1)
+      if (tag.startsWith('</')) stack.pop()
+      else if (!tag.endsWith('/>')) stack.push(tag)
+      cur += tag
+      i = end + 1
+    } else if (ch === '\n') {
+      for (let k = 0; k < stack.length; k++) cur += '</span>'
+      lines.push(cur)
+      cur = stack.join('')
+      i += 1
+    } else {
+      const nextNl = html.indexOf('\n', i)
+      const nextTag = html.indexOf('<', i)
+      let stop = html.length
+      if (nextTag !== -1) stop = Math.min(stop, nextTag)
+      if (nextNl !== -1) stop = Math.min(stop, nextNl)
+      cur += html.slice(i, stop)
+      i = stop
+    }
+  }
+  lines.push(cur)
+  return lines
+}
+
+/** P04/P24: fenced code widget — Copy (always the FULL code), optional line
+ * collapse (expand memory per content hash), line numbers and soft wrap. */
 export class CodeBlockWidget extends BlockWidget {
   constructor(
     readonly code: string,
     readonly lang: string,
     sourceFrom: number,
-    sourceTo: number
+    sourceTo: number,
+    readonly ui?: CodeBlockUiOptions
   ) {
     super(sourceFrom, sourceTo)
   }
 
   eq(other: CodeBlockWidget): boolean {
+    if (
+      other.code !== this.code ||
+      other.lang !== this.lang ||
+      other.sourceFrom !== this.sourceFrom
+    ) {
+      return false
+    }
+    const a = this.ui
+    const b = other.ui
+    if (!a && !b) return true
+    if (!a || !b) return false
     return (
-      other.code === this.code &&
-      other.lang === this.lang &&
-      other.sourceFrom === this.sourceFrom
+      a.collapseLines === b.collapseLines &&
+      a.showLineNumbers === b.showLineNumbers &&
+      a.wrap === b.wrap &&
+      a.expanded === b.expanded &&
+      a.key === b.key
     )
   }
 
   toDOM(view: EditorView): HTMLElement {
     ensureScopedCss()
+    const lines = this.code.split('\n')
+    const threshold = this.ui?.collapseLines ?? 0
+    const collapsed = threshold > 0 && lines.length > threshold && !this.ui?.expanded
+
     const wrap = document.createElement('div')
     wrap.className = 'cm-md-code-block'
+    if (this.ui?.wrap) wrap.classList.add('cm-md-code-block-wrap')
+    if (collapsed) wrap.classList.add('cm-md-code-block-collapsed')
 
     const label = document.createElement('div')
     label.className = 'cm-md-code-lang'
@@ -424,17 +499,63 @@ export class CodeBlockWidget extends BlockWidget {
     const pre = document.createElement('pre')
     const codeEl = document.createElement('code')
     codeEl.className = 'hljs'
-    codeEl.innerHTML = highlightCodeHtml(this.code, this.lang)
+    const fullHtml = highlightCodeHtml(this.code, this.lang)
+    const htmlLines = splitHighlightedLines(fullHtml)
+    // Collapsed blocks render the FIRST `threshold` lines, so numbering 1..N
+    // is correct in both states (expanded numbers the full range 1..total).
+    const visible = collapsed ? htmlLines.slice(0, threshold) : htmlLines
+    if (this.ui?.showLineNumbers) {
+      codeEl.classList.add('cm-md-code-lines')
+      codeEl.innerHTML = visible
+        .map(
+          (h, i) =>
+            `<span class="cm-md-code-line"><span class="cm-md-code-line-no">${i + 1}</span><span class="cm-md-code-line-src">${h}</span></span>`
+        )
+        .join('')
+    } else {
+      codeEl.innerHTML = visible.join('\n')
+    }
     pre.appendChild(codeEl)
     wrap.appendChild(pre)
 
-    this.attachBlockToolbar(wrap, [
-      {
-        label: 'Copy',
-        title: 'Copy code',
-        onClick: (btn) => void this.copyWithFeedback(this.code, btn)
+    const items: BlockToolbarItem[] = []
+    // P24: Fold re-collapses an expanded long block (memory key cleared).
+    if (!collapsed && threshold > 0 && lines.length > threshold && this.ui) {
+      const ui = this.ui
+      items.push({
+        label: t('codeBlock.fold'),
+        title: t('codeBlock.fold'),
+        onClick: () => {
+          view.dispatch({ effects: toggleCodeBlockFold.of({ key: ui.key, expanded: false }) })
+        }
+      })
+    }
+    items.push({
+      label: 'Copy',
+      title: 'Copy code',
+      onClick: (btn) => void this.copyWithFeedback(this.code, btn)
+    })
+    this.attachBlockToolbar(wrap, items)
+
+    // P24: expander chip — revealed lines on click. stopPropagation keeps the
+    // press away from wrapWithGap's click-to-source listener.
+    if (collapsed && this.ui) {
+      const hidden = lines.length - threshold
+      const btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'cm-md-code-expander'
+      btn.textContent = t('codeBlock.expand', { n: hidden })
+      const stop = (e: Event) => {
+        e.stopPropagation()
+        e.preventDefault()
       }
-    ])
+      btn.addEventListener('mousedown', stop)
+      btn.addEventListener('click', (e) => {
+        stop(e)
+        view.dispatch({ effects: toggleCodeBlockFold.of({ key: this.ui!.key, expanded: true }) })
+      })
+      wrap.appendChild(btn)
+    }
     return this.wrapWithGap(wrap, view)
   }
 }

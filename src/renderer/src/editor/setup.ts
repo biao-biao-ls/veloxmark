@@ -16,6 +16,7 @@ import { imageInputExtension } from './images'
 import { imageSizeMarkdown } from './markdown-image-ext'
 import { foldField, foldGutterExtension, foldPlaceholderClickExtension, getFoldedKeys, toggleFold, restoreFolds, expandFolds } from './livePreview/fold'
 import { calloutClickExtension, calloutFoldField } from './livePreview/calloutFold'
+import { codeBlockUiField } from './livePreview/codeBlockUi'
 import { linkNavExtension } from './livePreview/linkNav'
 import { modeClassesExtension, typewriterExtension } from './modes'
 import { getPreferences } from '../preferences/store'
@@ -95,6 +96,8 @@ export function createExtensions(
     calloutFoldField,
     // P10: active table cell / session column widths — drives enterTable.
     tableEditField,
+    // P24: code-block expand memory (content-hash keyed, session-only).
+    codeBlockUiField,
     // P08 mode flags are read from the store (not the args): this runs once at
     // editor creation, and the App effect keeps them in sync afterwards.
     livePreviewConfigExtension({
@@ -104,7 +107,10 @@ export function createExtensions(
       linkEpoch: 0,
       mode: getPreferences().sourceMode ? 'source' : 'live',
       focusMode: getPreferences().focusMode,
-      typewriterMode: getPreferences().typewriterMode
+      typewriterMode: getPreferences().typewriterMode,
+      codeBlockCollapseLines: getPreferences().codeBlockCollapseLines,
+      codeBlockShowLineNumbers: getPreferences().codeBlockShowLineNumbers,
+      codeBlockWrap: getPreferences().codeBlockWrap
     }),
     modeClassesExtension,
     typewriterExtension(),

@@ -13,6 +13,7 @@ import {
   TaskWidget,
   parseImageMarkdown
 } from '../widgets'
+import { codeBlockKey, getCodeBlockExpanded } from './codeBlockUi'
 import {
   ABBR_DEF_RE,
   DL_DEF_RE,
@@ -403,10 +404,19 @@ export function enterFencedCode(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
   const doc = state.doc
   const lineFrom = doc.lineAt(node.from).from
   const lineTo = doc.lineAt(node.to).to
+  // P24: non-mermaid blocks carry collapse/numbers/wrap UI state; expand
+  // memory is keyed by content hash (session-only Set in codeBlockUiField).
+  const cbKey = lang === 'mermaid' ? '' : codeBlockKey(code)
   const widget =
     lang === 'mermaid'
       ? new MermaidWidget(code, node.from, node.to, ctx.config.theme)
-      : new CodeBlockWidget(code, lang, node.from, node.to)
+      : new CodeBlockWidget(code, lang, node.from, node.to, {
+          collapseLines: ctx.config.codeBlockCollapseLines ?? 20,
+          showLineNumbers: ctx.config.codeBlockShowLineNumbers ?? false,
+          wrap: ctx.config.codeBlockWrap ?? true,
+          expanded: getCodeBlockExpanded(state).has(cbKey),
+          key: cbKey
+        })
   ctx.decos.push({
     from: lineFrom,
     to: lineTo,
