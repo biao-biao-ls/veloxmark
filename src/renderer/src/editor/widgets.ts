@@ -265,11 +265,6 @@ function rememberMermaidGood(pos: number, entry: MermaidGoodRender): void {
   }
 }
 
-/** Test hook / theme switch hook: clear remembered mermaid renders. */
-export function clearMermaidLastGood(): void {
-  mermaidLastGood.clear()
-}
-
 /**
  * P16: jump-to-source for a mermaid parse error. Mermaid messages carry
  * `Parse error on line N` (or `line N: …`) — N is 1-based within the fence

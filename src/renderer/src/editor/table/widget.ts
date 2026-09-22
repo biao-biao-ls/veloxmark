@@ -56,7 +56,7 @@ import { buildContextMenu, openContextMenu } from '../contextMenu/registry'
 // ---- model re-resolution -----------------------------------------------------
 
 /** Resolve the Table syntax node covering `approxFrom` and re-parse its source. */
-export function resolveTableModel(
+function resolveTableModel(
   view: EditorView,
   approxFrom: number
 ): { model: TableModel; lineFrom: number } | null {
@@ -399,14 +399,6 @@ function commitActiveOnly(main: EditorView, hintFrom?: number): void {
 }
 
 /**
- * UX-P28: commit the active cell's pending text (if any) without changing
- * active state. Exported for lifecycle.ts auto-exit and Escape paths.
- */
-export function commitActiveCell(main: EditorView, hintFrom?: number): void {
-  commitActiveOnly(main, hintFrom)
-}
-
-/**
  * UX-P28: commit pending cell text and exit table editing.
  *
  * @param select - 'none' for blur-path (don't change selection);
@@ -633,7 +625,9 @@ function mountCellEditor(
         EditorView.updateListener.of((u) => {
           if (!u.focusChanged || u.view.hasFocus) return
           setTimeout(() => {
-            if (main.isDestroyed) return
+            // CM6 has no public isDestroyed (destroyed is a private field);
+            // a destroyed view's dom is detached from the document.
+            if (!main.dom.isConnected) return
             if (!getTableEdit(main.state).active) return
             if (main.hasFocus) return
             const nv = activeNestedView()

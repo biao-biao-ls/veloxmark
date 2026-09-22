@@ -88,6 +88,9 @@ body {
   --border: #e5e5e5;
   --accent: #0969da;
   --danger: #d1242f;
+  /* Inset chip/readout surface (table-insert sniff badge, lightbox zoom
+     readout). One step off --bg; opaque solid so contrast math stays honest. */
+  --bg-inset: #f2f2f2;
   /* color: content surface */
   --quote-border: #d0d7de;
   --code-bg: rgba(175, 184, 193, 0.2);
@@ -108,6 +111,9 @@ body {
      disabled controls, so those must not ride dim. */
   --fg-dim: #6b6b6b;
   --fg-disabled: #b0b0b0;
+  /* Muted metadata text riding --bg-inset chips/readouts. Semantic split from
+     --fg-dim (secondary prose) per F08 precedent — same value today. */
+  --fg-muted: #6b6b6b;
   /* UX-P17 F3: link hover tooltip — dark hover-card in BOTH themes (content
      contrast independent of app chrome); values match pre-token rendering. */
   --tooltip-bg: #1f2328;
@@ -122,6 +128,8 @@ body {
   --border: #333333;
   --accent: #58a6ff;
   --danger: #f85149;
+  /* See light theme — inset chip/readout surface. */
+  --bg-inset: #2a2a2b;
   /* color: content surface */
   --quote-border: #444444;
   --code-bg: rgba(110, 118, 129, 0.25);
@@ -141,6 +149,8 @@ body {
   /* F04: dark dim lifted for AA (5.44:1 on --bg-sidebar, was 4.32). */
   --fg-dim: #9a9a9a;
   --fg-disabled: #6a6a6a;
+  /* See light theme — muted metadata text (chips/readouts). */
+  --fg-muted: #9a9a9a;
   /* UX-P17 F3: see light theme — tooltip tokens (bg deeper in dark chrome). */
   --tooltip-bg: #0d1117;
   --tooltip-fg: #e6edf3;
