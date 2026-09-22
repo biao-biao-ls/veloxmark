@@ -1,0 +1,180 @@
+import { syntaxTree } from '@codemirror/language'
+import type { EditorState } from '@codemirror/state'
+import { Decoration, type DecorationSet } from '@codemirror/view'
+import type { LivePreviewConfig } from './config'
+import { FoldPlaceholder, collectFoldRanges, getFoldedKeys } from './fold'
+import { CalloutFoldPlaceholder } from './calloutFold'
+import { getLang } from '../../i18n'
+import {
+  collectExtendedDecos,
+  collectMathDecos,
+  enterCallout,
+  enterEmphasisMark,
+  enterFencedCode,
+  enterHeaderMark,
+  enterHeading,
+  enterHorizontalRule,
+  enterImage,
+  enterInlineCode,
+  enterInlineMark,
+  enterLink,
+  enterListMark,
+  enterQuoteMark,
+  enterStrikethroughMark,
+  enterTable,
+  enterTaskMarker,
+  type BuildCtx,
+  type PendingDeco
+} from './handlers'
+
+/**
+ * Build all live-preview decorations for a document.
+ *
+ * Pure with respect to module state: every piece of configuration arrives
+ * via the `config` argument, so this runs in a plain node environment
+ * (EditorState.create + buildDecorations) for snapshot tests (P15).
+ */
+export function buildDecorations(state: EditorState, config: LivePreviewConfig): DecorationSet {
+  // P08 source mode: raw Markdown — no live-preview decorations at all.
+  // Syntax highlighting (theme HighlightStyle) and line numbers are
+  // independent of this field and stay on.
+  if (config.mode === 'source') return Decoration.none
+
+  const decos: PendingDeco[] = []
+  const tree = syntaxTree(state)
+  const selections = state.selection.ranges
+  const doc = state.doc
+
+  /**
+   * Line-granularity: any cursor/selection's line intersects [from, to].
+   * Kept for line-level markers (ATX #, horizontal rules, quotes, tasks).
+   */
+  const touched = (from: number, to: number): boolean =>
+    selections.some((r) => {
+      const lineFrom = doc.lineAt(r.from).from
+      const lineTo = doc.lineAt(r.to).to
+      return from <= lineTo && to >= lineFrom
+    })
+
+  /** True when any cursor/selection lies inside the block [from, to]. */
+  const blockTouched = (from: number, to: number): boolean =>
+    selections.some((r) => (r.from >= from && r.from <= to) || (r.to >= from && r.to <= to))
+
+  /**
+   * P09 mark-granularity: any selection range intersects the closed interval
+   * [from, to]. An empty cursor degenerates to `from <= head <= to`; a
+   * non-empty range is a plain interval-intersection test, so cross-line
+   * selections reveal every mark they touch. Endpoints count deliberately:
+   * a cursor resting on either edge of a hidden mark must reveal it, so
+   * replace-hidden text never blocks keyboard movement.
+   */
+  const markTouched = (from: number, to: number): boolean =>
+    selections.some((r) => r.from <= to && r.to >= from)
+
+  const ctx: BuildCtx = {
+    state,
+    config,
+    decos,
+    touched,
+    blockTouched,
+    markTouched,
+    calloutFoldRanges: []
+  }
+
+  // tree.iterate's enter only dispatches; each syntax kind lives in handlers.ts
+  tree.iterate({
+    enter: (node) => {
+      const name = node.node.name
+
+      const atx = /^ATXHeading([1-6])$/.exec(name)
+      if (atx) return enterHeading(Number(atx[1]), node, ctx)
+
+      if (name === 'HeaderMark' && node.node.parent?.name.startsWith('ATXHeading')) {
+        return enterHeaderMark(node, ctx)
+      }
+      if (name === 'EmphasisMark') return enterEmphasisMark(node, ctx)
+      if (name === 'Emphasis' || name === 'StrongEmphasis' || name === 'Strikethrough') {
+        return enterInlineMark(node, ctx)
+      }
+      if (name === 'StrikethroughMark') return enterStrikethroughMark(node, ctx)
+      if (name === 'InlineCode') return enterInlineCode(node, ctx)
+      if (name === 'Link' || name === 'Autolink') return enterLink(node, ctx)
+      if (name === 'Image') return enterImage(node, ctx)
+      if (name === 'ListMark') return enterListMark(node, ctx)
+      // P21: `> [!TYPE]` callout container — always descends; QuoteMark `>`
+      // handling below (and nested inline/block previews) stays unchanged.
+      if (name === 'Blockquote') return enterCallout(node, ctx)
+      if (name === 'QuoteMark') return enterQuoteMark(node, ctx)
+      if (name === 'Table') return enterTable(node, ctx)
+      if (name === 'FencedCode') return enterFencedCode(node, ctx)
+      if (name === 'HorizontalRule') return enterHorizontalRule(node, ctx)
+      if (name === 'TaskMarker') return enterTaskMarker(node, ctx)
+
+      return true
+    }
+  })
+
+  collectMathDecos(ctx, (pos, side) => tree.resolveInner(pos, side))
+  // P11 extended syntax: front matter / footnotes / highlight / sub-sup pass.
+  collectExtendedDecos(ctx, (pos, side) => tree.resolveInner(pos, side))
+
+  // P08 focus mode: mark every line of the top-level block the cursor is in.
+  // CSS dims all other .cm-line elements via the .cm-focus-mode root class.
+  if (config.focusMode) {
+    const head = selections[0]?.head ?? 0
+    let block = tree.topNode.firstChild
+    while (block) {
+      if (block.from <= head && head <= block.to) {
+        for (let line = doc.lineAt(block.from); ; ) {
+          decos.push({
+            from: line.from,
+            to: line.from,
+            value: Decoration.line({ class: 'cm-focus-active' })
+          })
+          if (line.to >= block.to || line.to >= doc.length) break
+          line = doc.lineAt(line.to + 1)
+        }
+        break
+      }
+      block = block.nextSibling
+    }
+  }
+
+  // P21 callout folds: same overlap rule as P18 — CM6 forbids overlapping
+  // replace decorations, so decos inside a collapsed callout body (quote-mark
+  // hides, inline marks, body line classes, focus lines) drop first, then the
+  // body-range `⋯ N 行` placeholder is pushed.
+  const cfRanges = ctx.calloutFoldRanges ?? []
+  if (cfRanges.length > 0) {
+    const keptCF = decos.filter((d) => !cfRanges.some((r) => d.from < r.to && d.to > r.from))
+    decos.length = 0
+    decos.push(...keptCF)
+    for (const r of cfRanges) {
+      decos.push({
+        from: r.from,
+        to: r.to,
+        value: Decoration.replace({ widget: new CalloutFoldPlaceholder(r.key, r.lines, getLang()) })
+      })
+    }
+  }
+
+  // P18 heading folds: drop anything inside a collapsed range (CM6 forbids
+  // overlapping replace decorations — image/code widgets inside a folded
+  // section would throw), then push fold replaces + `⋯ N 行` placeholders.
+  // Field read is optional so snapshot states without foldField keep working.
+  const foldRanges = collectFoldRanges(state, getFoldedKeys(state))
+  if (foldRanges.length > 0) {
+    const kept = decos.filter((d) => !foldRanges.some((r) => d.from < r.to && d.to > r.from))
+    decos.length = 0
+    decos.push(...kept)
+    for (const r of foldRanges) {
+      decos.push({
+        from: r.from,
+        to: r.to,
+        value: Decoration.replace({ widget: new FoldPlaceholder(r.key, r.lines, getLang()) })
+      })
+    }
+  }
+
+  return Decoration.set(decos, true)
+}

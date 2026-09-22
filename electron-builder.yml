@@ -1,0 +1,62 @@
+appId: io.github.veloxmark.veloxmark
+productName: VeloxMark
+copyright: Copyright © 2026 VeloxMark contributors
+
+directories:
+  buildResources: build      # build/icon.icns (mac) / build/icon.ico (win)
+  output: dist
+
+# electron-vite 的编译产物是 out/，必须打进包里
+files:
+  - out/**
+  - package.json
+
+mac:
+  icon: build/icon.icns
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    # zip 供 electron-updater 增量更新使用（接入自动更新时需要）
+    - target: zip
+      arch: [arm64, x64]
+  # .md / .markdown / .mdown 与主进程 FILE_FILTERS 对齐（txt 不抢占系统关联）
+  fileAssociations:
+    - ext: md
+      name: Markdown Document
+      role: Editor
+      icon: build/icon.icns
+    - ext: markdown
+      name: Markdown Document
+      role: Editor
+      icon: build/icon.icns
+    - ext: mdown
+      name: Markdown Document
+      role: Editor
+      icon: build/icon.icns
+
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+  # 签名接入后填写（见 docs/windows-release-guide.md 第 3、4 节）
+  # signtoolOptions:
+  #   ...
+
+nsis:
+  oneClick: false                          # 非一键安装，体验更像传统桌面软件
+  perMachine: false                        # 装到用户目录，免管理员权限
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: VeloxMark
+  deleteAppDataOnUninstall: false
+  artifactName: VeloxMark-Setup-${version}-${arch}.${ext}
+
+# 自动更新需要 GitHub provider（仓库推送后填写，见 windows-release-guide.md 第 4 节）
+# publish:
+#   provider: github
+#   owner: <GitHub用户名>
+#   repo: veloxmark

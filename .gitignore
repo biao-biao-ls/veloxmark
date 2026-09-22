@@ -1,0 +1,23 @@
+node_modules/
+out/
+dist/
+build/icon.iconset/
+*.log
+.DS_Store
+.claude/
+# 临时验证截图（已入库的历史截图不受影响）
+scripts/p0*-*.png
+# CDP 测试脚本自建的临时工作区（fixture + 运行输出，脚本会重建）
+scripts/tmp-p03/
+scripts/tmp-p04/
+scripts/tmp-p05/
+scripts/tmp-p05-outside/
+scripts/tmp-p06/
+scripts/tmp-p08/
+scripts/tmp-p09/
+scripts/tmp-p*/
+# UX 评估流水线临时夹具与审计输出（评估记录入库在 docs/ux-eval/）
+scripts/tmp-ux*/
+scripts/tmp-ab-probe/
+scripts/tmp-regress-summary.txt
+scripts/ux/tmp-*.mjs
