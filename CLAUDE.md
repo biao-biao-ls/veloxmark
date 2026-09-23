@@ -84,6 +84,6 @@ npm run build      # 构建到 out/
 重构等多阶段工作按 **Spec-Driven Development** 推进（对齐 GitHub Spec Kit 的 specify → plan → tasks → implement → converge 循环）：
 
 - **Constitution（项目宪法）**：本文件即宪法——技术栈规范、好模式、禁忌清单。所有 spec/plan 不得与之冲突；冲突时先改这里。
-- **Backlog**：[docs/refactor-tasks.md](docs/refactor-tasks.md) 是当前规格化任务清单（4 阶段 38 项 + 收尾阶段 5 项 + 阶段 5 UI 观感 6 项）。
+- **Backlog**：[docs/refactor-tasks.md](docs/refactor-tasks.md) 是当前规格化任务清单（4 阶段 38 项 + 收尾阶段 5 项 + 阶段 5 UI 观感 6 项 + 阶段 6 左侧导航 14 项 + 4 可选）。
 - **每项任务/每组任务的推进协议**：spec（what/why）→ plan（how）→ implement → converge（验证收敛），细则与模板见 [docs/sdd-workflow.md](docs/sdd-workflow.md)。
 - **Converge 验收恒定为**：`npm run typecheck && npm run test:unit` 通过 + e2e 缝未破坏 + 勾销清单对应 checkbox；行为不变类任务需人工冒烟确认 UI 无回归。
