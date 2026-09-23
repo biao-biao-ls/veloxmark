@@ -2,11 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { EditorView } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
 import { ensureSyntaxTree } from '@codemirror/language'
-import { insertNewlineContinueMarkup, markdown } from '@codemirror/lang-markdown'
-import { buildDecorations } from './editor/livePreview/build'
-import { DEFAULT_LIVE_PREVIEW_CONFIG, getLivePreviewConfig } from './editor/livePreview/config'
+import { markdown } from '@codemirror/lang-markdown'
+import { getLivePreviewConfig } from './editor/livePreview/config'
 import {
-  collectFoldRanges,
   expandFolds,
   foldKey,
   getFoldedKeys,
@@ -16,7 +14,6 @@ import {
 } from './editor/livePreview/fold'
 import {
   collectLinkHrefs,
-  getBrokenHrefs as getBrokenHrefsFromCache,
   invalidateLinkTipCache,
   isSkippableHref,
   rememberLinkStatus,
@@ -40,7 +37,6 @@ import {
 } from './components/TableInsertDialog'
 import { insertTableAtCursor, convertSelectionAtCursor, buildTableMarkdown } from './editor/table/insert'
 import { sniffDelimiter } from './editor/table/ops'
-import { getCodeBlockExpanded, toggleCodeBlockFold } from './editor/livePreview/codeBlockUi'
 import {
   mermaidFenceAt,
   resolvePinnedFence,
@@ -48,30 +44,17 @@ import {
 } from './editor/mermaidPreview'
 import { MermaidPreviewPanel } from './components/MermaidPreviewPanel'
 import { TabsBar } from './components/TabsBar'
-import { undo } from '@codemirror/commands'
 import MermaidLightbox from './components/MermaidLightbox'
 import { DialogHost, dialog } from './components/Dialog'
 import { EditorContextMenuHost } from './components/EditorContextMenu'
 import { SearchIcon } from './components/Icons'
 import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch, bumpLinkEpoch, bumpI18nEpoch, updateLivePreviewConfig } from './editor/setup'
-import { invalidateImageCache, setMermaidExportIo } from './editor/widgets'
-import {
-  readEditingAssistsConfig,
-  faultNextHtmlTransformOnce,
-  htmlToMarkdownSafe,
-  runMenuPaste,
-  setHtmlPasteFallbackNotice
-} from './editor/assists'
-import { faultNextFormatOnce, formatMarkdown, type FormatWarning } from './editor/format'
-import {
-  copyHtmlToClipboard,
-  copyRichTextToClipboard,
-  renderSelectionHtmlDocument
-} from './export/copyRichText'
+import { invalidateImageCache } from './editor/widgets'
+import { readEditingAssistsConfig, setHtmlPasteFallbackNotice } from './editor/assists'
+import { formatMarkdown, type FormatWarning } from './editor/format'
 import { extractOutline, findHeadingBySlug, type OutlineItem } from './outline/extract'
 import { MERMAID_TEMPLATES, isCursorInMermaidFence } from './editor/mermaidTemplates'
 import { CALLOUT_TYPES } from './editor/livePreview/callout'
-import { getCalloutFoldOverrides } from './editor/livePreview/calloutFold'
 import { getWelcomeMd, WELCOME_MD_EN, WELCOME_MD_ZH } from './content'
 import { getLang, resolveLang, setLang, t, useTranslation } from './i18n'
 import StatusBar, { EMPTY_STATS, computeDocStats, type DocStats } from './components/StatusBar'
@@ -90,316 +73,12 @@ import {
   setPreferences
 } from './preferences/store'
 import type { SidebarMode } from './preferences/store'
-import type { LinkResolveResult, SearchOptions, SearchReplaceRequest, SearchReplaceResult } from '../../../electron/shared/api'
+import type { LinkResolveResult } from '../../../electron/shared/api'
 import { buildCommands, type CommandOps, type RecentItem } from './commands'
 import { linkAtPos } from './editor/contextMenu/detect'
 import { setCtxRuntime } from './editor/contextMenu/registry'
-
-// Handle for CDP smoke tests (scripts/cdp-p05.mjs) — mirrors the __veloxPrefs
-// / __veloxExport pattern; nothing in the app reads it.
-declare global {
-  interface Window {
-    __veloxEditor: {
-      view: EditorView
-      applyLivePreviewConfig: typeof updateLivePreviewConfig
-    } | null
-    /** P12 e2e handle: close-query / drafts / autosave inspection. */
-    __veloxP12: {
-      queryClose: () => Promise<boolean>
-      confirmDiscard: () => Promise<boolean>
-      saveFile: () => Promise<boolean>
-      loadDoc: (content: string, path: string | null) => void
-      getFilePath: () => string | null
-      getDirty: () => boolean
-      draftList: () => Promise<Awaited<ReturnType<typeof window.api.draftList>>>
-      draftWrite: (path: string | null, content: string) => Promise<void>
-      draftDiscard: (path: string | null) => Promise<void>
-      runDraftCheck: () => Promise<void>
-      getLastAutoSaveAt: () => number | null
-    } | null
-    /** P13 e2e handle: folder search / replace / jump-to-result. */
-    __veloxP13: {
-      openFolder: (path: string) => Promise<void>
-      openSearch: () => void
-      getSidebarMode: () => string
-      searchRun: (
-        root: string,
-        pattern: string,
-        options: SearchOptions
-      ) => Promise<{ searchId: number; error?: string }>
-      searchReplace: (req: SearchReplaceRequest) => Promise<SearchReplaceResult>
-      openAt: (path: string, line: number, col: number) => Promise<void>
-      getDoc: () => string
-      getFilePath: () => string | null
-    } | null
-    /** P14 e2e handle: i18n + status-bar stats. */
-    __veloxP14: {
-      setLanguage: (pref: 'system' | 'zh' | 'en') => void
-      getLang: () => string
-      getStats: () => DocStats
-      t: (key: string, params?: Record<string, string | number>) => string
-      loadDoc: (text: string, path: string) => void
-    } | null
-    /** P15 bench handle: buildDecorations timing over synthetic docs. */
-    __veloxP15: {
-      bench: (
-        lines: number,
-        formulas: number,
-        samples?: number
-      ) => { lines: number; formulas: number; samples: number; avg: number; p95: number; max: number }
-    } | null
-    /** P16 e2e handle: mermaid template insert + fence probe + export IO seam. */
-    __veloxP16: {
-      templates: () => string[]
-      insertTemplate: (id: string) => void
-      openInsertDialog: () => void
-      getDialogOpen: () => boolean
-      isCursorInMermaidFence: () => boolean
-      setExportIo: (io: Parameters<typeof setMermaidExportIo>[0]) => void
-    } | null
-    /** P17 e2e handle: link resolve / navigate / revalidate / openExternal seam. */
-    __veloxP17: {
-      resolve: (href: string, baseDir?: string) => Promise<LinkResolveResult>
-      navigate: (href: string) => Promise<void>
-      revalidate: () => Promise<void>
-      getBrokenHrefs: () => string[]
-      getLinkEpoch: () => number
-      setExternalConfirm: (v: boolean) => void
-      setOpenExternalImpl: (fn: ((url: string) => Promise<boolean>) | null) => void
-    } | null
-    /** P18 e2e handle: heading folds — keys, ranges, restore, bench. */
-    __veloxP18: {
-      getFoldedKeys: () => string[]
-      toggleKey: (key: string) => void
-      getRanges: () => { key: string; from: number; to: number; lines: number }[]
-      getHeadingKeys: () => string[]
-      restoreFromSession: () => void
-      restoreKeys: (keys: string[]) => void
-      getSessionFolds: () => string[]
-      benchToggle: (key: string, n?: number) => { ms: number; avg: number }
-    } | null
-    /** P19 e2e handle: HTML→Markdown paste — transform probe, DOM-event + menu paths. */
-    __veloxP19: {
-      transform: (html: string) => string | null
-      /** Synthesize a ClipboardEvent paste on the editor; returns defaultPrevented. */
-      pasteHtmlEvent: (html: string, plain?: string) => boolean
-      /** Menu Edit>Paste through the shared runMenuPaste; true when doc changed. */
-      pasteFromClipboard: () => Promise<boolean>
-      /** wave⑥-4 F2 seam: next htmlToMarkdown throws once — verify plain fallback. */
-      faultNextTransform: () => void
-      setPasteHtmlToMd: (v: boolean) => void
-      writeClipboardHtml: (html: string, text: string) => Promise<void>
-      getDoc: () => string
-    } | null
-    /** P20 e2e handle: rich-text clipboard commands + flavor read-back. */
-    __veloxP20: {
-      copyRichText: () => Promise<boolean>
-      copyAsHtml: () => Promise<boolean>
-      /** Render current selection/doc → standalone HTML written to `target`. */
-      exportSelectionTo: (target: string) => Promise<boolean>
-      getClipboard: () => Promise<{ html: string; text: string }>
-      getToast: () => string | null
-      setThemePref: (mode: 'light' | 'dark') => void
-    } | null
-    /** P21 e2e handle: callout probe + insert dialog + export/quote seams. */
-    __veloxP21: {
-      getDoc: () => string
-      setSelection: (pos: number) => void
-      openCalloutInsert: () => void
-      getCalloutDialogOpen: () => boolean
-      insertCallout: (type: string) => void
-      /** Full-doc (or selection) standalone export HTML via P04 renderer. */
-      renderExportHtml: () => Promise<string>
-      /** lang-markdown Enter continuation — quote/callout line prefixes. */
-      pressEnter: () => boolean
-      getCalloutFoldOverrides: () => Array<[string, boolean]>
-    } | null
-    /** P22 e2e handle: table insert dialog + convert flow. */
-    __veloxP22: {
-      getDoc: () => string
-      setSelection: (from: number, to?: number) => void
-      openDialog: (mode: 'insert' | 'convert') => void
-      getDialogMode: () => string | null
-      setDialogForm: (patch: Partial<TableInsertForm>) => void
-      getDialogForm: () => TableInsertForm
-      confirm: () => void
-    } | null
-    /** P23 e2e handle: format command + format-on-save seams. */
-    __veloxP23: {
-      getDoc: () => string
-      setSelection: (from: number, to?: number) => void
-      loadDoc: (text: string, path: string | null) => void
-      format: () => { changed: number; warnings: FormatWarning[] }
-      undo: () => boolean
-      getToast: () => string | null
-      setFormatOnSave: (v: boolean) => void
-      getFormatOnSave: () => boolean
-      saveFile: () => Promise<boolean>
-      getFilePath: () => string | null
-      getFormatWarnings: () => FormatWarning[]
-      openFormatWarnings: () => void
-      faultNextFormat: () => void
-    } | null
-    /** P24 e2e handle: code-block collapse / line numbers / wrap seams. */
-    __veloxP24: {
-      getDoc: () => string
-      loadDoc: (text: string, path: string | null) => void
-      setPrefs: (patch: Record<string, unknown>) => void
-      getPrefs: () => {
-        codeBlockCollapseLines: number
-        codeBlockShowLineNumbers: boolean
-        codeBlockWrap: boolean
-      }
-      getExpandedKeys: () => string[]
-      codeBlockInfo: () => {
-        count: number
-        collapsedCount: number
-        expanderText: string | null
-        hasFoldBtn: boolean
-        lineNoCount: number
-        wrapCount: number
-        renderedCodeLines: number
-        hasCollapsedClass: boolean
-      } | null
-      clickExpander: () => boolean
-      clickFold: () => boolean
-      clearExpanded: () => void
-    } | null
-    /** P25 e2e handle: mermaid source live-preview panel seams. */
-    __veloxP25: {
-      getDoc: () => string
-      loadDoc: (text: string, path: string | null) => void
-      setCursor: (pos: number) => void
-      insertText: (pos: number, text: string) => void
-      undo: () => boolean
-      panel: () => {
-        visible: boolean
-        hasSvg?: boolean
-        errorText?: string | null
-        pinOn?: boolean
-        editableCount?: number
-        svgText?: string
-        height?: number
-      }
-      clickPin: () => boolean
-      setPrefs: (patch: Record<string, unknown>) => void
-      getPrefs: () => { mermaidPreviewHeight: number }
-      getPinSession: () => boolean
-      probeNow: () => void
-    } | null
-    /** P26 e2e handle: multi-document tab seams. */
-    __veloxP26: {
-      getDoc: () => string
-      loadDoc: (text: string, path: string | null) => void
-      openPath: (path: string) => Promise<boolean>
-      tabs: () => Array<{ id: string; path: string | null; name: string; dirty: boolean; active: boolean }>
-      activeIndex: () => number
-      activate: (id: string) => void
-      activateIndex: (i: number) => void
-      closeActive: (opts?: { force?: boolean }) => Promise<boolean>
-      closeId: (id: string, opts?: { force?: boolean }) => Promise<boolean>
-      resetWelcome: () => void
-      nextTab: () => void
-      reopenClosed: () => Promise<void>
-      hasClosedTabs: () => boolean
-      reorder: (dragId: string, targetId: string) => void
-      getFilePath: () => string | null
-      getDirty: () => boolean
-      insertText: (pos: number, text: string) => void
-      setCursor: (pos: number) => void
-      getCursor: () => number
-      undo: () => boolean
-      getBaseDir: () => string
-      getToast: () => string | null
-      persistTabs: () => void
-      getSessionTabs: () => { openTabs: string[]; activePath: string | null }
-      saveAllDirty: () => Promise<void>
-      newUntitled: () => void
-      closeOthers: (id: string) => void
-      closeRight: (id: string) => void
-      queryClose: () => Promise<boolean>
-      dialogOpen: () => boolean
-      setPrefs: (patch: Record<string, unknown>) => void
-      getScrollTop: () => number
-    } | null
-    /** P28 e2e handle: focused code-block panel (source-edit chrome) seams. */
-    __veloxP28: {
-      getDoc: () => string
-      loadDoc: (text: string, path: string | null) => void
-      setCursor: (pos: number) => void
-      getCursor: () => number
-      insertText: (pos: number, text: string) => void
-      undo: () => boolean
-      panelInfo: () => {
-        panelLineCount: number
-        hasFirst: boolean
-        hasLast: boolean
-        bodyCount: number
-        chipCount: number
-        chipText: string | null
-        fenceTextVisible: boolean
-        openLineHasFence: boolean
-        widgetCount: number
-        mermaidWidgetCount: number
-        focusModeOn: boolean
-        activeLineCount: number
-        previewPanelVisible: boolean
-        panelLeft: number | null
-        styles: {
-          bg: string
-          borderLeft: string
-          borderTop: string
-          radius: string
-          opacity: string
-        } | null
-      } | null
-      /** Resolve a CSS custom property under the app theme host (.app). */
-      themeToken: (name: string) => string
-    } | null
-    /** P29 e2e handle: focused-panel syntax highlight (hljs token marks). */
-    __veloxP29: {
-      getDoc: () => string
-      loadDoc: (text: string, path: string | null) => void
-      setCursor: (pos: number) => void
-      getCursor: () => number
-      insertText: (pos: number, text: string) => void
-      undo: () => boolean
-      tokenInfo: () => {
-        panelLineCount: number
-        chipText: string | null
-        fenceTextVisible: boolean
-        widgetCount: number
-        /** DOM count of [class*="hljs-"] spans inside panel lines. */
-        spanCount: number
-        classes: string[]
-        keywordTexts: string[]
-        /** Computed color of the first .hljs-keyword in panel lines. */
-        panelKeywordColor: string | null
-        /** Computed color of .hljs-keyword inside the rendered widget (null while focused). */
-        widgetKeywordColor: string | null
-      } | null
-      themeToken: (name: string) => string
-    } | null
-  }
-}
-window.__veloxEditor = null
-window.__veloxP12 = null
-window.__veloxP13 = null
-window.__veloxP14 = null
-window.__veloxP15 = null
-window.__veloxP16 = null
-window.__veloxP17 = null
-window.__veloxP18 = null
-window.__veloxP19 = null
-window.__veloxP20 = null
-window.__veloxP21 = null
-window.__veloxP22 = null
-window.__veloxP23 = null
-window.__veloxP24 = null
-window.__veloxP25 = null
-window.__veloxP26 = null
-window.__veloxP28 = null
-window.__veloxP29 = null
+import { useE2eSeams } from './e2e/seams'
+import { installP12Handle } from './e2e/seams/p12'
 
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -828,19 +507,7 @@ export default function App(): React.JSX.Element {
   const lastAutoSaveAtRef = useRef<number | null>(null)
   lastAutoSaveAtRef.current = autoSave.lastAutoSaveAt
   useEffect(() => {
-    window.__veloxP12 = {
-      queryClose: () => queryClose(),
-      confirmDiscard: () => fileOps.confirmDiscard(),
-      saveFile: () => fileOps.saveFile(),
-      loadDoc: (content, path) => fileOps.loadContent(content, path),
-      getFilePath: () => filePathRef.current,
-      getDirty: () => fileOps.dirtyRef.current,
-      draftList: () => window.api.draftList(),
-      draftWrite: (path, content) => window.api.draftWrite(path, content),
-      draftDiscard: (path) => window.api.draftDiscard(path),
-      runDraftCheck: () => checkDrafts(),
-      getLastAutoSaveAt: () => lastAutoSaveAtRef.current
-    }
+    installP12Handle({ queryClose, fileOps, filePathRef, checkDrafts, lastAutoSaveAtRef })
     return window.api.onQueryClose(() => {
       void queryClose().then((allow) => window.api.closeResponse(allow))
     })
@@ -1152,62 +819,6 @@ export default function App(): React.JSX.Element {
   const scheduleDocStatsRef = useRef(scheduleDocStats)
   scheduleDocStatsRef.current = scheduleDocStats
 
-  // P14 e2e handle.
-  const statsRef = useRef(stats)
-  statsRef.current = stats
-  const loadContentRef = useRef(fileOps.loadContent)
-  loadContentRef.current = fileOps.loadContent
-  useEffect(() => {
-    window.__veloxP14 = {
-      setLanguage: (pref) => setPreferences({ language: pref }),
-      getLang: () => getLang(),
-      getStats: () => statsRef.current,
-      t: (key, params) => t(key, params),
-      loadDoc: (text, path) => loadContentRef.current(text, path)
-    }
-  }, [])
-
-  // P15 e2e/bench handle: times buildDecorations on synthetic docs in the
-  // live renderer (the built bundle — same code path the editor uses).
-  useEffect(() => {
-    window.__veloxP15 = {
-      bench: (lines, formulas, samples = 100) => {
-        // Mixed doc: headings/bold/code/links + `formulas` $$-blocks spread out.
-        const parts: string[] = []
-        for (let i = 1; i <= lines; i++) {
-          if (i % 7 === 0) parts.push(`## Section ${i}`)
-          else if (i % 3 === 0) parts.push(`line ${i} with **bold** and \`code\` and [link](./x${i}.md)`)
-          else parts.push(`line ${i} plain text for padding the document body`)
-        }
-        for (let f = 0; f < formulas; f++) {
-          const at = Math.min(parts.length - 1, Math.floor(((f + 1) * parts.length) / (formulas + 1)))
-          parts.splice(at, 0, `$$E_${f} = mc^2 + \\frac{${f}}{2} + \\sum_{i=1}^{${f}} i$$`)
-        }
-        const base = parts.join('\n')
-        // Cursor parks in a trailing scratch line so mark-touched rules stay stable.
-        let state = EditorState.create({
-          doc: `${base}\n\ntype-here: `,
-          extensions: [markdown()]
-        })
-        ensureSyntaxTree(state, state.doc.length, 300000)
-        const cfg = DEFAULT_LIVE_PREVIEW_CONFIG
-        const times: number[] = []
-        for (let i = 0; i < samples; i++) {
-          const insertAt = state.doc.length - 1
-          state = state.update({ changes: { from: insertAt, insert: 'x' } }).state
-          ensureSyntaxTree(state, state.doc.length, 300000)
-          const t0 = performance.now()
-          buildDecorations(state, cfg)
-          times.push(performance.now() - t0)
-        }
-        const sorted = [...times].sort((a, b) => a - b)
-        const avg = times.reduce((a, b) => a + b, 0) / Math.max(1, times.length)
-        const p95 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))] ?? 0
-        return { lines, formulas, samples: times.length, avg, p95, max: sorted[sorted.length - 1] ?? 0 }
-      }
-    }
-  }, [])
-
   // ---- P13 folder-wide search ------------------------------------------------
   // P13-F3: remember the non-search mode so SearchPanel's single back button
   // returns to wherever the user came from (files/outline), not always files.
@@ -1257,25 +868,8 @@ export default function App(): React.JSX.Element {
   const sidebarModeRef = useRef<SidebarMode>(sidebarMode)
   sidebarModeRef.current = sidebarMode
 
-  // P13 e2e handle.
-  useEffect(() => {
-    window.__veloxP13 = {
-      openFolder: (path) => workspace.loadFolder(path),
-      openSearch: () => openGlobalSearch(),
-      getSidebarMode: () => sidebarModeRef.current,
-      searchRun: (root, pattern, options) => window.api.searchRun(root, pattern, options),
-      searchReplace: (req) => window.api.searchReplace(req),
-      openAt: (path, line, col) => openSearchResult(path, line, col),
-      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
-      getFilePath: () => filePathRef.current
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openGlobalSearch, openSearchResult, workspace.loadFolder])
-
   // ---- P16: Mermaid insert dialog + template application --------------------
   const [showMermaidInsert, setShowMermaidInsert] = useState(false)
-  const mermaidDialogOpenRef = useRef(false)
-  mermaidDialogOpenRef.current = showMermaidInsert
 
   /** Menu/command entry: no-op while the cursor sits in a mermaid fence. */
   const openMermaidInsert = useCallback(() => {
@@ -1312,26 +906,8 @@ export default function App(): React.JSX.Element {
     [viewRef]
   )
 
-  // P16 e2e handle.
-  useEffect(() => {
-    window.__veloxP16 = {
-      templates: () => MERMAID_TEMPLATES.map((x) => x.id),
-      insertTemplate: (id) => insertMermaidTemplate(id),
-      openInsertDialog: () => openMermaidInsert(),
-      getDialogOpen: () => mermaidDialogOpenRef.current,
-      isCursorInMermaidFence: () => {
-        const view = viewRef.current
-        return view ? isCursorInMermaidFence(view.state) : false
-      },
-      setExportIo: (io) => setMermaidExportIo(io)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [insertMermaidTemplate, openMermaidInsert])
-
   // ---- P21: callout insert dialog + template application ---------------------
   const [showCalloutInsert, setShowCalloutInsert] = useState(false)
-  const calloutDialogOpenRef = useRef(false)
-  calloutDialogOpenRef.current = showCalloutInsert
 
   const openCalloutInsert = useCallback(() => setShowCalloutInsert(true), [])
 
@@ -1362,34 +938,6 @@ export default function App(): React.JSX.Element {
     },
     [viewRef]
   )
-
-  // P21 e2e handle: callout probe + export/quote continuation seams.
-  useEffect(() => {
-    window.__veloxP21 = {
-      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
-      setSelection: (pos) => {
-        const view = viewRef.current
-        if (!view) return
-        view.dispatch({ selection: { anchor: Math.min(pos, view.state.doc.length) } })
-      },
-      openCalloutInsert: () => setShowCalloutInsert(true),
-      getCalloutDialogOpen: () => calloutDialogOpenRef.current,
-      insertCallout: (type) => insertCalloutTemplate(type),
-      renderExportHtml: async () => {
-        const view = viewRef.current
-        return view ? await renderSelectionHtmlDocument(view) : ''
-      },
-      pressEnter: () => {
-        const view = viewRef.current
-        return view ? insertNewlineContinueMarkup(view) : false
-      },
-      getCalloutFoldOverrides: () => {
-        const view = viewRef.current
-        return view ? [...getCalloutFoldOverrides(view.state).entries()] : []
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [insertCalloutTemplate])
 
   // ---- P22: table insert / convert dialog --------------------------------------
   const [tableDialog, setTableDialog] = useState<TableDialogMode | null>(null)
@@ -1449,30 +997,6 @@ export default function App(): React.JSX.Element {
     view.focus()
   }, [showToast, tableSelText])
 
-  // P22 e2e handle
-  useEffect(() => {
-    window.__veloxP22 = {
-      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
-      setSelection: (from, to) => {
-        const view = viewRef.current
-        if (!view) return
-        const len = view.state.doc.length
-        view.dispatch({
-          selection: {
-            anchor: Math.min(from, len),
-            head: Math.min(to ?? from, len)
-          }
-        })
-      },
-      openDialog: (mode) => openTableInsert(mode),
-      getDialogMode: () => tableDialogRef.current,
-      setDialogForm: (patch) => patchTableForm(patch),
-      getDialogForm: () => tableFormRef.current,
-      confirm: () => confirmTableDialog()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openTableInsert, confirmTableDialog, patchTableForm])
-
   // ---- P23: format document ---------------------------------------------------
   const lastFormatRef = useRef<{ changed: number; warnings: FormatWarning[] }>({
     changed: 0,
@@ -1528,258 +1052,6 @@ export default function App(): React.JSX.Element {
       messageParams: { list: lines }
     })
   }, [])
-
-  // P23 e2e handle
-  useEffect(() => {
-    window.__veloxP23 = {
-      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
-      setSelection: (from, to) => {
-        const view = viewRef.current
-        if (!view) return
-        const len = view.state.doc.length
-        view.dispatch({
-          selection: { anchor: Math.min(from, len), head: Math.min(to ?? from, len) }
-        })
-      },
-      loadDoc: (text, path) => fileOps.loadContent(text, path),
-      format: () => {
-        formatDocument()
-        return lastFormatRef.current
-      },
-      undo: () => {
-        const view = viewRef.current
-        return view ? undo(view) : false
-      },
-      getToast: () => toast,
-      setFormatOnSave: (v) => setPreferences({ formatOnSave: v }),
-      getFormatOnSave: () => getPreferences().formatOnSave,
-      saveFile: () => fileOps.saveFile(),
-      getFilePath: () => fileOps.filePath,
-      getFormatWarnings: () => formatWarningsRef.current,
-      openFormatWarnings: () => showFormatWarnings(),
-      faultNextFormat: () => faultNextFormatOnce()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formatDocument, fileOps, toast, showFormatWarnings])
-
-  // P24 e2e handle — code-block display seams.
-  useEffect(() => {
-    const info = () => {
-      const blocks = Array.from(document.querySelectorAll('.cm-md-code-block'))
-      if (blocks.length === 0) return null
-      const block = blocks[0]
-      const expander = block.querySelector('.cm-md-code-expander')
-      const codeEl = block.querySelector('pre code')
-      // Numbered mode renders one span per line (no \n text nodes); fall back
-      // to textContent splitting for the plain pre-render path.
-      const numbered = codeEl ? codeEl.querySelectorAll('.cm-md-code-line').length : 0
-      const textNodes = codeEl ? codeEl.textContent ?? '' : ''
-      return {
-        count: blocks.length,
-        collapsedCount: document.querySelectorAll('.cm-md-code-block-collapsed').length,
-        expanderText: expander ? expander.textContent : null,
-        hasFoldBtn: Array.from(document.querySelectorAll('.cm-md-block-toolbar-btn')).some(
-          (b) => b.textContent && b.textContent !== 'Copy' && b.textContent !== '✓'
-        ),
-        lineNoCount: document.querySelectorAll('.cm-md-code-line-no').length,
-        wrapCount: document.querySelectorAll('.cm-md-code-block-wrap').length,
-        renderedCodeLines: numbered > 0 ? numbered : textNodes.length === 0 ? 0 : textNodes.split('\n').length,
-        hasCollapsedClass: block.classList.contains('cm-md-code-block-collapsed')
-      }
-    }
-    window.__veloxP24 = {
-      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
-      loadDoc: (text, path) => fileOps.loadContent(text, path),
-      setPrefs: (patch) => setPreferences(patch),
-      getPrefs: () => {
-        const p = getPreferences()
-        return {
-          codeBlockCollapseLines: p.codeBlockCollapseLines,
-          codeBlockShowLineNumbers: p.codeBlockShowLineNumbers,
-          codeBlockWrap: p.codeBlockWrap
-        }
-      },
-      getExpandedKeys: () => {
-        const view = viewRef.current
-        return view ? Array.from(getCodeBlockExpanded(view.state)) : []
-      },
-      clearExpanded: () => {
-        const view = viewRef.current
-        if (!view) return
-        const keys = Array.from(getCodeBlockExpanded(view.state))
-        if (keys.length === 0) return
-        view.dispatch({ effects: keys.map((key) => toggleCodeBlockFold.of({ key, expanded: false })) })
-      },
-      codeBlockInfo: info,
-      clickExpander: () => {
-        const btn = document.querySelector('.cm-md-code-expander')
-        if (!btn) return false
-        btn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-        return true
-      },
-      clickFold: () => {
-        const btns = Array.from(document.querySelectorAll('.cm-md-block-toolbar-btn'))
-        // Fold is the first toolbar button on expanded long blocks (before Copy).
-        const fold = btns.find((b) => b.textContent && b.textContent !== 'Copy' && b.textContent !== '✓')
-        if (!fold) return false
-        fold.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-        return true
-      }
-    }
-    // P28 e2e handle — focused code-block panel seams. Shares this effect with
-    // __veloxP24 (same viewRef/fileOps deps; code-block-adjacent probe surface).
-    window.__veloxP28 = {
-      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
-      loadDoc: (text, path) => fileOps.loadContent(text, path),
-      setCursor: (pos) => {
-        const view = viewRef.current
-        if (!view) return
-        const p = Math.min(Math.max(0, pos), view.state.doc.length)
-        view.dispatch({ selection: { anchor: p } })
-      },
-      getCursor: () => viewRef.current?.state.selection.main.head ?? 0,
-      insertText: (pos, text) => {
-        const view = viewRef.current
-        if (!view) return
-        const p = Math.min(Math.max(0, pos), view.state.doc.length)
-        view.dispatch({
-          changes: { from: p, insert: text },
-          selection: { anchor: p + text.length }
-        })
-      },
-      undo: () => {
-        const view = viewRef.current
-        return view ? undo(view) : false
-      },
-      panelInfo: () => {
-        const srcLines = document.querySelectorAll('.cm-line.cm-md-code-src')
-        const firstLine = document.querySelector('.cm-line.cm-md-code-src-first')
-        const chip = document.querySelector('.cm-md-code-src-chip')
-        let fenceTextVisible = false
-        srcLines.forEach((el) => {
-          if ((el.textContent ?? '').includes('```')) fenceTextVisible = true
-        })
-        return {
-          panelLineCount: srcLines.length,
-          hasFirst: !!firstLine,
-          hasLast: !!document.querySelector('.cm-line.cm-md-code-src-last'),
-          bodyCount: document.querySelectorAll('.cm-line.cm-md-code-src-body').length,
-          chipCount: document.querySelectorAll('.cm-md-code-src-chip').length,
-          chipText: chip?.textContent ?? null,
-          fenceTextVisible,
-          openLineHasFence: (firstLine?.textContent ?? '').includes('```'),
-          widgetCount: document.querySelectorAll('.cm-md-code-block').length,
-          mermaidWidgetCount: document.querySelectorAll('.cm-md-mermaid').length,
-          focusModeOn: !!document.querySelector('.cm-editor.cm-focus-mode'),
-          activeLineCount: document.querySelectorAll('.cm-line.cm-focus-active').length,
-          previewPanelVisible: (() => {
-            const p = document.querySelector('.mermaid-preview-panel')
-            return !!p && (p as HTMLElement).offsetParent !== null
-          })(),
-          panelLeft: firstLine?.getBoundingClientRect().left ?? null,
-          styles: firstLine
-            ? (() => {
-                const cs = getComputedStyle(firstLine)
-                return {
-                  bg: cs.backgroundColor,
-                  borderLeft: cs.borderLeftColor,
-                  borderTop: cs.borderTopColor,
-                  radius: cs.borderTopLeftRadius,
-                  opacity: cs.opacity
-                }
-              })()
-            : null
-        }
-      },
-      themeToken: (name) => {
-        // Token-scope host is .app (theme class lives there, not on :root) —
-        // resolve under it so light/dark samples read the right vocabulary.
-        const host = document.querySelector('.app') ?? document.documentElement
-        const probe = document.createElement('span')
-        probe.style.position = 'absolute'
-        probe.style.visibility = 'hidden'
-        host.appendChild(probe)
-        probe.style.background = `var(${name})`
-        const resolved = getComputedStyle(probe).backgroundColor
-        probe.remove()
-        return resolved
-      }
-    }
-    // P29 e2e handle — focused-panel syntax highlight seams. Shares this
-    // effect with __veloxP24/__veloxP28 (same viewRef/fileOps deps).
-    window.__veloxP29 = {
-      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
-      loadDoc: (text, path) => fileOps.loadContent(text, path),
-      setCursor: (pos) => {
-        const view = viewRef.current
-        if (!view) return
-        const p = Math.min(Math.max(0, pos), view.state.doc.length)
-        view.dispatch({ selection: { anchor: p } })
-      },
-      getCursor: () => viewRef.current?.state.selection.main.head ?? 0,
-      insertText: (pos, text) => {
-        const view = viewRef.current
-        if (!view) return
-        const p = Math.min(Math.max(0, pos), view.state.doc.length)
-        view.dispatch({
-          changes: { from: p, insert: text },
-          selection: { anchor: p + text.length }
-        })
-      },
-      undo: () => {
-        const view = viewRef.current
-        return view ? undo(view) : false
-      },
-      tokenInfo: () => {
-        const panelLines = document.querySelectorAll('.cm-line.cm-md-code-src')
-        const tokenEls = document.querySelectorAll(
-          '.cm-line.cm-md-code-src [class*="hljs-"]'
-        )
-        const classes = new Set<string>()
-        const keywordTexts: string[] = []
-        let panelKeywordColor: string | null = null
-        tokenEls.forEach((el) => {
-          el.classList.forEach((c) => {
-            if (c.startsWith('hljs-')) classes.add(c)
-          })
-          if (el.classList.contains('hljs-keyword')) {
-            keywordTexts.push(el.textContent ?? '')
-            if (!panelKeywordColor) panelKeywordColor = getComputedStyle(el).color
-          }
-        })
-        const chip = document.querySelector('.cm-md-code-src-chip')
-        let fenceTextVisible = false
-        panelLines.forEach((el) => {
-          if ((el.textContent ?? '').includes('```')) fenceTextVisible = true
-        })
-        const widgetKw = document.querySelector('.cm-md-code-block .hljs-keyword')
-        return {
-          panelLineCount: panelLines.length,
-          chipText: chip?.textContent ?? null,
-          fenceTextVisible,
-          widgetCount: document.querySelectorAll('.cm-md-code-block').length,
-          spanCount: tokenEls.length,
-          classes: Array.from(classes),
-          keywordTexts,
-          panelKeywordColor,
-          widgetKeywordColor: widgetKw ? getComputedStyle(widgetKw).color : null
-        }
-      },
-      themeToken: (name) => {
-        // Token-scope host is .app (theme class lives there, not on :root).
-        const host = document.querySelector('.app') ?? document.documentElement
-        const probe = document.createElement('span')
-        probe.style.position = 'absolute'
-        probe.style.visibility = 'hidden'
-        host.appendChild(probe)
-        probe.style.background = `var(${name})`
-        const resolved = getComputedStyle(probe).backgroundColor
-        probe.remove()
-        return resolved
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fileOps])
 
   // ---- P25: mermaid source live preview (route B) ----------------------------
   const mpPinRef = useRef(false)
@@ -1867,131 +1139,6 @@ export default function App(): React.JSX.Element {
     mpPinRef.current = pin
     setMpPin(pin)
   }, [])
-
-  // P25 e2e handle
-  useEffect(() => {
-    window.__veloxP25 = {
-      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
-      loadDoc: (text, path) => fileOps.loadContent(text, path),
-      setCursor: (pos) => {
-        const view = viewRef.current
-        if (!view) return
-        const p = Math.min(Math.max(0, pos), view.state.doc.length)
-        view.dispatch({ selection: { anchor: p } })
-      },
-      insertText: (pos, text) => {
-        const view = viewRef.current
-        if (!view) return
-        const p = Math.min(Math.max(0, pos), view.state.doc.length)
-        view.dispatch({
-          changes: { from: p, insert: text },
-          selection: { anchor: p + text.length }
-        })
-      },
-      undo: () => {
-        const view = viewRef.current
-        return view ? undo(view) : false
-      },
-      panel: () => {
-        const el = document.querySelector('.mermaid-preview-panel')
-        if (!el) return { visible: false }
-        return {
-          visible: true,
-          hasSvg: !!el.querySelector('.mermaid-preview-svg svg'),
-          errorText: el.querySelector('.mermaid-preview-error')?.textContent ?? null,
-          pinOn: !!el.querySelector('.mermaid-preview-pin.is-on'),
-          editableCount: el.querySelectorAll('[contenteditable="true"]').length,
-          svgText: el.querySelector('.mermaid-preview-svg')?.innerHTML ?? '',
-          height: el.getBoundingClientRect().height
-        }
-      },
-      clickPin: () => {
-        const btn = document.querySelector('.mermaid-preview-pin')
-        if (!btn) return false
-        btn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-        return true
-      },
-      setPrefs: (patch) => setPreferences(patch),
-      getPrefs: () => ({ mermaidPreviewHeight: getPreferences().mermaidPreviewHeight }),
-      getPinSession: () => getSession().mermaidPreviewPin === true,
-      probeNow: () => {
-        const view = viewRef.current
-        if (view) mpProbeRef.current(view.state)
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fileOps])
-
-  // P26 e2e handle — multi-document tab seams.
-  useEffect(() => {
-    window.__veloxP26 = {
-      getDoc: () => viewRef.current?.state.doc.toString() ?? '',
-      loadDoc: (text, path) => fileOps.loadContent(text, path),
-      openPath: (path) => fileOps.openDocPath(path),
-      tabs: () => fileOps.tabInfos,
-      activeIndex: () => fileOps.tabInfos.findIndex((x) => x.active),
-      activate: (id) => fileOps.activateTab(id),
-      activateIndex: (i) => {
-        const list = fileOps.tabInfos
-        if (i >= 0 && i < list.length) fileOps.activateTab(list[i].id)
-      },
-      closeActive: (opts) => fileOps.closeTab(fileOps.getActiveTabId(), opts),
-      closeId: (id, opts) => fileOps.closeTab(id, opts),
-      // Probe hygiene only: product close paths close the window when the
-      // last tab closes — sweeping closeId to zero tabs would kill the page.
-      resetWelcome: () => fileOps.resetToWelcome(),
-      nextTab: () => fileOps.nextTab(),
-      reopenClosed: () => fileOps.reopenClosedTab(),
-      hasClosedTabs: () => fileOps.hasClosedTabs(),
-      reorder: (dragId, targetId) => fileOps.reorderTab(dragId, targetId),
-      getFilePath: () => filePathRef.current,
-      getDirty: () => fileOps.dirtyRef.current,
-      insertText: (pos, text) => {
-        const view = viewRef.current
-        if (!view) return
-        const p = Math.min(Math.max(0, pos), view.state.doc.length)
-        view.dispatch({
-          changes: { from: p, insert: text },
-          selection: { anchor: p + text.length }
-        })
-      },
-      setCursor: (pos) => {
-        const view = viewRef.current
-        if (!view) return
-        const p = Math.min(Math.max(0, pos), view.state.doc.length)
-        view.dispatch({ selection: { anchor: p } })
-      },
-      getCursor: () => viewRef.current?.state.selection.main.from ?? -1,
-      undo: () => {
-        const view = viewRef.current
-        return view ? undo(view) : false
-      },
-      getBaseDir: () => fileOps.getActiveBaseDir(),
-      getToast: () => toast,
-      persistTabs: () => fileOps.persistTabsSession(),
-      getSessionTabs: () => {
-        const sess = getSession()
-        return { openTabs: sess.openTabs ?? [], activePath: sess.activePath ?? null }
-      },
-      saveAllDirty: async () => {
-        await fileOps.saveAllDirtyTabs()
-      },
-      newUntitled: () => {
-        void fileOps.newFile()
-      },
-      closeOthers: (id) => {
-        void fileOps.closeOtherTabs(id)
-      },
-      closeRight: (id) => {
-        void fileOps.closeTabsRight(id)
-      },
-      queryClose: () => fileOps.queryClose(),
-      dialogOpen: () => !!document.querySelector('.dialog'),
-      setPrefs: (patch) => setPreferences(patch),
-      getScrollTop: () => viewRef.current?.scrollDOM.scrollTop ?? -1
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fileOps, toast])
 
   // ---- P17: link navigation ---------------------------------------------------
   // openExternal goes through a seam so e2e can capture URLs instead of
@@ -2164,80 +1311,6 @@ export default function App(): React.JSX.Element {
     return () => window.removeEventListener('focus', onFocus)
   }, [scheduleRevalidate])
 
-  // P17 e2e handle.
-  useEffect(() => {
-    window.__veloxP17 = {
-      resolve: (href, baseDir) => {
-        const view = viewRef.current
-        const bd = baseDir ?? (view ? getLivePreviewConfig(view.state).baseDir : '')
-        return window.api.resolveLink(bd, href)
-      },
-      navigate: (href) => resolveAndNavigate(href),
-      revalidate: () => revalidateLinks(),
-      getBrokenHrefs: () => {
-        const view = viewRef.current
-        const bd = view ? getLivePreviewConfig(view.state).baseDir : ''
-        return getBrokenHrefsFromCache(bd)
-      },
-      getLinkEpoch: () => {
-        const view = viewRef.current
-        return view ? getLivePreviewConfig(view.state).linkEpoch : -1
-      },
-      setExternalConfirm: (v) => setPreferences({ externalLinkConfirm: v }),
-      setOpenExternalImpl: (fn) => {
-        openExternalImplRef.current = fn
-      }
-    }
-  }, [resolveAndNavigate, revalidateLinks, viewRef])
-
-  // P18 e2e handle: heading folds.
-  useEffect(() => {
-    window.__veloxP18 = {
-      getFoldedKeys: () => {
-        const view = viewRef.current
-        return view ? [...getFoldedKeys(view.state)] : []
-      },
-      toggleKey: (key) => {
-        viewRef.current?.dispatch({ effects: toggleFold.of(key) })
-      },
-      getRanges: () => {
-        const view = viewRef.current
-        if (!view) return []
-        return collectFoldRanges(view.state, getFoldedKeys(view.state)).map((r) => ({
-          key: r.key,
-          from: r.from,
-          to: r.to,
-          lines: r.lines
-        }))
-      },
-      getHeadingKeys: () => {
-        const view = viewRef.current
-        if (!view) return []
-        return extractOutline(view.state).map((i) => foldKey(i.level, i.text))
-      },
-      restoreFromSession: () => {
-        restoreFoldsForRef.current(filePathRef.current)
-      },
-      restoreKeys: (keys) => {
-        viewRef.current?.dispatch({ effects: restoreFolds.of(new Set(keys)) })
-      },
-      getSessionFolds: () => {
-        const path = filePathRef.current
-        return path ? (getSession().headingFolds?.[path] ?? []) : []
-      },
-      benchToggle: (key, n = 20) => {
-        const view = viewRef.current
-        if (!view) return { ms: 0, avg: 0 }
-        const t0 = performance.now()
-        for (let i = 0; i < n; i++) {
-          view.dispatch({ effects: toggleFold.of(key) })
-        }
-        const ms = performance.now() - t0
-        return { ms, avg: ms / n }
-      }
-    }
-  }, [viewRef, filePathRef])
-
   // P19 wave⑥-4 F2: converter-throw fallback → one restrained status notice
   // (success stays silent — Typora-parity decision, UX-P19 report).
   useEffect(() => {
@@ -2245,65 +1318,52 @@ export default function App(): React.JSX.Element {
     return () => setHtmlPasteFallbackNotice(null)
   }, [showToast])
 
-  // P19 e2e handle: HTML→Markdown paste pipeline.
-  useEffect(() => {
-    window.__veloxP19 = {
-      transform: (html) => htmlToMarkdownSafe(html),
-      pasteHtmlEvent: (html, plain) => {
-        const view = viewRef.current
-        if (!view) return false
-        const dt = new DataTransfer()
-        if (html) dt.setData('text/html', html)
-        if (plain != null) dt.setData('text/plain', plain)
-        const ev = new ClipboardEvent('paste', { bubbles: true, cancelable: true })
-        // Some Chromium builds drop clipboardData from the constructor init.
-        if (!ev.clipboardData || ev.clipboardData.getData('text/html') !== (html || '')) {
-          Object.defineProperty(ev, 'clipboardData', { value: dt })
-        }
-        view.contentDOM.dispatchEvent(ev)
-        return ev.defaultPrevented
-      },
-      pasteFromClipboard: async () => {
-        const view = viewRef.current
-        if (!view) return false
-        const before = view.state.doc.toString()
-        await runMenuPaste(view, () =>
-          getLivePreviewConfig(view.state).baseDir ? Promise.resolve(true) : fileOps.saveFileAs()
-        )
-        return view.state.doc.toString() !== before
-      },
-      setPasteHtmlToMd: (v) => setPreferences({ pasteHtmlToMd: v }),
-      faultNextTransform: () => faultNextHtmlTransformOnce(),
-      writeClipboardHtml: (html, text) => window.api.clipboardWriteHtml(html, text),
-      getDoc: () => viewRef.current?.state.doc.toString() ?? ''
-    }
-  }, [viewRef, fileOps.saveFileAs])
-
-  // P20 e2e handle: rich-text clipboard.
-  useEffect(() => {
-    window.__veloxP20 = {
-      copyRichText: () => {
-        const view = viewRef.current
-        return view ? copyRichTextToClipboard(view) : Promise.resolve(false)
-      },
-      copyAsHtml: () => {
-        const view = viewRef.current
-        return view ? copyHtmlToClipboard(view) : Promise.resolve(false)
-      },
-      exportSelectionTo: async (target) => {
-        const view = viewRef.current
-        if (!view) return false
-        const html = await renderSelectionHtmlDocument(view)
-        return window.api.exportHtml(target, html)
-      },
-      getClipboard: async () => ({
-        html: await window.api.clipboardReadHtml(),
-        text: await window.api.clipboardRead()
-      }),
-      getToast: () => toastRef.current,
-      setThemePref: (mode) => setPreferences({ theme: mode })
-    }
-  }, [viewRef])
+  // P13–P29 probe handles: single assembly entry (task 1A split). P12 installs
+  // from the close-query effect above (subscription is product behavior);
+  // __veloxEditor installs in the create-editor effect (editor lifecycle).
+  useE2eSeams({
+    // P13
+    workspace,
+    openGlobalSearch,
+    openSearchResult,
+    sidebarModeRef,
+    // P14
+    stats,
+    // P16
+    insertMermaidTemplate,
+    openMermaidInsert,
+    dialogOpen: showMermaidInsert,
+    // P17
+    resolveAndNavigate,
+    revalidateLinks,
+    openExternalImplRef,
+    // P18
+    restoreFoldsForRef,
+    // P20
+    toastRef,
+    // P21
+    insertCalloutTemplate,
+    setShowCalloutInsert,
+    calloutDialogOpen: showCalloutInsert,
+    // P22
+    openTableInsert,
+    tableDialogRef,
+    tableFormRef,
+    patchTableForm,
+    confirmTableDialog,
+    // P23
+    formatDocument,
+    showFormatWarnings,
+    lastFormatRef,
+    formatWarningsRef,
+    toast,
+    // P25
+    mpProbeRef,
+    // shared (P13/P18/P19/P24–P26)
+    viewRef,
+    fileOps,
+    filePathRef
+  })
 
   const commandOps: CommandOps = {
     viewRef,
