@@ -38,13 +38,15 @@
 
 ### 1A. 拆 App.tsx（2642 行 → 目标 < 2000 行）
 
-- [ ] **1.1 e2e 类型声明外移**：`declare global` 的 `__veloxP12`–`__veloxP29` 等约 284 行（App.tsx 约 L100–384）→ `src/renderer/src/e2e/handles.d.ts`
-- [ ] **1.2 e2e seam useEffect 外移**：约 300 行 seam 装配（约 L720–2300 区间内）→ `src/renderer/src/e2e/seams/`，按 P 编号分组（如 `p26.ts`…`p29.ts`），App 只保留统一装配入口
+- [x] **1.1 e2e 类型声明外移**：`declare global` 的 `__veloxP12`–`__veloxP29` 等约 284 行（App.tsx 约 L100–384）→ `src/renderer/src/e2e/handles.d.ts`
+- [x] **1.2 e2e seam useEffect 外移**：约 300 行 seam 装配（约 L720–2300 区间内）→ `src/renderer/src/e2e/seams/`，按 P 编号分组（如 `p26.ts`…`p29.ts`），App 只保留统一装配入口
 - [ ] **1.3 复核剩余业务回调**，如有明显独立域（如折叠同步、会话持久化 effect 群）可顺势下沉到 hooks（可选）
+
+> ✅ **1A 收敛记录（2026-09-22）**：App.tsx 2642 → 1702 行。`declare global` 块（285 行）**原样平移**至 `e2e/handles.d.ts`（import-type 头 + 全局类型即 e2e 契约，编译器守护）；18 行 null 初始化 → `e2e/seams/index.ts` 模块副作用（import 时执行）。15 个 seam effect 体**逐字节平移**至 `e2e/seams/`（p12–p26、p24-p29）：P12 特例——`installP12Handle` 只外提 handle 字面量，`onQueryClose` 订阅 effect 留 App 原位；P24/P28/P29 三 handle 共享单 effect 原状保持（`useP24P29Seam`）；P28/P29 两份同体 `themeToken` 提为模块私有 `probeThemeToken`（spec 授权同文件去重），其余零改动。dep 数组逐项保持（含 exhaustive-deps 抑制位）。ref 归属 grep 复核：**seam-only 随迁** statsRef/loadContentRef/mermaidDialogOpenRef/calloutDialogOpenRef；**业务共用留 App 走 deps** sidebarModeRef（修正规格「随迁」假设——`openGlobalSearch` 消费）/toastRef/tableDialogRef/tableFormRef/lastFormatRef/formatWarningsRef/mpProbeRef/openExternalImplRef/restoreFoldsForRef/lastAutoSaveAtRef（P12 install 非 hook，ref 留 App 传入）。App 唯一装配入口 `useE2eSeams`（hook 序 = 原 effect 序 P14→P20）；`__veloxEditor` 赋值留 create-editor effect（编辑器生命周期非 seam）。顺手清除 20 个 seam 独占 import、折叠切口空行。收敛：typecheck 双配置 + 190 unit 全绿（18 文件）。1.3 复核完成：按 [1A spec](specs/1A-split-app/) 不做业务下沉，若做另立单元（同 1.7 处理）。
 
 ### 1B. 拆 styles.css（3131 行 → styles/ 目录）
 
-- [ ] **1.4 按注释 section 切文件**（切割线即现有注释边界）：
+- [x] **1.4 按注释 section 切文件**（切割线即现有注释边界）：
   ```
   src/renderer/src/styles/
     tokens.css           L7–78    :root 词表
@@ -65,27 +67,33 @@
   ```
   - 原 `styles.css` 改为按序 `@import`（或由 `main.tsx` 依次 import），对外零改动
   - 把文件尾游离的 `.vm-mermaid-lightbox-zoom`（L3118–3131）归还到 lightbox 区
-- [ ] **1.5 提取阴影/焦点环 token**：`--shadow-pop`（3 处重复）、`--shadow-modal`（2 处）、`--focus-ring`（2 处）
-- [ ] **1.6 收敛 `.theme-dark` 旁路补丁**（约 6 处选择器级暗色补丁 + callout 色 light/dark 整段复制 ×2）：能翻转成 token 的翻转进 `.theme-dark`，不能的在所属模块内就近保留 theme 段
+- [x] **1.5 提取阴影/焦点环 token**：`--shadow-pop`（3 处重复）、`--shadow-modal`（2 处）、`--focus-ring`（2 处）
+- [x] **1.6 收敛 `.theme-dark` 旁路补丁**（约 6 处选择器级暗色补丁 + callout 色 light/dark 整段复制 ×2）：能翻转成 token 的翻转进 `.theme-dark`，不能的在所属模块内就近保留 theme 段
 - [ ] **1.7 按钮皮肤归并（可选）**：5 套平行按钮（`.dialog-btn` / `.cm-search .cm-button` / `.sidebar-mode-seg button` / `.sb-stat-btn` / `.mermaid-preview-bar button` / `.tab-context-menu button`）抽共享 primitives（`.btn` / `.btn-primary` / `.btn-danger`），注意 `.dialog-btn-primary` 的暗色特例（L917–919）
+
+> ✅ **1B 收敛记录（2026-09-22）**：3141 行 → `styles/` 15 文件（tokens 84 / themes 92 / chrome 374 / filetree 120 / context-menu 83 / overlays 289 / forms 156 / editor-modes 146 / markdown 946 / ext-syntax 108 / global-search 302 / statusbar 122 / code-chrome 93 / mermaid-preview 112 / tabs 124）+ barrel 15 行 `@import`（`main.tsx` 零改动）。moved 块（ListPickDialog、表格插入、lightbox-zoom 尾块）选择器均组件私有，已验证无第二落点；`scripts/cdp-*.mjs` 不扫 styles.css。1.5：3 个 token 进 `:root`，7 处字面量改引用。1.6：callout 图标 16 行主题复制 → `var(--co-bar)` + 8 行主题无关 glyph；katex 暗色 `#d4d4d4` → `var(--fg)`；lightbox 遮罩 → `--lightbox-scrim`（themes 双套）；lightbox svg 暗补丁（== dark `--bg`）删除；`.dialog-btn-primary` 暗补丁归位基础规则旁；mermaid-error 琥珀三色 / `.list-pick-item.is-active`（#111 vs #1e1e1e 值不同）按判定表就近保留。收敛：typecheck + 183 unit + `npm run build`（CSS 产物 `index-*.css` 正常）。规格：[docs/specs/1B-split-styles/](specs/1B-split-styles/)。1.7 未做（可选，另立单元）。
 
 ### 1C. 主题色单源化
 
-- [ ] **1.8 确立唯一色值源**：以 `src/renderer/src/export/palette.ts` 为单一定义（或新建 `src/renderer/src/theme/tokens.ts`）
-  - `styles.css`（→ `themes.css`）的 `.theme-light/.theme-dark` 消费同一套值（构建期注入或手工对照 + 测试守护二选一）
-  - `export/exportCss.ts` 的 `lightVars/darkVars` + callout 色（L308–315）改为从 palette 引用
-  - `editor/livePreview/hljsTokens.ts` 的 hljs 映射表标注引用关系
-  - 注意导出侧 class 名 `.export-theme-light/.export-theme-dark` 与运行时 `.theme-*` 的对应关系一并文档化
-- [ ] **1.9 加一致性测试**：断言 palette 值与 styles.css 声明一致（读文件解析或快照），杜绝再次漂移
+- [x] **1.8 确立唯一色值源**：以 `src/renderer/src/export/palette.ts` 为单一定义（或新建 `src/renderer/src/theme/tokens.ts`）
+  - `styles.css`（→ `themes.css`）的 `.theme-light/.theme-dark` 消费同一套值（构建期注入或手工对照 + 测试守护二选一）——**取「手工对照 + 测试守护」**（不做构建期注入，见 [1C spec](specs/1C-theme-palette/spec.md) 不做）
+  - `export/exportCss.ts` 的 `lightVars/darkVars` + callout 色（L308–315）改为从 palette 引用——callout 16 行 → `calloutCss(…)` 生成；`inlineStyles.ts` 的 `co` 字面对象 → `DARK_CALLOUTS`/`LIGHT_CALLOUTS`（tuple 形状不变）
+  - `editor/livePreview/hljsTokens.ts` 的 hljs 映射表标注引用关系——上游 `highlight.js/styles/github*.css` 由 widgets.ts/buildDocument.ts scope 注入，不走 palette
+  - 注意导出侧 class 名 `.export-theme-light/.export-theme-dark` 与运行时 `.theme-*` 的对应关系一并文档化——palette.ts 文档头 + 导出 `RUNTIME_CSS_VAR`（含 `bgAlt` → export `--bg-alt` vs runtime `--bg-sidebar` 错位）
+- [x] **1.9 加一致性测试**：断言 palette 值与 styles.css 声明一致（读文件解析或快照），杜绝再次漂移——新增 `export/palette.test.ts`
+
+> ✅ **1C 收敛记录（2026-09-22）**：palette.ts 成为唯一色值源——新增 `CalloutType`/`CalloutColors`/`LIGHT_CALLOUTS`/`DARK_CALLOUTS`/`RUNTIME_CSS_VAR`（8 型 × bar/bg × light/dark，值取自原三处手工同步）；`exportCss.ts`/`inlineStyles.ts` callout 字面 hex 全部消失（引用生成，生成规则行逐字节等价有测试钉住）；hljsTokens.ts 头部标注色源关系。`palette.test.ts`（+7 用例）读 `styles/themes.css`/`styles/markdown.css` 断言 10 token × 2 主题 + callout 16 行 == palette，改色流程：改 palette → 跑测试 → 同步被点名的 CSS 行。游离 hex（mermaid-error `#d1242f`、katex `#d4d4d4`）按 spec 不做，另立清理项。收敛：typecheck + 190 unit 全绿（18 文件）。规格：[docs/specs/1C-theme-palette/](specs/1C-theme-palette/)。
 
 ### 1D. 拆 handlers.ts（907 行，TS 侧最安全的首个拆分）
 
-- [ ] **1.10 抽共享层** `editor/livePreview/handlers-ctx.ts`：`BuildCtx`、`PendingDeco`、6 个 Decoration 单例（`hide`/`markEm`/`markStrong`/`markDel`/`markCode`/`markLink`/`markLinkBroken`）、小工具（`nodeText`/`hideMarkerWithSpace`/`listDepth`/`quoteDepth`）
-- [ ] **1.11 拆 tree handlers** `handlers-tree.ts`：全部 `enter*`（行内/标题/链接/图片/列表/引用/callout/hr/任务）
-- [ ] **1.12 拆表格+围栏代码** `handlers-code.ts`：`enterTable`、`enterFencedCode` + 私有 `buildFocusedCodePanel`（唯一同时碰 table/state 与 codeBlockUi/hljsTokens 的段，文件头注明「装饰层感知编辑会话」语义）
-- [ ] **1.13 拆数学 pass** `handlers-math.ts`：`collectMathDecos` + `MATH_SKIP_NODES`（文件头注明「须在树 pass 之后跑」契约；与 `export/renderDoc.ts` renderTextRun 是手工平行实现，语法改动双处同步）
-- [ ] **1.14 拆扩展语法 pass** `handlers-extended.ts`：`collectExtendedDecos`（front matter/脚注/highlight·sup·sub/缩写/定义列表/属性）。唯一需要动代码形状之处：把局部闭包 `inInlineSyntax`/`inlineMarkPass`/`bodyFrom` 提升为参数化工具
-- [ ] **1.15 保留 `handlers.ts` 作 re-export barrel**（下游 `build.ts` 零改动），或直接改 `build.ts` import；**解开循环依赖** `build → handlers → table/widget → livePreview/field`
+- [x] **1.10 抽共享层** `editor/livePreview/handlers-ctx.ts`：`BuildCtx`、`PendingDeco`、6 个 Decoration 单例（`hide`/`markEm`/`markStrong`/`markDel`/`markCode`/`markLink`/`markLinkBroken`）、小工具（`nodeText`/`hideMarkerWithSpace`/`listDepth`/`quoteDepth`）
+- [x] **1.11 拆 tree handlers** `handlers-tree.ts`：全部 `enter*`（行内/标题/链接/图片/列表/引用/callout/hr/任务）
+- [x] **1.12 拆表格+围栏代码** `handlers-code.ts`：`enterTable`、`enterFencedCode` + 私有 `buildFocusedCodePanel`（唯一同时碰 table/state 与 codeBlockUi/hljsTokens 的段，文件头注明「装饰层感知编辑会话」语义）
+- [x] **1.13 拆数学 pass** `handlers-math.ts`：`collectMathDecos` + `MATH_SKIP_NODES`（文件头注明「须在树 pass 之后跑」契约；与 `export/renderDoc.ts` renderTextRun 是手工平行实现，语法改动双处同步）
+- [x] **1.14 拆扩展语法 pass** `handlers-extended.ts`：`collectExtendedDecos`（front matter/脚注/highlight·sup·sub/缩写/定义列表/属性）。~~把局部闭包 `inInlineSyntax`/`inlineMarkPass`/`bodyFrom` 提升为参数化工具~~ **plan 修订**：整函数纯平移、局部闭包原样保留，零代码形状变化（见 [1D spec](specs/1D-split-handlers/spec.md) AC4）
+- [x] **1.15 保留 `handlers.ts` 作 re-export barrel**（下游 `build.ts` 零改动），或直接改 `build.ts` import；**解开循环依赖** `build → handlers → table/widget → livePreview/field`
+
+> ✅ **1D 收敛记录（2026-09-22）**：907 行 → `handlers-ctx`(81) + `handlers-tree`(315) + `handlers-code`(169) + `handlers-math`(124) + `handlers-extended`(269) + barrel(19)。解环走注入缝 `setNestedPreviewField`（`table/widget.ts` 消费、`editor/setup.ts` 装配时接线，`mountCellEditor` 内嵌套编辑器行为不变）。收敛：typecheck 绿、183 unit 全绿（build 快照 = 装饰输出行为基线）、`npx madge --circular` **0 cycles**（解环前 1 环）。规格：[docs/specs/1D-split-handlers/](specs/1D-split-handlers/)。
 
 ---
 

@@ -6,7 +6,7 @@ React 19 + CodeMirror 6 的编辑器 UI 全部。入口 `index.html` → `src/ma
 
 | 目录/文件 | 职责 |
 |---|---|
-| `App.tsx` | 外壳与状态装配（⚠ 2642 行已知债务，见下） |
+| `App.tsx` | 外壳与状态装配（~1700 行；e2e 类型/seam 已外移 `e2e/`，业务下沉见下） |
 | `components/` | UI 组件，App 一层星型分发（props 不钻透） |
 | `commands.ts` | 命令注册表（id/label/shortcut/run），MenuBar + 全局快捷键 + mac 原生菜单三消费方 |
 | `hooks/` | `useFileOps`(多标签+文件IO)、`useAutoSave`、`useWorkspaceTree`、`useExport`、`useAppTheme`、`useMenus` |
@@ -20,7 +20,8 @@ React 19 + CodeMirror 6 的编辑器 UI 全部。入口 `index.html` → `src/ma
 | `outline/extract.ts` | 语法树提取标题大纲（有单测） |
 | `preferences/store.ts` | 偏好+会话 store（localStorage，sanitize 校验，pub/sub） |
 | `i18n/` | en/zh 扁平字典 + `t()` + `useTranslation()` |
-| `styles.css` | 全部样式（3131 行单文件，按注释分区；拆分在 backlog） |
+| `e2e/` | 测试基础设施（1A 外移）：`handles.d.ts`（`window.__velox*` 契约类型）+ `seams/`（探针 handle 装配，App 经 `useE2eSeams`/`installP12Handle` 接线） |
+| `styles/` | 全部样式（1B 已按分区拆 15 文件，`styles.css` 仅为 `@import` barrel） |
 | `statusbar/` `content.ts` | 状态栏统计、欢迎文档 |
 
 ## 核心设计（改动必须遵守）
@@ -35,16 +36,16 @@ React 19 + CodeMirror 6 的编辑器 UI 全部。入口 `index.html` → `src/ma
 
 ## 测试
 
-- Vitest node 环境，`*.test.ts` 同目录共置；只测纯函数/纯逻辑（outline、table/parse、livePreview/build、format、stats 等已有 16 个测试文件）
+- Vitest node 环境，`*.test.ts` 同目录共置；只测纯函数/纯逻辑（outline、table/parse、livePreview/build、format、stats、palette↔CSS 对齐、i18n 对齐等 18 个测试文件）
 - 重浏览器依赖走 `src/test-stubs/`（如 mermaid stub，由 `vitest.config.ts` alias 接管），单测不渲染 widget
-- CDP 验收钩子（硬契约，重构不得破坏）：`window.__veloxTable`（`scripts/cdp-p10.mjs`）、`window.__veloxP12`–`__veloxP29`、`window.__veloxCtxDebug`/`__veloxCtxLastHit`、`window.__veloxPrefs`、`window.__veloxTableCellView`
+- CDP 验收钩子（硬契约，重构不得破坏）：`window.__veloxTable`、`window.__veloxP12`–`__veloxP29`、`window.__veloxCtxDebug`/`__veloxCtxLastHit`、`window.__veloxPrefs`、`window.__veloxTableCellView`——形状由 `e2e/handles.d.ts` 等类型钉住（探针脚本不在本仓库）
 
 ## 已知债务与互斥模式（新代码用哪边）
 
-- **App.tsx 是瓶颈**（2642 行：~284 行 e2e 类型 + ~300 行 seam effect + 业务回调）：新功能逻辑放 `hooks/` 或独立模块，App 只接线
-- **主题色 4 处手工同步**：styles.css / `export/exportCss.ts` / `export/palette.ts` / `editor/livePreview/hljsTokens.ts`——改色必须四处同改
+- **App.tsx 仍是业务装配中枢**（~1700 行）：e2e 类型/seam 已外移 `e2e/`（1A）；新功能逻辑放 `hooks/` 或独立模块，App 只接线；业务回调再下沉按 [docs/refactor-tasks.md](../../docs/refactor-tasks.md) 走 SDD 流程
+- **主题色单源是 `export/palette.ts`**（1C 已收敛）：改色改 palette → 跑 `export/palette.test.ts` → 同步被点名的 `styles/` 行（手工对照 + 测试守护）；hljs 色在上游 `highlight.js/styles/github*.css`（scope 注入），不走 palette
 - **commands 双源快捷键** + command id 字面量被 cdp 探针扫描，id 不可改
-- **大文件只做局部小改**：`editor/widgets.ts`（1445）、`editor/table/widget.ts`（1142）、`hooks/useFileOps.ts`（1018）、`editor/livePreview/handlers.ts`（907）——结构性拆分按 [docs/refactor-tasks.md](../../docs/refactor-tasks.md) 走 SDD 流程
-- **循环依赖** `livePreview/build → handlers → table/widget → livePreview/field` 现存，import 时绕开加剧
+- **大文件只做局部小改**：`editor/widgets.ts`（1445）、`editor/table/widget.ts`（1142）、`hooks/useFileOps.ts`（1018）——结构性拆分按 docs/refactor-tasks.md 走 SDD 流程
+- **handlers 1D 已拆**（`handlers-ctx/tree/code/math/extended` + barrel）；`build → handlers → table/widget` 循环依赖已解（`setNestedPreviewField` 注入缝，`npx madge --circular` 守护 0 cycles），新增 import 勿绕开 barrel/缝重建环
 - `useFileOps` 的 dirty 三轨（dirtyRef/tab.dirty/setDirty state）与 savedContent 双写勿扩散到新代码，新状态单一真源
 - `table/widget.ts` 的 `pendingHandoff`（destroy→remount 未提交文本交接）correctness-critical，动它先读文件头设计注释
