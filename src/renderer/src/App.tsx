@@ -49,7 +49,7 @@ import { DialogHost, dialog } from './components/Dialog'
 import { EditorContextMenuHost } from './components/EditorContextMenu'
 import { SearchIcon } from './components/Icons'
 import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch, bumpLinkEpoch, bumpI18nEpoch, updateLivePreviewConfig } from './editor/setup'
-import { invalidateImageCache } from './editor/widgets'
+import { invalidateImageCache } from './editor/image-widget'
 import { readEditingAssistsConfig, setHtmlPasteFallbackNotice } from './editor/assists'
 import { formatMarkdown, type FormatWarning } from './editor/format'
 import { extractOutline, findHeadingBySlug, type OutlineItem } from './outline/extract'
@@ -74,7 +74,7 @@ import {
 } from './preferences/store'
 import type { SidebarMode } from './preferences/store'
 import type { LinkResolveResult } from '../../../electron/shared/api'
-import { buildCommands, type CommandOps, type RecentItem } from './commands'
+import { createCommandCache, type CommandOps, type RecentItem } from './commands'
 import { linkAtPos } from './editor/contextMenu/detect'
 import { setCtxRuntime } from './editor/contextMenu/registry'
 import { useE2eSeams } from './e2e/seams'
@@ -309,19 +309,19 @@ export default function App(): React.JSX.Element {
 
   // Native-menu Open Recent / Clear Menu clicks arrive with payloads.
   useEffect(() => {
-    const offOpen = window.api.onMenu('menu:openRecent', (path?: string) => {
+    const offOpen = window.api.onMenu('openRecent', (path?: string) => {
       if (path) void fileOps.openRecentFile(path)
     })
-    const offClear = window.api.onMenu('menu:clearRecent', () => clearRecentFiles())
+    const offClear = window.api.onMenu('clearRecent', () => clearRecentFiles())
     // P26 native-menu tab commands (darwin File menu + Cmd/Ctrl+W routing).
-    const offCloseTab = window.api.onMenu('menu:closeTab', () => {
+    const offCloseTab = window.api.onMenu('closeTab', () => {
       void fileOps.closeTab(fileOps.getActiveTabId())
     })
-    const offReopenTab = window.api.onMenu('menu:reopenClosedTab', () => {
+    const offReopenTab = window.api.onMenu('reopenClosedTab', () => {
       void fileOps.reopenClosedTab()
     })
-    const offNextTab = window.api.onMenu('menu:nextTab', () => fileOps.nextTab())
-    const offCloseOrWindow = window.api.onMenu('menu:closeTabOrWindow', () => {
+    const offNextTab = window.api.onMenu('nextTab', () => fileOps.nextTab())
+    const offCloseOrWindow = window.api.onMenu('closeTabOrWindow', () => {
       // Spec: Cmd/Ctrl+W closes a tab only when tabs>1; otherwise it keeps
       // the window-close semantics (P12 intercept runs on window:close).
       if (fileOps.getTabCount() > 1) {
@@ -1424,21 +1424,23 @@ export default function App(): React.JSX.Element {
   }
   const commandOpsRef = useRef(commandOps)
   commandOpsRef.current = commandOps
+  // 2.11: command-table Map cache for the setCtxRuntime hot path — rebuilt at
+  // most once per render (ops identity), so run closures still see the latest
+  // ops without a full table rebuild on every dispatch.
+  const cmdCache = useRef(createCommandCache(() => commandOpsRef.current)).current
 
   // P27 context-menu runtime — the registry builds items; this supplies the
   // app capabilities they call (command dispatch, clipboard, link open, toasts
-  // and the P02 danger confirm). Commands are rebuilt per call so run closures
-  // always see the latest ops.
+  // and the P02 danger confirm). Commands are resolved through the ops-keyed
+  // cache so run closures always see the latest ops.
   useEffect(() => {
     setCtxRuntime({
       runCommand: (id) => {
-        const cmd = buildCommands(commandOpsRef.current).find((c) => c.id === id)
-        if (cmd) cmd.run()
+        cmdCache.get(id)?.run()
       },
       // P22-F3: menu-disabled state from the same catalog as runCommand.
       isCommandDisabled: (id) => {
-        const cmd = buildCommands(commandOpsRef.current).find((c) => c.id === id)
-        return cmd?.isDisabled?.() ?? false
+        return cmdCache.get(id)?.isDisabled?.() ?? false
       },
       getBaseDir: () => {
         const p = filePathRef.current

@@ -8,7 +8,7 @@ import type { SyntaxNode } from '@lezer/common'
 import type { ThemeName } from '../theme'
 import { t } from '../../i18n'
 import { livePreviewConfigFacet } from '../livePreview/config'
-import { BlockWidget, type BlockToolbarItem } from '../widgets'
+import { BlockWidget, type BlockToolbarItem } from '../blockWidget'
 import {
   escapeCell,
   isSentinelCell,

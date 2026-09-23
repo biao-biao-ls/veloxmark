@@ -14,7 +14,9 @@ import {
   quoteDepth,
   type BuildCtx
 } from './handlers-ctx'
-import { ImageWidget, TaskWidget, parseImageMarkdown } from '../widgets'
+import { TaskWidget } from '../widgets-extended'
+import { ImageWidget } from '../image-widget'
+import { parseImageMarkdown } from '../image-parse'
 import { extractLinkUrl, isBrokenCached, isSkippableHref } from './linkNav'
 import { calloutDisplayTitle, parseCalloutMarker } from './callout'
 import { CalloutTitleWidget, calloutKey, isCalloutFolded } from './calloutFold'

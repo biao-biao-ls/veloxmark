@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { splitHighlightedLines } from './widgets'
+import { splitHighlightedLines } from './render-helpers'
 import { codeBlockKey } from './livePreview/codeBlockUi'
 
 describe('P24 splitHighlightedLines', () => {

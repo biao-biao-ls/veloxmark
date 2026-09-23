@@ -1,13 +1,9 @@
 import { parser as mdParser, GFM } from '@lezer/markdown'
 import type { SyntaxNode, Tree } from '@lezer/common'
 import { imageSizeMarkdown } from '../editor/markdown-image-ext'
-import {
-  flipTransform,
-  highlightCodeHtml,
-  parseImageMarkdown,
-  renderKatexHtml,
-  renderMermaid
-} from '../editor/widgets'
+import { flipTransform, parseImageMarkdown } from '../editor/image-parse'
+import { renderMermaid } from '../editor/mermaid'
+import { highlightCodeHtml, renderKatexHtml } from '../editor/render-helpers'
 import type { ThemeName } from '../editor/theme'
 import {
   ABBR_DEF_RE,

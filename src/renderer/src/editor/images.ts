@@ -2,7 +2,7 @@ import { Prec, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { getPreferences, type ImageRenameMode } from '../preferences/store'
 import { getLivePreviewConfig } from './livePreview'
-import { closeAllImageSelections } from './widgets'
+import { closeAllImageSelections } from './image-widget'
 
 /**
  * Paste / drop image insertion (P05).

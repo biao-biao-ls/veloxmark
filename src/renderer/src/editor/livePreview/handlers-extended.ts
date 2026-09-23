@@ -13,7 +13,7 @@ import {
   escapeRegExp,
   parseFrontMatter
 } from './extendedSyntax'
-import { FootnoteDefBackWidget, FootnoteRefWidget, FrontMatterWidget } from '../widgets'
+import { FootnoteDefBackWidget, FootnoteRefWidget, FrontMatterWidget } from '../widgets-extended'
 
 /**
  * P11 extended-syntax regex pass (split from handlers.ts, task 1D): front

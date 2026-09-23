@@ -9,7 +9,7 @@
 import { syntaxTree } from '@codemirror/language'
 import type { EditorView } from '@codemirror/view'
 import { t } from '../../i18n'
-import { copyPngImage, exportPng, exportSvg } from '../widgets'
+import { copyPngImage, exportPng, exportSvg } from '../mermaid'
 import {
   expandFolds,
   foldKey,

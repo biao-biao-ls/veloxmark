@@ -8,7 +8,7 @@
  */
 import { useEffect, useRef } from 'react'
 import { MERMAID_TEMPLATES, isCursorInMermaidFence } from '../../editor/mermaidTemplates'
-import { setMermaidExportIo } from '../../editor/widgets'
+import { setMermaidExportIo } from '../../editor/mermaid'
 import type { ViewRef } from './types'
 
 export interface P16Deps {

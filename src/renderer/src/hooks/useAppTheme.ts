@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore, type RefObject 
 import type { EditorView } from '@codemirror/view'
 import { reconfigureTheme } from '../editor/setup'
 import type { ThemeName } from '../editor/theme'
-import { clearMermaidCache } from '../editor/widgets'
+import { clearMermaidCache } from '../editor/mermaid'
 import {
   getPreferences,
   setPreferences,

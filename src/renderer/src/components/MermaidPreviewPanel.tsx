@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { renderMermaid, exportSvg, exportPng, copyPngImage } from '../editor/widgets'
+import { renderMermaid, exportSvg, exportPng, copyPngImage } from '../editor/mermaid'
 import type { ThemeName } from '../editor/theme'
 import { t } from '../i18n'
 

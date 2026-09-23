@@ -2,7 +2,7 @@ import type { SyntaxNode } from '@lezer/common'
 import { syntaxTree } from '@codemirror/language'
 import { Decoration } from '@codemirror/view'
 import { type BuildCtx } from './handlers-ctx'
-import { InlineMathWidget, MathBlockWidget } from '../widgets'
+import { InlineMathWidget, MathBlockWidget } from '../widgets-math'
 
 /**
  * Math regex pass (split from handlers.ts, task 1D). @lezer/markdown has no

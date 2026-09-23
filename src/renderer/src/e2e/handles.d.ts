@@ -13,7 +13,7 @@
  */
 import type { EditorView } from '@codemirror/view'
 import type { updateLivePreviewConfig } from '../editor/setup'
-import type { setMermaidExportIo } from '../editor/widgets'
+import type { setMermaidExportIo } from '../editor/mermaid'
 import type { DocStats } from '../components/StatusBar'
 import type { FormatWarning } from '../editor/format'
 import type { TableInsertForm } from '../components/TableInsertDialog'
