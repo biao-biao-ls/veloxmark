@@ -1,0 +1,85 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ===========================================================================
+   Design-token vocabulary (F08 layering)
+   ---------------------------------------------------------------------------
+   Five sections: color: chrome / color: content surface / color: text /
+   spacing / editor. New visual concepts get a token HERE first, then consume
+   it — component styles never invent parallel literals.
+
+   Theme-split tokens are declared on .theme-light / .theme-dark below (the
+   product hosts theme-* on the .app div, not html/body) but belong to the
+   same vocabulary. Chrome-semantic tokens (--bg-sidebar, --border, …) must
+   never be consumed by content widgets (.cm-md-*); content surfaces get
+   their own tokens (--table-header-bg, --code-bg, …). Component-private
+   tokens (callout --co-bar/--co-bg family) are allowed and stay local.
+   ======================================================================== */
+:root {
+  /* ---- color: chrome ---------------------------------------------------- */
+  /* Theme-split — declared in .theme-light/.theme-dark: --bg, --bg-sidebar,
+     --border, --accent, --danger. */
+
+  /* ---- color: content surface ------------------------------------------- */
+  /* Theme-split — declared in .theme-light/.theme-dark: --code-bg,
+     --table-header-bg, --table-stripe-bg, --quote-border, --hr-color,
+     --highlight-bg. */
+
+  /* ---- color: text ------------------------------------------------------ */
+  /* Theme-split — declared in .theme-light/.theme-dark: --fg, --fg-dim
+     (F04, AA on --bg-sidebar), --fg-disabled (exempt affordance). */
+
+  /* ---- spacing (F03) + radius (F08) ------------------------------------- */
+  /* 4/8-grid spacing scale. New or touched margin/padding rules must
+     consume --space-* (or --editor-gutter for content-column alignment) —
+     no magic numbers. Values: 4/8/12/16/24/32/48. Radius: minimal set,
+     migration keeps existing px values (3→sm, 8→md). */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --radius-sm: 3px;
+  --radius-md: 8px;
+
+  /* ---- editor ----------------------------------------------------------- */
+  --editor-font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system,
+    sans-serif;
+  --editor-font-size: 16px;
+  --editor-line-height: 1.6;
+  /* Content column cap. :root is the ONLY stylesheet declaration point; the
+     P03 preferences store (applyPreferencesCssVars) additionally writes an
+     inline value on documentElement at runtime — that inline write is the
+     sanctioned preference channel exception, not a second declaration. */
+  --editor-max-width: 100%;
+  /* F01/F03/F06: single source for editor side gutter. theme.ts .cm-line
+     and block-level insets (table/code/callout) all consume this variable,
+     so prose and blocks stay aligned by construction. F06 finalized the
+     value at 16px (--space-4): with the fold gutter moved left of the line
+     numbers, number-right → prose-left = --editor-gutter exactly, landing
+     in the 12–20px professional band instead of the old ~69px dead zone. */
+  --editor-gutter: 16px;
+
+  /* elevation & focus (task 1B/1.5) — theme-independent shadows and the
+     shared focus ring. Menu dropdown (0 6px 24px) intentionally NOT tokened:
+     different blur/alpha from --shadow-pop. */
+  --shadow-pop: 0 4px 16px rgba(0, 0, 0, 0.18);
+  --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.28);
+  --focus-ring: 0 0 0 1px var(--accent);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, sans-serif;
+}

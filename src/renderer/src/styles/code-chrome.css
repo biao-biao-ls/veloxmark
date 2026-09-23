@@ -1,0 +1,93 @@
+/* ---- P24: code block display enhancements ---- */
+.cm-md-code-block-wrap code,
+.cm-md-code-block-wrap .cm-md-code-line-src {
+  white-space: pre-wrap !important;
+  word-break: break-all;
+}
+.cm-md-code-block code.cm-md-code-lines .cm-md-code-line {
+  display: flex;
+  align-items: flex-start;
+}
+.cm-md-code-line-no {
+  flex: none;
+  width: 3.2em;
+  padding-right: 12px;
+  text-align: right;
+  color: var(--fg-dim);
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+.cm-md-code-line-src {
+  flex: 1;
+  min-width: 0;
+  white-space: pre;
+}
+.cm-md-code-block-collapsed pre {
+  position: relative;
+  max-height: none;
+}
+.cm-md-code-expander {
+  display: block;
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--border);
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--fg-dim);
+  background: linear-gradient(to bottom, transparent, var(--widget-surface) 40%);
+  cursor: pointer;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.cm-md-code-expander:hover {
+  color: var(--accent);
+}
+.cm-md-code-block-collapsed pre code {
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+}
+
+/* ---- P28: focused code-block panel (source-edit chrome) ---- */
+/* CM6 has no block-level wrapper for live lines, so the panel frame is
+   stitched per line: side borders + surface on every line, caps carry
+   top/bottom borders and --cb-radius. Tokens mirror .cm-md-code-block —
+   the dual-state same-shell contract (panel → widget keeps the same edges). */
+.cm-editor .cm-line.cm-md-code-src {
+  margin: 0 var(--editor-gutter);
+  /* space-4 (16px) matches the rendered widget's pre padding — dual-state
+     code text starts on the same x (chip keeps the lang label's 12px). */
+  padding-left: var(--space-4);
+  background: var(--widget-surface);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+}
+.cm-editor .cm-line.cm-md-code-src-first {
+  border-top: 1px solid var(--border);
+  border-radius: var(--cb-radius) var(--cb-radius) 0 0;
+  padding-top: var(--space-1);
+}
+.cm-editor .cm-line.cm-md-code-src-last {
+  border-bottom: 1px solid var(--border);
+  border-radius: 0 0 var(--cb-radius) var(--cb-radius);
+  padding-bottom: var(--space-1);
+}
+/* P28 × P08: panel decorations exist only while the cursor is inside the
+   block, i.e. on cm-focus-active lines. Focus-mode dim is opacity-only, but
+   pin opacity anyway so surface/border tokens never composite under it. */
+.cm-editor.cm-focus-mode .cm-line.cm-md-code-src {
+  opacity: 1;
+}
+/* Language chip on the (hidden) opening-fence line — same visual values as
+   the rendered widget's .cm-md-code-lang label, minus its border-bottom. */
+.cm-md-code-src-chip {
+  display: inline-block;
+  font-family: Consolas, monospace;
+  font-size: 11px;
+  color: var(--fg-dim);
+  text-transform: lowercase;
+  padding: 2px 12px;
+  user-select: none;
+}
+

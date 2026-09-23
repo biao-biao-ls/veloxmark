@@ -1,0 +1,122 @@
+/* ---- P14 status bar -------------------------------------------------------- */
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 24px;
+  flex-shrink: 0;
+  padding: 0 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-sidebar);
+  color: var(--fg-dim);
+  font-size: 12px;
+  user-select: none;
+  gap: 12px;
+}
+
+.sb-left,
+.sb-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sb-cursor {
+  font-variant-numeric: tabular-nums;
+}
+
+.sb-sel {
+  color: var(--accent);
+}
+
+/* P20 transient command feedback chip. */
+.sb-toast {
+  color: var(--accent);
+  margin-left: 10px;
+  white-space: nowrap;
+  animation: sb-toast-fade 2.5s ease forwards;
+}
+
+@keyframes sb-toast-fade {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0.35; }
+}
+
+.sb-stat {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sb-stat-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0 6px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  /* UX-P14 F3: ≥22px hit target inside the 24px strip (visual stays 24px). */
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  border-radius: 3px;
+}
+
+.sb-stat-btn:hover {
+  color: var(--fg);
+}
+
+/* UX-P14 F4: tabbable slots carry a visible focus ring (accent token). */
+.sb-stat-btn:focus {
+  outline: none;
+}
+
+.sb-stat-btn:focus-visible {
+  outline: none;
+  color: var(--fg);
+  box-shadow: var(--focus-ring);
+}
+
+/* UX-P23 wave⑥-6 F1: format-warnings chip — sb-stat-btn geometry, danger tint
+   so the slot reads as a warning without leaving the status-bar system. */
+.sb-warn-btn {
+  color: var(--danger);
+}
+
+.sb-warn-btn:hover {
+  color: var(--danger);
+}
+
+.sb-warn-btn:focus-visible {
+  color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger);
+}
+
+.sb-lamp {
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+.sb-autosave {
+  color: var(--fg-dim);
+  white-space: nowrap;
+}
+
+.sb-autosave-error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* UX-P04 F2: export run-in-progress lamp */
+.sb-exporting {
+  color: var(--accent);
+}
+

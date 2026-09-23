@@ -1,0 +1,156 @@
+/* ---- preferences panel (P03) -------------------------------------------------- */
+
+.prefs-overlay {
+  align-items: flex-start;
+  padding-top: 10vh;
+}
+
+.prefs-dialog {
+  min-width: 420px;
+  max-width: 520px;
+  max-height: 76vh;
+  overflow-y: auto;
+  /* F03: same horizontal scale values as .dialog (16px). */
+  padding: var(--space-4) var(--space-4) var(--space-3);
+}
+
+/* P07 workspace section: stacked label + textarea + hint. */
+.prefs-row-stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.prefs-textarea {
+  resize: vertical;
+  min-height: 72px;
+  font-family: var(--editor-font-family, inherit);
+  line-height: 1.5;
+}
+
+.prefs-hint {
+  font-size: 11px;
+  color: var(--fg-dim);
+  line-height: 1.4;
+}
+
+.prefs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.prefs-header .dialog-title {
+  margin-bottom: 0;
+}
+
+.prefs-section {
+  margin-top: 14px;
+}
+
+.prefs-section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-dim);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+}
+
+.prefs-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.prefs-label {
+  width: 120px;
+  flex-shrink: 0;
+  color: var(--fg);
+}
+
+.prefs-input {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  outline: none;
+}
+
+.prefs-input:focus {
+  border-color: var(--accent);
+}
+
+.prefs-input-num {
+  flex: 0 0 88px;
+}
+
+.prefs-unit {
+  color: var(--fg-dim);
+  font-size: 12px;
+}
+
+/* F07: small mono mirror of the editor-font value — stays readable when the
+   input itself ellipsizes a long stack; title tooltip is the full value. */
+.prefs-mono {
+  font-family: ui-monospace, 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  font-size: 11px;
+  color: var(--fg-dim);
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.prefs-check {
+  cursor: pointer;
+}
+
+.prefs-check input {
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.prefs-sub {
+  padding-left: 22px;
+}
+
+.prefs-disabled {
+  /* F04: disabled affordance token. */
+  color: var(--fg-disabled);
+  cursor: default;
+}
+
+.dialog-btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.editor-host {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* F01: direct-child scope — descendant matching also hit the nested table
+   cell editor (.cm-editor inside .cm-content) and fed it height:100%. */
+.editor-host > .cm-editor {
+  height: 100%;
+}
+
+.editor-host > .cm-editor > .cm-scroller {
+  overflow: auto;
+}
+

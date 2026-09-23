@@ -1,0 +1,112 @@
+/* ---- P25: mermaid source-preview panel (below the editor) ---- */
+.editor-column {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.mermaid-preview-panel {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  flex: none;
+  min-height: 0;
+  position: relative;
+  z-index: 5;
+  /* wave⑥-7 F2: visible shrink on leave-fence collapse (2s grace + 220ms anim) */
+  transition: height 0.2s ease, opacity 0.2s ease;
+}
+.mermaid-preview-panel.is-collapsing {
+  height: 0 !important;
+  min-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  border-top-color: transparent;
+  pointer-events: none;
+}
+.mermaid-preview-resize {
+  /* wave⑥-7 F3: ≥8px hit-area + row-resize cursor (was 5px/ns-resize) */
+  height: 8px;
+  cursor: row-resize;
+  background: transparent;
+  flex: none;
+}
+.mermaid-preview-resize:hover {
+  background: var(--accent);
+  opacity: 0.4;
+}
+.mermaid-preview-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--fg-dim);
+  flex: none;
+}
+.mermaid-preview-bar .mermaid-preview-title {
+  font-weight: 600;
+  color: var(--fg);
+  margin-right: auto;
+}
+.mermaid-preview-bar button {
+  border: 1px solid var(--border);
+  background: var(--bg-sidebar);
+  color: var(--fg-dim);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.mermaid-preview-bar button:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+/* wave⑥-7: keyboard contract — bar controls are native buttons; focus ring
+   makes tab-stop state visible (same accent ring idiom as sb-stat-btn). */
+.mermaid-preview-bar button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.mermaid-preview-bar button.is-on {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--bg);
+}
+.mermaid-preview-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mermaid-preview-svg {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.mermaid-preview-svg.is-dim {
+  opacity: 0.45;
+}
+.mermaid-preview-svg svg {
+  max-width: 100%;
+  height: auto;
+}
+.mermaid-preview-error {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--danger, #d33);
+  background: var(--bg-sidebar);
+  color: var(--fg);
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+  white-space: pre-wrap;
+}
+

@@ -1,0 +1,120 @@
+/* ---- folder file tree ------------------------------------------------------- */
+
+.filetree-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 2px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 0;
+}
+
+.filetree-item:hover {
+  background: var(--code-bg);
+}
+
+.filetree-item.filetree-active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.filetree-dir-label {
+  color: var(--fg-dim);
+  user-select: none;
+}
+
+.filetree-dir-label svg {
+  flex-shrink: 0;
+}
+
+.filetree-dir-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* P07: fixed-height rows while virtualizing (windowing math needs it). */
+.filetree-item-fixed {
+  height: 25px;
+  box-sizing: border-box;
+  line-height: 21px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* P07: drop-into-folder highlight (HTML5 DnD). */
+.filetree-dir-label.filetree-drop-target {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+/* UX-P07-F4: inline rename row after create (IDE-grade entry). */
+.filetree-renaming {
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+
+.filetree-rename-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  padding: 0 4px;
+  outline: none;
+}
+
+/* P07: filler under the tree — right-click opens the root menu. */
+.filetree-blank {
+  flex: 1;
+  min-height: 48px;
+}
+
+/* ---- tree context menu ------------------------------------------------------ */
+
+.tree-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 140px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: var(--shadow-pop);
+}
+
+.tree-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.tree-menu-item:hover {
+  background: var(--code-bg);
+}
+
+.tree-menu-danger {
+  color: var(--danger);
+}
+

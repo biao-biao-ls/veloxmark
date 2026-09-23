@@ -1,0 +1,944 @@
+/* ---- markdown rendered styles ---------------------------------------------- */
+
+.cm-md-heading {
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* NOTE: line decorations must not carry vertical margins — CodeMirror's
+   heightmap measures border boxes only, so any margin on a .cm-line shifts
+   the DOM away from CM's coordinate mapping and posAtCoords starts landing
+   clicks at the wrong position (end of line / next line). Vertical spacing
+   is done with padding instead; horizontal margins are fine. */
+
+/* F06 heading rhythm: padding-only ladder (CM6 heightmap forbids vertical
+   margins on line decorations — see NOTE above). Top padding decreases down
+   the ladder; total pre-block space is tighter than the old h1 0.67/0.7 mix. */
+.cm-md-h1 {
+  font-size: 2em;
+  padding-top: 0.8em !important;
+  padding-bottom: 0.4em !important; /* gap + room above the bottom border */
+  border-bottom: 1px solid var(--border);
+}
+
+.cm-md-h2 {
+  font-size: 1.5em;
+  padding-top: 0.7em !important;
+  padding-bottom: 0.35em !important;
+}
+
+.cm-md-h3 {
+  font-size: 1.25em;
+  padding-top: 0.6em !important;
+}
+
+.cm-md-h4 {
+  font-size: 1.1em;
+  padding-top: 0.5em !important;
+}
+
+.cm-md-h5 {
+  font-size: 1em;
+  padding-top: 0.45em !important;
+}
+
+.cm-md-h6 {
+  font-size: 0.9em;
+  color: var(--fg-dim);
+  padding-top: 0.4em !important;
+}
+
+.cm-md-strong {
+  font-weight: 700;
+}
+
+.cm-md-em {
+  font-style: italic;
+}
+
+.cm-md-del {
+  text-decoration: line-through;
+}
+
+.cm-md-inline-code {
+  font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  font-size: 0.9em;
+  background: var(--code-bg);
+  border-radius: var(--radius-sm);
+  padding: 0.1em 0.3em;
+}
+
+.cm-md-link {
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* P17: broken link target (existence cache said the path is missing) —
+   UX-P17 F3: semantic token (--danger theme-splits; values unchanged). */
+.cm-md-link-broken {
+  color: var(--danger);
+  text-decoration: underline dashed;
+  text-decoration-color: var(--danger);
+  /* UX-P17 F2: broken targets are not navigable — kill the clickable cue. */
+  cursor: not-allowed;
+}
+
+/* P18 heading fold: gutter arrows, line-end placeholder, outline triangles */
+.cm-fold-gutter {
+  width: 18px;
+}
+
+/* F06: line numbers hug the content box. padR 0 + fold gutter to the LEFT
+   (setup.ts order) means number-right → prose-left equals --editor-gutter
+   exactly (16px, in the 12–20px professional band). Digits keep a small
+   left inset; ≥3-digit numbers widen the gutter automatically leftward. */
+.cm-gutter.cm-lineNumbers .cm-gutterElement {
+  padding: 0 0 0 var(--space-2);
+}
+
+.cm-md-fold-gutter .cm-gutterElement {
+  padding: 0 2px;
+  cursor: default;
+  /* UX-P18 F2: gutter fold target ≥22px tall (was ~14px glyph box). */
+  min-width: 20px;
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+}
+
+.cm-md-fold-arrow {
+  display: inline-block;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--fg);
+  opacity: 0.55;
+  cursor: pointer;
+  visibility: hidden;
+  user-select: none;
+}
+
+.cm-md-fold-gutter .cm-gutterElement:hover .cm-md-fold-arrow,
+.cm-md-fold-arrow.is-folded {
+  visibility: visible;
+}
+
+.cm-md-fold-arrow:hover {
+  opacity: 1;
+}
+
+.cm-md-fold-placeholder {
+  /* UX-P18 F4: token, not GitHub-dark bare value (theme follows --fg-dim). */
+  color: var(--fg-dim);
+  font-size: 12px;
+  padding: 0 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cm-md-fold-placeholder:hover {
+  color: var(--accent);
+}
+
+.outline-fold {
+  /* UX-P18 F2: 22×22 hit box (was 14×~14 glyph). */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: -18px;
+  margin-right: 2px;
+  font-size: 9px;
+  color: var(--fg);
+  opacity: 0.5;
+  cursor: pointer;
+  user-select: none;
+  transform-origin: 45% 50%;
+}
+
+.outline-fold:hover {
+  opacity: 1;
+}
+
+.outline-fold.is-folded {
+  opacity: 0.9;
+  transform: rotate(90deg);
+}
+
+/* P17: hover tooltip for rendered links (editor-level singleton) —
+   UX-P17 F3: --tooltip-* tokens (theme-split; values unchanged). */
+.vm-link-tooltip {
+  position: fixed;
+  z-index: 4000;
+  pointer-events: none;
+  max-width: 480px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-fg);
+  border: 1px solid var(--tooltip-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* lists */
+
+.cm-md-list {
+  position: relative;
+}
+
+.cm-md-list::before {
+  content: '•';
+  color: var(--fg);
+  position: absolute;
+  left: 34px;
+}
+
+.cm-md-list-d1 {
+  padding-top: 0.15em;
+}
+
+.cm-md-list-d2 {
+  padding-left: 24px;
+}
+
+.cm-md-list-d3 {
+  padding-left: 48px;
+}
+
+.cm-md-list-d4 {
+  padding-left: 72px;
+}
+
+.cm-md-list-d5 {
+  padding-left: 96px;
+}
+
+.cm-md-list-d6 {
+  padding-left: 120px;
+}
+
+/* P09: source marker showing — drop the CSS bullet so they don't double up. */
+.cm-md-list-open::before {
+  content: none;
+}
+
+/* blockquote */
+
+.cm-md-quote {
+  border-left: 4px solid var(--quote-border);
+  color: var(--fg-dim);
+  font-style: italic;
+}
+
+.cm-md-quote-d2 {
+  margin-left: 24px;
+}
+
+.cm-md-quote-d3 {
+  margin-left: 48px;
+}
+
+.cm-md-quote-d4 {
+  margin-left: 72px;
+}
+
+/* P21 callouts — `> [!TYPE]` cards. Line classes stack on top of cm-md-quote
+   (enterQuoteMark still runs on the QuoteMark children); later rules win the
+   shared border/color/font-style properties. */
+
+.cm-md-callout {
+  border-left: 4px solid var(--co-bar, var(--quote-border));
+  background: var(--co-bg, transparent);
+  color: var(--fg);
+  font-style: normal;
+  /* F03: callout is a Decoration.line on .cm-line. Theme rule
+     .ͼX .cm-line { padding: 0 var(--editor-gutter) } (0,2,0) outranked the
+     old bare .cm-md-callout padding-left:10px — dead rule. This (0,3,0)
+     rule puts the accent bar's left edge on the same --editor-gutter
+     column as table/code blocks (margin-left), and indents text inside
+     the bar with the spacing scale. */
+  padding-left: var(--space-2);
+}
+
+.cm-editor .cm-line.cm-md-callout {
+  margin-left: var(--editor-gutter);
+  padding-left: var(--space-2);
+}
+
+.cm-md-callout-head {
+  font-weight: 600;
+}
+
+.cm-md-callout-head::before {
+  margin-right: 6px;
+  font-style: normal;
+  /* Icon tint rides the type's bar color — both themes set --co-bar per type,
+     so the old 16-line light/dark icon-color duplication is gone. */
+  color: var(--co-bar);
+}
+
+/* P09: marker showing in source form — suppress the CSS icon so `[!TYPE]`
+   and the icon don't double up on the head line. */
+.cm-md-callout-src.cm-md-callout-head::before {
+  content: none !important;
+}
+
+.cm-md-callout-title {
+  font-weight: 600;
+}
+
+.cm-md-callout-fold-text {
+  color: var(--fg-dim);
+  font-weight: 400;
+  font-size: 0.85em;
+  margin-left: 8px;
+  cursor: pointer;
+  user-select: none;
+  /* UX-P21 F3: chip hit-area ≥24px high (professional target size). */
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* UX-P11 F2: footnote definition ↩ return affordance */
+.cm-md-footnote-back {
+  margin-left: 6px;
+  cursor: pointer;
+  color: var(--fg-dim);
+  font-size: 0.9em;
+  user-select: none;
+}
+
+.cm-md-footnote-back:hover {
+  color: var(--accent);
+}
+
+.cm-md-callout-fold-text:hover {
+  color: var(--accent);
+}
+
+/* light theme — 8 types: bar + light bg (icon color rides --co-bar; glyphs below) */
+.theme-light .cm-md-callout-note { --co-bar: #0969da; --co-bg: #f0f6fc; }
+.theme-light .cm-md-callout-tip { --co-bar: #1a7f37; --co-bg: #eef8f2; }
+.theme-light .cm-md-callout-important { --co-bar: #8250df; --co-bg: #f5e9f7; }
+.theme-light .cm-md-callout-warning { --co-bar: #9a6700; --co-bg: #fff6e0; }
+.theme-light .cm-md-callout-caution { --co-bar: #cf222e; --co-bg: #fff0ee; }
+.theme-light .cm-md-callout-info { --co-bar: #0a7ea4; --co-bg: #e7f3ff; }
+.theme-light .cm-md-callout-success { --co-bar: #1a7f37; --co-bg: #e6f6ec; }
+.theme-light .cm-md-callout-danger { --co-bar: #cf222e; --co-bg: #ffebe9; }
+
+/* dark theme — same 8 types on muted dark backgrounds */
+.theme-dark .cm-md-callout-note { --co-bar: #4493f8; --co-bg: #1c2b3a; }
+.theme-dark .cm-md-callout-tip { --co-bar: #3fb950; --co-bg: #1c2e1e; }
+.theme-dark .cm-md-callout-important { --co-bar: #a371f7; --co-bg: #2a2140; }
+.theme-dark .cm-md-callout-warning { --co-bar: #d29922; --co-bg: #3a2e12; }
+.theme-dark .cm-md-callout-caution { --co-bar: #f85149; --co-bg: #3d1c20; }
+.theme-dark .cm-md-callout-info { --co-bar: #58a6ff; --co-bg: #1c2b3a; }
+.theme-dark .cm-md-callout-success { --co-bar: #3fb950; --co-bg: #1c2e1e; }
+.theme-dark .cm-md-callout-danger { --co-bar: #f85149; --co-bg: #3d1418; }
+
+/* Unicode glyphs — theme-independent (was duplicated in both theme blocks) */
+.cm-md-callout-note.cm-md-callout-head::before { content: 'ℹ'; }
+.cm-md-callout-tip.cm-md-callout-head::before { content: '💡'; }
+.cm-md-callout-important.cm-md-callout-head::before { content: '❗'; }
+.cm-md-callout-warning.cm-md-callout-head::before { content: '⚠'; }
+.cm-md-callout-caution.cm-md-callout-head::before { content: '⚡'; }
+.cm-md-callout-info.cm-md-callout-head::before { content: '📌'; }
+.cm-md-callout-success.cm-md-callout-head::before { content: '✅'; }
+.cm-md-callout-danger.cm-md-callout-head::before { content: '⛔'; }
+
+/* horizontal rule */
+
+.cm-md-hr {
+  border-bottom: 1px solid var(--hr-color);
+  height: 0.5em;
+}
+
+/* code blocks */
+
+/* Vertical gap around block widgets lives on the .cm-md-block-gap wrapper as
+   padding (see widgets.ts wrapWithGap) — margin on the widget box itself is
+   invisible to CodeMirror's heightmap and shifts click mapping below it. */
+.cm-md-block-gap {
+  padding: 6px 0;
+}
+
+/* P28: --cb-radius is a component-private token (F08) shared by the rendered
+   widget and the focused source panel so state transitions don't shift edges.
+   Declared on both hosts — not part of the :root vocabulary. */
+.cm-editor .cm-line.cm-md-code-src,
+.cm-md-code-block {
+  --cb-radius: 6px;
+}
+
+.cm-md-code-block {
+  position: relative;
+  margin: 0 var(--editor-gutter);
+  border-radius: var(--cb-radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--widget-surface);
+  cursor: pointer;
+}
+
+.cm-md-code-lang {
+  font-size: 11px;
+  color: var(--fg-dim);
+  padding: 2px 12px;
+  border-bottom: 1px solid var(--border);
+  font-family: Consolas, monospace;
+  text-transform: lowercase;
+}
+
+/* Content inside a block widget isn't selectable (contenteditable=false); the
+   pointer cursor signals the whole block is a click target (jump to source). */
+
+.cm-md-code-block pre {
+  margin: 0;
+  padding: 12px 16px;
+  overflow-x: auto;
+}
+
+.cm-md-code-block code {
+  font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  font-size: 13.5px;
+  line-height: 1.55;
+  background: transparent;
+  display: block;
+  white-space: pre;
+}
+
+/* mermaid */
+
+.cm-md-mermaid {
+  position: relative;
+  margin: 0 var(--editor-gutter);
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--widget-surface);
+  text-align: center;
+  cursor: pointer;
+  overflow-x: auto;
+}
+
+.cm-md-mermaid-svg {
+  color: var(--fg-dim);
+  font-size: 13px;
+  display: inline-block;
+  min-width: 40px;
+  min-height: 1.4em;
+}
+
+.cm-md-mermaid-svg svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* P16: previous good render kept visible while a re-render is in flight or
+   the current source fails to parse. */
+.cm-md-mermaid-svg.is-dim {
+  opacity: 0.4;
+}
+
+.cm-md-mermaid-placeholder {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  color: var(--fg-dim);
+  font-size: 13px;
+}
+
+.cm-md-mermaid-placeholder::before {
+  content: '📊';
+  font-size: 16px;
+}
+
+.cm-md-mermaid-badge {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 21;
+  padding: 1px 8px;
+  font-size: 11px;
+  border-radius: 10px;
+  color: var(--fg-dim);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+.cm-md-mermaid-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  /* amber palette: readable on both app backgrounds */
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.14);
+  border-left: 3px solid #f59e0b;
+  border-radius: 0 4px 4px 0;
+  text-align: left;
+  word-break: break-word;
+}
+
+.theme-dark .cm-md-mermaid-error {
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.18);
+  border-left-color: #d97706;
+}
+
+.cm-md-mermaid-jump {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 1px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+}
+
+.cm-md-mermaid-jump:hover {
+  filter: brightness(1.15);
+}
+
+/* P16: fullscreen mermaid lightbox (App-root portal, singleton) */
+.vm-mermaid-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2500;
+  background: var(--lightbox-scrim);
+  cursor: grab;
+}
+
+.vm-mermaid-lightbox:active {
+  cursor: grabbing;
+}
+
+.vm-mermaid-lightbox-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.vm-mermaid-lightbox-content {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.vm-mermaid-lightbox-content svg {
+  max-width: min(90vw, 1200px);
+  height: auto;
+  /* keeps diagram fills readable on the scrim — var(--bg) tracks the theme
+     (the old .theme-dark patch #1e1e1e was exactly dark --bg; dropped as a
+     static no-op, task 1B/1.6) */
+  background: var(--bg);
+  padding: 16px;
+  border-radius: 6px;
+}
+
+/* P16-F2: lightbox zoom% readout */
+.vm-mermaid-lightbox-zoom {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  user-select: none;
+}
+/* math */
+
+.cm-md-math-block {
+  position: relative;
+  margin: 0 var(--editor-gutter);
+  padding: 8px 0;
+  overflow-x: auto;
+  cursor: pointer;
+  text-align: center;
+}
+
+.cm-md-math-inline {
+  padding: 0 2px;
+}
+
+/* block toolbar (P06): hover controls shared by code/math/mermaid/table widgets */
+
+.cm-md-block-toolbar {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 0.15s;
+  line-height: 1;
+}
+
+.cm-md-block-toolbar:hover,
+.cm-md-block-toolbar:focus-within {
+  opacity: 1;
+}
+
+/* Parent-hover reveal: CSS can't select a parent, so each block type opts in. */
+.cm-md-code-block:hover .cm-md-block-toolbar,
+.cm-md-mermaid:hover .cm-md-block-toolbar,
+.cm-md-math-block:hover .cm-md-block-toolbar,
+.cm-md-table-wrap:hover .cm-md-block-toolbar {
+  opacity: 1;
+}
+
+.cm-md-block-toolbar-btn {
+  padding: 2px 8px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--fg-dim);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cm-md-block-toolbar-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.cm-md-block-toolbar-btn.copied {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* images (P05: selection + zoom toolbar + broken placeholder) */
+
+.cm-md-image-wrap {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  line-height: 0;
+}
+
+.cm-md-image {
+  max-width: 100%;
+  border-radius: 4px;
+  display: inline-block;
+  vertical-align: bottom;
+  cursor: pointer;
+}
+
+.cm-md-image-wrap.cm-md-image-selected .cm-md-image {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.cm-md-image-toolbar {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--widget-surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  line-height: 1;
+  white-space: nowrap;
+  z-index: 30;
+}
+
+.cm-md-image-toolbar input[type='range'] {
+  width: 140px;
+  accent-color: var(--accent);
+}
+
+.cm-md-image-toolbar-pct {
+  min-width: 3.2em;
+  text-align: right;
+  font-size: 12px;
+  color: var(--fg-dim);
+}
+
+.cm-md-image-toolbar-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  border-radius: 4px;
+  /* UX-P05 F3: hit-area ≥22×22px (professional target — Flip ⤒ was 19×22). */
+  min-width: 22px;
+  min-height: 22px;
+  padding: 2px 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cm-md-image-toolbar-btn:hover {
+  background: var(--bg-editor);
+}
+
+/* Flip toggles: pressed state (vertical flip uses the accent tint too). */
+.cm-md-image-toolbar-btn.active {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: var(--accent);
+  color: var(--fg);
+}
+
+.cm-md-image-placeholder {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  color: var(--fg-dim);
+  font-size: 13px;
+  line-height: 1.4;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cm-md-image-placeholder::before {
+  content: '🖼';
+  font-size: 16px;
+}
+
+/* tables */
+
+.cm-md-table-wrap {
+  position: relative;
+  margin: 0 var(--editor-gutter);
+  /* F05: keep block widgets inside the same content column as prose
+     (var(--editor-max-width) is px when set, 100% when prefs say 0). */
+  max-width: var(--editor-max-width);
+  overflow-x: auto;
+  cursor: pointer;
+  /* UX-P28 F3: constant left gutter for in-cell absolute handles.
+     Same value idle+edit → zero layout shift on enter/exit editing. */
+  padding-left: var(--table-handle-gutter, 56px);
+  /* diag-P28: constant TOP gutter for column handles (positioned above the
+     header row, OUTSIDE header cells — they must never overlap header text).
+     Same idle+edit value → zero layout shift. 28px = 22px button + 4px gap
+     + 2px clearance; the strip lives inside the wrap's padding box so the
+     overflow-x:auto scrollport still shows it without scrollbars. */
+  padding-top: var(--table-col-handle-gutter, 28px);
+}
+
+.cm-md-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.95em;
+  line-height: 1.6;
+}
+
+.cm-md-table th,
+.cm-md-table td {
+  border: 1px solid var(--border);
+  /* F02/F03: cell padding on the spacing scale (was 6px 13px). */
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+}
+
+.cm-md-table th {
+  /* F02: semantic token — content surface, not --bg-sidebar chrome. */
+  background: var(--table-header-bg);
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+}
+
+.cm-md-table tbody tr:nth-child(2n) {
+  background: var(--table-stripe-bg);
+}
+
+.cm-md-table code {
+  font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  font-size: 0.9em;
+  background: var(--code-bg);
+  border-radius: var(--radius-sm);
+  padding: 0.1em 0.3em;
+}
+
+/* P10: table cell editing — handles, active cell, nested editor */
+
+/* F02 dedupe: the old second `.cm-md-table-wrap { cursor: default }`
+   unconditionally overrode the base pointer affordance. Editing-state
+   semantics are preserved by scoping to the class P01/P10 put on the
+   wrap element itself; idle wraps stay clickable. */
+.cm-md-table-wrap.cm-md-table-editing {
+  cursor: default;
+}
+
+/* UX-P28 F3: DELETED width:auto;min-width:100% — this was the root cause of
+   the ~220px layout shift together with handle column injection. With pure
+   table (no handle th/tr) and constant wrap padding, width stays 100% both
+   states. */
+
+.cm-md-table-editing td,
+.cm-md-table-editing th {
+  cursor: text;
+}
+
+.cm-md-table td.cm-md-table-cell-editing,
+.cm-md-table th.cm-md-table-cell-editing {
+  outline: 2px solid var(--accent, #4a9eed);
+  outline-offset: -2px;
+  background: var(--bg);
+  min-width: 3em;
+}
+
+.cm-md-table-cell-editing .cm-editor {
+  min-width: 2em;
+  /* F01 fallback fence: even if a theme var leak reappears, the in-cell
+     editor stays content-sized with internal scroll instead of exploding
+     by 40vh. */
+  height: auto !important;
+  max-height: 6em;
+  overflow: auto;
+}
+
+/* diag-P28: drawSelection's hideNativeSelection theme cascades
+   `caret-color: transparent !important` into nested editors (descendant
+   selectors hit the in-cell .cm-content AND .cm-line — the caret color is
+   taken from the line element). The nested cell editor has no drawSelection
+   of its own (no drawn cursor layer), so the NATIVE caret is the only caret;
+   restore it at higher specificity + !important. currentColor matches
+   nestedCellTheme (auto would go black-on-dark). */
+.cm-md-table-cell-editing .cm-editor .cm-content,
+.cm-md-table-cell-editing .cm-editor .cm-line {
+  caret-color: currentColor !important;
+}
+
+/* UX-P28 F3: RETIRED cm-md-handle-cell / cm-md-handle-row — handle buttons
+   are now absolutely positioned inside content cells, not separate th/td.
+   The constant wrap padding-left reserves space for them without affecting
+   table geometry. */
+
+/* UX-P28 F3: cells hosting absolute-positioned handles need position context. */
+.cm-md-table-editing td[data-col="0"],
+.cm-md-table-editing th {
+  position: relative;
+}
+
+/* Row handle buttons — absolutely positioned inside first-column cells,
+   out in the wrap's left gutter. diag-P28: side-by-side (was a vertical
+   stack at top:2/top:28 — the stack overflowed short last rows and the
+   wrap grew a vertical scrollbar). */
+.cm-md-table-btn-row-insert,
+.cm-md-table-btn-row-delete {
+  position: absolute;
+  top: 2px;
+  right: 100%;
+  pointer-events: auto;
+  z-index: 1;
+}
+.cm-md-table-btn-row-insert { margin-right: 30px; }
+.cm-md-table-btn-row-delete { margin-right: 4px; }
+
+/* Column handle buttons — above the header row, in the wrap's top gutter.
+   diag-P28: these used to sit INSIDE header cells (top:2/left:2), overlapping
+   header text and swallowing cell clicks. bottom:100% parks them outside the
+   table box entirely. */
+.cm-md-table-btn-col-insert,
+.cm-md-table-btn-col-delete {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 4px;
+  pointer-events: auto;
+  z-index: 1;
+}
+.cm-md-table-btn-col-insert { left: 2px; }
+.cm-md-table-btn-col-delete { left: 28px; }
+
+.cm-md-table-handle-btn {
+  display: inline-block;
+  /* UX-P10 F3: hit-area ≥22×22px (professional target — was 18×18). */
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  line-height: 20px;
+  margin: 0 1px;
+  padding: 0;
+  font-size: 12px;
+  text-align: center;
+  color: var(--fg);
+  /* F02: table chrome tokens, not sidebar chrome. */
+  background: var(--table-header-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  opacity: 0.65;
+}
+
+.cm-md-table-handle-btn:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--code-bg);
+}
+
+.cm-md-table-handle-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+/* UX-P28 F3: col grip is now inside header th directly (no col-handle-cell).
+   diag-P28: right:0 (was -3px) — the -3px stuck past the last column and
+   dragged a horizontal scrollbar into every editing table. */
+.cm-md-col-grip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 7px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 2;
+}
+
+.cm-md-col-grip:hover {
+  background: var(--accent, #4a9eed);
+  opacity: 0.5;
+}
+
+.cm-md-table-menu {
+  z-index: 3000;
+}
+
+/* tasks */
+
+.cm-md-task {
+  margin-right: 6px;
+  vertical-align: middle;
+  accent-color: var(--accent);
+}
+
+/* katex color follows theme text (dark --fg is the old #d4d4d4; form kept so
+   light-theme katex still inherits like before) */
+.theme-dark .katex {
+  color: var(--fg);
+}
+

@@ -1,0 +1,108 @@
+/* ---- P11 extended syntax ---------------------------------------------------- */
+
+/* ==highlight== — theme var flips light/dark (e2e toggles .theme-dark) */
+.cm-md-highlight {
+  background: var(--highlight-bg);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.cm-md-sup,
+.cm-md-sub {
+  font-size: 0.75em;
+}
+
+.cm-md-sup {
+  vertical-align: super;
+}
+
+.cm-md-sub {
+  vertical-align: sub;
+}
+
+.cm-md-footnote-ref {
+  font-size: 0.75em;
+  vertical-align: super;
+  color: var(--accent);
+  margin: 0 1px;
+  user-select: none;
+}
+
+.cm-md-footnote-ref-clickable {
+  cursor: pointer;
+  text-decoration: underline dotted;
+}
+
+.cm-md-footnote-def {
+  font-size: 0.92em;
+  color: var(--fg-dim);
+}
+
+.cm-md-abbr {
+  text-decoration: underline dotted var(--fg-dim);
+  cursor: help;
+}
+
+.cm-md-abbr-def {
+  font-size: 0.92em;
+  color: var(--fg-dim);
+}
+
+.cm-md-dl-term {
+  font-weight: 600;
+}
+
+.cm-md-dl-def {
+  padding-left: 1.5em;
+  color: var(--fg-dim);
+}
+
+/* front matter folded card */
+.cm-md-frontmatter {
+  margin: 0 var(--editor-gutter);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--code-bg) 70%, transparent);
+  color: var(--fg-dim);
+  font-size: 12px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.cm-md-frontmatter-head {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.cm-md-frontmatter-body {
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cm-md-frontmatter-kv {
+  display: flex;
+  gap: 8px;
+  line-height: 1.5;
+}
+
+.cm-md-frontmatter-key {
+  flex: 0 0 auto;
+  min-width: 42px;
+  font-weight: 600;
+  color: var(--fg);
+  opacity: 0.75;
+}
+
+.cm-md-frontmatter-val {
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+

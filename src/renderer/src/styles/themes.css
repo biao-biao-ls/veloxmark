@@ -1,0 +1,92 @@
+/* ---- themes (app chrome + content palette) --------------------------------
+   Theme-split declarations of the :root vocabulary (F08 layering):
+   chrome / content surface / text — same three color sections. */
+
+.theme-light {
+  /* color: chrome */
+  --bg: #ffffff;
+  --bg-sidebar: #fafafa;
+  --border: #e5e5e5;
+  --accent: #0969da;
+  --danger: #d1242f;
+  /* Inset chip/readout surface (table-insert sniff badge, lightbox zoom
+     readout). One step off --bg; opaque solid so contrast math stays honest. */
+  --bg-inset: #f2f2f2;
+  /* color: content surface */
+  --quote-border: #d0d7de;
+  --code-bg: rgba(175, 184, 193, 0.2);
+  --hr-color: #d8dee4;
+  --highlight-bg: #fff8c5;
+  /* F08: block-widget surface (code/mermaid/image toolbar/expander) —
+     value matches --bg-sidebar today; semantic split so content widgets
+     never consume chrome tokens. */
+  --widget-surface: #fafafa;
+  /* F02: table hierarchy tokens — header clearly deeper than zebra stripe;
+     neither borrows --bg-sidebar (chrome color) for content roles. */
+  --table-header-bg: #e8e8e8;
+  --table-stripe-bg: #f6f6f6;
+  /* color: text */
+  --fg: #333333;
+  /* F04: dim = secondary TEXT (AA target, 5.11:1 on --bg-sidebar).
+     Disabled affordance is a separate weaker token — WCAG exempts
+     disabled controls, so those must not ride dim. */
+  --fg-dim: #6b6b6b;
+  --fg-disabled: #b0b0b0;
+  /* Muted metadata text riding --bg-inset chips/readouts. Semantic split from
+     --fg-dim (secondary prose) per F08 precedent — same value today. */
+  --fg-muted: #6b6b6b;
+  /* UX-P17 F3: link hover tooltip — dark hover-card in BOTH themes (content
+     contrast independent of app chrome); values match pre-token rendering. */
+  --tooltip-bg: #1f2328;
+  --tooltip-fg: #e6edf3;
+  --tooltip-border: #30363d;
+  /* P16 mermaid lightbox scrim (task 1B/1.6: was a literal + .theme-dark patch). */
+  --lightbox-scrim: rgba(15, 18, 22, 0.72);
+}
+
+.theme-dark {
+  /* color: chrome */
+  --bg: #1e1e1e;
+  --bg-sidebar: #252526;
+  --border: #333333;
+  --accent: #58a6ff;
+  --danger: #f85149;
+  /* See light theme — inset chip/readout surface. */
+  --bg-inset: #2a2a2b;
+  /* color: content surface */
+  --quote-border: #444444;
+  --code-bg: rgba(110, 118, 129, 0.25);
+  --hr-color: #444444;
+  /* P11-F3: opaque solid (was rgba(187,128,9,.45) — probes/AA math saw the raw
+     rgba as ~2.3:1 vs #d4d4d4; this solid matches the old composite-over-#1e1e1e
+     rendering (#654a15) at ~5.3:1, so visuals stay put and AA holds). */
+  --highlight-bg: #654a15;
+  /* F08: see light theme — content-widget surface, not sidebar chrome. */
+  --widget-surface: #252526;
+  /* F02: header surface lifted off the zebra stripe (was both
+     --bg-sidebar #252526, indistinguishable). */
+  --table-header-bg: #2d2d2e;
+  --table-stripe-bg: #252526;
+  /* color: text */
+  --fg: #d4d4d4;
+  /* F04: dark dim lifted for AA (5.44:1 on --bg-sidebar, was 4.32). */
+  --fg-dim: #9a9a9a;
+  --fg-disabled: #6a6a6a;
+  /* See light theme — muted metadata text (chips/readouts). */
+  --fg-muted: #9a9a9a;
+  /* UX-P17 F3: see light theme — tooltip tokens (bg deeper in dark chrome). */
+  --tooltip-bg: #0d1117;
+  --tooltip-fg: #e6edf3;
+  --tooltip-border: #30363d;
+  /* See light theme — lightbox scrim (deeper mask on dark chrome). */
+  --lightbox-scrim: rgba(0, 0, 0, 0.82);
+}
+
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--fg);
+}
+
