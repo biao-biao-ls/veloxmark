@@ -1,4 +1,4 @@
-# VeloxMark 重构任务清单（四阶段）
+# VeloxMark 重构任务清单（四阶段 + 收尾）
 
 > 依据 2026-09-22 架构评估产出。目标：在不改变行为的前提下拆分大文件、收敛重复真源，支撑可持续迭代。
 >
@@ -185,8 +185,30 @@
 
 ---
 
+## 阶段 4 — 收尾与缺陷修复（可选项落地，最安全 → 最危险）
+
+> 四阶段（0–3）已收敛；本阶段收尾：可选项落地、遗留处置、2D 遗留缺陷修复。
+
+- [x] **4.1 遗留记录三项处置**：对下方「遗留记录」三项给出决议（保持/收紧/远期登记），勾销并转正为知情记录 — 决议见遗留记录段标注，规格：[docs/specs/4A-legacy-disposition/](specs/4A-legacy-disposition/)
+- [x] **4.2 = 1.7 按钮皮肤归并**（原可选项）：5 套平行按钮抽共享 primitives（`.btn`/`.btn-primary`/`.btn-danger`），注意 `.dialog-btn-primary` 暗色特例 — 现状复核后取「皮肤/几何分层 + 别名组」方案（真正平行仅 `.dialog-btn` ↔ `.cm-search .cm-button` 两族），规格：[docs/specs/4B-button-primitives/](specs/4B-button-primitives/)
+- [x] **4.3 = 2.17 opsBlocks 整理**（原低优先）：抽 `blockHelpers.ts`；opsBlocks 复用 `transforms.ts` dispatch 约定；`transforms.ts` 表格段可迁 `editor/table/source.ts` — 全部落地，规格：[docs/specs/4C-opsblocks-tidy/](specs/4C-opsblocks-tidy/)
+- [x] **4.4 = 1.3 复核剩余业务回调**（原可选项）：审计 App.tsx 残留业务回调，明显独立域（折叠同步、会话持久化 effect 群等）可顺势下沉 hooks — 审计表 17 域决议 + 两域下沉，规格：[docs/specs/4D-app-callback-audit/](specs/4D-app-callback-audit/)
+- [x] **4.5 双派发缺陷修复**（2D 遗留，**行为变更**）：App 三监听（`closeTab`/`reopenClosedTab`/`nextTab`）与 useMenus `menu:<id>` 订阅双派发——原生菜单单击双执行（reopenClosedTab 重开两张），收敛为单派发 — 命令侧赢（useMenus 泛化订阅为唯一派发面），规格：[docs/specs/4E-double-dispatch/](specs/4E-double-dispatch/)
+
+> ✅ **4.2 收敛记录（2026-09-23）**：新 `styles/buttons.css`（84 行）单源按钮**皮肤**（color/bg/border/radius/cursor/hover 六声明）；几何留本地（dialog：min-width/5px 14px/13px；cm-button：margin/4px 10px/12px + font-family/line-height + `:active`）。**现状复核关键发现**：6 套按钮皮肤里真正逐字平行的只有 `.dialog-btn` ↔ `.cm-search .cm-button` 两族；其余 4 套（`sidebar-mode-seg` 分段 / `sb-stat-btn` ghost+`--focus-ring` UX-P14 契约 / `mermaid-preview-bar` chip+`.is-on` / `tab-context-menu` 菜单项）是**不同控制族**，强行归并 = 视觉回归，spec 划界不并（头注释点名）。实现取 **comma-selector 别名组**（`.btn, .dialog-btn, .cm-search .cm-button`）而非 TSX 换类名——**DOM class 零变化**（零 TSX 改动、探针/用户脚本零风险），`.btn*` primitives 对新代码可用（constitution 条款已更新）；`.dialog-btn-danger` 从 forms.css 归族迁入；`.theme-dark` 暗色特例（#1e1e1e，1B/1.6 注释）连注释逐字随迁。声明**值逐字迁移**零改色（palette↔CSS 测试未触）；base 规则拆「皮肤组 + 几何组」声明集不重叠、computed style 等价；组内次序保原序（dark 压 primary、active 压 hover）；barrel 注入位置 forms.css 后、editor-modes.css 前（级联次序兜底）。grep 断言：4 类声明只存 buttons.css（overlays/forms/editor-modes 仅剩迁址注释）。收敛：typecheck 双配置 + 211 unit 全绿。行为不变类——建议人工冒烟：对话框按钮三态（普通/primary/danger × 亮暗主题，含 hover/active）、搜索面板按钮（hover/active）、4 个非并控制族各过一眼确认无视觉变化。规格：[docs/specs/4B-button-primitives/](specs/4B-button-primitives/)。
+
+> ✅ **4.3 收敛记录（2026-09-23）**：opsBlocks.ts 438 → **注册器纯注册**（184 行，7 个 `registerContextMenuOps` + 注册器专属常量/内联逻辑 `CALLOUT_TYPES`/fm.edit fence 扫描）；helper 落新 `contextMenu/blockHelpers.ts`（127 行）：六 helper（enclosingNode/mathRange/fenceBody/mermaidSvgAt/deleteRange/confirmDanger）原样平移 + **缩进对合并**（`indentFenceBody`/`indentSelectedLines` 循环体逐字相同 → `indentLines(view,from,to,userEvent)` 单实现 + 两薄包装；change 形状保持 line 首插 `'  '`，不换整行替换）。**dispatch 约定原语化**：`transforms.ts` 导出 `applyLineChanges`（逐行建 changes → 空跳过 → 单 dispatch），`setHeadingLevel`/`toggleBlockquote`/`convertList`（`olIndex` 闭包态随迁）与 `indentLines` 四处复用——userEvent 字面量逐一不变（`input.contextMenu.*`/`delete.*`/`indent.*`/`callout.type` 全集 grep 守）。**表格段归位**：`tableModelOf`/`tableMarkdown`/`formatTableSourceRange`/`deleteTableRange` 迁新 `editor/table/source.ts`（body 含 UX-P28 `setActiveCell.of(null)` 注释逐字），消费方 opsTable 改 `../table/source` import；**死导出 `tableSource` 删除**（零调用点，3.9 cellClipboard 先例）；transforms 甩掉 `table/*`/`format` 依赖成纯段落/行变换模块（`format → table/parse` 方向已核，`source → format` 无环）。`data-op` id 全集与菜单项集合零变化（注册器 body 未动）。收敛：typecheck 双配置 + 211 unit 全绿；`npx madge --circular --extensions ts,tsx` **0 cycles**（199 文件）。行为不变类——建议人工冒烟：代码块右键（复制/缩进块/缩进选区/删除）、mermaid/图片/数学/callout/标题/front-matter 右键各一项、表格右键复制表格/格式化源/删除表格、段落▶/格式▶ 转换各一。规格：[docs/specs/4C-opsblocks-tidy/](specs/4C-opsblocks-tidy/)。
+
+> ✅ **4.4 收敛记录（2026-09-23）**：审计表 17 域（spec 内）逐域 keep/sink 决议——**sink 仅两域**（任务点名）：P18 折叠同步 → 新 `hooks/useFoldSync.ts`（foldedKeys state + foldSigRef + syncFoldedKeys/restoreFoldsFor 双回调 + Ref 镜像对 + filePath effect，body 原样平移；`RestoreFoldsForRef` 契约形状不变，App 透传 `useP18Seam`；`syncFoldedKeysRef` 稳定 ref 身份，create-editor 4 处闭包消费点原样）；P03 会话写侧 → 新 `hooks/useSessionPersist.ts`（3× sidebar `patchSession` + tabs 持久化 + Recent Files 校验 + `setRecentFiles` 推送，body 原样平移；`sessionSynced` 门闩注释随类型迁移；deps 显式 7 参注入，对象字面量不进 dep——3A 纪律）。**keep 理由已档**：showToast/outline 投影（多 hook 共享装配点）、原生菜单订阅 effect（**4.5 双派发现场，本次零触**）、restore effect（boot 编排）、P12 drafts（缝接线）、pref→IPC 桥/Compartment 群/glue（薄）、create-editor/链接导航/插入对话框群（装配/表单本地态）。p18.ts 两处注释校正（App→useFoldSync）。App.tsx 1702→**1619 行**；grep 断言：`headingFolds`/`persistTabsSession()`/`setRecentFiles`/`sidebar` patch 写点 App 原位 0 残留（仅存 hook），ref 消费点全数不变。收敛：typecheck 双配置 + 211 unit 全绿；madge **0 cycles**。行为不变类——建议人工冒烟：折叠几节→切文件回来折叠仍在；侧栏显隐/模式/宽度改后重启保留；tabs 开关后重启恢复；Recent Files 校验（删磁盘文件看菜单项失效）。规格：[docs/specs/4D-app-callback-audit/](specs/4D-app-callback-audit/)。
+
+> ✅ **4.5 收敛记录（2026-09-23，行为变更）**：拓扑核清后取「**命令侧赢**」——useMenus 对全部命令 id 的 `menu:<id>` 泛化订阅是三消费方设计面（MenuBar/全局快捷键/mac 原生菜单，useMenus 文件头明文「nothing is hand-listed」），App 手写三监听是 P26 pre-registry 补丁。删 App `onMenu('closeTab'|'reopenClosedTab'|'nextTab')` 三订阅——逐 id 等价表已核（手写 body ≡ `commandOps` body 逐字同），**单击恰好执行一次**（reopen 恰好重开一张）。`openRecent`/`clearRecent`（带 path 载荷）与 `closeTabOrWindow`（main `before-input-event` 的 Cmd/Ctrl+W 专用路由，非命令 id）**原样保留**（各单注册，双派发不成立）；`closeTabOrWindow` 的 tab-aware 语义（tabs>1 关 tab / 否则 queryClose→关窗）零改动。附带异味清除：effect deps `[fileOps]`（hook 返回对象字面量每 render 新身份 → 订阅每 render 拆装）收窄为五个稳定 useCallback 字段路径，churn 消失。影响面：仅 macOS 原生菜单点击路径双发（MenuBar/键盘本就单发）。grep 断言：三手写监听 0 命中、三专用通道各恰 1、useMenus 泛化订阅不动；命令 id / `menu:` 通道 / `data-op` 全集零变化。收敛：typecheck 双配置 + 211 unit 全绿；madge **0 cycles**。**行为变更类必做人工冒烟**：macOS 原生菜单 File → Close Tab / Reopen Closed Tab / Next Tab 各单击一次只执行一次；Cmd/Ctrl+W 三态（多 tab / 单 tab / 脏拦截）；MenuBar 点击与 Ctrl+Tab / Ctrl+Shift+T 无回归。规格：[docs/specs/4E-double-dispatch/](specs/4E-double-dispatch/)。
+
+> ✅ **阶段 4 收尾完成（2026-09-23）**：5/5 勾销。4.1 遗留处置（文档）→ 4.2 按钮皮肤归并（视觉不变）→ 4.3 opsBlocks 整理（行为不变）→ 4.4 业务回调审计+两域下沉（行为不变）→ 4.5 双派发修复（**行为变更**）。全程 spec→plan→implement→converge 每单元独立规格档 `docs/specs/4[A-E]-*/`；门禁每单元全绿（typecheck 双配置 + 211 unit + madge 0 cycles）。行为不变类（4.2/4.3/4.4）与行为变更类（4.5）的**人工冒烟清单见各单元收敛记录**，提交前建议按清单过一遍 UI。
+
+---
+
 ## 遗留记录（本轮评估发现、未列入手术项）
 
-- [ ] `preferences/store.ts`：**暂不拆**（418 行、分节清楚）。可选远期项：31 字段 schema 化（一处声明驱动 default+sanitize+类型）；`sanitizeSession()` 与 prefs 模式对齐
-- [ ] 组件层轻度「直达编辑器」导入（`Outline` 的 `foldKey`、`TableInsertDialog` 的 `sniffDelimiter`）：可接受，若收紧由 App 传入即可
-- [ ] `preferences/store.ts` 的 `applyPreferencesCssVars()` 是 `:root` 唯一声明点规则的明文豁免（runtime inline 覆盖 `--editor-max-width` 等 4 个 token），双通道现状保留但需知情
+- [x] `preferences/store.ts`：**已决（4.1）：保持不拆**（418 行、分节清楚）；31 字段 schema 化 / `sanitizeSession()` 对齐登记为**远期备选**（不进本清单）
+- [x] 组件层轻度「直达编辑器」导入（`Outline` 的 `foldKey`、`TableInsertDialog` 的 `sniffDelimiter`）：**已决（4.1）：接受现状不收紧**（纯工具直引，经 App 传参反而加 props 面）
+- [x] `preferences/store.ts` 的 `applyPreferencesCssVars()` 是 `:root` 唯一声明点规则的明文豁免（runtime inline 覆盖 `--editor-max-width` 等 4 个 token）：**已决（4.1）：知情保留**（偏好滑杆必须 runtime 写入，双通道是设计）
