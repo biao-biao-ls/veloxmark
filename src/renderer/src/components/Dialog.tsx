@@ -329,7 +329,9 @@ declare global {
     dialog: typeof dialog
   }
 }
-window.dialog = dialog
+// Guarded for node-env unit imports (2B command tests pull this module);
+// the renderer always assigns the CDP seam.
+if (typeof window !== 'undefined') window.dialog = dialog
 
 // ---- host + presentational component ----------------------------------------
 
