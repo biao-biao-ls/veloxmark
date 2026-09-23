@@ -273,8 +273,12 @@
 
 ### 6C. 树展开定位与行质感（P0 + 5D 遗留）
 
-- [ ] **6.5 展开策略反转**（**行为变更**）：默认全折；激活文件祖先链自动展开 + 滚动 reveal 进视口；tab/换根同步；用户手动展开不被收回 — 规格：[docs/specs/6C-tree-reveal/](specs/6C-tree-reveal/)
-- [ ] **6.6 行图标与 hover 层次**：目录/文件 SVG 图标（非 emoji）+ hover 分层，修 5D 记录「文件树偏平」 — 同 6C 规格
+- [x] **6.5 展开策略反转**（**行为变更**）：默认全折；激活文件祖先链自动展开 + 滚动 reveal 进视口；tab/换根同步；用户手动展开不被收回 — 规格：[docs/specs/6C-tree-reveal/](specs/6C-tree-reveal/)
+  > ✅ **6C 收敛记录（2026-09-23）**：T1 纯逻辑 `components/filetreeRows.ts`（`visibleRows` 深度优先拍平 / `ancestorDirPaths` 严格祖先链（win32+POSIX 双分隔符、无分隔符输入守卫）/ `isDirOpen` 优先级 rename 强制 > 用户态 > reveal 默认开 > 折叠）+ **12 条单测**（默认全折、<100 子项也折——启发式核销、reveal 不写 expanded、用户手动展开/收起均不被 reveal 收回、rename 链强开过显式收起）→ T2 `FileTree.tsx` 收编：删 `COLLAPSE_CHILDREN_OVER` 与 size 启发式、删 `isAncestorOfRenaming`（前缀法 → 祖先链集合，语义等价且与 reveal 同源）、`rows` 换 `visibleRows`（eslint exhaustive-deps 直闭，去掉 disable 注释）→ T3 reveal 滚动：`lastRevealRef {path, found}` 防抖，仅「目标变化 / not-found→found」时把 active 行滚到视口**中部**（25px 行坐标系 + `treeTop` 偏移，虚拟/非虚拟共用），树数据晚到后补 reveal（先 not-found 再 found 触发补滚）。**plan 实现修正 2 处（AC 不变）**：① D2 「scrollIntoView 中部」改为手算 `side.scrollTop` 偏移——scrollIntoView 会滚动任意祖先且无法精确居中，且与虚拟滚动 spacer 行高模型不匹配；② 换根默认折叠的实现从「effect 重置 expanded」改为 App 侧 `<FileTree key={workspace.folderPath}>` 换根重挂载（状态自然复位，少一条 effect；副作用：换根同时复位树内滚动，随即被 reveal 补滚到 active 行，观感正确）。**模型语义**：reveal = 派生态不写用户 `expanded`（手动收起祖先后 active 行暂不可见是**符合预期**——用户态优先，再次展开即恢复链）；toggle 写入 = `!effectiveOpen`（reveal 默认开的目录首次点按即显式收起）。**已知角落**：rename 强开目录在 rename 中被点收起时视觉仍开（强制态盖过，rename 结束按写入态收起）——既有语义保持；侧栏「文件↔大纲」双 tab 切换会重挂载 FileTree 导致展开态复位（6A 信息架构既有行为，未在本单元扩大；如需跨侧栏 tab 记忆展开态另立小项）。T4 6.6：`Icons.tsx` 同源新增 `FolderIcon`/`FolderOpenIcon`/`FileMdIcon`（Lucide 几何、currentColor 描边，无图标字体/emoji），`.filetree-icon` 基色 `--fg-muted`、行 hover 提亮 `--fg`、active 行 `--accent`（hover 层次 = 既有 `--code-bg` 背景 + 图标态两级）；`filetree-item-fixed` 下 svg `display:block` 钉死行高 25px 不破虚拟滚动契约。收敛：typecheck 双配置 + **247 unit 全绿（+12）**；`npx madge --circular` 0 环；e2e 缝零触碰（`filetree-*`/`outline-fold` class、`ROW_HEIGHT`/`VIRTUALIZE_AT` 语义、`__velox*` 面均未动）。
+  >
+  > 人工冒烟清单（**行为变更密集，必做**）：① 打开含多级子目录的目录：子目录**默认全折叠**（含 <100 子项的目录——不再自动展开）；② 打开深路径文件（如 `docs/deep/a.md`）：祖先链自动展开 + 行滚动到视口中部且 `filetree-active` 高亮；快速连切 3+ tab 每次都定位到对应行不错位；③ 手动展开某无关目录 → 切 tab 再切回：手动展开**不被收回**；手动收起 reveal 链上的目录后 active 行暂时藏起是预期（用户态优先），再展开恢复；④ 换根（树内点开子目录文件 / 打开文件夹…）：新根默认全折叠 + reveal 定位到 active 行；⑤ 图标与 hover：目录开/合两态图标、md 文件文档图标，hover 背景 + 图标提亮两级层次，深浅主题均清晰无 emoji；行高观感无错行/图标不撑破 25px 行；⑥ 大树（>500 行触发虚拟滚动）下 reveal 仍准确定位；⑦ 回归：点击打开/chevron 折叠/拖拽移动/右键菜单/内联重命名（含深路径新建后 rename 行可见）/active 高亮均不回归。
+
+- [x] **6.6 行图标与 hover 层次**：目录/文件 SVG 图标（非 emoji）+ hover 分层，修 5D 记录「文件树偏平」 — 同 6C 规格
 
 ### 6D. 底部栏与「操作」面板（P1）
 
