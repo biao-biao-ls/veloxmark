@@ -20,15 +20,15 @@ import {
   type TableOp
 } from '../table/ops'
 import { unescapeCell, type TableModel } from '../table/parse'
-import { getTableEdit, setActiveCell } from '../table/state'
-import { registerContextMenuOps } from './deltaRegistry'
-import { sep } from './menuSkeleton'
 import {
   deleteTableRange,
   formatTableSourceRange,
   tableMarkdown,
   tableModelOf
-} from './transforms'
+} from '../table/source'
+import { getTableEdit, setActiveCell } from '../table/state'
+import { registerContextMenuOps } from './deltaRegistry'
+import { sep } from './menuSkeleton'
 import type { CtxMenuItem, CtxRuntime } from './types'
 
 // ---- table delta (P10 migration: one unified menu) ---------------------------

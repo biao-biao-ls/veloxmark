@@ -5,9 +5,9 @@
  * and returns block-specific items; the registry assembles them above the
  * generic cut/copy/paste skeleton. Ops re-read doc/DOM at click time (stale-
  * instance discipline). ids are the e2e contract — probes key on data-op.
+ *
+ * View helpers live in blockHelpers.ts (task 4.3 = 2.17) — registrations only.
  */
-import { syntaxTree } from '@codemirror/language'
-import type { EditorView } from '@codemirror/view'
 import { t } from '../../i18n'
 import { copyPngImage, exportPng, exportSvg } from '../mermaid'
 import {
@@ -19,79 +19,18 @@ import {
 } from '../livePreview/fold'
 import { extractOutline } from '../../outline/extract'
 import { parseCalloutMarker } from '../livePreview/callout'
+import {
+  confirmDanger,
+  deleteRange,
+  enclosingNode,
+  fenceBody,
+  indentFenceBody,
+  indentSelectedLines,
+  mathRange,
+  mermaidSvgAt
+} from './blockHelpers'
 import { registerContextMenuOps } from './registry'
-import type { BlockHit, CtxMenuItem, CtxRuntime } from './types'
-
-/** First enclosing syntax node matching `names` around `pos`. */
-function enclosingNode(
-  view: EditorView,
-  pos: number,
-  names: string[]
-): { from: number; to: number; name: string } | null {
-  const tree = syntaxTree(view.state)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let cur: any = tree.resolveInner(pos, 1)
-  for (; cur; cur = cur.parent) {
-    if (names.includes(cur.name)) return { from: cur.from, to: cur.to, name: cur.name }
-  }
-  return null
-}
-
-/** $$…$$ body range when the hit sits inside display math (DOM-detected). */
-function mathRange(view: EditorView, pos: number): { from: number; to: number } | null {
-  const state = view.state
-  let line = state.doc.lineAt(pos)
-  const isOpen = (text: string): boolean => /^\s*\$\$/.test(text)
-  const isClose = (text: string): boolean => /\$\$\s*$/.test(text) && !isOpen(text)
-  let fromLine = line
-  while (fromLine.number > 1 && !isOpen(fromLine.text)) fromLine = state.doc.lineAt(fromLine.from - 1)
-  if (!isOpen(fromLine.text) && !/\$\$/.test(fromLine.text)) return null
-  let toLine = line
-  const last = state.doc.lines
-  while (toLine.number < last && !(toLine.number > fromLine.number && isClose(toLine.text))) {
-    toLine = state.doc.lineAt(toLine.to + 1)
-  }
-  return { from: fromLine.from, to: toLine.to }
-}
-
-/** Body text of a fenced code block (skips the ```lang opener + closer). */
-function fenceBody(view: EditorView, range: { from: number; to: number }): string {
-  const state = view.state
-  const first = state.doc.lineAt(range.from)
-  const last = state.doc.lineAt(range.to)
-  const bodyFrom = first.to < last.from ? first.to + 1 : first.to
-  const bodyTo = last.from > first.to ? last.from - 1 : last.to
-  return state.sliceDoc(Math.min(bodyFrom, range.to), Math.max(bodyFrom, bodyTo))
-}
-
-/** Rendered <svg> for the mermaid block whose fence contains `pos`. */
-function mermaidSvgAt(view: EditorView, pos: number): SVGSVGElement | null {
-  try {
-    const domInfo = view.domAtPos(pos)
-    let el: HTMLElement | null =
-      (domInfo.node instanceof HTMLElement ? domInfo.node : domInfo.node.parentElement)
-    el = el?.closest('.cm-md-mermaid') ?? null
-    return el?.querySelector('svg') ?? null
-  } catch {
-    return null
-  }
-}
-
-function deleteRange(view: EditorView, range: { from: number; to: number }, userEvent: string): void {
-  const state = view.state
-  const last = state.doc.lines
-  const endLine = state.doc.lineAt(range.to)
-  const to = endLine.number < last ? endLine.to + 1 : range.to
-  view.dispatch({
-    changes: { from: range.from, to: Math.min(to, state.doc.length), insert: '' },
-    selection: { anchor: range.from },
-    userEvent
-  })
-}
-
-async function confirmDanger(rt: CtxRuntime, message: string): Promise<boolean> {
-  return rt.confirm({ title: t('ctx.deleteBlock'), message, danger: true })
-}
+import type { CtxMenuItem } from './types'
 
 // ---- P05 image deltas --------------------------------------------------------
 
@@ -264,43 +203,6 @@ registerContextMenuOps('code-block', (view, hit, rt) => {
     }
   ]
 })
-
-/** UX-P24 F1: indent every body line of the enclosing fence by two spaces. */
-function indentFenceBody(view: EditorView, range: { from: number; to: number }): void {
-  const state = view.state
-  const bodyFrom = range.from
-  const bodyTo = range.to
-  const first = state.doc.lineAt(bodyFrom)
-  const last = state.doc.lineAt(bodyTo)
-  const changes: { from: number; to: number; insert: string }[] = []
-  for (let n = first.number; n <= last.number; n++) {
-    const line = state.doc.line(n)
-    if (/^\s*```/.test(line.text)) continue
-    if (!line.text.length) continue
-    changes.push({ from: line.from, to: line.from, insert: '  ' })
-  }
-  if (!changes.length) return
-  view.dispatch({ changes, userEvent: 'indent.code' })
-}
-
-/** UX-P24 F1: indent the lines the user selected (falls back to fence body). */
-function indentSelectedLines(view: EditorView, range: { from: number; to: number }): void {
-  const state = view.state
-  const sel = state.selection.main
-  const from = sel.empty ? range.from : sel.from
-  const to = sel.empty ? range.to : sel.to
-  const first = state.doc.lineAt(from)
-  const last = state.doc.lineAt(to)
-  const changes: { from: number; to: number; insert: string }[] = []
-  for (let n = first.number; n <= last.number; n++) {
-    const line = state.doc.line(n)
-    if (/^\s*```/.test(line.text)) continue
-    if (!line.text.length) continue
-    changes.push({ from: line.from, to: line.from, insert: '  ' })
-  }
-  if (!changes.length) return
-  view.dispatch({ changes, userEvent: 'indent.selection' })
-}
 
 // ---- P06 math-block deltas ---------------------------------------------------
 
