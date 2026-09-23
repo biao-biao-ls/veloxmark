@@ -265,8 +265,11 @@
 
 ### 6B. 树根跟随当前文档（P0·产品语义，行为变更）
 
-- [ ] **6.3 树根 = 激活文档所在目录**：随 tab 激活/打开文件换根（跟随制）；无文档/未命名回落最近根 — 规格：[docs/specs/6B-tree-root/](specs/6B-tree-root/)
-- [ ] **6.4 边界收编**：「打开文件夹…」显式根与跟随制优先级（`resolveTreeRoot`）、watcher 随根换靶竞态守卫、扫描深度 8→20、QuickOpen/全局搜索范围随根收窄（行为变更注明） — 同 6B 规格
+- [x] **6.3 树根 = 激活文档所在目录**：随 tab 激活/打开文件换根（跟随制）；无文档/未命名回落最近根 — 规格：[docs/specs/6B-tree-root/](specs/6B-tree-root/)
+- [x] **6.4 边界收编**：「打开文件夹…」显式根与跟随制优先级（`resolveTreeRoot`）、watcher 随根换靶竞态守卫、扫描深度 8→20、QuickOpen/全局搜索范围随根收窄（行为变更注明） — 同 6B 规格
+
+> ✅ **6B 收敛记录（2026-09-23）**：T1 `hooks/useTreeRoot.ts` 纯函数（`resolveTreeRoot` 优先级 显式根→激活文档 dirname→最近根 / `isPathInside` 边界安全（`C:\proj` vs `C:\project` 前缀陷阱有专门用例）/ `explicitRootAfterActivate` D1 失效规则）+ 15 条单测 → T2 `useTreeRoot` hook 组合进 `useWorkspaceTree`（`applyTreeRoot` 单漏斗：换靶 watch/unwatch + `lastFolderPath` 最近根写侧收编 D5；`loadFolder` 显式化 = 切文件 tab + `setExplicitRoot` 钴住）+ `electron/ipc/folder.ts` `MAX_SCAN_DEPTH` 8→20（D4）→ T3 watcher 竞态守卫。**plan 实现修正 3 处（AC 不变）**：① D2 竞态守卫从「渲染侧 rootPath 世代号」改为主进程 `watchEpoch`（`stopFolderWatcher` 递增，扫描前后核对，过期树/旧 watcher 迟到 error 全部丢弃）——零 API 面变化（`folder:*` payload/RendererApi 均不动），修掉既有 in-flight `pushFolderTree` 跨换靶陈旧推送缺口；② D2 接线从「App +10 行」改为 `useWorkspaceTree` 内部组合（App 仅 +1 行 `activePath: filePath` 透传），显式根通道 `setExplicitRoot` 挂 workspace 返回面（6D/6F 直接消费）；③ D5 写侧在 `applyTreeRoot`（每次根应用写 `lastFolderPath`）而非 plan 表中点名的 `useSessionPersist`（该文件本就不写 `lastFolderPath`，零改动）。**模型语义核销**：`temp/typora/typora-2.png` 裁决根 = 当前文件 dirname 严格语义（当前文件平铺根层、子目录折叠为孩子）——树内点开子目录文件会下钻换根，与6C「祖先链 reveal」的适用面（显式根内的深路径文件）自洽。**行为变更注明（AC6）**：QuickOpen/全局搜索扫描范围 = 当前树根（随激活文档收窄，不再固定为打开的工作区）。**已知角落**：显式根钴住 + 激活文档在根外的状态跨重启恢复后转跟随（重启过程的激活事件触发 D1 失效，与现场钉住语义有一档偏差）；`lastFolderPath` 死目录启动 → 6A 空态引导（无 mount 自动应用，恢复路径 `pathExists` 守卫保持）。`baseDir` 链、P13 缝（`openFolder` 钴住语义反而更稳——根外文档激活前树立即显示 path）、P26 面、`folder:*` channel 面零触碰。收敛：typecheck 双配置 + **235 unit 全绿**；`npx madge --circular` 0 环；e2e 缝零触碰。
+> 人工冒烟清单（**行为变更密集，必做**）：① 打开 A 目录文件 → 树根 = A；切到 B 目录文件的 tab → 树根 = B；切回 A 恢复（快速连切 3+ tab 树不错闪旧内容——AC5 竞态守卫）；② 树内点开子目录文件：根下钻为该子目录（严格「当前 md 所在目录为根」，typora-2.png 同构；**如需「树内导航不缩根」规则请反馈**）；③ 关闭全部 tab / 切到未命名草稿：树回落最近根不消失；④ 「打开文件夹…」钉住根，打开根**内**文件钉保持，打开根**外**文件转跟随（D1 失效规则）；⑤ 外部增删改 md 文件 watcher 仍自动刷新；QuickOpen/全局搜索范围 = 当前树根（行为变更）；⑥ 深层目录（>8 级）文件可见（D4）；⑦ 6A 不回归：双 tab 互切/打开文档不切模式/files 空态引导/重启 tab 与侧栏模式记忆。
 
 ### 6C. 树展开定位与行质感（P0 + 5D 遗留）
 
