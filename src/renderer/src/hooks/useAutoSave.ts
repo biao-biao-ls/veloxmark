@@ -36,7 +36,6 @@ interface Args {
   viewRef: RefObject<EditorView | null>
   filePathRef: RefObject<string | null>
   dirtyRef: RefObject<boolean>
-  savedContentRef: RefObject<string>
   mode: AutoSaveMode
   delaySec: number
   intervalMin: number
@@ -45,8 +44,12 @@ interface Args {
   saveFile: () => Promise<boolean>
   /** P26: write EVERY dirty tab (autosave covers all tabs, not just active). */
   saveAllDirtyTabs?: () => Promise<SaveAllResult>
-  setDirty: (dirty: boolean) => void
-  syncAppState: (path: string | null, dirty: boolean) => void
+  /**
+   * 3.1 single source: untitled-draft save bookkeeping (saved baseline +
+   * clear dirty + app-state sync) lives in useFileOps.markActiveSaved — the
+   * raw savedContentRef/dirtyRef/setDirty triple writes are gone from here.
+   */
+  markActiveSaved: (content: string, path: string | null) => void
   /** UX-P12 F3: transient failure toast (App → statusbar sb-toast). Rate-limited here. */
   onAutoSaveFailed?: (message: string) => void
 }
@@ -114,10 +117,7 @@ export function useAutoSave(args: Args): {
       // Untitled → draft area, then the same clean bookkeeping as a real save.
       const content = view.state.doc.toString()
       await window.api.draftWrite(null, content)
-      a.savedContentRef.current = content
-      a.dirtyRef.current = false
-      a.setDirty(false)
-      a.syncAppState(null, false)
+      a.markActiveSaved(content, null)
       markSuccess()
     } catch (err) {
       reportFailure(a.filePathRef.current, err)

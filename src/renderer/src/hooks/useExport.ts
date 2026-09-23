@@ -6,6 +6,7 @@ import { setSaveDialogAuto, showSaveDialog, takeSaveDialogCalls } from '../expor
 import type { ImageMode } from '../export/renderDoc'
 import { dialog } from '../components/Dialog'
 import { t } from '../i18n'
+import { baseNameOf } from '../pathUtil'
 
 /**
  * Export orchestration (P04): owns the export dialog state, remembers the
@@ -114,7 +115,7 @@ export function useExport({ viewRef, filePath, onExported }: Args) {
         const markdown = view.state.doc.toString()
         const lp = getLivePreviewConfig(view.state)
         const fp = filePathRef.current
-        const title = fp ? fp.replace(/^.*[\\/]/, '').replace(/\.[^.]*$/, '') : 'Untitled'
+        const title = fp ? baseNameOf(fp).replace(/\.[^.]*$/, '') : 'Untitled'
         const ext = format === 'pdf' ? 'pdf' : 'html'
         const target = await showSaveDialog(`${title}.${ext}`, [
           { name: format === 'pdf' ? 'PDF' : 'HTML', extensions: [ext] },

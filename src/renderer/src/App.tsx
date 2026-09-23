@@ -59,6 +59,7 @@ import { getWelcomeMd, WELCOME_MD_EN, WELCOME_MD_ZH } from './content'
 import { getLang, resolveLang, setLang, t, useTranslation } from './i18n'
 import StatusBar, { EMPTY_STATS, computeDocStats, type DocStats } from './components/StatusBar'
 import { useFileOps } from './hooks/useFileOps'
+import { baseNameOf } from './pathUtil'
 import { useAutoSave } from './hooks/useAutoSave'
 import { useWorkspaceTree } from './hooks/useWorkspaceTree'
 import { useAppTheme } from './hooks/useAppTheme'
@@ -161,7 +162,7 @@ export default function App(): React.JSX.Element {
     // wave⑥-6 F3: format-on-save throw — one-shot, distinct copy from save failures.
     onFormatOnSaveFailed: () => showToast(t('format.onSaveFailed'))
   })
-  const { dirty, setDirty, filePath, filePathRef, syncAppState, savedContentRef } = fileOps
+  const { dirty, setDirty, filePath, filePathRef, syncAppState } = fileOps
 
   // ---- P18: heading folds ------------------------------------------------------
   const [foldedKeys, setFoldedKeys] = useState<ReadonlySet<string>>(() => new Set())
@@ -223,7 +224,6 @@ export default function App(): React.JSX.Element {
     viewRef,
     filePathRef,
     dirtyRef: fileOps.dirtyRef,
-    savedContentRef,
     mode: prefs.autoSaveMode,
     delaySec: prefs.autoSaveDelaySec,
     intervalMin: prefs.autoSaveIntervalMin,
@@ -232,8 +232,7 @@ export default function App(): React.JSX.Element {
     // — suppress the manual-save toast to avoid double-firing.
     saveFile: () => fileOps.saveFile({ notifyFailure: false }),
     saveAllDirtyTabs: fileOps.saveAllDirtyTabs,
-    setDirty,
-    syncAppState,
+    markActiveSaved: fileOps.markActiveSaved,
     // UX-P12 F3: failure toast lands in the statusbar sb-toast slot.
     onAutoSaveFailed: showToast
   })
@@ -292,7 +291,7 @@ export default function App(): React.JSX.Element {
       const items = await Promise.all(
         files.map(async (path) => ({
           path,
-          name: path.replace(/^.*[\\/]/, ''),
+          name: baseNameOf(path),
           exists: await window.api.pathExists(path)
         }))
       )
@@ -456,8 +455,7 @@ export default function App(): React.JSX.Element {
         if (choice === 'confirm') {
           fileOps.loadContent(d.content, null)
           // Draft content was never saved — dirty against an empty baseline.
-          fileOps.savedContentRef.current = ''
-          fileOps.dirtyRef.current = true
+          fileOps.setSavedBaseline('')
           fileOps.setDirty(true)
         } else if (choice === 'discard') {
           void window.api.draftDiscard(null)
@@ -480,9 +478,8 @@ export default function App(): React.JSX.Element {
       if (choice === 'confirm') {
         fileOps.loadContent(d.content, d.path)
         // Loaded draft vs disk baseline → dirty until the user saves again.
-        fileOps.savedContentRef.current = disk
+        fileOps.setSavedBaseline(disk)
         const isDirty = d.content !== disk
-        fileOps.dirtyRef.current = isDirty
         fileOps.setDirty(isDirty)
         fileOps.syncAppState(d.path, isDirty)
         // Restore keeps the draft until an explicit save/discard.
@@ -492,7 +489,7 @@ export default function App(): React.JSX.Element {
       // 'cancel'/Later: leave the draft on disk — the next launch re-offers.
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fileOps.loadContent, fileOps.setDirty, fileOps.syncAppState])
+  }, [fileOps.loadContent, fileOps.setSavedBaseline, fileOps.setDirty, fileOps.syncAppState])
 
   useEffect(() => {
     if (!sessionSynced) return
@@ -602,7 +599,6 @@ export default function App(): React.JSX.Element {
               // P12 dirty flag: set on change, cleared on save — no per-change
               // full-document compare. Programmatic loads suppress the flag.
               if (!fileOps.suppressDirtyRef.current && !fileOps.dirtyRef.current) {
-                fileOps.dirtyRef.current = true
                 setDirty(true)
                 syncAppState(filePathRef.current, true)
               }
@@ -1444,6 +1440,8 @@ export default function App(): React.JSX.Element {
       },
       getBaseDir: () => {
         const p = filePathRef.current
+        // Trailing-separator variant — intentionally NOT baseDirOf (keeps the
+        // separator for relative joins). See pathUtil.ts.
         return p ? p.replace(/[^/\\]+$/, '') : ''
       },
       getActiveFilePath: () => filePathRef.current,
@@ -1469,9 +1467,9 @@ export default function App(): React.JSX.Element {
   }, [])
 
   const activeTab = fileOps.tabInfos.find((x) => x.active)
-  const fileName = activeTab ? activeTab.name : filePath ? filePath.replace(/^.*[\/]/, '') : 'Untitled'
+  const fileName = activeTab ? activeTab.name : filePath ? baseNameOf(filePath) : 'Untitled'
   const folderName = workspace.folderPath
-    ? workspace.folderPath.replace(/^.*[\\/]/, '') || workspace.folderPath
+    ? baseNameOf(workspace.folderPath) || workspace.folderPath
     : null
 
   return (
