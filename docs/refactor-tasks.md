@@ -146,34 +146,42 @@
 
 ### 3A. useFileOps.ts（1018 行）
 
-- [ ] **3.1 前置：dirty/savedContent 单一真源**：三轨（`dirtyRef` / `tab.dirty` / `setDirty` state）与 savedContent 双写收敛到 tab store；消除 4 处散落的 `isActive ? dirtyRef.current : tab.dirty` 判断
-- [ ] **3.2 抽公共类型/工具**：`docTabs.ts`（`DocTab`/`DocTabInfo`）——先统一与 `preferences/store.ts` 重复定义的 `SidebarMode`（两处同名类型）；`pathUtil.ts`（`baseDirOf`/`baseNameOf`，App.tsx 内另有手写同逻辑，一并去重）
-- [ ] **3.3 拆 `useTabStore.ts`**：Map CRUD（`initTabs`/`activateTab`/`closeTab`/`reorderTab`/`reopenClosedTab`/`listTabs`/`tabOrder`/`findTabIdByPath`/`tabContent` 等，约 300 行）；`makeState` 注入 `extensionsRef`
-- [ ] **3.4 拆 `useDocIo.ts`**：`openDocPath`/`loadContent`/`saveFile`/`saveFileAs`/`saveAllDirtyTabs`/`reloadTabFromDisk`/`maybeFormatForSave`/`markActiveSaved`（约 250 行）
-- [ ] **3.5 拆 `tabClosePolicy.ts`**：`confirmDiscard`/`queryClose` + `closeTab` 的 dirty 分支（P12 三选一对话框语义一起搬）
-- [ ] **3.6 保持 facade 兼容**：返回对象是 App/useAutoSave/useWorkspaceTree 共用接口，保留兼容壳或同步改 3 处绑定
+- [x] **3.1 前置：dirty/savedContent 单一真源**：三轨（`dirtyRef` / `tab.dirty` / `setDirty` state）与 savedContent 双写收敛到 tab store；消除 4 处散落的 `isActive ? dirtyRef.current : tab.dirty` 判断
+- [x] **3.2 抽公共类型/工具**：`docTabs.ts`（`DocTab`/`DocTabInfo`）——先统一与 `preferences/store.ts` 重复定义的 `SidebarMode`（两处同名类型）；`pathUtil.ts`（`baseDirOf`/`baseNameOf`，App.tsx 内另有手写同逻辑，一并去重）
+- [x] **3.3 拆 `useTabStore.ts`**：Map CRUD（`initTabs`/`activateTab`/`closeTab`/`reorderTab`/`reopenClosedTab`/`listTabs`/`tabOrder`/`findTabIdByPath`/`tabContent` 等，约 300 行）；`makeState` 注入 `extensionsRef`
+- [x] **3.4 拆 `useDocIo.ts`**：`openDocPath`/`loadContent`/`saveFile`/`saveFileAs`/`saveAllDirtyTabs`/`reloadTabFromDisk`/`maybeFormatForSave`/`markActiveSaved`（约 250 行）
+- [x] **3.5 拆 `tabClosePolicy.ts`**：`confirmDiscard`/`queryClose` + `closeTab` 的 dirty 分支（P12 三选一对话框语义一起搬）
+- [x] **3.6 保持 facade 兼容**：返回对象是 App/useAutoSave/useWorkspaceTree 共用接口，保留兼容壳或同步改 3 处绑定
+
+> ✅ **3A 收敛记录（2026-09-23）**：useFileOps.ts 996 行（3.1/3.2 后）→ **facade 138 行**，落 4 模块：`pathUtil.ts`(14+测试 5 用例) / `docTabs.ts`(类型叶) / `tabClosePolicy.ts`(144，纯函数叶) / `useTabStore.ts`(544) / `useDocIo.ts`(497)。**3.1** 真源契约：`DocTab.dirty`/`savedContent` 为真源，`dirtyRef`/`dirty` state/`savedContentRef` 为活动 tab 投影，只经 `setActiveDirty`/`setSavedBaseline`/`projectActiveMirrors` 写入；grep 断言写点仅 useTabStore 两 mutator（4 行），`isActive ? dirtyRef` 残留 0。三元/直写收口逐点等价（App 草稿恢复 ×2、onChange、useAutoSave 未命名存盘 → `markActiveSaved(content, null)`，见 plan 等价表）；`savedContentRef` 零读者，refreshTabs 陈旧回写竞态修正不可见。**3.2** `SidebarMode` 收敛 `preferences/store.ts` 单源 + re-export；pathUtil 去重 App ×3/useExport ×1（`getBaseDir` 尾分隔符变体有意不合并且已注释；L1472 `[\/]`-only → `baseNameOf` 为超集修复已文档化）。**3.3–3.5** body 原样平移（含注释）；结构偏差（行为等价）：① `reopenClosedTab` 落 `useDocIo`（复用 openDocPath，落 store 会反向 store→io），闭栈经 `popClosedStack`；② 建 tab 收口 `addTab`/`nextUntitledNo` 原语（原各创建点内联 id 写入）；③ closeTab dirty 分支委托 `resolveTabCloseDirty`（content 提取提前到对话框前，原 lazy 提取——untitled-active Save As 分支 `tab.path/name` 突变原样保留）；④ useAutoSave 绑定面收窄为 `markActiveSaved`（savedContentRef/setDirty/syncAppState 三参删除）。**3.6** facade 返回 key 集逐字保留（42 key 顺序不变，含 3.1 新增 `markActiveSaved`）；`confirmDiscard`/`queryClose` 包装 policy 纯函数注入依赖；回调全部 `useCallback` 稳定身份（App effect deps 契约）。模块 DAG 无环：useFileOps → {useTabStore, useDocIo, tabClosePolicy}，useDocIo → useTabStore，useTabStore → tabClosePolicy。收敛：typecheck 双配置 + 211 unit 全绿（21 文件，pathUtil +5）；`npx madge --circular --extensions ts,tsx` **0 cycles**（192 文件）。行为不变类——建议人工冒烟：多标签 开/关/切换/拖拽排序/重开关闭标签；脏关三选一（单文档命名版 + 多文档列表版）；关末标签关窗；autosave（含未命名草稿）；草稿恢复两条（磁盘优先/草稿优先）；Save / Save As；外部文件变更 reload（活动/非活动 tab）；会话恢复。规格：[docs/specs/3A-split-usefileops/](specs/3A-split-usefileops/)。
 
 ### 3B. table/widget.ts（1142 行，耦合最重，最后动）
 
-- [ ] **3.7 前置：立 `nestedSession` API**：收拢 `nestedViewInstance` + `pendingHandoff`/`handoffKey` + `activeNestedView` + `mountCellEditor`，提供 `get/commit/mount/destroyHandoff` 显式接口。**destroy↔mountCell 的 handoff 协议两端不可拆散**（correctness-critical，UX-P28 D1）
-- [ ] **3.8 拆 `resolve.ts`**：模型重解析纯函数（`resolveTableModel`/`resolveWithFallback`，L56–98）
-- [ ] **3.9 拆 `commands.ts`**（table 域）：`moveCell`/`runTableOp`/`commitActiveOnly`/`exitTableEdit`/`activateCellAt`/`clearTableEditAndFocusSource`/`handleTsvPaste`/`cellClipboard`/`openTableContextMenu`（约 370 行）；**顺带合并三份重复的「提交 pending」逻辑**（勿原样复制）
-- [ ] **3.10 拆 `keymap.ts`**：`cellKeymap`/`boundaryNav`/`nestedCellTheme` + TSV paste handlers
-- [ ] **3.11 `widget.ts` 只留 `TableWidget` + 行列把手 + 列宽拖拽 + `tableTestHook`**：testHook 调用 7 个内部函数，拆分后须保持 `window.__veloxTable` 契约（`scripts/cdp-p10.mjs` 依赖）
-- [ ] **3.12 修复 barrel 状态**：`table/index.ts` 要么成为真实入口（`livePreview/handlers.ts` 改走 barrel），要么删除
+- [x] **3.7 前置：立 `nestedSession` API**：收拢 `nestedViewInstance` + `pendingHandoff`/`handoffKey` + `activeNestedView` + `mountCellEditor`，提供 `get/commit/mount/destroyHandoff` 显式接口。**destroy↔mountCell 的 handoff 协议两端不可拆散**（correctness-critical，UX-P28 D1）
+- [x] **3.8 拆 `resolve.ts`**：模型重解析纯函数（`resolveTableModel`/`resolveWithFallback`，L56–98）
+- [x] **3.9 拆 `commands.ts`**（table 域）：`moveCell`/`runTableOp`/`commitActiveOnly`/`exitTableEdit`/`activateCellAt`/`clearTableEditAndFocusSource`/`handleTsvPaste`/`cellClipboard`/`openTableContextMenu`（约 370 行）；**顺带合并三份重复的「提交 pending」逻辑**（勿原样复制）
+- [x] **3.10 拆 `keymap.ts`**：`cellKeymap`/`boundaryNav`/`nestedCellTheme` + TSV paste handlers
+- [x] **3.11 `widget.ts` 只留 `TableWidget` + 行列把手 + 列宽拖拽 + `tableTestHook`**：testHook 调用 7 个内部函数，拆分后须保持 `window.__veloxTable` 契约（`scripts/cdp-p10.mjs` 依赖）
+- [x] **3.12 修复 barrel 状态**：`table/index.ts` 要么成为真实入口（`livePreview/handlers.ts` 改走 barrel），要么删除
+
+> ✅ **3B 收敛记录（2026-09-23）**：table/widget.ts 1151 行 → 残壳 445 行（`TableWidget` 整类 + handleBtn/widthsEqual + tableTestHook + 公共入口 re-export），落 4 模块：`resolve`(61) / `keymap`(123) / `nestedSession`(242) / `commands`(406)（含文件头共 1277 行）。**3.7** handoff 协议两端同模块收拢：`getHandoff`（mount 端 one-shot 消费）/`destroyHandoff`（destroy 端全逻辑：捕获→置 handoff→`commitHandoff` microtask 回写→拆 view→清 `__veloxTableCellView`）/`mountCellEditor`；isRetarget 跳过（diag-P28）与 key 公式 `${t}:${r}:${c}`、one-shot 清除、多拍聚焦、失焦即退场全部原样。**3.8** 重解析原样平移，`resolveTableModel` 补 export（testHook 消费，可见性偏差）。**3.9** 三份「提交 pending」合并为 `pendingCommitChanges`（sentinel 策略参数化：`activateCellAt` 取 `rewrite` 整表重写、`commitActiveOnly`/`clearTableEditAndFocusSource` 取 `skip`；等价表见 plan；guard/比较/文案全同，dispatch 合并方式留调用点）；**死代码删除**：`cellClipboard` 零调用点（活路径是 `contextMenu/opsTable.ts` 注册闭包内联版，跨模块平行语义另立不并）。**3.10** 键位/主题/TSV paste 纯工厂化，`Dir`/`NestedNavFns` 词汇表落 keymap.ts；**环破缝**：keymap 不 import commands，move/exit/tsv 经 `NestedNavFns` 注入（先例 1D `setNestedPreviewField`），DAG 无环：resolve ← nestedSession ← commands ← widget，keymap 为叶。**3.11** `TableWidget` 整类不动，仅 destroy() 一行委托 `destroyHandoff`、toDOM 挂载点改 `getHandoff`+带 nav 的 `mountCellEditor`；`__veloxTable` 九方法（nested/resolve/activate/move/setCellDoc/commit/clearEdit/op/pasteTsv）形状与 userEvent 字面量不变。**3.12** barrel 已在阶段 0 删除（fca74ae）——核验不复活，`widget.ts` 为唯一公共入口，三消费方（handlers-code/setup/lifecycle）import **零改动**。非平移点另有：testHook `resolve` 返回类型钉为 `TableModel | null`（保持 cdp 契约）；`own` 参数类型 `{row;col}|null`（避免 widget 反向 import）。收敛：typecheck 双配置 + 211 unit 全绿；`npx madge --circular --extensions ts,tsx` **0 cycles**（196 文件）；grep 断言：`pendingHandoff` 读写仅 nestedSession、`__veloxTableCellView` 写点/清点各 1、`td.__cellView` 写点 1。行为不变类——建议人工冒烟：点格进编辑/Tab/Shift-Tab/Enter/Esc、末格 Tab 追加行、行列把手增删、对齐、列宽拖拽、右键表格菜单（增删行列/对齐/剪贴板三项）、TSV 粘贴、**主题/列宽/语言切换 rebuild 时编辑中 pending 文本不丢**（handoff）、**hop 换格不串文本**（diag-P28）、失焦即退场、参差表格 sentinel 格跳过/激活时整表重写。规格：[docs/specs/3B-split-table-widget/](specs/3B-split-table-widget/)。
 
 ### 3C. renderDoc.ts（712 行）
 
-- [ ] **3.13 抽 `export/renderDoc/ctx.ts`**：`RenderCtx`/`RenderDocOptions`/`ImageMode`/`textOf`/`escapeHtml`
-- [ ] **3.14 拆纯函数块**：`inlineText.ts`（`renderTextRun`/`escapeWithAbbrs`/`asMathBlock`）、`blockAttrs.ts`（`attrsFromTrailing`/`stripTrailingAttrs`/`splitDefinitionList`/`isDefLineText`）——约 250 行零依赖，先行
-- [ ] **3.15 拆 dispatch 模块**：`block.ts`/`inline.ts`/`listTable.ts`/`code.ts`/`image.ts`/`callout.ts`（递归 walk 互调，从主文件注入或同模块内聚）
-- [ ] **3.16 文件头固化平行契约注释**：与 `handlers-math.ts` 的正则同步约束、与 livePreview 的 class 契约（`markdown-image-ext`/`callout`/`inlineStyles` 注释提及处）
+- [x] **3.13 抽 `export/renderDoc/ctx.ts`**：`RenderCtx`/`RenderDocOptions`/`ImageMode`/`textOf`/`escapeHtml`
+- [x] **3.14 拆纯函数块**：`inlineText.ts`（`renderTextRun`/`escapeWithAbbrs`/`asMathBlock`）、`blockAttrs.ts`（`attrsFromTrailing`/`stripTrailingAttrs`/`splitDefinitionList`/`isDefLineText`）——约 250 行零依赖，先行
+- [x] **3.15 拆 dispatch 模块**：`block.ts`/`inline.ts`/`listTable.ts`/`code.ts`/`image.ts`/`callout.ts`（递归 walk 互调，从主文件注入或同模块内聚）
+- [x] **3.16 文件头固化平行契约注释**：与 `handlers-math.ts` 的正则同步约束、与 livePreview 的 class 契约（`markdown-image-ext`/`callout`/`inlineStyles` 注释提及处）
+
+> ✅ **3C 收敛记录（2026-09-23）**：renderDoc.ts 708 行删除，落 `export/renderDoc/` 10 模块（含 import 头/横幅共 781 行）：`ctx`(39) / `inlineText`(83) / `blockAttrs`(61) / `callout`(31) / `code`(34) / `image`(22) / `inline`(109) / `listTable`(110) / `block`(208) / `index`(84)。body 原样平移（含注释）；模块 DAG 取「inline 不回调 block」的无环切法（block → {inline,code,listTable,callout}，listTable → {inline,code}，inline → {inlineText,image}），免注入缝。非平移点（行为等价/可见性）：① 跨模块声明补 `export`（可见性）；② `RenderCtxParts`/`renderInline`/`renderListItem`/`renderDefinitionList`/`renderBlock`/`escapeWithAbbrs` 留各自模块私有；③ `index.ts` 本地 `import type RenderDocOptions`（re-export 不进本地作用域）；④ 三处平行契约注释旧路径 `export/renderDoc.ts` 校正到新落点（callout.ts/handlers-math.ts/markdown-image-ext.ts，3.16 随行）。3.16：`index.ts` 文件头固化平行契约——数学正则 ↔ `handlers-math.ts`（renderTextRun 现址 `inlineText.ts`）、`export-*`/`export-callout*` class ↔ `exportCss.ts`+`inlineStyles.ts`、`imageSizeMarkdown` ↔ `markdown-image-ext`。消费方 3 处（buildDocument/copyRichText/useExport）`from './renderDoc'` 解析到 `index.ts` **零改动**。收敛：typecheck 双配置 + 206 unit 全绿（20 文件）；`npx madge --circular --extensions ts,tsx` **0 cycles**（186 文件）。行为不变类——建议人工冒烟：导出 HTML / 导出 PDF / 复制富文本 各一（覆盖 callout/mermaid/代码块/图片/列表/表格/脚注/缩写/定义列表/数学）。规格：[docs/specs/3C-split-renderdoc/](specs/3C-split-renderdoc/)。
 
 ### 3D. 字典分裂治理（i18n 收尾）
 
-- [ ] **3.17 `NATIVE_MENU_STRINGS` 并入统一 key 空间**：从共享 key 派生或让 0.2 的对齐测试覆盖第三份字典
-- [ ] **3.18 删除 `DEFAULT_CALLOUT_TITLES` 重复**：`editor/livePreview/callout.ts` 的 zh/en × 8 型与 i18n `callout.*` 语义完全重叠，统一走 `t('callout.'+type)`（二选一，删一份）
-- [ ] **3.19 i18n 读源统一**：`i18n/index.ts` 的 `langFromStorage` 自读 `veloxmark.preferences`，与 `preferences/store.ts` 存在启动时双读源——改为从 store 单一读取
+- [x] **3.17 `NATIVE_MENU_STRINGS` 并入统一 key 空间**：从共享 key 派生或让 0.2 的对齐测试覆盖第三份字典
+- [x] **3.18 删除 `DEFAULT_CALLOUT_TITLES` 重复**：`editor/livePreview/callout.ts` 的 zh/en × 8 型与 i18n `callout.*` 语义完全重叠，统一走 `t('callout.'+type)`（二选一，删一份）
+- [x] **3.19 i18n 读源统一**：`i18n/index.ts` 的 `langFromStorage` 自读 `veloxmark.preferences`，与 `preferences/store.ts` 存在启动时双读源——改为从 store 单一读取
+
+> ✅ **3D 收敛记录（2026-09-23）**：**3.17** 取「对齐测试覆盖第三份字典」方案（main/renderer 双 bundle 无法运行时共享 `t()`）：`NATIVE_MENU_STRINGS`（zh/en × 67 key）迁 `electron/shared/menuStrings.ts` 纯数据叶模块（仿 2.12 `commandAccelerators` 先例，一字一行供 key 字面量扫描），`menu/darwin.ts` 改 import；0.2 对齐测试扩展第三份字典守护（zh/en key 集相等 + 无重复 key 字面量 + `{placeholder}` 一致，按语言分段扫描防跨语重复误报）。**3.18** 删 `DEFAULT_CALLOUT_TITLES`（值已与 `callout.*` 8 键逐字一致，已核对）；`calloutDefaultTitle` → `t('callout.'+type)`；动态 key 以「CALLOUT_TYPES × callout.* 存在性」直接断言登记（替代前缀白名单）；`callout.test.ts` 值钉迁双语 `calloutDefaultTitle` 断言（zh+en 各 1 例）。**3.19** `i18n/index.ts` 启动语言改读 `getPreferences().language`（store 的 `readJson` try/catch 兜底，missing/garbage → `'system'`，与原 `langFromStorage` 等价）；`LanguagePref` 收敛 store 单源声明 + i18n re-export（消费方零改动）。收敛：typecheck 双配置 + 206 unit 全绿（21 文件，+5 用例）。行为不变类——建议人工冒烟：Preferences 切语言 → 原生菜单/callout 默认标题/欢迎文档同步；`> [!note]` 显示 Note/注意；启动语言 = 上次偏好。规格：[docs/specs/3D-i18n-dictionaries/](specs/3D-i18n-dictionaries/)。
 
 ---
 
