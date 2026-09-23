@@ -60,7 +60,12 @@ export const EXPORT_DOC_CSS = `
   padding-bottom: 0.2em;
 }
 
-.export-doc h2 { font-size: 1.5em; }
+.export-doc h2 {
+  font-size: 1.5em;
+  /* 5C/D1 parallel: h2 rule matches h1. */
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.2em;
+}
 .export-doc h3 { font-size: 1.25em; }
 .export-doc h4 { font-size: 1.1em; }
 .export-doc h5 { font-size: 1em; }
@@ -207,6 +212,12 @@ export const EXPORT_DOC_CSS = `
   padding: 8px 0;
   overflow-x: auto;
   text-align: center;
+}
+
+/* 5C/D2 parallel: buildDocument embeds katex.css whose .katex-display brings
+   1em margins — zero them so export spacing matches the editor. */
+.export-doc .export-math-block .katex-display {
+  margin: 0;
 }
 
 .export-theme-dark .katex {

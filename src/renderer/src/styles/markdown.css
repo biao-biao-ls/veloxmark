@@ -13,23 +13,27 @@
 
 /* F06 heading rhythm: padding-only ladder (CM6 heightmap forbids vertical
    margins on line decorations — see NOTE above). Top padding decreases down
-   the ladder; total pre-block space is tighter than the old h1 0.67/0.7 mix. */
+   the ladder; total pre-block space is tighter than the old h1 0.67/0.7 mix.
+   5C/D3: ladder tops tightened one notch (0.7/0.6/0.5em) — blank-line
+   occupancy plus the old tops stacked looser than Typora's rhythm. */
 .cm-md-h1 {
   font-size: 2em;
-  padding-top: 0.8em !important;
+  padding-top: 0.7em !important;
   padding-bottom: 0.4em !important; /* gap + room above the bottom border */
   border-bottom: 1px solid var(--border);
 }
 
 .cm-md-h2 {
   font-size: 1.5em;
-  padding-top: 0.7em !important;
-  padding-bottom: 0.35em !important;
+  padding-top: 0.6em !important;
+  padding-bottom: 0.35em !important; /* room above the bottom border */
+  /* 5C/D1: h2 rule matches h1 (Typora's default theme rules h1+h2 only). */
+  border-bottom: 1px solid var(--border);
 }
 
 .cm-md-h3 {
   font-size: 1.25em;
-  padding-top: 0.6em !important;
+  padding-top: 0.5em !important;
 }
 
 .cm-md-h4 {
@@ -368,9 +372,10 @@
 
 /* Vertical gap around block widgets lives on the .cm-md-block-gap wrapper as
    padding (see widgets.ts wrapWithGap) — margin on the widget box itself is
-   invisible to CodeMirror's heightmap and shifts click mapping below it. */
+   invisible to CodeMirror's heightmap and shifts click mapping below it.
+   5C/D3: unified at the --space-2 rhythm tier. */
 .cm-md-block-gap {
-  padding: 6px 0;
+  padding: var(--space-2) 0;
 }
 
 /* P28: --cb-radius is a component-private token (F08) shared by the rendered
@@ -578,10 +583,16 @@
 .cm-md-math-block {
   position: relative;
   margin: 0 var(--editor-gutter);
-  padding: 8px 0;
+  padding: var(--space-2) 0;
   overflow-x: auto;
   cursor: pointer;
   text-align: center;
+}
+
+/* 5C/D2: zero katex.css's own .katex-display margins — vertical gap is owned
+   solely by .cm-md-block-gap + this box's padding (~1 line total). */
+.cm-md-math-block .katex-display {
+  margin: 0;
 }
 
 .cm-md-math-inline {
