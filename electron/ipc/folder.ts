@@ -7,7 +7,8 @@ import { IMAGE_FILE_EXT, queueImageChange, stopImageChangeBroadcast } from './im
 import type { GetWindow } from './getWindow'
 
 const MD_EXT = /\.(md|markdown|mdown|txt)$/i
-const MAX_SCAN_DEPTH = 8
+// 6B/D4: 8 silently truncated real-world trees (nested repos, home dirs).
+const MAX_SCAN_DEPTH = 20
 
 // P07: scan options arrive from the renderer's preferences (localStorage lives
 // renderer-side). Defaults must stay in sync with DEFAULT_PREFERENCES in
@@ -100,8 +101,14 @@ async function listMarkdownTree(dirPath: string, depth = 0): Promise<DirNode[]> 
 let folderWatcher: FSWatcher | null = null
 let watchedFolder: string | null = null
 let watchRefreshTimer: NodeJS.Timeout | null = null
+// 6B: retarget race guard — bumped on every (un)watch; scans capture it and
+// drop their result when a newer watch/unwatch superseded them mid-await.
+// Covers root-follow retargeting (rapid tab switches) without changing the
+// folder:* channel shapes.
+let watchEpoch = 0
 
 export function stopFolderWatcher(): void {
+  watchEpoch++
   if (watchRefreshTimer) {
     clearTimeout(watchRefreshTimer)
     watchRefreshTimer = null
@@ -114,8 +121,12 @@ export function stopFolderWatcher(): void {
 
 export function registerFolderIpc(getWindow: GetWindow): void {
   async function pushFolderTree(): Promise<void> {
-    if (!watchedFolder) return
-    const tree = await listMarkdownTree(watchedFolder)
+    const root = watchedFolder
+    const epoch = watchEpoch
+    if (!root) return
+    const tree = await listMarkdownTree(root)
+    // 6B: retargeted mid-scan — this tree is stale, never push it.
+    if (epoch !== watchEpoch) return
     const win = getWindow()
     if (win && !win.isDestroyed()) {
       win.webContents.send(IpcChannels.folderTree, tree)
@@ -131,6 +142,7 @@ export function registerFolderIpc(getWindow: GetWindow): void {
     stopFolderWatcher()
     setScanOptions(options)
     watchedFolder = dirPath
+    const epoch = watchEpoch
     try {
       folderWatcher = watch(dirPath, { recursive: true }, (_event, changedPath) => {
         // Ignore editor temp files (vim/emacs swap, atomic-save .tmp siblings).
@@ -153,6 +165,8 @@ export function registerFolderIpc(getWindow: GetWindow): void {
         }, 200)
       })
       folderWatcher.on('error', () => {
+        // 6B: a replaced watcher's late error must not tear down the new root.
+        if (epoch !== watchEpoch) return
         // Root deleted or became unreadable — surface an empty tree, keep the
         // session alive so the user can reopen another folder.
         stopFolderWatcher()
@@ -165,9 +179,13 @@ export function registerFolderIpc(getWindow: GetWindow): void {
       // recursive watch unsupported — degraded: tree won't auto-refresh
       folderWatcher = null
     }
+    const tree = await listMarkdownTree(dirPath)
+    // 6B: superseded by a newer watch/unwatch while scanning — drop silently
+    // (the newer call delivers its own tree; return false marks this one lost).
+    if (epoch !== watchEpoch) return false
     // Send the current tree immediately so the renderer doesn't need a separate
     // list call when (re)subscribing.
-    e.sender.send(IpcChannels.folderTree, await listMarkdownTree(dirPath))
+    e.sender.send(IpcChannels.folderTree, tree)
     return true
   })
 

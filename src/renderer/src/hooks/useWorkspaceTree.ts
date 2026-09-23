@@ -5,9 +5,12 @@ import type { TreeMenuItem } from '../components/TreeMenu'
 import { dialog } from '../components/Dialog'
 import { getPreferences, getSession, patchSession } from '../preferences/store'
 import type { SidebarMode } from './useFileOps'
+import { useTreeRoot } from './useTreeRoot'
 import { t } from '../i18n'
 
 interface Args {
+  /** 6B: reactive active-document path — drives tree-root follow (D1). */
+  activePath: string | null
   filePathRef: RefObject<string | null>
   dirty: boolean
   confirmDiscard: () => Promise<boolean>
@@ -42,6 +45,7 @@ function cleanIpcMessage(err: unknown): string {
  * CRUD (new/rename/delete/move) and the tree context menu.
  */
 export function useWorkspaceTree({
+  activePath,
   filePathRef,
   dirty,
   confirmDiscard,
@@ -53,27 +57,44 @@ export function useWorkspaceTree({
   setSidebarMode,
   setShowOutline
 }: Args) {
-  // Folder workspace: when set, the sidebar can show the markdown file tree
-  // and switch between it and the current file's outline.
+  // 6B tree root: `folderPath` is the *resolved* root (explicit pin → active
+  // doc dir → recent root), no longer "the opened workspace folder".
   const [folderPath, setFolderPath] = useState<string | null>(null)
   const [folderTree, setFolderTree] = useState<DirNode[]>([])
   const [treeMenu, setTreeMenu] = useState<TreeMenuRequest | null>(null)
   // UX-P07-F4: node path in inline-rename mode (entered after create).
   const [renamingPath, setRenamingPath] = useState<string | null>(null)
 
-  // Load a folder workspace: sidebar switches to the markdown file tree.
-  // The editor keeps its current document until a file is picked. Subscribing
-  // the watcher delivers the initial tree and every subsequent refresh.
-  const loadFolder = useCallback(
-    async (dirPath: string) => {
-      setFolderPath(dirPath)
-      setSidebarMode('files')
-      setShowOutline(true)
-      // P03: remember for session restore.
+  // 6B: single funnel that applies a resolved root — retargets the one folder
+  // watcher and remembers the root as the session's recent-root slot (D5).
+  // Mode-neutral on purpose: root follow must never flip the sidebar tab (6A).
+  const applyTreeRoot = useCallback(async (dirPath: string | null) => {
+    setFolderPath(dirPath)
+    if (dirPath) {
+      // P03/6B D5: lastFolderPath is the recent-root slot (6F grows it into
+      // the recent-folders list). Written on every root application so the
+      // AC4 fallback ("无文档时树根回落最近一次根") tracks the live root.
       patchSession({ lastFolderPath: dirPath })
       await window.api.watchFolder(dirPath, folderScanOptions())
+    } else {
+      await window.api.unwatchFolder()
+    }
+  }, [])
+
+  // 6B: root follow + explicit pin (D1/D2). Follow transitions come from
+  // activation changes; explicit opens pin through setExplicitRoot.
+  const { setExplicitRoot } = useTreeRoot({ activePath, onRootChange: applyTreeRoot })
+
+  // Explicit "open folder" channel (dialog / macOS open-file / P13 seam /
+  // 6D/6F ops panel + recents): pins the root (D1) and shows the files tab.
+  // The editor keeps its current document until a file is picked.
+  const loadFolder = useCallback(
+    async (dirPath: string) => {
+      setSidebarMode('files')
+      setShowOutline(true)
+      await setExplicitRoot(dirPath)
     },
-    [setSidebarMode, setShowOutline]
+    [setExplicitRoot, setSidebarMode, setShowOutline]
   )
 
   const openFolder = useCallback(async () => {
@@ -356,6 +377,8 @@ export function useWorkspaceTree({
     cancelInlineRename,
     finishInlineRename,
     loadFolder,
+    /** 6B explicit-root channel for 6D/6F (ops panel / recent folders). */
+    setExplicitRoot,
     openFolder,
     openFolderFromSystem,
     openFileFromTree,

@@ -191,6 +191,7 @@ export default function App(): React.JSX.Element {
   const exportOps = useExport({ viewRef, filePath, onExported: showToast })
 
   const workspace = useWorkspaceTree({
+    activePath: filePath,
     filePathRef,
     dirty,
     confirmDiscard: fileOps.confirmDiscard,
@@ -1119,7 +1120,8 @@ export default function App(): React.JSX.Element {
         await dialog.alert({ messageKey: 'link.brokenTip' })
         return
       }
-      // kind === 'dir': sidebar locate is a 低优 item — not implemented in v1.
+      // kind === 'dir': sidebar locate is a 低优 item — 6.17 optional. 6B made
+      // it cheap: pin the dir via workspace.setExplicitRoot(dirname).
     },
     [fileOps, jumpToAnchor, viewRef]
   )
