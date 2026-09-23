@@ -207,6 +207,36 @@
 
 ---
 
+## 阶段 5 — UI 观感对齐 Typora（截图对比评估）
+
+> 依据 2026-09-23 同文档双端截图对比评估（`temp/typora/typora-1.png` ↔ `temp/veloxmark/veloxmark-1.png`，样稿 `D:/Downloads/untitled.md`）。总评：排版底子（字体/行内样式/KaTeX/代码高亮）已接近 Typora，观感差距约 75%，集中在**列表渲染、版心、区块节奏**三个层面；修掉 P0 后可达 90%+。
+> 差距一览（按视觉影响排序）：**列表圆点/缩进缺失 + 任务项残渣**（P0）> **正文通栏不居中**（P0）> 区块间距发虚 + H2 无底线（P1）> 行号常显噪声（P1）> 大纲层级无缩进（P2）> 块级公式纵向留白（P2）。
+> 不输项（不许改坏）：行内排版（粗/斜/删/行内代码 chip/KaTeX）、自绘顶栏+Tab、状态栏信息密度、代码块语言标签。
+> 本阶段性质：视觉/布局为主；**5.3 为行为变更**（默认值），其余行为不变类按各单元收敛记录注明人工冒烟项。
+
+### 5A. 列表与任务列表渲染修复（P0）
+
+- [x] **5.1 恢复列表视觉体系 + 清除任务项残留**：无序圆点/有序编号 marker、悬挂缩进、嵌套层级缩进全数恢复；任务项复选框后的 `+•` 残渣清除；P09 marker 显隐语义不变 — 规格：[docs/specs/5A-list-rendering/](specs/5A-list-rendering/)
+
+> ✅ **5A 收敛记录（2026-09-23）**：T1 CSS 体系重建（特异度修复 `.cm-editor .cm-line.cm-md-list` + 悬挂缩进 `--list-indent` 阶梯）→ T2 `cm-md-task-item` 压制 CSS 圆点 → T3 有序列表构建期重编号（`orderedListIndex` + `data-vm-n`，CSS counters 在 CM6 扁平行 DOM 下不可用）→ T4 单测（build 5 例 + handlers-ctx 4 例）。**顺手修复既有缺陷 1 处**：`listDepth` 检查不存在的节点名 `'List'`（解析器实际产出 `BulletList`/`OrderedList`），深度恒钳 1、`cm-md-list-d2+` 从未发出。收敛：typecheck 双配置 + **220 unit 全绿**；`npx madge --circular`（202 files）**0 cycles**；e2e 缝零触碰（`window.__velox*`/命令 id/`data-op` 均未出现在 diff）。
+> 人工冒烟清单（行为不变类）：① 无序圆点正常渲染且不压正文（重点看任务行、含拉丁字符行——原 `left:34px` 残渣场景）；② 嵌套列表逐级缩进（d2+）；③ 任务项仅复选框、无 `+•` 残渣；④ 光标进入列表行 → marker 源码显形且 CSS marker 隐藏，移开恢复（P09）；⑤ `1. 1. 1.` 显示 1/2/3，嵌套有序各自从 1 起编；⑥ 暗色主题同过一遍。
+
+### 5B. 阅读版心与行号（P0 + P1）
+
+- [ ] **5.2 正文居中窄栏版心**：正文行与全部块 widget 统一到居中内容列（`editorMaxWidth` 偏好语义保持），F05 同列契约保持 — 规格：[docs/specs/5B-reading-measure/](specs/5B-reading-measure/)
+- [ ] **5.3 行号默认关闭**（**行为变更**）：`showLineNumbers` 默认 `true` → `false`，偏好保留可开；F06 gutter 对齐契约保持 — 同 5B 规格
+
+### 5C. 标题体系与区块节奏（P1 + P2）
+
+- [ ] **5.4 H2 底线统一 + 垂直节奏收敛**：H1/H2 统一浅色底线（token 化）；空行占位与块间距不叠加，同视口节奏对齐 Typora — 规格：[docs/specs/5C-block-rhythm/](specs/5C-block-rhythm/)
+- [ ] **5.5 块级公式留白收紧**：`MathBlockWidget` 上下空档收敛到约一行量级，居中/点击编辑行为不变 — 同 5C 规格
+
+### 5D. 侧边栏大纲精致度（P2）
+
+- [ ] **5.6 大纲层级缩进与质感**：补齐 `outline-l2`–`outline-l6` 缩进样式（现仅 `outline-l1` 有样式），hover/active 质感对齐 Typora 大纲 — 规格：[docs/specs/5D-sidebar-outline/](specs/5D-sidebar-outline/)
+
+---
+
 ## 遗留记录（本轮评估发现、未列入手术项）
 
 - [x] `preferences/store.ts`：**已决（4.1）：保持不拆**（418 行、分节清楚）；31 字段 schema 化 / `sanitizeSession()` 对齐登记为**远期备选**（不进本清单）
