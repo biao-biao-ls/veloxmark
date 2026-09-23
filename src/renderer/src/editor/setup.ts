@@ -32,6 +32,7 @@ import {
 } from './livePreview'
 import { tableEditField } from './table/state'
 import { tableEditLifecycle } from './table/lifecycle'
+import { setNestedPreviewField } from './table/widget'
 import { getCtxRuntime, handleEditorContextMenu } from './contextMenu/registry'
 import { compartmentThemes, ThemeName } from './theme'
 
@@ -75,6 +76,10 @@ export function createExtensions(
   assists: EditingAssistsConfig,
   showLineNumbers: boolean
 ): Extension[] {
+  // 1D cycle break: nested table-cell editors share the live-preview field.
+  // Wired here (not imported inside table/widget) so the import chain
+  // build → handlers → table/widget never points back into livePreview/field.
+  setNestedPreviewField(livePreviewField)
   return [
     // F06: fold gutter renders LEFT of the line numbers so the number column
     // sits flush against the content box — the fold arrows no longer eat the

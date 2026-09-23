@@ -1,13 +1,12 @@
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { syntaxTree } from '@codemirror/language'
-import { EditorState } from '@codemirror/state'
+import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView, keymap, type KeyBinding } from '@codemirror/view'
 import { GFM } from '@lezer/markdown'
 import type { SyntaxNode } from '@lezer/common'
 import type { ThemeName } from '../theme'
 import { t } from '../../i18n'
-import { livePreviewField } from '../livePreview/field'
 import { livePreviewConfigFacet } from '../livePreview/config'
 import { BlockWidget, type BlockToolbarItem } from '../widgets'
 import {
@@ -35,6 +34,21 @@ import { getTableEdit, setActiveCell, setColWidth } from './state'
 import { getCtxRuntime } from '../contextMenu/registry'
 import { formatTable } from './parse'
 import { buildContextMenu, openContextMenu } from '../contextMenu/registry'
+
+/**
+ * Injection seam (task 1D): the live-preview StateField mounted by nested
+ * cell editors. `editor/setup.ts` wires it at assembly time via
+ * `setNestedPreviewField` — importing `../livePreview/field` directly here
+ * would close the build → handlers → table/widget → field import cycle
+ * (docs/specs/1D-split-handlers/spec.md). Defaults to `[]` (CM6 no-op) so
+ * a never-wired unit-test host degrades to "no nested live preview" instead
+ * of crashing.
+ */
+let nestedPreviewField: Extension = []
+
+export function setNestedPreviewField(ext: Extension): void {
+  nestedPreviewField = ext
+}
 
 /**
  * P10 interactive table widget.
@@ -602,8 +616,9 @@ function mountCellEditor(
       doc: cellText,
       extensions: [
         markdown({ extensions: [GFM], addKeymap: false, pasteURLAsLink: false }),
-        // P09 live-preview rules inside the cell — same decoration pipeline.
-        livePreviewField,
+        // P09 live-preview rules inside the cell — same decoration pipeline
+        // (injected via setNestedPreviewField — see top of file).
+        nestedPreviewField,
         livePreviewConfigFacet.of({
           theme,
           baseDir: '',

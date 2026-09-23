@@ -36,7 +36,7 @@ import {
  * hidden and every block is rendered. KaTeX / mermaid / highlight.js go
  * through the shared helpers extracted from widgets.ts.
  *
- * Math uses the same regex strategy as livePreview/handlers.ts
+ * Math uses the same regex strategy as livePreview/handlers-math.ts
  * (collectMathDecos): lezer has no math extension, so block math is detected
  * on paragraph text and inline math on text runs.
  */
