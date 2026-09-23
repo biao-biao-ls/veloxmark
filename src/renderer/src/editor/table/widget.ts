@@ -1,57 +1,6 @@
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
-import { markdown } from '@codemirror/lang-markdown'
-import { syntaxTree } from '@codemirror/language'
-import { EditorState, type Extension } from '@codemirror/state'
-import { EditorView, keymap, type KeyBinding } from '@codemirror/view'
-import { GFM } from '@lezer/markdown'
-import type { SyntaxNode } from '@lezer/common'
-import type { ThemeName } from '../theme'
-import { t } from '../../i18n'
-import { livePreviewConfigFacet } from '../livePreview/config'
-import { BlockWidget, type BlockToolbarItem } from '../blockWidget'
-import {
-  escapeCell,
-  isSentinelCell,
-  parseTableModel,
-  renderInlineCell,
-  unescapeCell,
-  type CellInfo,
-  type TableModel
-} from './parse'
-import {
-  deleteColOp,
-  deleteRowOp,
-  gridWithCellText,
-  insertColOp,
-  insertRowOp,
-  pasteCellOp,
-  pasteTsvOp,
-  setAlignOp,
-  writeCellOp,
-  type TableOp
-} from './ops'
-import { getTableEdit, setActiveCell, setColWidth } from './state'
-import { getCtxRuntime } from '../contextMenu/registry'
-import { formatTable } from './parse'
-import { buildContextMenu, openContextMenu } from '../contextMenu/registry'
-
 /**
- * Injection seam (task 1D): the live-preview StateField mounted by nested
- * cell editors. `editor/setup.ts` wires it at assembly time via
- * `setNestedPreviewField` — importing `../livePreview/field` directly here
- * would close the build → handlers → table/widget → field import cycle
- * (docs/specs/1D-split-handlers/spec.md). Defaults to `[]` (CM6 no-op) so
- * a never-wired unit-test host degrades to "no nested live preview" instead
- * of crashing.
- */
-let nestedPreviewField: Extension = []
-
-export function setNestedPreviewField(ext: Extension): void {
-  nestedPreviewField = ext
-}
-
-/**
- * P10 interactive table widget.
+ * P10 interactive table widget (task 3.11 residual — TableWidget + handles +
+ * col-width drag + tableTestHook; the public entry for the table modules).
  *
  * Markdown stays the single source of truth: the widget is still one block
  * replace over the whole table source, but its DOM is a real HTML table.
@@ -65,626 +14,50 @@ export function setNestedPreviewField(ext: Extension): void {
  * cell offsets. Every handler re-resolves the table model from `view.state`
  * at event time (resolveTableModel), anchored on `tableFrom` which the
  * tableEditField maps through doc changes.
- */
-
-// ---- model re-resolution -----------------------------------------------------
-
-/** Resolve the Table syntax node covering `approxFrom` and re-parse its source. */
-function resolveTableModel(
-  view: EditorView,
-  approxFrom: number
-): { model: TableModel; lineFrom: number } | null {
-  const state = view.state
-  const tree = syntaxTree(state)
-  let node: SyntaxNode | null = tree.resolveInner(approxFrom, 1)
-  while (node && node.name !== 'Table') node = node.parent
-  if (!node || node.name !== 'Table') {
-    let b: SyntaxNode | null = tree.topNode.firstChild
-    while (b) {
-      if (b.name === 'Table' && b.from <= approxFrom + 4 && approxFrom <= b.to + 4) {
-        node = b
-        break
-      }
-      b = b.nextSibling
-    }
-  }
-  if (!node || node.name !== 'Table') return null
-  const lineFrom = state.doc.lineAt(node.from).from
-  const lineTo = state.doc.lineAt(node.to).to
-  return { model: parseTableModel(state.sliceDoc(lineFrom, lineTo), lineFrom), lineFrom }
-}
-
-/**
- * Resolve with fallbacks: the active cell's mapped tableFrom first, then the
- * widget-supplied hint (fresh even when the mapped anchor drifted through a
- * large doc replacement, e.g. a test setDoc that swaps the whole document).
- */
-export function resolveWithFallback(
-  view: EditorView,
-  activeFrom: number | null | undefined,
-  hintFrom: number
-): { model: TableModel; lineFrom: number } | null {
-  if (activeFrom != null) {
-    const r = resolveTableModel(view, activeFrom)
-    if (r) return r
-  }
-  return resolveTableModel(view, hintFrom)
-}
-
-// ---- nested cell editor ------------------------------------------------------
-
-/** The live nested view of the active cell (module-level: widgets are ephemeral). */
-let nestedViewInstance: EditorView | null = null
-
-/** Exported for lifecycle.ts self-heal focus (widgets are ephemeral). */
-export function activeNestedView(): EditorView | null {
-  if (nestedViewInstance && nestedViewInstance.dom.isConnected) return nestedViewInstance
-  nestedViewInstance = null
-  return null
-}
-
-/**
- * Compact theme for the in-cell editor: inherit cell typography, none of the
- * main editor's padding/margins. Decorations (cm-md-strong etc.) come from
- * styles.css and apply globally.
- */
-const nestedCellTheme = EditorView.theme({
-  '&': {
-    backgroundColor: 'transparent',
-    color: 'inherit',
-    fontSize: 'inherit',
-    fontFamily: 'inherit',
-    lineHeight: 'inherit',
-    // F01: the main editor's theme rules are descendant selectors rooted on
-    // the main .cm-editor class, and nested cell editors live inside that
-    // DOM tree — plain theme values (40vh content padding, 48px line
-    // gutter) cascade in and balloon the cell. Overriding the *variables*
-    // at this root wins for every descendant regardless of stylesheet
-    // injection order.
-    '--cm-content-padding': '0',
-    '--cm-content-max-width': 'none',
-    '--editor-gutter': '0'
-  },
-  '.cm-content': {
-    padding: '0',
-    margin: '0',
-    maxWidth: 'none',
-    fontFamily: 'inherit',
-    fontSize: 'inherit',
-    lineHeight: 'inherit',
-    caretColor: 'currentColor'
-  },
-  '.cm-line': { padding: '0' },
-  '&.cm-focused': { outline: 'none' },
-  '.cm-cursor': { borderLeftColor: 'currentColor', borderLeftWidth: '2px' },
-  '.cm-selectionBackground, &.cm-focused .cm-selectionBackground': {
-    backgroundColor: 'rgba(96, 165, 250, 0.35)'
-  }
-})
-
-type Dir = 'next' | 'prev' | 'up' | 'down' | 'out'
-
-function cellKeymap(main: EditorView): KeyBinding[] {
-  return [
-    { key: 'Tab', run: (v) => (moveCell(v, main, 'next'), true) },
-    { key: 'Shift-Tab', run: (v) => (moveCell(v, main, 'prev'), true) },
-    { key: 'Enter', run: (v) => (moveCell(v, main, 'down'), true) },
-    {
-      key: 'Shift-Enter',
-      run: (v) => {
-        const range = v.state.selection.main
-        v.dispatch({
-          changes: { from: range.from, to: range.to, insert: '<br>' },
-          selection: { anchor: range.from + 4 },
-          userEvent: 'input.table.br'
-        })
-        return true
-      }
-    },
-    { key: 'Escape', run: (v) => (moveCell(v, main, 'out'), true) },
-    { key: 'ArrowLeft', run: (v) => boundaryNav(v, main, 'prev') },
-    { key: 'ArrowRight', run: (v) => boundaryNav(v, main, 'next') },
-    // UX-P10 nav-leak: while the in-cell editor holds focus, vertical arrows
-    // move the caret INSIDE cell text only — they must not jump cells (probe
-    // contract + Google-Sheets edit-mode semantics). Cross-cell motion stays
-    // Tab / Shift-Tab / Enter (commit + below) / Esc then arrows.
-    { key: 'ArrowUp', run: () => false },
-    { key: 'ArrowDown', run: () => false }
-  ]
-}
-
-function boundaryNav(v: EditorView, main: EditorView, dir: 'prev' | 'next'): boolean {
-  const sel = v.state.selection.main
-  if (!sel.empty) return false
-  if (dir === 'prev' && sel.from === 0) {
-    moveCell(v, main, 'prev')
-    return true
-  }
-  if (dir === 'next' && sel.to === v.state.doc.length) {
-    moveCell(v, main, 'next')
-    return true
-  }
-  return false
-}
-
-/** Model with the pending nested-cell text folded in (for whole-table ops). */
-function modelWithPendingText(
-  view: EditorView,
-  model: TableModel
-): { model: TableModel; lineFrom: number; pending: boolean } | null {
-  const edit = getTableEdit(view.state)
-  const nested = activeNestedView()
-  if (!nested || !edit.active) return { model, lineFrom: model.tableFrom, pending: false }
-  const newText = escapeCell(nested.state.doc.toString())
-  const cell = model.cells[edit.active.row]?.[edit.active.col]
-  if (!cell || isSentinelCell(cell) || newText === cell.text) {
-    return { model, lineFrom: model.tableFrom, pending: false }
-  }
-  const cells = model.cells.map((row, r) =>
-    row.map((c, ci) =>
-      r === edit.active!.row && ci === edit.active!.col ? { ...c, text: newText } : c
-    )
-  )
-  return { model: { ...model, cells }, lineFrom: model.tableFrom, pending: true }
-}
-
-/**
- * Commit the active cell's nested text, then move / exit / clamp.
- * Structural cases (last-cell Tab) rebuild the whole table in ONE transaction
- * together with the commit so undo is a single doc-level step.
  *
- * IMPORTANT: cell commits compare nested text against the ORIGINAL model's
- * cell source — never against a pending-folded copy (that would make
- * `changed` always false and silently drop the write-back).
+ * Split map (tasks 3.7–3.12, docs/specs/3B-split-table-widget/):
+ *   - resolve.ts       model re-resolution (resolveTableModel/resolveWithFallback)
+ *   - nestedSession.ts UX-P28 handoff protocol (getHandoff/destroyHandoff/
+ *                      commitHandoff) + nested cell-editor mount/teardown
+ *   - commands.ts      moveCell/runTableOp/commitActiveOnly/exitTableEdit/…
+ *   - keymap.ts        in-cell keymap/theme/TSV-paste factories (nav injected)
+ * This file is the single public entry (no table/index.ts barrel — 3.12):
+ * consumers (handlers-code.ts / setup.ts / lifecycle.ts) import from here.
  */
-function moveCell(nested: EditorView, main: EditorView, dir: Dir): void {
-  const edit = getTableEdit(main.state)
-  if (!edit.active) return
-  const resolved = resolveTableModel(main, edit.active.tableFrom)
-  if (!resolved) return
-  const model = resolved.model
-  const lineFrom = resolved.lineFrom
-  const a = edit.active
-  const nestedText = escapeCell(nested.state.doc.toString())
-  const cell = model.cells[a.row]?.[a.col]
-  const cellChanged = !!cell && nestedText !== cell.text
+import type { EditorView } from '@codemirror/view'
+import type { ThemeName } from '../theme'
+import { t } from '../../i18n'
+import { BlockWidget, type BlockToolbarItem } from '../blockWidget'
+import { parseTableModel, renderInlineCell, type CellInfo, type TableModel } from './parse'
+import { deleteColOp, deleteRowOp, insertColOp, insertRowOp, setAlignOp } from './ops'
+import { getTableEdit, setActiveCell, setColWidth } from './state'
+import {
+  activeNestedView,
+  destroyHandoff,
+  getHandoff,
+  handoffKey,
+  mountCellEditor,
+  setNestedPreviewField
+} from './nestedSession'
+import { resolveTableModel, resolveWithFallback } from './resolve'
+import {
+  activateCellAt,
+  clearTableEditAndFocusSource,
+  commitActiveOnly,
+  exitTableEdit,
+  handleTsvPaste,
+  moveCell,
+  openTableContextMenu,
+  runTableOp
+} from './commands'
+import type { Dir, NestedNavFns } from './keymap'
 
-  /** Grid carrying the pending cell text — for whole-table rewrites. */
-  const gridWithPending = (): string[][] => {
-    const grid = model.cells.map((r) => r.map((c) => c.text))
-    if (grid[a.row]) {
-      while (grid[a.row].length <= a.col) grid[a.row].push('')
-      grid[a.row][a.col] = nestedText
-    }
-    return grid
-  }
-  /** Cell-range replace when the cell has a real source range; else null. */
-  const cellChange = (): { from: number; to: number; insert: string } | null =>
-    cellChanged && cell && !isSentinelCell(cell)
-      ? { from: cell.from, to: cell.to, insert: nestedText }
-      : null
+// Public entry re-exports (3.11/3.12): lifecycle.ts binds activeNestedView /
+// resolveWithFallback / exitTableEdit here; setup.ts binds setNestedPreviewField.
+export { setNestedPreviewField, activeNestedView, resolveWithFallback, exitTableEdit }
 
-  if (dir === 'out') {
-    // UX-P28: use exitTableEdit for consistent commit+clear semantics.
-    // For non-sentinel cells, commitActiveOnly handles the commit.
-    // Sentinel cell pending (ragged tables) is committed via whole-table
-    // rewrite only in the moveCell hop path; 'out' via exitTableEdit skips
-    // sentinel (D3 known limitation, out of scope).
-    exitTableEdit(main, { select: 'after' })
-    main.focus()
-    return
-  }
-
-  const lastRow = model.cells.length - 1
-  const lastCol = model.colCount - 1
-  let nextRow = a.row
-  let nextCol = a.col
-  let structural = false
-
-  switch (dir) {
-    case 'next':
-      if (a.col < lastCol) nextCol = a.col + 1
-      else if (a.row < lastRow) {
-        nextRow = a.row + 1
-        nextCol = 0
-      } else {
-        structural = true
-        const grid = gridWithPending()
-        grid.push(new Array(model.colCount).fill(''))
-        main.dispatch({
-          changes: { from: model.tableFrom, to: model.tableTo, insert: formatTable(model.aligns, grid) },
-          effects: setActiveCell.of({
-            tableFrom: lineFrom,
-            row: grid.length - 1,
-            col: 0,
-            caret: 0
-          }),
-          userEvent: 'input.table.appendRow'
-        })
-        return
-      }
-      break
-    case 'prev':
-      if (a.col > 0) nextCol = a.col - 1
-      else if (a.row > 0) {
-        nextRow = a.row - 1
-        nextCol = lastCol
-      }
-      break
-    case 'down':
-      if (a.row < lastRow) nextRow = a.row + 1
-      break
-    case 'up':
-      if (a.row > 0) nextRow = a.row - 1
-      break
-  }
-  if (structural) return
-
-  // Same-cell move (clamped at an edge): just commit; keep the cell active.
-  if (nextRow === a.row && nextCol === a.col) {
-    const change = cellChange()
-    if (change) {
-      main.dispatch({ changes: change, userEvent: 'input.table.cell' })
-    } else if (cellChanged) {
-      main.dispatch({
-        changes: {
-          from: model.tableFrom,
-          to: model.tableTo,
-          insert: formatTable(model.aligns, gridWithPending())
-        },
-        userEvent: 'input.table.cell'
-      })
-    }
-    return
-  }
-
-  const target = model.cells[nextRow]?.[nextCol]
-  const caret = target && !isSentinelCell(target) ? target.text.length : 0
-  const change = cellChange()
-  main.dispatch({
-    changes:
-      change ??
-      (cellChanged
-        ? {
-            from: model.tableFrom,
-            to: model.tableTo,
-            insert: formatTable(model.aligns, gridWithPending())
-          }
-        : undefined),
-    effects: setActiveCell.of({ tableFrom: lineFrom, row: nextRow, col: nextCol, caret }),
-    userEvent: 'input.table.nav'
-  })
-}
-
-/** Dispatch a whole-table op (handles/menu), folding in any pending cell text. */
-/**
- * wave③ toast 统一: structure-destructive ops get a completion toast at the
- * dispatch layer so EVERY caller (widget handles, P27 menu via shared ops,
- * e2e hooks) produces the same visible feedback. Insert/align stay quiet —
- * the table change itself is the feedback.
- */
-const STRUCTURE_TOASTS: Record<string, string> = {
-  'input.table.deleteRow': 'toast.rowDeleted',
-  'input.table.deleteCol': 'toast.colDeleted'
-}
-
-function runTableOp(
-  main: EditorView,
-  tableFromHint: number,
-  opFn: (model: TableModel) => TableOp | null,
-  userEvent: string
-): void {
-  const edit = getTableEdit(main.state)
-  const resolved = resolveWithFallback(main, edit.active?.tableFrom, tableFromHint)
-  if (!resolved) return
-  const withPending = modelWithPendingText(main, resolved.model)
-  if (!withPending) return
-  const op = opFn(withPending.model)
-  if (!op) return
-  main.dispatch({
-    changes: { from: op.from, to: op.to, insert: op.insert },
-    effects: setActiveCell.of({
-      tableFrom: resolved.lineFrom,
-      row: op.nextActive.row,
-      col: op.nextActive.col,
-      caret: 0
-    }),
-    userEvent
-  })
-  const toastKey = STRUCTURE_TOASTS[userEvent]
-  if (toastKey) getCtxRuntime()?.toast(t(toastKey))
-}
-
-/** Commit pending nested text (if any) without changing the active cell. */
-function commitActiveOnly(main: EditorView, hintFrom?: number): void {
-  const nested = activeNestedView()
-  const edit = getTableEdit(main.state)
-  if (!nested || !edit.active) return
-  const resolved = resolveWithFallback(main, edit.active.tableFrom, hintFrom ?? edit.active.tableFrom)
-  if (!resolved) return
-  const cell = resolved.model.cells[edit.active.row]?.[edit.active.col]
-  const newText = escapeCell(nested.state.doc.toString())
-  if (cell && !isSentinelCell(cell) && newText !== cell.text) {
-    main.dispatch({
-      changes: { from: cell.from, to: cell.to, insert: newText },
-      userEvent: 'input.table.cell'
-    })
-  }
-}
-
-/**
- * UX-P28: commit pending cell text and exit table editing.
- *
- * @param select - 'none' for blur-path (don't change selection);
- *                 'after' for Escape path (place cursor adjacent to table).
- */
-export function exitTableEdit(
-  main: EditorView,
-  opts?: { select?: 'none' | 'after' }
-): void {
-  const edit = getTableEdit(main.state)
-  if (!edit.active) return
-
-  // Commit pending first.
-  commitActiveOnly(main)
-
-  const selectMode = opts?.select ?? 'none'
-  const spec: Parameters<EditorView['dispatch']>[0] = {
-    effects: setActiveCell.of(null),
-    userEvent: 'input.table.exit'
-  }
-
-  if (selectMode === 'after') {
-    const resolved = resolveWithFallback(
-      main,
-      edit.active.tableFrom,
-      edit.active.tableFrom
-    )
-    if (resolved) {
-      const docLen = main.state.doc.length
-      const { lineFrom, model } = resolved
-      // Place cursor adjacent to table — outside [tableFrom, tableTo] so
-      // the enterTable hatch (blockTouched, inclusive) doesn't suppress.
-      spec.selection = {
-        anchor: model.tableTo < docLen
-          ? model.tableTo + 1
-          : Math.max(0, lineFrom - 1)
-      }
-    }
-  }
-
-  main.dispatch(spec)
-}
-
-function activateCellAt(main: EditorView, tableFromHint: number, row: number, col: number, caretOverride?: number): void {
-  const edit = getTableEdit(main.state)
-  const resolved = resolveWithFallback(main, edit.active?.tableFrom, tableFromHint)
-  if (!resolved) return
-  const nested = activeNestedView()
-  const changes = []
-  // Commit any pending nested-cell text before hopping to the target cell.
-  if (nested && edit.active) {
-    const a = edit.active
-    const orig = resolved.model.cells[a.row]?.[a.col]
-    const newText = escapeCell(nested.state.doc.toString())
-    if (orig && newText !== orig.text) {
-      if (isSentinelCell(orig)) {
-        const grid = gridWithCellText(resolved.model, a.row, a.col, newText)
-        changes.push({
-          from: resolved.model.tableFrom,
-          to: resolved.model.tableTo,
-          insert: formatTable(resolved.model.aligns, grid)
-        })
-      } else {
-        changes.push({ from: orig.from, to: orig.to, insert: newText })
-      }
-    }
-  }
-  const target = resolved.model.cells[row]?.[col]
-  main.dispatch({
-    changes: changes.length ? changes : undefined,
-    effects: setActiveCell.of({
-      tableFrom: resolved.lineFrom,
-      row,
-      col,
-      // UX-P28 F2: use click-computed caret when available; else end-of-cell.
-      caret: caretOverride != null
-        ? Math.min(Math.max(caretOverride, 0), target && !isSentinelCell(target) ? target.text.length : 0)
-        : target && !isSentinelCell(target) ? target.text.length : 0
-    }),
-    userEvent: 'input.table.activate'
-  })
-}
-
-function clearTableEditAndFocusSource(main: EditorView, sourceFrom: number): void {
-  // UX-P28: merge to single dispatch — the old two-dispatch path (commit then
-  // selection+clear) would trigger the lifecycle auto-exit listener on the first
-  // dispatch (docChanged without setActiveCell, selection still outside table).
-  const nested = activeNestedView()
-  const edit = getTableEdit(main.state)
-  const changes = []
-  if (nested && edit.active) {
-    const resolved = resolveWithFallback(main, edit.active.tableFrom, sourceFrom)
-    const cell = resolved?.model.cells[edit.active.row]?.[edit.active.col]
-    const newText = escapeCell(nested.state.doc.toString())
-    if (cell && !isSentinelCell(cell) && newText !== cell.text) {
-      changes.push({ from: cell.from, to: cell.to, insert: newText })
-    }
-  }
-  main.dispatch({
-    changes: changes.length ? changes : undefined,
-    selection: { anchor: sourceFrom },
-    effects: setActiveCell.of(null),
-    scrollIntoView: true,
-    userEvent: 'select.table.exit'
-  })
-}
-
-// ---- TSV paste / clipboard ---------------------------------------------------
-
-function handleTsvPaste(main: EditorView, tsv: string): void {
-  const edit = getTableEdit(main.state)
-  if (!edit.active) return
-  const resolved = resolveWithFallback(main, edit.active.tableFrom, edit.active.tableFrom)
-  if (!resolved) return
-  const op = pasteTsvOp(resolved.model, edit.active.row, edit.active.col, tsv)
-  if (!op) return
-  main.dispatch({
-    changes: { from: op.from, to: op.to, insert: op.insert },
-    effects: setActiveCell.of({
-      tableFrom: resolved.lineFrom,
-      row: op.nextActive.row,
-      col: op.nextActive.col,
-      caret: 0
-    }),
-    userEvent: 'input.table.pasteTsv'
-  })
-}
-
-function cellClipboard(
-  main: EditorView,
-  tableFromHint: number,
-  row: number,
-  col: number,
-  mode: 'cut' | 'copy' | 'paste'
-): void {
-  if (mode === 'paste') {
-    void window.api.clipboardRead().then((text) => {
-      if (!text) return
-      runTableOp(
-        main,
-        tableFromHint,
-        (m) => pasteCellOp(m, row, col, text),
-        'input.table.pasteCell'
-      )
-    })
-    return
-  }
-  const resolved = resolveWithFallback(main, getTableEdit(main.state).active?.tableFrom, tableFromHint)
-  const cell = resolved?.model.cells[row]?.[col]
-  const text = cell ? unescapeCell(cell.text) : ''
-  void window.api.clipboardWrite(text).then(() => {
-    if (mode === 'cut') {
-      runTableOp(main, tableFromHint, (m) => writeCellOp(m, row, col, ''), 'input.table.cutCell')
-    }
-  })
-}
-
-// ---- context menu (P27: unified .editor-context-menu) -----------------------
-
-function openTableContextMenu(
-  main: EditorView,
-  tableFromHint: number,
-  row: number,
-  col: number,
-  x: number,
-  y: number
-): void {
-  // Commit any pending nested-cell text first so the shared table-cell delta
-  // (registry) parses a fresh source model — one menu surface, no widget-only
-  // dispatch path to drift.
-  commitActiveOnly(main, tableFromHint)
-  const resolved = resolveWithFallback(main, getTableEdit(main.state).active?.tableFrom, tableFromHint)
-  const from = resolved?.lineFrom ?? tableFromHint
-  const to = resolved?.model.tableTo ?? main.state.doc.length
-  openContextMenu({
-    x,
-    y,
-    items: buildContextMenu(main, {
-      kind: 'table-cell',
-      pos: from,
-      lineFrom: from,
-      lineTo: to,
-      table: { from, to, row, col }
-    })
-  })
-}
-
-// ---- nested view mount -------------------------------------------------------
-
-function mountCellEditor(
-  td: HTMLElement,
-  cellText: string,
-  theme: ThemeName,
-  main: EditorView,
-  caret: number
-): EditorView {
-  td.classList.add('cm-md-table-cell-editing')
-  td.textContent = ''
-  const nested = new EditorView({
-    state: EditorState.create({
-      doc: cellText,
-      extensions: [
-        markdown({ extensions: [GFM], addKeymap: false, pasteURLAsLink: false }),
-        // P09 live-preview rules inside the cell — same decoration pipeline
-        // (injected via setNestedPreviewField — see top of file).
-        nestedPreviewField,
-        livePreviewConfigFacet.of({
-          theme,
-          baseDir: '',
-          imageEpoch: 0,
-          linkEpoch: 0,
-          mode: 'live',
-          focusMode: false,
-          typewriterMode: false
-        }),
-        nestedCellTheme,
-        EditorView.lineWrapping,
-        history(),
-        keymap.of([...cellKeymap(main), ...defaultKeymap, ...historyKeymap]),
-        // diag-P28 B1-gap: selection-leave auto-exit only fires on MAIN-editor
-        // selection changes. Clicks outside the editor (panels, other apps)
-        // blur the nested view without touching main selection — exit there
-        // too ("失焦即退场"). Deferred so a click that re-enters another cell
-        // (or a table handle) can restore focus first and cancel the exit.
-        EditorView.updateListener.of((u) => {
-          if (!u.focusChanged || u.view.hasFocus) return
-          setTimeout(() => {
-            // CM6 has no public isDestroyed (destroyed is a private field);
-            // a destroyed view's dom is detached from the document.
-            if (!main.dom.isConnected) return
-            if (!getTableEdit(main.state).active) return
-            if (main.hasFocus) return
-            const nv = activeNestedView()
-            if (nv && nv.hasFocus) return
-            const wrap = u.view.dom.closest?.('.cm-md-table-wrap')
-            const ae = document.activeElement
-            if (wrap && ae && ae !== document.body && wrap.contains(ae)) return
-            exitTableEdit(main, { select: 'none' })
-          }, 0)
-        }),
-        EditorView.domEventHandlers({
-          paste(e, v) {
-            const text = e.clipboardData?.getData('text/plain') ?? ''
-            if (text && (text.includes('\t') || text.includes('\n'))) {
-              e.preventDefault()
-              handleTsvPaste(main, text)
-              return true
-            }
-            return false
-          }
-        })
-      ]
-    }),
-    parent: td
-  })
-  ;(td as unknown as { __cellView?: EditorView }).__cellView = nested
-  ;(window as unknown as { __veloxTableCellView?: EditorView }).__veloxTableCellView = nested
-  nestedViewInstance = nested
-  const pos = Math.min(Math.max(caret, 0), nested.state.doc.length)
-  nested.dispatch({ selection: { anchor: pos }, scrollIntoView: false })
-  // UX-P28 F1 / diag-P28: defer focus until after CM6 inserts the widget DOM
-  // into the document (toDOM runs before insertion, so sync focus() is a
-  // silent no-op on a detached node). Multi-shot: microtask covers the common
-  // case (same task, right after DOM sync); the timeout backstops remount
-  // chains. tableEditLifecycle's self-heal listener covers any remaining gap.
-  const tryFocus = (): void => {
-    if (nested.dom.isConnected) nested.focus()
-  }
-  queueMicrotask(tryFocus)
-  setTimeout(tryFocus, 10)
-  return nested
-}
+/** Command callbacks injected into the nested session (cycle-break seam). */
+const tableNav: NestedNavFns = { move: moveCell, exit: exitTableEdit, tsv: handleTsvPaste }
 
 // ---- widget ------------------------------------------------------------------
 
@@ -732,19 +105,9 @@ function handleBtn(
   return btn
 }
 
-// ---- UX-P28: pending text handoff (correctness-critical) -------------------
-
-/**
- * When a widget is destroyed due to a rebuild (theme/colWidths/i18n change),
- * the pending nested text must survive the remount cycle. destroy() captures
- * the pending text into this handoff; mountCellEditor consumes it to seed the
- * new nested view. Without this, a race of destroy→toDOM→microtask-commit
- * would clobber the pending text with stale committed source.
- *
- * Handoff is one-shot: destroy sets it, mountCellEditor consumes and clears.
- */
-let pendingHandoff: { key: string; text: string } | null = null
-const handoffKey = (t: number, r: number, c: number) => `${t}:${r}:${c}`
+// ---- UX-P28: pending text handoff (correctness-critical) ---------------------
+// Producer/consumer pair lives in nestedSession (destroyHandoff/getHandoff) —
+// the destroy↔mount protocol must not be split apart. See nestedSession.ts.
 
 export class TableWidget extends BlockWidget {
   /** UX-P28: view reference set in toDOM, used by destroy for microtask dispatch. */
@@ -885,17 +248,11 @@ export class TableWidget extends BlockWidget {
       if (align) el.style.textAlign = align
       const isActive = active != null && active.row === uiRow && active.col === col
       if (isActive) {
-        // UX-P28 D1: consume pendingHandoff if this mount matches the handoff
-        // cell — the destroy→remount cycle preserves pending text this way.
-        let cellText = cell?.text ?? ''
-        if (pendingHandoff) {
-          const key = handoffKey(this.sourceFrom, active.row, active.col)
-          if (pendingHandoff.key === key) {
-            cellText = pendingHandoff.text
-            pendingHandoff = null
-          }
-        }
-        mountCellEditor(el, cellText, this.spec.theme, view, active.caret)
+        // UX-P28 D1: consume the pending handoff if this mount matches the
+        // handoff cell — the destroy→remount cycle preserves pending text.
+        const handoffText = getHandoff(handoffKey(this.sourceFrom, active.row, active.col))
+        const cellText = handoffText ?? (cell?.text ?? '')
+        mountCellEditor(el, cellText, this.spec.theme, view, active.caret, tableNav)
       } else {
         el.innerHTML = renderInlineCell(cell?.text ?? '')
         el.addEventListener('mousedown', (e) => {
@@ -1010,72 +367,9 @@ export class TableWidget extends BlockWidget {
   }
 
   destroy(dom: HTMLElement): void {
-    const cellEl = dom.querySelector('.cm-md-table-cell-editing')
-    const host = (cellEl ?? null) as HTMLElement | null
-    const maybe = host ? EditorView.findFromDOM(host) : null
-    if (maybe && host && host.contains(maybe.dom)) {
-      // UX-P28 D1: capture pending text BEFORE destroying the nested view.
-      // The handoff ensures the next mount (after rebuild) seeds with this
-      // text instead of the stale committed source — preventing the
-      // destroy→remount→commit→destroy→"old overwrites PRECIOUS" clobber.
-      //
-      // diag-P28: the handoff identity MUST be this widget's own active cell
-      // (spec.active + sourceFrom). Reading getTableEdit(view.state).active
-      // instead would point at the NEW cell on hops (state already moved)
-      // while `maybe` still holds the OLD cell's text — the handoff then
-      // seeds the hop TARGET with the source cell's text and the microtask
-      // clobbers the target's source with it.
-      const pendingText = escapeCell(maybe.state.doc.toString())
-      const view = this._view
-      const own = this.spec.active
-      const stateActive = view ? getTableEdit(view.state).active : null
-      // Hop (or re-target): activateCellAt/runTableOp already committed this
-      // cell's pending text in the same transaction and the new mount owns
-      // the session — skip handoff + microtask entirely.
-      const isRetarget =
-        stateActive != null &&
-        (stateActive.row !== own?.row || stateActive.col !== own?.col)
-      if (view && own && !isRetarget) {
-        const resolved = resolveWithFallback(view, this.sourceFrom, this.sourceFrom)
-        const cell = resolved?.model.cells[own.row]?.[own.col]
-        const key = handoffKey(this.sourceFrom, own.row, own.col)
-        // Only set handoff if pending differs from committed source.
-        if (cell && !isSentinelCell(cell) && pendingText !== cell.text) {
-          pendingHandoff = { key, text: pendingText }
-        }
-        // Microtask commit: runs after the CM6 update task completes.
-        // Commits pending text without clearing active (rebuild preserves session).
-        const capturedView = view
-        const capturedRow = own.row
-        const capturedCol = own.col
-        queueMicrotask(() => {
-          try {
-            const st = capturedView.state
-            const ed = getTableEdit(st)
-            if (!ed.active) return // Already cleared (product exit path).
-            // Only commit if the active cell still matches what we captured.
-            if (ed.active.row !== capturedRow || ed.active.col !== capturedCol) return
-            const r = resolveWithFallback(capturedView, ed.active.tableFrom, ed.active.tableFrom)
-            const c = r?.model.cells[capturedRow]?.[capturedCol]
-            if (!r || !c || isSentinelCell(c)) return
-            if (pendingText !== c.text) {
-              capturedView.dispatch({
-                changes: { from: c.from, to: c.to, insert: pendingText },
-                userEvent: 'input.table.cell'
-              })
-            }
-          } catch {
-            // View may be destroyed; no-op.
-          }
-        })
-      }
-      maybe.destroy()
-      if (nestedViewInstance === maybe) nestedViewInstance = null
-      const wv = (window as unknown as { __veloxTableCellView?: EditorView }).__veloxTableCellView
-      if (wv === maybe) {
-        ;(window as unknown as { __veloxTableCellView?: EditorView }).__veloxTableCellView = undefined
-      }
-    }
+    // UX-P28 D1 handoff protocol (both ends in nestedSession): capture pending
+    // text, stash one-shot handoff, schedule the microtask commit, tear down.
+    destroyHandoff(dom, this._view, this.spec.active, this.sourceFrom)
   }
 
   ignoreEvent(): boolean {
@@ -1128,7 +422,7 @@ const tableTestHook = {
     }[kind]
     if (!table) return false
     // wave③: drive the SAME userEvents as product paths so dispatch-layer
-    // feedback (structure toasts) is exercised end-to-end by probes too.
+    // feedback (structure toasts) are exercised end-to-end by probes too.
     const userEvent =
       ({
         insertRow: 'input.table.insertRow',
