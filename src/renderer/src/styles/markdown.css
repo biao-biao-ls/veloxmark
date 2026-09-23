@@ -737,9 +737,10 @@
 .cm-md-table-wrap {
   position: relative;
   margin: 0 var(--editor-gutter);
-  /* F05: keep block widgets inside the same content column as prose
-     (var(--editor-max-width) is px when set, 100% when prefs say 0). */
-  max-width: var(--editor-max-width);
+  /* F05/5B: same column as prose — column width is owned by .cm-content
+     (var(--editor-max-width)); widgets align via margin: 0 var(--editor-gutter).
+     Deliberately NO max-width here: a % would resolve against the content
+     column and shrink tables below it once the soft cap applies. */
   overflow-x: auto;
   cursor: pointer;
   /* UX-P28 F3: constant left gutter for in-cell absolute handles.

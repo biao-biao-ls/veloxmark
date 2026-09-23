@@ -121,14 +121,16 @@ export const DEFAULT_PREFERENCES: Preferences = {
   editorFontFamily: DEFAULT_FONT_STACK,
   editorFontSize: 16,
   editorLineHeight: 1.6,
-  // F05: new installs get a readable 800px content column. Existing
-  // profiles that stored 0 keep full-width — sanitizePreferences spreads
-  // raw over these defaults, so an explicit 0 in storage still wins.
+  // F05/5B: new installs get a readable 800px content column. Stored 0
+  // means the auto-fit soft cap (min(90%, 1200px)) — sanitizePreferences
+  // spreads raw over these defaults, so an explicit value in storage wins.
   editorMaxWidth: 800,
   typingAssistsEnabled: true,
   wrapBareUrlOnPaste: true,
   pasteHtmlToMd: true,
-  showLineNumbers: true,
+  // 5B (behavior change): line numbers are opt-in — default off for a quiet
+  // reading column. Stored explicit true keeps the gutter.
+  showLineNumbers: false,
   restoreLastSession: true,
   sidebarDefaultOpen: true,
   attachmentDirName: 'assets',
@@ -232,7 +234,7 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
     typingAssistsEnabled: p.typingAssistsEnabled !== false,
     wrapBareUrlOnPaste: p.wrapBareUrlOnPaste !== false,
     pasteHtmlToMd: p.pasteHtmlToMd !== false,
-    showLineNumbers: p.showLineNumbers !== false,
+    showLineNumbers: p.showLineNumbers === true,
     restoreLastSession: p.restoreLastSession !== false,
     sidebarDefaultOpen: p.sidebarDefaultOpen !== false,
     // A path separator here would let a pref escape the document directory.
@@ -350,7 +352,9 @@ export function applyPreferencesCssVars(p: Preferences = preferences): void {
   root.style.setProperty('--editor-line-height', String(p.editorLineHeight))
   root.style.setProperty(
     '--editor-max-width',
-    p.editorMaxWidth > 0 ? `${p.editorMaxWidth}px` : '100%'
+    // 5B: 0 = auto-fit soft cap. Keep the expression in sync with the
+    // --editor-max-width default in styles/tokens.css (pre-injection value).
+    p.editorMaxWidth > 0 ? `${p.editorMaxWidth}px` : 'min(90%, 1200px)'
   )
 }
 

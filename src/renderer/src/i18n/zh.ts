@@ -205,7 +205,7 @@ export const ZH: Record<string, string> = {
   'prefs.lineHeight': '行高',
   'prefs.lineHeightUnit': '\u500d\uff081.0\u20133.0\uff09',
   'prefs.contentWidth': '内容列宽',
-  'prefs.widthUnit': 'px（0 = 自动/全宽）',
+  'prefs.widthUnit': 'px（0 = 自适应软上限）',
   'prefs.editing': '编辑',
   'prefs.typingAssists': '输入辅助（列表、标题、粘贴转换）',
   'prefs.wrapUrl': '将粘贴的 URL 包装为 <url>',

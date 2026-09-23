@@ -207,7 +207,7 @@ export const EN: Record<string, string> = {
   'prefs.lineHeight': 'Line height',
   'prefs.lineHeightUnit': '\u00d7 (1.0\u20133.0)',
   'prefs.contentWidth': 'Content column width',
-  'prefs.widthUnit': 'px (0 = auto / full width)',
+  'prefs.widthUnit': 'px (0 = auto-fit, soft cap)',
   'prefs.editing': 'Editing',
   'prefs.typingAssists': 'Typing assists (lists, headings, paste transforms)',
   'prefs.wrapUrl': 'Wrap pasted URLs as <url>',

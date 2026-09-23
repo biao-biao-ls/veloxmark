@@ -55,8 +55,10 @@
   /* Content column cap. :root is the ONLY stylesheet declaration point; the
      P03 preferences store (applyPreferencesCssVars) additionally writes an
      inline value on documentElement at runtime — that inline write is the
-     sanctioned preference channel exception, not a second declaration. */
-  --editor-max-width: 100%;
+     sanctioned preference channel exception, not a second declaration.
+     5B: this default is the auto-fit soft cap (prefs value 0). Keep the
+     expression in sync with the 0-branch in applyPreferencesCssVars. */
+  --editor-max-width: min(90%, 1200px);
   /* F01/F03/F06: single source for editor side gutter. theme.ts .cm-line
      and block-level insets (table/code/callout) all consume this variable,
      so prose and blocks stay aligned by construction. F06 finalized the
