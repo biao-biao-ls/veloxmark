@@ -349,10 +349,36 @@
 .outline-item.outline-active {
   color: var(--accent);
   font-weight: 600;
+  /* 5D/D2: Typora-style accent bar. inset shadow, not border-left — a border
+     participates in the box model and shifts text on hover/active jitter. */
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .outline-l1 {
   font-weight: 600;
+}
+
+/* 5D/D1: one --space-3 step per heading level below h1. Replaces the old
+   inline bare-px paddingLeft on the button (Outline.tsx) — later rule wins
+   over .outline-item's padding shorthand at equal specificity. */
+.outline-l2 {
+  padding-left: calc(var(--space-3) * 2);
+}
+
+.outline-l3 {
+  padding-left: calc(var(--space-3) * 3);
+}
+
+.outline-l4 {
+  padding-left: calc(var(--space-3) * 4);
+}
+
+.outline-l5 {
+  padding-left: calc(var(--space-3) * 5);
+}
+
+.outline-l6 {
+  padding-left: calc(var(--space-3) * 6);
 }
 
 /* ---- sidebar resize handle (P03 width persistence) -------------------------- */

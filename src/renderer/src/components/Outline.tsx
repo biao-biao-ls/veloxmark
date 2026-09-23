@@ -31,7 +31,6 @@ export default function Outline({
           <button
             key={`${item.pos}-${i}`}
             className={`outline-item outline-l${item.level}${activePos === item.pos ? ' outline-active' : ''}`}
-            style={{ paddingLeft: 12 + (item.level - 1) * 14 }}
             onClick={() => onSelect(item.pos)}
             title={item.text}
           >
