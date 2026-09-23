@@ -1,8 +1,8 @@
-import { clipboard, ipcMain, net, shell } from 'electron'
+import { clipboard, ipcMain, net } from 'electron'
 import { copyFile, mkdir, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, isAbsolute, join, relative, sep } from 'node:path'
-import type { ImageSaveOptions, SaveClipboardImageResult } from '../shared/api'
-import type { GetWindow } from './index'
+import { IpcChannels, type ImageSaveOptions, type SaveClipboardImageResult } from '../shared/api'
+import type { GetWindow } from './getWindow'
 
 /**
  * Image domain IPC (P05).
@@ -12,7 +12,6 @@ import type { GetWindow } from './index'
  *   directory) or a copy under assets (outside it).
  * - `image:downloadRemote` — remote URL → file under assets; falls back to the
  *   URL so a network failure never blocks the paste.
- * - `shell:showItemInFolder` — reveal an image in the OS file manager.
  *
  * The renderer owns the policy decisions (rename mode, whether outside files
  * are copied at all); this module only executes them and keeps the on-disk
@@ -83,7 +82,7 @@ function extFromContentType(contentType: string | null): string {
 
 export function registerImageIpc(): void {
   ipcMain.handle(
-    'image:saveClipboard',
+    IpcChannels.imageSaveClipboard,
     async (_e, baseDir: string, options: ImageSaveOptions): Promise<SaveClipboardImageResult | null> => {
       const image = clipboard.readImage()
       if (image.isEmpty()) return null
@@ -95,7 +94,7 @@ export function registerImageIpc(): void {
   )
 
   ipcMain.handle(
-    'image:importLocalFile',
+    IpcChannels.imageImportLocalFile,
     async (_e, baseDir: string, filePath: string, options: ImageSaveOptions): Promise<string> => {
       if (isInside(baseDir, filePath)) return toMarkdownRel(baseDir, filePath)
       if (!options.copyExternal) return filePath // reference in place
@@ -112,7 +111,7 @@ export function registerImageIpc(): void {
   )
 
   ipcMain.handle(
-    'image:downloadRemote',
+    IpcChannels.imageDownloadRemote,
     async (_e, baseDir: string, url: string, options: ImageSaveOptions): Promise<string> => {
       try {
         const res = await net.fetch(url)
@@ -136,10 +135,6 @@ export function registerImageIpc(): void {
       }
     }
   )
-
-  ipcMain.handle('shell:showItemInFolder', (_e, filePath: string) => {
-    shell.showItemInFolder(filePath)
-  })
 }
 
 // ---- image change broadcast --------------------------------------------------
@@ -157,7 +152,7 @@ export function queueImageChange(getWindow: GetWindow, absPath: string): void {
     imageFlushTimer = null
     const win = getWindow()
     if (win && !win.isDestroyed()) {
-      for (const p of pendingImageChanges) win.webContents.send('image:changed', p)
+      for (const p of pendingImageChanges) win.webContents.send(IpcChannels.imageChanged, p)
     }
     pendingImageChanges.clear()
   }, 200)

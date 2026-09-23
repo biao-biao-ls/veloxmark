@@ -1,7 +1,8 @@
 /**
- * Single source of truth for the preload bridge and IPC payload types.
- * Consumed by electron/preload.ts, electron/ipc/* and the renderer's
- * env.d.ts — do not redeclare these shapes anywhere else.
+ * Single source of truth for the preload bridge, IPC payload types and IPC
+ * channel names. Consumed by electron/preload.ts, electron/ipc/* and the
+ * renderer's env.d.ts — do not redeclare these shapes (or channel strings)
+ * anywhere else.
  */
 
 export interface DirNode {
@@ -171,6 +172,97 @@ export interface LinkResolveResult {
   anchor?: string
 }
 
+// ---- IPC channel names (2.20) ------------------------------------------------
+// The only place channel strings live — preload and ipc/* take values from
+// here, so renaming a channel is a one-line change both processes pick up.
+// Keys are `domainAction` camelCase derived from the `domain:action` value.
+// Push channels (main → renderer) are marked; everything else is
+// invoke (handle) or send (on). Menu dispatch is dynamic (`menu:<id>`) — use
+// menuChannel(id) instead of a table entry.
+
+export const IpcChannels = {
+  // dialog:
+  dialogOpenFile: 'dialog:openFile',
+  dialogOpenFolder: 'dialog:openFolder',
+  dialogSaveFile: 'dialog:saveFile',
+  // file:
+  fileCreate: 'file:create',
+  fileMkdir: 'file:mkdir',
+  fileDelete: 'file:delete',
+  fileRename: 'file:rename',
+  filePathExists: 'file:pathExists',
+  fileRead: 'file:read',
+  fileWrite: 'file:write',
+  fileWriteBase64: 'file:writeBase64',
+  fileResolveImageSrc: 'file:resolveImageSrc',
+  // path:
+  pathMove: 'path:move',
+  // link:
+  linkResolve: 'link:resolve',
+  // folder:
+  folderList: 'folder:list',
+  folderWatch: 'folder:watch',
+  folderUnwatch: 'folder:unwatch',
+  folderSetOptions: 'folder:setOptions',
+  /** push */
+  folderTree: 'folder:tree',
+  // shell:
+  shellShowItemInFolder: 'shell:showItemInFolder',
+  shellOpenExternal: 'shell:openExternal',
+  // export:
+  exportHtml: 'export:html',
+  exportPdf: 'export:pdf',
+  exportReadImageAsDataUrl: 'export:readImageAsDataUrl',
+  // image:
+  imageSaveClipboard: 'image:saveClipboard',
+  imageImportLocalFile: 'image:importLocalFile',
+  imageDownloadRemote: 'image:downloadRemote',
+  /** push */
+  imageChanged: 'image:changed',
+  // draft:
+  draftWrite: 'draft:write',
+  draftDiscard: 'draft:discard',
+  draftList: 'draft:list',
+  // search:
+  searchRun: 'search:run',
+  searchReplace: 'search:replace',
+  /** push */
+  searchResults: 'search:results',
+  // clipboard:
+  clipboardRead: 'clipboard:read',
+  clipboardWrite: 'clipboard:write',
+  clipboardReadHtml: 'clipboard:readHtml',
+  clipboardWriteHtml: 'clipboard:writeHtml',
+  clipboardHasImage: 'clipboard:hasImage',
+  clipboardWriteImage: 'clipboard:writeImage',
+  // window:
+  windowMinimize: 'window:minimize',
+  windowMaximizeRestore: 'window:maximize-restore',
+  windowClose: 'window:close',
+  windowToggleDevTools: 'window:toggleDevTools',
+  windowZoom: 'window:zoom',
+  // app:
+  appSetState: 'app:setState',
+  appSetRecentFiles: 'app:setRecentFiles',
+  appSetMenuCheckedIds: 'app:setMenuCheckedIds',
+  appSetLanguage: 'app:setLanguage',
+  appCloseResponse: 'app:closeResponse',
+  appRendererReady: 'app:rendererReady',
+  /** push */
+  appQueryClose: 'app:queryClose',
+  /** push */
+  appOpenPath: 'app:openPath',
+  /** push */
+  appOpenFolder: 'app:openFolder',
+  /** push */
+  appFullScreen: 'app:fullScreen'
+} as const
+
+/** Menu dispatch channel for a command id or fixed menu id: `menu:<id>`. */
+export function menuChannel(id: string): string {
+  return `menu:${id}`
+}
+
 /** Shape of the object preload exposes as `window.api`. */
 export interface RendererApi {
   platform: string
@@ -270,6 +362,7 @@ export interface RendererApi {
   onOpenPath(callback: (filePath: string) => void): () => void
   onOpenFolder(callback: (folderPath: string) => void): () => void
   onFullScreen(callback: (fullScreen: boolean) => void): () => void
-  /** Menu dispatch; payload args are channel-specific (e.g. openRecent path). */
-  onMenu(channel: string, callback: (...args: string[]) => void): () => void
+  /** Menu dispatch for a command id or fixed menu id (subscribes to `menu:<id>`
+   *  via menuChannel); payload args are channel-specific (e.g. openRecent path). */
+  onMenu(id: string, callback: (...args: string[]) => void): () => void
 }

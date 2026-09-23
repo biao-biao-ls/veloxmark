@@ -1,57 +1,26 @@
-import { clipboard, ipcMain, nativeImage, shell, type BrowserWindow } from 'electron'
-import { basename } from 'node:path'
-import type { AppWindowState } from '../shared/api'
-import type { GetWindow } from './index'
+import { ipcMain } from 'electron'
+import { IpcChannels } from '../shared/api'
+import type { GetWindow } from './getWindow'
 
+/** Zoom helper — also used by the macOS native menu (menu/darwin.ts). */
 export function zoomBy(getWindow: GetWindow, delta: number | 'reset'): void {
   const contents = getWindow()?.webContents
   if (!contents) return
   contents.setZoomLevel(delta === 'reset' ? 0 : contents.getZoomLevel() + delta)
 }
 
+/** Window domain IPC — window chrome controls. */
 export function registerWindowIpc(getWindow: GetWindow): void {
-  ipcMain.on('window:minimize', () => getWindow()?.minimize())
-  ipcMain.on('window:maximize-restore', () => {
+  ipcMain.on(IpcChannels.windowMinimize, () => getWindow()?.minimize())
+  ipcMain.on(IpcChannels.windowMaximizeRestore, () => {
     const win = getWindow()
     if (!win) return
     win.isMaximized() ? win.unmaximize() : win.maximize()
   })
-  ipcMain.on('window:close', () => getWindow()?.close())
-  ipcMain.on('window:toggleDevTools', () => getWindow()?.webContents.toggleDevTools())
-  ipcMain.on('window:zoom', (_e, action: 'in' | 'out' | 'reset') => {
+  ipcMain.on(IpcChannels.windowClose, () => getWindow()?.close())
+  ipcMain.on(IpcChannels.windowToggleDevTools, () => getWindow()?.webContents.toggleDevTools())
+  ipcMain.on(IpcChannels.windowZoom, (_e, action: 'in' | 'out' | 'reset') => {
     if (action === 'reset') zoomBy(getWindow, 'reset')
     else zoomBy(getWindow, action === 'in' ? 0.5 : -0.5)
-  })
-
-  ipcMain.handle('clipboard:read', () => clipboard.readText())
-  ipcMain.handle('clipboard:write', (_e, text: string) => clipboard.writeText(text))
-  // P19: menu Edit>Paste needs the HTML flavor (browsers put both on the clipboard).
-  ipcMain.handle('clipboard:readHtml', () => clipboard.readHTML())
-  // P19 e2e + P20 rich copy: place an HTML flavor alongside plain text.
-  ipcMain.handle('clipboard:writeHtml', (_e, html: string, text: string) => {
-    clipboard.write({ text: String(text ?? ''), html: String(html ?? '') })
-  })
-  // P05: cheap bitmap probe so the menu Paste path can skip the image flow
-  // (and any Save As prompt) when the clipboard only holds text.
-  ipcMain.handle('clipboard:hasImage', () => !clipboard.readImage().isEmpty())
-  // P16: Mermaid "Copy Image" — data-URL bitmap onto the OS clipboard.
-  ipcMain.handle('clipboard:writeImage', (_e, dataUrl: string) => {
-    const img = nativeImage.createFromDataURL(dataUrl)
-    if (!img.isEmpty()) clipboard.write({ image: img })
-  })
-  // P17: external links — http/https only (mailto: & friends stay in-app tips).
-  ipcMain.handle('shell:openExternal', (_e, url: string) => {
-    if (!/^https?:\/\//i.test(String(url ?? ''))) return false
-    void shell.openExternal(url)
-    return true
-  })
-
-  // Renderer -> main state sync so the OS window title tracks the document.
-  ipcMain.handle('app:setState', (_e, state: AppWindowState) => {
-    const win = getWindow()
-    if (win) {
-      const name = state.filePath ? basename(state.filePath) : 'Untitled'
-      win.setTitle(`${state.dirty ? '• ' : ''}${name} - VeloxMark`)
-    }
   })
 }

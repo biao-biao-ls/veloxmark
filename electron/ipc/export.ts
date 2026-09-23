@@ -1,7 +1,7 @@
 import { BrowserWindow, app, ipcMain } from 'electron'
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import { extname, isAbsolute, join, normalize } from 'node:path'
-import type { PdfExportOptions } from '../shared/api'
+import { IpcChannels, type PdfExportOptions } from '../shared/api'
 
 /**
  * Export domain IPC (P04).
@@ -30,13 +30,13 @@ function escapeHtml(text: string): string {
 }
 
 export function registerExportIpc(): void {
-  ipcMain.handle('export:html', async (_e, targetPath: string, html: string) => {
+  ipcMain.handle(IpcChannels.exportHtml, async (_e, targetPath: string, html: string) => {
     await writeFile(targetPath, html, 'utf-8')
     return true
   })
 
   ipcMain.handle(
-    'export:pdf',
+    IpcChannels.exportPdf,
     async (_e, targetPath: string, html: string, options: PdfExportOptions) => {
       // Hidden window: printToPDF acts on a webContents, and a data: URL would
       // hit Chromium's URL size limits on large documents — use a temp file.
@@ -84,7 +84,7 @@ export function registerExportIpc(): void {
     }
   )
 
-  ipcMain.handle('export:readImageAsDataUrl', async (_e, dir: string, src: string) => {
+  ipcMain.handle(IpcChannels.exportReadImageAsDataUrl, async (_e, dir: string, src: string) => {
     const abs = normalize(isAbsolute(src) ? src : join(dir || '.', src))
     const mime = MIME_BY_EXT[extname(abs).toLowerCase()] ?? 'application/octet-stream'
     const buf = await readFile(abs)

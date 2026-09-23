@@ -2,7 +2,7 @@ import { app, ipcMain } from 'electron'
 import { createHash } from 'node:crypto'
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { DraftListItem, DraftRecord } from '../shared/api'
+import { IpcChannels, type DraftListItem, type DraftRecord } from '../shared/api'
 
 /**
  * P12 crash-recovery drafts (main-process storage).
@@ -56,14 +56,14 @@ function scheduleWrite(key: string, rec: DraftRecord): void {
 }
 
 export function registerDraftsIpc(): void {
-  ipcMain.handle('draft:write', (_e, path: string | null, content: string) => {
+  ipcMain.handle(IpcChannels.draftWrite, (_e, path: string | null, content: string) => {
     const key = keyOf(path)
     scheduleWrite(key, { path, content, mtime: Date.now() })
     // Pending-timer model: acknowledge immediately; the write lands ≤ throttle.
     return true
   })
 
-  ipcMain.handle('draft:discard', async (_e, path: string | null) => {
+  ipcMain.handle(IpcChannels.draftDiscard, async (_e, path: string | null) => {
     const key = keyOf(path)
     pending.delete(key)
     const timer = timers.get(key)
@@ -75,7 +75,7 @@ export function registerDraftsIpc(): void {
     return true
   })
 
-  ipcMain.handle('draft:list', async (): Promise<DraftListItem[]> => {
+  ipcMain.handle(IpcChannels.draftList, async (): Promise<DraftListItem[]> => {
     // Flush any pending writes so a list right after edits sees fresh content.
     for (const [key, timer] of [...timers]) {
       clearTimeout(timer)

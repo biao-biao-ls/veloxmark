@@ -2,9 +2,9 @@ import { ipcMain } from 'electron'
 import { watch, type FSWatcher } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { basename, isAbsolute, join } from 'node:path'
-import type { DirNode, FolderScanOptions } from '../shared/api'
+import { IpcChannels, type DirNode, type FolderScanOptions } from '../shared/api'
 import { IMAGE_FILE_EXT, queueImageChange, stopImageChangeBroadcast } from './image'
-import type { GetWindow } from './index'
+import type { GetWindow } from './getWindow'
 
 const MD_EXT = /\.(md|markdown|mdown|txt)$/i
 const MAX_SCAN_DEPTH = 8
@@ -118,15 +118,15 @@ export function registerFolderIpc(getWindow: GetWindow): void {
     const tree = await listMarkdownTree(watchedFolder)
     const win = getWindow()
     if (win && !win.isDestroyed()) {
-      win.webContents.send('folder:tree', tree)
+      win.webContents.send(IpcChannels.folderTree, tree)
     }
   }
 
-  ipcMain.handle('folder:list', async (_e, dirPath: string): Promise<DirNode[]> => {
+  ipcMain.handle(IpcChannels.folderList, async (_e, dirPath: string): Promise<DirNode[]> => {
     return listMarkdownTree(dirPath)
   })
 
-  ipcMain.handle('folder:watch', async (e, dirPath: string, options?: FolderScanOptions) => {
+  ipcMain.handle(IpcChannels.folderWatch, async (e, dirPath: string, options?: FolderScanOptions) => {
     // A window owns exactly one watched folder; replace any previous watcher.
     stopFolderWatcher()
     setScanOptions(options)
@@ -158,7 +158,7 @@ export function registerFolderIpc(getWindow: GetWindow): void {
         stopFolderWatcher()
         const win = getWindow()
         if (win && !win.isDestroyed()) {
-          win.webContents.send('folder:tree', [])
+          win.webContents.send(IpcChannels.folderTree, [])
         }
       })
     } catch {
@@ -167,17 +167,17 @@ export function registerFolderIpc(getWindow: GetWindow): void {
     }
     // Send the current tree immediately so the renderer doesn't need a separate
     // list call when (re)subscribing.
-    e.sender.send('folder:tree', await listMarkdownTree(dirPath))
+    e.sender.send(IpcChannels.folderTree, await listMarkdownTree(dirPath))
     return true
   })
 
-  ipcMain.handle('folder:unwatch', () => {
+  ipcMain.handle(IpcChannels.folderUnwatch, () => {
     stopFolderWatcher()
     return true
   })
 
   // P07: preferences changed — swap the rules and refresh the live tree.
-  ipcMain.handle('folder:setOptions', (_e, options: FolderScanOptions) => {
+  ipcMain.handle(IpcChannels.folderSetOptions, (_e, options: FolderScanOptions) => {
     setScanOptions(options)
     void pushFolderTree()
   })

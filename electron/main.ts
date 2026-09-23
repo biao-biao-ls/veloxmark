@@ -1,17 +1,16 @@
-import { app, BrowserWindow, ipcMain, Menu, net, protocol, shell } from 'electron'
+import { app, BrowserWindow, net, protocol, shell } from 'electron'
 
 // NOTE: window uses frameless mode; all menus live in the renderer titlebar.
-// Exception: macOS keeps the native menu bar (see buildDarwinMenu) and native
+// Exception: macOS keeps the native menu bar (see menu/darwin.ts) and native
 // traffic lights via titleBarStyle: 'hiddenInset'.
-import { readFileSync, writeFileSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { registerAllIpc } from './ipc'
+import { registerAllIpc, type AppIpcDeps } from './ipc'
 import { stopFolderWatcher } from './ipc/folder'
-import { zoomBy } from './ipc/window'
 import { attachWindowStatePersistence, loadWindowState } from './ipc/window-state'
-import type { RecentFileItem } from './shared/api'
+import { initDarwinMenu, installApplicationMenu, setMenuCheckedIds, setRecentFiles, setUiLanguage } from './menu/darwin'
+import { IpcChannels, menuChannel } from './shared/api'
 
 // In dev the process lives inside Electron.app's bundle, so macOS would show
 // "Electron" in the menu bar; packaged builds get the name from CFBundleName.
@@ -48,7 +47,7 @@ async function deliverOpenPath(filePath: string): Promise<void> {
   } catch {
     // unreadable path — still attempt to open it as a file
   }
-  const channel = isDir ? 'app:openFolder' : 'app:openPath'
+  const channel = isDir ? IpcChannels.appOpenFolder : IpcChannels.appOpenPath
   if (rendererLoaded && mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send(channel, filePath)
   } else {
@@ -123,7 +122,7 @@ function createWindow(): void {
     if (!wKey || input.shift || input.alt) return
     if (!(input.meta || input.control)) return
     event.preventDefault()
-    win.webContents.send('menu:closeTabOrWindow')
+    win.webContents.send(menuChannel('closeTabOrWindow'))
   })
 
   // P12 close intercept: ask the renderer whether the close may proceed. The
@@ -135,7 +134,7 @@ function createWindow(): void {
     if (closeApproved) return
     e.preventDefault()
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('app:queryClose')
+      mainWindow.webContents.send(IpcChannels.appQueryClose)
     }
   })
   mainWindow.on('closed', () => {
@@ -147,7 +146,7 @@ function createWindow(): void {
   // lights (they auto-hide in fullscreen) — keep the renderer in sync.
   const notifyFullScreen = (): void => {
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('app:fullScreen', mainWindow.isFullScreen())
+      mainWindow.webContents.send(IpcChannels.appFullScreen, mainWindow.isFullScreen())
     }
   }
   mainWindow.on('enter-full-screen', notifyFullScreen)
@@ -171,379 +170,36 @@ function createWindow(): void {
   }
 }
 
-// Renderer pings once the editor is mounted; only then can openPath be applied.
-ipcMain.on('app:rendererReady', () => {
-  rendererLoaded = true
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('app:fullScreen', mainWindow.isFullScreen())
-  }
-  for (const { path, isDir } of queuedOpens.splice(0)) {
-    mainWindow?.webContents.send(isDir ? 'app:openFolder' : 'app:openPath', path)
-  }
-})
-
-// ---- application menu ------------------------------------------------------
-// Windows/Linux keep Menu.setApplicationMenu(null) — the renderer titlebar owns
-// all menus there. macOS is different: the menu bar is platform chrome, and a
-// null menu strips the system shortcuts (Cmd+Q/H/W/M, Edit roles like copy and
-// paste in plain <input>s). App-specific items forward to the channels the
-// renderer already listens on (see preload `onMenu`).
-function sendMenu(channel: string): void {
-  mainWindow?.webContents.send(channel)
-}
-
-// App-command accelerators for the macOS native menu. Labels and handlers
-// live in the renderer's command registry (src/renderer/src/commands.ts);
-// this stays a thin id→accelerator map, and every click forwards as
-// `menu:<id>` so the renderer dispatches through the same registry.
-const DARWIN_COMMAND_ACCELERATORS: Record<string, string> = {
-  newFile: 'Cmd+N',
-  openFile: 'Cmd+O',
-  openFolder: 'Cmd+Shift+O',
-  quickOpen: 'Cmd+P',
-  saveFile: 'Cmd+S',
-  saveFileAs: 'Cmd+Shift+S',
-  openPreferences: 'Cmd+,',
-  toggleTheme: 'Cmd+Shift+T',
-  // P08 writing modes. UX-P08: Typewriter Mode gains F9 parity with Focus (F8).
-  // Inline-format toggles intentionally have NO accelerator here: the CM6
-  // keymap owns Mod-B/I/E in the editor, and a native accelerator would race it.
-  toggleFocusMode: 'F8',
-  toggleTypewriterMode: 'F9',
-  toggleSourceMode: 'Cmd+/',
-  // P13 folder-wide search.
-  globalSearch: 'Cmd+Shift+F',
-  // P20 rich-text clipboard (no conflicting registered accelerator).
-  copyRichText: 'CmdOrCtrl+Shift+C',
-  // P23 format document — same chord as VS Code.
-  formatDocument: 'Shift+Alt+F'
-}
-
-// P03: recent files, pushed from the renderer (which owns the store) whenever
-// the list changes so the native File > Open Recent submenu stays in sync.
-let recentFiles: RecentFileItem[] = []
-
-// ---- P14: native-menu language ----------------------------------------------
-// The renderer resolves the language pref (system → zh/en) and pushes it here;
-// we persist to userData so the menu built at startup (before the renderer is
-// ready) already matches. Fallback chain: stored file → app locale → en.
-type UiLang = 'zh' | 'en'
-const NATIVE_MENU_STRINGS: Record<UiLang, Record<string, string>> = {
-  en: {
-    app: 'VeloxMark', services: 'Services', hide: 'Hide VeloxMark', hideOthers: 'Hide Others',
-    unhide: 'Show All', quit: 'Quit VeloxMark', preferences: 'Preferences…',
-    file: 'File', newFile: 'New', openFile: 'Open…', openFolder: 'Open Folder…',
-    quickOpen: 'Quick Open…', openRecent: 'Open Recent', noRecent: 'No Recent Files',
-    clearMenu: 'Clear Menu', save: 'Save', saveAs: 'Save As…', export: 'Export',
-    pdf: 'PDF…', html: 'HTML…', close: 'Close', closeTab: 'Close Tab', reopenClosedTab: 'Reopen Closed Tab', nextTab: 'Next Tab',
-    edit: 'Edit', cut: 'Cut', copy: 'Copy', paste: 'Paste', pasteMatch: 'Paste and Match Style',
-    del: 'Delete', selectAll: 'Select All',
-    copyRichText: 'Copy as Rich Text', copyAsHtml: 'Copy as HTML',
-    exportSelectionHtml: 'Export Selection as HTML…',
-    insertTable: 'Insert Table…', convertToTable: 'Convert Selection to Table…',
-    formatDocument: 'Format Document',
-    format: 'Format', bold: 'Bold', italic: 'Italic', inlineCode: 'Inline Code',
-    strikethrough: 'Strikethrough', highlight: 'Highlight',
-    view: 'View', toggleOutline: 'Toggle Outline', globalSearch: 'Search in Folder…',
-    focusMode: 'Focus Mode', typewriterMode: 'Typewriter Mode', sourceMode: 'Source Mode',
-    typingAssists: 'Typing Assists', wrapBareUrls: 'Wrap Bare URLs on Paste',
-    pasteHtmlMd: 'Convert HTML on Paste',
-    zoomIn: 'Zoom In', zoomOut: 'Zoom Out', zoomReset: 'Reset Zoom',
-    devTools: 'Toggle Developer Tools', toggleTheme: 'Toggle Theme',
-    insert: 'Insert', insertMermaidDiagram: 'Mermaid Diagram…',
-    insertCallout: 'Insert Callout…',
-    window: 'Window', minimize: 'Minimize', zoom: 'Zoom', fullscreen: 'Enter Full Screen',
-    front: 'Bring All to Front',
-    help: 'Help', showHelp: 'Markdown Syntax Reference'
-  },
-  zh: {
-    app: 'VeloxMark', services: '服务', hide: '隐藏 VeloxMark', hideOthers: '隐藏其他',
-    unhide: '全部显示', quit: '退出 VeloxMark', preferences: '偏好设置…',
-    file: '文件', newFile: '新建', openFile: '打开…', openFolder: '打开文件夹…',
-    quickOpen: '快速打开…', openRecent: '打开最近', noRecent: '暂无最近文件',
-    clearMenu: '清空列表', save: '保存', saveAs: '另存为…', export: '导出',
-    pdf: 'PDF…', html: 'HTML…', close: '关闭', closeTab: '关闭标签', reopenClosedTab: '重新打开已关标签', nextTab: '下一个标签',
-    edit: '编辑', cut: '剪切', copy: '复制', paste: '粘贴', pasteMatch: '粘贴并匹配样式',
-    del: '删除', selectAll: '全选',
-    copyRichText: '复制为富文本', copyAsHtml: '复制为 HTML',
-    exportSelectionHtml: '导出选区为 HTML…',
-    insertTable: '插入表格…', convertToTable: '选区转表格…',
-    formatDocument: '格式化文档',
-    format: '格式', bold: '加粗', italic: '斜体', inlineCode: '行内代码',
-    strikethrough: '删除线', highlight: '高亮',
-    view: '视图', toggleOutline: '切换大纲', globalSearch: '文件夹内搜索…',
-    focusMode: '专注模式', typewriterMode: '打字机模式', sourceMode: '源码模式',
-    typingAssists: '输入辅助', wrapBareUrls: '粘贴时包裹裸链接',
-    pasteHtmlMd: '粘贴 HTML 转 Markdown',
-    zoomIn: '放大', zoomOut: '缩小', zoomReset: '重置缩放',
-    devTools: '开发者工具', toggleTheme: '切换主题',
-    insert: '插入', insertMermaidDiagram: 'Mermaid 图表…',
-    insertCallout: '插入 Callout…',
-    window: '窗口', minimize: '最小化', zoom: '缩放', fullscreen: '进入全屏幕',
-    front: '前置所有窗口',
-    help: '帮助', showHelp: 'Markdown 语法参考'
-  }
-}
-
-function uiLanguagePath(): string {
-  return join(app.getPath('userData'), 'ui-language.json')
-}
-
-function readStoredUiLang(): UiLang | null {
-  try {
-    const raw = JSON.parse(readFileSync(uiLanguagePath(), 'utf8')) as { lang?: unknown }
-    return raw.lang === 'zh' || raw.lang === 'en' ? raw.lang : null
-  } catch {
-    return null
-  }
-}
-
-let uiLang: UiLang = 'en'
-
-function initUiLang(): void {
-  const stored = readStoredUiLang()
-  if (stored) {
-    uiLang = stored
-  } else {
-    uiLang = app.getLocale().toLowerCase().startsWith('zh') ? 'zh' : 'en'
-  }
-}
-
-function rebuildDarwinMenu(): void {
-  if (process.platform === 'darwin') Menu.setApplicationMenu(buildDarwinMenu())
-}
-
-function recentFilesSubmenu(S: Record<string, string>): Electron.MenuItemConstructorOptions[] {
-  if (recentFiles.length === 0) {
-    return [{ label: S.noRecent, enabled: false }]
-  }
-  const items: Electron.MenuItemConstructorOptions[] = recentFiles.map((item) => ({
-    label: basename(item.path),
-    toolTip: item.path,
-    // Missing paths stay listed but greyed out (parity with the in-app menu).
-    enabled: item.exists,
-    click: () => mainWindow?.webContents.send('menu:openRecent', item.path)
-  }))
-  items.push(
-    { type: 'separator' },
-    {
-      label: S.clearMenu,
-      click: () => mainWindow?.webContents.send('menu:clearRecent')
-    }
-  )
-  return items
-}
-
-/** Toggle ids currently ON, pushed by the renderer (app:setMenuCheckedIds). */
-let nativeCheckedIds = new Set<string>()
-
-function commandItem(id: string, label: string): Electron.MenuItemConstructorOptions {
-  // Preference-backed toggles render as checkboxes; renderer keeps the set live.
-  const checkbox = NATIVE_CHECKBOX_COMMANDS.has(id)
-  return {
-    label,
-    accelerator: DARWIN_COMMAND_ACCELERATORS[id],
-    type: checkbox ? 'checkbox' : undefined,
-    checked: checkbox ? nativeCheckedIds.has(id) : undefined,
-    click: () => sendMenu(`menu:${id}`)
-  }
-}
-
-/** Commands whose native-menu entry shows checkbox state (View menu toggles). */
-const NATIVE_CHECKBOX_COMMANDS = new Set([
-  'toggleFocusMode',
-  'toggleTypewriterMode',
-  'toggleSourceMode',
-  'toggleTypingAssists',
-  'toggleWrapBareUrlOnPaste',
-  'togglePasteHtmlToMd'
-])
-
-function buildDarwinMenu(): Menu {
-  const S = NATIVE_MENU_STRINGS[uiLang]
-  return Menu.buildFromTemplate([
-    {
-      label: S.app,
-      submenu: [
-        { role: 'about' },
-        { type: 'separator' },
-        { role: 'services', label: S.services },
-        { type: 'separator' },
-        { role: 'hide', label: S.hide },
-        { role: 'hideOthers', label: S.hideOthers },
-        { role: 'unhide', label: S.unhide },
-        { type: 'separator' },
-        commandItem('openPreferences', S.preferences),
-        { type: 'separator' },
-        { role: 'quit', label: S.quit }
-      ]
-    },
-    {
-      label: S.file,
-      submenu: [
-        commandItem('newFile', S.newFile),
-        commandItem('openFile', S.openFile),
-        commandItem('openFolder', S.openFolder),
-        commandItem('quickOpen', S.quickOpen),
-        { label: S.openRecent, submenu: recentFilesSubmenu(S) },
-        { type: 'separator' },
-        commandItem('saveFile', S.save),
-        commandItem('saveFileAs', S.saveAs),
-        { type: 'separator' },
-        // P26 tab commands. No accelerator entries: Cmd/Ctrl+W is routed by
-        // the before-input handler above (tab-aware), Cmd/Ctrl+Tab and
-        // Cmd+Shift+T are bound in the renderer command registry.
-        commandItem('closeTab', S.closeTab),
-        commandItem('reopenClosedTab', S.reopenClosedTab),
-        commandItem('nextTab', S.nextTab),
-        { type: 'separator' },
-        {
-          label: S.export,
-          submenu: [commandItem('exportPdf', S.pdf), commandItem('exportHtml', S.html)]
-        },
-        { type: 'separator' },
-        { role: 'close', label: S.close }
-      ]
-    },
-    {
-      label: S.edit,
-      submenu: [
-        // No undo/redo roles on purpose: a menu accelerator would intercept
-        // Cmd+Z/Y before CodeMirror sees them, and native undo fights CM6's
-        // transaction history. CM6's own keymap handles them in the editor.
-        { role: 'cut', label: S.cut },
-        { role: 'copy', label: S.copy },
-        { role: 'paste', label: S.paste },
-        { role: 'pasteAndMatchStyle', label: S.pasteMatch },
-        // P20 — rendered by the same command registry as the in-app menu.
-        commandItem('copyRichText', S.copyRichText),
-        commandItem('copyAsHtml', S.copyAsHtml),
-        { role: 'delete', label: S.del },
-        { role: 'selectAll', label: S.selectAll },
-        { type: 'separator' },
-        commandItem('exportSelectionHtml', S.exportSelectionHtml),
-        { type: 'separator' },
-        commandItem('insertTable', S.insertTable),
-        commandItem('convertToTable', S.convertToTable),
-        { type: 'separator' },
-        commandItem('formatDocument', S.formatDocument),
-        // P27/UX-P01: Format submenu — same command ids as the in-app Edit ▶
-        // Format menu and the CM6 keymap. No native accelerators on purpose:
-        // Mod-B/I/E belong to the editor keymap (see DARWIN_COMMAND_ACCELERATORS).
-        {
-          label: S.format,
-          submenu: [
-            commandItem('bold', S.bold),
-            commandItem('italic', S.italic),
-            commandItem('inlineCode', S.inlineCode),
-            commandItem('strikethrough', S.strikethrough),
-            commandItem('highlight', S.highlight)
-          ]
-        }
-      ]
-    },
-    {
-      label: S.view,
-      submenu: [
-        commandItem('toggleOutline', S.toggleOutline),
-        { type: 'separator' },
-        commandItem('globalSearch', S.globalSearch),
-        { type: 'separator' },
-        commandItem('toggleFocusMode', S.focusMode),
-        commandItem('toggleTypewriterMode', S.typewriterMode),
-        commandItem('toggleSourceMode', S.sourceMode),
-        { type: 'separator' },
-        // UX-P01-F8: typing-assist toggles — same registry as the in-app menu.
-        commandItem('toggleTypingAssists', S.typingAssists),
-        commandItem('toggleWrapBareUrlOnPaste', S.wrapBareUrls),
-        commandItem('togglePasteHtmlToMd', S.pasteHtmlMd),
-        { type: 'separator' },
-        // Zoom/devtools run in main directly — no renderer round-trip.
-        { label: S.zoomIn, accelerator: 'Cmd+Plus', click: () => zoomBy(getWindow, 0.5) },
-        { label: S.zoomOut, accelerator: 'Cmd+-', click: () => zoomBy(getWindow, -0.5) },
-        { label: S.zoomReset, accelerator: 'Cmd+0', click: () => zoomBy(getWindow, 'reset') },
-        { type: 'separator' },
-        {
-          label: S.devTools,
-          accelerator: 'Alt+Cmd+I',
-          click: () => mainWindow?.webContents.toggleDevTools()
-        },
-        { type: 'separator' },
-        commandItem('toggleTheme', S.toggleTheme)
-      ]
-    },
-    {
-      label: S.insert,
-      submenu: [
-        commandItem('insertMermaidDiagram', S.insertMermaidDiagram),
-        commandItem('insertCallout', S.insertCallout),
-        commandItem('insertTable', S.insertTable)
-      ]
-    },
-    {
-      label: S.window,
-      submenu: [
-        { role: 'minimize', label: S.minimize },
-        { role: 'zoom', label: S.zoom },
-        { type: 'separator' },
-        { role: 'togglefullscreen', label: S.fullscreen },
-        { type: 'separator' },
-        { role: 'front', label: S.front }
-      ]
-    },
-    {
-      label: S.help,
-      submenu: [commandItem('showHelp', S.showHelp)]
-    }
-  ])
-}
-
 app.whenReady().then(() => {
-  initUiLang()
-  registerAllIpc(getWindow)
+  initDarwinMenu(getWindow)
 
-  // P03: renderer pushes the recent-files list (with existence flags) so the
-  // native Open Recent submenu can rebuild; clearMenu flows back the other way.
-  ipcMain.handle('app:setRecentFiles', (_e, files: RecentFileItem[]) => {
-    recentFiles = Array.isArray(files) ? files : []
-    rebuildDarwinMenu()
-  })
-
-  // UX-P01-F8/P08: renderer pushes the ON-set of preference-backed toggles so
-  // the native View menu can render checkbox state.
-  ipcMain.handle('app:setMenuCheckedIds', (_e, ids: string[]) => {
-    nativeCheckedIds = new Set(Array.isArray(ids) ? ids.filter((x) => typeof x === 'string') : [])
-    rebuildDarwinMenu()
-  })
-
-  // P14: renderer resolved the language pref — persist + rebuild native menu.
-  ipcMain.handle('app:setLanguage', (_e, lang: string) => {
-    uiLang = lang === 'zh' ? 'zh' : 'en'
-    try {
-      writeFileSync(uiLanguagePath(), JSON.stringify({ lang: uiLang }), 'utf8')
-    } catch (err) {
-      console.error('[veloxmark] failed to persist ui language', err)
-    }
-    rebuildDarwinMenu()
-    return true
-  })
-
-  // P12: renderer verdict for the close query — allow re-runs close with the
-  // intercept flag set; deny is a no-op (the renderer already showed Cancel).
-  ipcMain.on('app:closeResponse', (_e, allow: boolean) => {
-    const win = getWindow()
-    if (!win || win.isDestroyed()) return
-    if (!allow) return
-    closeApproved = true
-    win.close()
-    closeApproved = false
-  })
-
-  if (process.platform === 'darwin') {
-    Menu.setApplicationMenu(buildDarwinMenu())
-  } else {
-    Menu.setApplicationMenu(null)
+  // App-domain behaviors for ipc/app.ts — lifecycle closures stay here, menu
+  // state syncs delegate to menu/darwin (ipc/* must not import menu/*).
+  const appDeps: AppIpcDeps = {
+    // Renderer pings once the editor is mounted; only then can openPath be applied.
+    onRendererReady: () => {
+      rendererLoaded = true
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(IpcChannels.appFullScreen, mainWindow.isFullScreen())
+      }
+      for (const { path, isDir } of queuedOpens.splice(0)) {
+        mainWindow?.webContents.send(isDir ? IpcChannels.appOpenFolder : IpcChannels.appOpenPath, path)
+      }
+    },
+    approveClose: () => {
+      const win = getWindow()
+      if (!win || win.isDestroyed()) return
+      closeApproved = true
+      win.close()
+      closeApproved = false
+    },
+    setRecentFiles,
+    setMenuCheckedIds,
+    setUiLanguage
   }
+  registerAllIpc(getWindow, appDeps)
+
+  installApplicationMenu()
 
   // macOS ignores the BrowserWindow `icon` option — the Dock icon comes from
   // the bundle icns when packaged, and from the Apple-grid master in dev

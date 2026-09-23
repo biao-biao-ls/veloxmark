@@ -39,7 +39,7 @@ export function useMenus({ isMac, recentItems, ...ops }: Args): {
   // native menu never sends simply stay silent.
   useEffect(() => {
     const offs = commandsRef.current.map((cmd) =>
-      window.api.onMenu(`menu:${cmd.id}`, () => commandsRef.current.find((c) => c.id === cmd.id)?.run())
+      window.api.onMenu(cmd.id, () => commandsRef.current.find((c) => c.id === cmd.id)?.run())
     )
     return () => offs.forEach((off) => off())
   }, [])

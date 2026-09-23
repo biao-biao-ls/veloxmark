@@ -1,13 +1,14 @@
 import { ipcMain } from 'electron'
 import { readFile, readdir, writeFile } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
-import type {
-  SearchFileResult,
-  SearchMatch,
-  SearchOptions,
-  SearchReplaceRequest,
-  SearchReplaceResult,
-  SearchRunPayload
+import {
+  IpcChannels,
+  type SearchFileResult,
+  type SearchMatch,
+  type SearchOptions,
+  type SearchReplaceRequest,
+  type SearchReplaceResult,
+  type SearchRunPayload
 } from '../shared/api'
 import { applyFolderScanOptions, isIgnoredPath } from './folder'
 
@@ -122,7 +123,7 @@ function matchFile(
 
 export function registerSearchIpc(): void {
   ipcMain.handle(
-    'search:run',
+    IpcChannels.searchRun,
     (
       e,
       rootPath: string,
@@ -151,7 +152,7 @@ export function registerSearchIpc(): void {
           }
           batch = []
           batchMatches = 0
-          if (!sender.isDestroyed()) sender.send('search:results', payload)
+          if (!sender.isDestroyed()) sender.send(IpcChannels.searchResults, payload)
         }
         for (const file of files) {
           let content: string
@@ -185,7 +186,7 @@ export function registerSearchIpc(): void {
     }
   )
 
-  ipcMain.handle('search:replace', async (_e, req: SearchReplaceRequest): Promise<SearchReplaceResult> => {
+  ipcMain.handle(IpcChannels.searchReplace, async (_e, req: SearchReplaceRequest): Promise<SearchReplaceResult> => {
     const empty = { replaced: 0, skipped: [], written: [] }
     try {
       if (!req || typeof req.rootPath !== 'string' || typeof req.pattern !== 'string') {
