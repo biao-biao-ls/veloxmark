@@ -5,6 +5,7 @@ import {
   hideMarkerWithSpace,
   listDepth,
   markCode,
+  orderedListIndex,
   markDel,
   markEm,
   markLink,
@@ -178,14 +179,19 @@ export function enterListMark(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
   if (!shown) {
     ctx.decos.push({ from: line.from, to: end, value: hide })
   }
-  // While the source marker is visible, suppress the CSS bullet so the two
-  // don't render side by side.
-  const depthClass = `cm-md-list cm-md-list-d${listDepth(node)}`
+  // While the source marker is visible, suppress the CSS marker so the two
+  // don't render side by side. Ordered lists carry a build-time renumber in
+  // data-vm-n (5A) — CSS counters can't reset across CM6's flat line DOM.
+  const ordered = /^\d/.test(nodeText(ctx.state, node))
+  const classes = ['cm-md-list', `cm-md-list-d${listDepth(node)}`]
+  if (shown) classes.push('cm-md-list-open')
+  if (ordered) classes.push('cm-md-list-ol')
   ctx.decos.push({
     from: line.from,
     to: line.from,
     value: Decoration.line({
-      class: shown ? `${depthClass} cm-md-list-open` : depthClass
+      class: classes.join(' '),
+      ...(ordered ? { attributes: { 'data-vm-n': String(orderedListIndex(node)) } } : {})
     })
   })
   return false
@@ -303,6 +309,14 @@ export function enterHorizontalRule(node: SyntaxNodeRef, ctx: BuildCtx): boolean
 // ---- task list checkboxes ---------------------------------------------------
 
 export function enterTaskMarker(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
+  // 5A: the checkbox replaces the bullet — kill the CSS marker on this line
+  // (Typora semantics: task items show a checkbox, never a dot).
+  const lineFrom = ctx.state.doc.lineAt(node.from).from
+  ctx.decos.push({
+    from: lineFrom,
+    to: lineFrom,
+    value: Decoration.line({ class: 'cm-md-task-item' })
+  })
   if (!ctx.touched(node.from, node.to)) {
     const text = nodeText(ctx.state, node)
     ctx.decos.push({

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { ensureSyntaxTree } from '@codemirror/language'
 import { markdown } from '@codemirror/lang-markdown'
+import { GFM } from '@lezer/markdown'
 import { Decoration } from '@codemirror/view'
 import { buildDecorations } from './build'
 import { DEFAULT_LIVE_PREVIEW_CONFIG, type LivePreviewConfig } from './config'
@@ -14,13 +15,17 @@ interface DecoHit {
   /** P28: widgets exposing a `lang` field (CodeLangChip) surface it here. */
   widgetLang: string | null
   block: boolean
+  /** 5A: line-decoration attributes (ordered-list renumber `data-vm-n`). */
+  attributes: Record<string, string> | null
 }
 
 function build(doc: string, selection?: number, config: Partial<LivePreviewConfig> = {}) {
   const state = EditorState.create({
     doc,
     ...(selection != null ? { selection: { anchor: selection } } : {}),
-    extensions: [markdown()]
+    // GFM mirrors editor/setup.ts — without it `[x]` parses as a Link and no
+    // TaskMarker node exists (5A).
+    extensions: [markdown({ extensions: [GFM] })]
   })
   ensureSyntaxTree(state, doc.length, 50000)
   const set = buildDecorations(state, { ...DEFAULT_LIVE_PREVIEW_CONFIG, ...config })
@@ -30,6 +35,7 @@ function build(doc: string, selection?: number, config: Partial<LivePreviewConfi
       class?: string
       widget?: { constructor: { name: string }; lang?: string }
       block?: boolean
+      attributes?: Record<string, string>
     }
     hits.push({
       from,
@@ -37,7 +43,8 @@ function build(doc: string, selection?: number, config: Partial<LivePreviewConfi
       className: spec.class,
       widgetName: spec.widget ? spec.widget.constructor.name : null,
       widgetLang: spec.widget ? (spec.widget.lang ?? null) : null,
-      block: spec.block === true
+      block: spec.block === true,
+      attributes: spec.attributes ?? null
     })
   })
   return { state, hits }
@@ -258,5 +265,75 @@ describe('P29 focused code-block hljs token marks', () => {
   it('source mode → no hljs marks anywhere', () => {
     const { hits } = build(DOC, DOC.indexOf('const x') + 3, { mode: 'source' })
     expect(hljsHits(hits)).toEqual([])
+  })
+})
+
+describe('5A list rendering', () => {
+  /** Line starts, excluding the phantom empty line after a trailing newline. */
+  const lineFroms = (doc: string): number[] => {
+    const res = [0]
+    for (let i = 0; i < doc.length; i++) {
+      if (doc[i] === '\n' && i < doc.length - 1) res.push(i + 1)
+    }
+    return res
+  }
+  const listLineAt = (hits: DecoHit[], pos: number) =>
+    hits.find((h) => h.from === pos && h.to === pos && h.className?.includes('cm-md-list'))
+
+  it('hides list markers and stamps depth classes (P09 hidden state)', () => {
+    const doc = '- one\n  - nested\n'
+    const { hits } = build(doc, doc.length - 1)
+    const [l1, l2] = lineFroms(doc)
+    // Top-level: hide '- ' and carry d1.
+    expect(hasHiddenRange(hits, l1, l1 + 2)).toBe(true)
+    expect(listLineAt(hits, l1)!.className).toContain('cm-md-list-d1')
+    // Nested: hide runs line.from → marker end (source indent included).
+    expect(hasHiddenRange(hits, l2, l2 + 4)).toBe(true)
+    expect(listLineAt(hits, l2)!.className).toContain('cm-md-list-d2')
+  })
+
+  it('ordered lists carry build-time renumber data-vm-n', () => {
+    const doc = '1. a\n1. b\n1. c\n'
+    const { hits } = build(doc, doc.length - 1)
+    const froms = lineFroms(doc)
+    expect(listLineAt(hits, froms[0])!.className).toContain('cm-md-list-ol')
+    expect(froms.map((p) => listLineAt(hits, p)!.attributes?.['data-vm-n'])).toEqual([
+      '1',
+      '2',
+      '3'
+    ])
+  })
+
+  it('nested ordered items renumber within their own list', () => {
+    const doc = '1. a\n   1. x\n   1. y\n1. b\n'
+    const { hits } = build(doc, doc.length - 1)
+    const froms = lineFroms(doc)
+    // Document order: outer 1, inner 1, inner 2, outer 2.
+    expect(froms.map((p) => listLineAt(hits, p)!.attributes?.['data-vm-n'])).toEqual([
+      '1',
+      '1',
+      '2',
+      '2'
+    ])
+    expect(listLineAt(hits, froms[0])!.className).toContain('cm-md-list-d1')
+    expect(listLineAt(hits, froms[1])!.className).toContain('cm-md-list-d2')
+  })
+
+  it('task lines get cm-md-task-item and a TaskWidget', () => {
+    // Trailing paragraph keeps the cursor off the task lines — touched lines
+    // reveal `[x]` source instead of the checkbox widget (P09).
+    const doc = '- [x] done\n- [ ] todo\n\nend\n'
+    const { hits } = build(doc, doc.indexOf('end'))
+    expect(hits.filter((h) => h.widgetName === 'TaskWidget').length).toBe(2)
+    for (const p of lineFroms(doc).slice(0, 2)) {
+      expect(hits.some((h) => h.from === p && h.className === 'cm-md-task-item')).toBe(true)
+    }
+  })
+
+  it('reveals the source marker when touched and drops the CSS marker (P09)', () => {
+    const doc = '- one\n'
+    const touched = build(doc, 1)
+    expect(hasHiddenRange(touched.hits, 0, 2)).toBe(false)
+    expect(listLineAt(touched.hits, 0)!.className).toContain('cm-md-list-open')
   })
 })

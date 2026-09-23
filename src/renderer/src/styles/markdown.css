@@ -185,45 +185,48 @@
   word-break: break-all;
 }
 
-/* lists */
+/* lists (5A) — indent + hanging marker.
+
+   Specificity note (same trap as F03): the EditorView theme rule
+   `.cm-line { padding: 0 var(--editor-gutter) }` is (0,2,0) and outranks bare
+   `.cm-md-list-dN` padding — the old depth ladder was dead CSS. The
+   `.cm-editor .cm-line.cm-md-list` (0,3,0) rule below owns padding-left;
+   depth classes only carry the --list-indent custom property (no conflict).
+   The marker sits in the hanging area (--list-indent minus its width); text
+   starts at the padding edge, so wrapped lines align with the first text
+   column for free. */
 
 .cm-md-list {
   position: relative;
 }
 
+.cm-editor .cm-line.cm-md-list {
+  --list-indent: 1.5em;
+  padding-left: calc(var(--editor-gutter) + var(--list-indent));
+}
+
+.cm-editor .cm-line.cm-md-list-d2 { --list-indent: 3.5em; }
+.cm-editor .cm-line.cm-md-list-d3 { --list-indent: 5.5em; }
+.cm-editor .cm-line.cm-md-list-d4 { --list-indent: 7.5em; }
+.cm-editor .cm-line.cm-md-list-d5 { --list-indent: 9.5em; }
+.cm-editor .cm-line.cm-md-list-d6 { --list-indent: 11.5em; }
+
 .cm-md-list::before {
   content: '•';
   color: var(--fg);
   position: absolute;
-  left: 34px;
+  left: calc(var(--editor-gutter) + var(--list-indent, 1.5em) - 1.5em);
 }
 
-.cm-md-list-d1 {
-  padding-top: 0.15em;
+/* 5A: ordered markers renumber at build time (data-vm-n from enterListMark). */
+.cm-md-list-ol::before {
+  content: attr(data-vm-n) '.';
 }
 
-.cm-md-list-d2 {
-  padding-left: 24px;
-}
-
-.cm-md-list-d3 {
-  padding-left: 48px;
-}
-
-.cm-md-list-d4 {
-  padding-left: 72px;
-}
-
-.cm-md-list-d5 {
-  padding-left: 96px;
-}
-
-.cm-md-list-d6 {
-  padding-left: 120px;
-}
-
-/* P09: source marker showing — drop the CSS bullet so they don't double up. */
-.cm-md-list-open::before {
+/* P09: source marker showing — drop the CSS marker so they don't double up.
+   5A: task lines never show a marker (the checkbox replaces the bullet). */
+.cm-md-list-open::before,
+.cm-md-list.cm-md-task-item::before {
   content: none;
 }
 

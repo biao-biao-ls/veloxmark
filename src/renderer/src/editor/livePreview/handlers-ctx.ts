@@ -59,9 +59,32 @@ export function nodeText(state: EditorState, node: SyntaxNodeRef): string {
 export function listDepth(node: SyntaxNodeRef): number {
   let depth = 0
   for (let p = node.node.parent; p; p = p.parent) {
-    if (p.name === 'List') depth++
+    // 5A: the parser emits BulletList/OrderedList — there is no generic
+    // 'List' node, so the old === 'List' check never matched and every item
+    // clamped to depth 1 (the d2–d6 ladder never fired).
+    if (p.name === 'BulletList' || p.name === 'OrderedList') depth++
   }
   return Math.min(Math.max(depth, 1), 6)
+}
+
+/**
+ * 5A: 1-based index of the ListItem owning this ListMark within its parent
+ * List — build-time renumbering for ordered lists. CSS counters can't do
+ * this: CM6 renders every line as a flat sibling under .cm-content, so
+ * nested lists never reset a counter.
+ */
+export function orderedListIndex(node: SyntaxNodeRef): number {
+  const item = node.node.parent
+  const list = item?.parent
+  if (!item || !list) return 1
+  let n = 0
+  for (let child = list.firstChild; child; child = child.nextSibling) {
+    if (child.name === 'ListItem') {
+      n++
+      if (child.from === item.from) return n
+    }
+  }
+  return Math.max(n, 1)
 }
 
 export function quoteDepth(node: SyntaxNodeRef): number {
