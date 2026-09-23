@@ -16,6 +16,8 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { NATIVE_MENU_STRINGS } from '../../../../electron/shared/menuStrings'
+import { CALLOUT_TYPES } from '../editor/livePreview/callout'
 import { EN } from './en'
 import { ZH } from './zh'
 
@@ -89,5 +91,74 @@ describe('i18n static references', () => {
       }
     }
     expect(unresolved, `unresolved t() keys: ${unresolved.join('; ')}`).toEqual([])
+  })
+})
+
+// ---- 3.18: dynamic-key registration -------------------------------------------
+// CLAUDE.md requires template-composed t() key families to be registered with a
+// guard. `calloutDefaultTitle` uses `t('callout.'+type)`; instead of a prefix
+// whitelist we assert the full family (CALLOUT_TYPES × callout.*) resolves.
+
+describe('callout.* dynamic key family (3.18)', () => {
+  it('callout.<type> resolves in EN and ZH for every CalloutType', () => {
+    const missing: string[] = []
+    for (const ty of CALLOUT_TYPES) {
+      const key = `callout.${ty}`
+      if (!(key in EN)) missing.push(`${key} (en)`)
+      if (!(key in ZH)) missing.push(`${key} (zh)`)
+    }
+    expect(missing, `unresolved callout.* keys: ${missing.join('; ')}`).toEqual([])
+  })
+})
+
+// ---- 3.17: third dictionary (darwin native menu strings) ----------------------
+// Same guards as EN/ZH above, applied to electron/shared/menuStrings.ts. The
+// source scan accepts unquoted `key:` entries (this dict's layout) and scans
+// each language map separately so cross-language repeats are not "dupes".
+
+describe('native menu strings (third dictionary, 3.17)', () => {
+  const menuSource = readFileSync(
+    fileURLToPath(new URL('../../../../electron/shared/menuStrings.ts', import.meta.url)),
+    'utf8'
+  )
+  const enSrc = menuSource.slice(menuSource.indexOf('  en: {'), menuSource.indexOf('  zh: {'))
+  const zhSrc = menuSource.slice(menuSource.indexOf('  zh: {'))
+
+  function menuKeyLiterals(source: string): string[] {
+    return [...source.matchAll(/^\s*'?([\w]+)'?:/gm)]
+      .map((m) => m[1])
+      .filter((k) => k !== 'en' && k !== 'zh')
+  }
+
+  it('zh and en define the same key set', () => {
+    const enKeys = Object.keys(NATIVE_MENU_STRINGS.en)
+    const zhKeys = Object.keys(NATIVE_MENU_STRINGS.zh)
+    const missingInZh = enKeys.filter((k) => !(k in NATIVE_MENU_STRINGS.zh))
+    const missingInEn = zhKeys.filter((k) => !(k in NATIVE_MENU_STRINGS.en))
+    expect(missingInZh, `missing in menuStrings zh: ${missingInZh.join(', ')}`).toEqual([])
+    expect(missingInEn, `missing in menuStrings en: ${missingInEn.join(', ')}`).toEqual([])
+  })
+
+  it('no duplicate key literals within either language map', () => {
+    for (const [lang, src] of [
+      ['en', enSrc],
+      ['zh', zhSrc]
+    ] as const) {
+      const keys = menuKeyLiterals(src)
+      const dupes = keys.filter((k, i) => keys.indexOf(k) !== i)
+      expect(dupes, `duplicate keys in menuStrings ${lang}: ${[...new Set(dupes)].join(', ')}`).toEqual([])
+    }
+  })
+
+  it('placeholders agree per key across languages', () => {
+    const mismatches: string[] = []
+    for (const [key, enValue] of Object.entries(NATIVE_MENU_STRINGS.en)) {
+      const zhValue = NATIVE_MENU_STRINGS.zh[key]
+      if (zhValue === undefined) continue // covered by the key-set test
+      if (placeholders(enValue) !== placeholders(zhValue)) {
+        mismatches.push(`${key} (en: {${placeholders(enValue)}} vs zh: {${placeholders(zhValue)}})`)
+      }
+    }
+    expect(mismatches, `placeholder drift: ${mismatches.join('; ')}`).toEqual([])
   })
 })

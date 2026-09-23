@@ -3,10 +3,11 @@
  *
  * Pure string logic, node-testable (vitest). Rendering decorations live in
  * handlers.ts (`enterCallout`) + calloutFold.ts; export mapping in
- * export/renderDoc.ts. The parser never touches i18n — display names come
- * from `calloutDefaultTitle`, which reads the active P14 language at call time.
+ * export/renderDoc/ (callout.ts helpers + block.ts assembly). The parser never touches i18n — display names come
+ * from `calloutDefaultTitle`, which reads the active P14 language at call
+ * time via `t('callout.'+type)` (3.18: titles single-sourced in i18n dict).
  */
-import { getLang } from '../../i18n'
+import { t } from '../../i18n'
 
 export type CalloutType =
   | 'note'
@@ -85,32 +86,9 @@ export const CALLOUT_ICON: Record<CalloutType, string> = {
   danger: '⛔'
 }
 
-/** Default display names per language (P14 i18n; zh is the docs' first版). */
-export const DEFAULT_CALLOUT_TITLES: Record<'zh' | 'en', Record<CalloutType, string>> = {
-  zh: {
-    note: '注意',
-    tip: '提示',
-    important: '重要',
-    warning: '警告',
-    caution: '谨慎',
-    info: '信息',
-    success: '成功',
-    danger: '危险'
-  },
-  en: {
-    note: 'Note',
-    tip: 'Tip',
-    important: 'Important',
-    warning: 'Warning',
-    caution: 'Caution',
-    info: 'Info',
-    success: 'Success',
-    danger: 'Danger'
-  }
-}
-
+/** Default display name — i18n `callout.*` keys are the single source (3.18). */
 export function calloutDefaultTitle(type: CalloutType): string {
-  return DEFAULT_CALLOUT_TITLES[getLang()][type]
+  return t('callout.' + type)
 }
 
 /**

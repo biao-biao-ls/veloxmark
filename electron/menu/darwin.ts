@@ -5,6 +5,7 @@ import type { GetWindow } from '../ipc/getWindow'
 import { zoomBy } from '../ipc/window'
 import { menuChannel, type RecentFileItem } from '../shared/api'
 import { DARWIN_COMMAND_ACCELERATORS } from '../shared/commandAccelerators'
+import { NATIVE_MENU_STRINGS } from '../shared/menuStrings'
 
 /**
  * macOS native menu bar (2.18, moved from main.ts).
@@ -51,63 +52,9 @@ export function setMenuCheckedIds(ids: string[]): void {
 // The renderer resolves the language pref (system → zh/en) and pushes it here;
 // we persist to userData so the menu built at startup (before the renderer is
 // ready) already matches. Fallback chain: stored file → app locale → en.
+// Labels: NATIVE_MENU_STRINGS moved to ../shared/menuStrings.ts (3.17, pure
+// data; alignment guard: src/renderer/src/i18n/i18n.test.ts).
 type UiLang = 'zh' | 'en'
-const NATIVE_MENU_STRINGS: Record<UiLang, Record<string, string>> = {
-  en: {
-    app: 'VeloxMark', services: 'Services', hide: 'Hide VeloxMark', hideOthers: 'Hide Others',
-    unhide: 'Show All', quit: 'Quit VeloxMark', preferences: 'Preferences…',
-    file: 'File', newFile: 'New', openFile: 'Open…', openFolder: 'Open Folder…',
-    quickOpen: 'Quick Open…', openRecent: 'Open Recent', noRecent: 'No Recent Files',
-    clearMenu: 'Clear Menu', save: 'Save', saveAs: 'Save As…', export: 'Export',
-    pdf: 'PDF…', html: 'HTML…', close: 'Close', closeTab: 'Close Tab', reopenClosedTab: 'Reopen Closed Tab', nextTab: 'Next Tab',
-    edit: 'Edit', cut: 'Cut', copy: 'Copy', paste: 'Paste', pasteMatch: 'Paste and Match Style',
-    del: 'Delete', selectAll: 'Select All',
-    copyRichText: 'Copy as Rich Text', copyAsHtml: 'Copy as HTML',
-    exportSelectionHtml: 'Export Selection as HTML…',
-    insertTable: 'Insert Table…', convertToTable: 'Convert Selection to Table…',
-    formatDocument: 'Format Document',
-    format: 'Format', bold: 'Bold', italic: 'Italic', inlineCode: 'Inline Code',
-    strikethrough: 'Strikethrough', highlight: 'Highlight',
-    view: 'View', toggleOutline: 'Toggle Outline', globalSearch: 'Search in Folder…',
-    focusMode: 'Focus Mode', typewriterMode: 'Typewriter Mode', sourceMode: 'Source Mode',
-    typingAssists: 'Typing Assists', wrapBareUrls: 'Wrap Bare URLs on Paste',
-    pasteHtmlMd: 'Convert HTML on Paste',
-    zoomIn: 'Zoom In', zoomOut: 'Zoom Out', zoomReset: 'Reset Zoom',
-    devTools: 'Toggle Developer Tools', toggleTheme: 'Toggle Theme',
-    insert: 'Insert', insertMermaidDiagram: 'Mermaid Diagram…',
-    insertCallout: 'Insert Callout…',
-    window: 'Window', minimize: 'Minimize', zoom: 'Zoom', fullscreen: 'Enter Full Screen',
-    front: 'Bring All to Front',
-    help: 'Help', showHelp: 'Markdown Syntax Reference'
-  },
-  zh: {
-    app: 'VeloxMark', services: '服务', hide: '隐藏 VeloxMark', hideOthers: '隐藏其他',
-    unhide: '全部显示', quit: '退出 VeloxMark', preferences: '偏好设置…',
-    file: '文件', newFile: '新建', openFile: '打开…', openFolder: '打开文件夹…',
-    quickOpen: '快速打开…', openRecent: '打开最近', noRecent: '暂无最近文件',
-    clearMenu: '清空列表', save: '保存', saveAs: '另存为…', export: '导出',
-    pdf: 'PDF…', html: 'HTML…', close: '关闭', closeTab: '关闭标签', reopenClosedTab: '重新打开已关标签', nextTab: '下一个标签',
-    edit: '编辑', cut: '剪切', copy: '复制', paste: '粘贴', pasteMatch: '粘贴并匹配样式',
-    del: '删除', selectAll: '全选',
-    copyRichText: '复制为富文本', copyAsHtml: '复制为 HTML',
-    exportSelectionHtml: '导出选区为 HTML…',
-    insertTable: '插入表格…', convertToTable: '选区转表格…',
-    formatDocument: '格式化文档',
-    format: '格式', bold: '加粗', italic: '斜体', inlineCode: '行内代码',
-    strikethrough: '删除线', highlight: '高亮',
-    view: '视图', toggleOutline: '切换大纲', globalSearch: '文件夹内搜索…',
-    focusMode: '专注模式', typewriterMode: '打字机模式', sourceMode: '源码模式',
-    typingAssists: '输入辅助', wrapBareUrls: '粘贴时包裹裸链接',
-    pasteHtmlMd: '粘贴 HTML 转 Markdown',
-    zoomIn: '放大', zoomOut: '缩小', zoomReset: '重置缩放',
-    devTools: '开发者工具', toggleTheme: '切换主题',
-    insert: '插入', insertMermaidDiagram: 'Mermaid 图表…',
-    insertCallout: '插入 Callout…',
-    window: '窗口', minimize: '最小化', zoom: '缩放', fullscreen: '进入全屏幕',
-    front: '前置所有窗口',
-    help: '帮助', showHelp: 'Markdown 语法参考'
-  }
-}
 
 function uiLanguagePath(): string {
   return join(app.getPath('userData'), 'ui-language.json')

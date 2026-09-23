@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_CALLOUT_TITLES, parseCalloutMarker } from './callout'
+import { CALLOUT_TYPES, calloutDefaultTitle, parseCalloutMarker } from './callout'
+import { setLang } from '../../i18n'
 
 describe('parseCalloutMarker', () => {
   it('parses bare [!NOTE] with no title and no fold', () => {
@@ -79,8 +80,11 @@ describe('parseCalloutMarker', () => {
     expect(m.markerText).toBe('[!NOTE]-')
   })
 
+  // 3.18: titles single-sourced in the i18n dict (callout.* keys) — these
+  // pins replace the former DEFAULT_CALLOUT_TITLES.zh value lock.
   it('zh default titles are the documented names', () => {
-    expect(DEFAULT_CALLOUT_TITLES.zh).toEqual({
+    setLang('zh')
+    expect(Object.fromEntries(CALLOUT_TYPES.map((ty) => [ty, calloutDefaultTitle(ty)]))).toEqual({
       note: '注意',
       tip: '提示',
       important: '重要',
@@ -89,6 +93,20 @@ describe('parseCalloutMarker', () => {
       info: '信息',
       success: '成功',
       danger: '危险'
+    })
+  })
+
+  it('en default titles are the documented names', () => {
+    setLang('en')
+    expect(Object.fromEntries(CALLOUT_TYPES.map((ty) => [ty, calloutDefaultTitle(ty)]))).toEqual({
+      note: 'Note',
+      tip: 'Tip',
+      important: 'Important',
+      warning: 'Warning',
+      caution: 'Caution',
+      info: 'Info',
+      success: 'Success',
+      danger: 'Danger'
     })
   })
 })

@@ -7,11 +7,12 @@
  * active language at call time through `t` / `getLang`.
  */
 import { useSyncExternalStore } from 'react'
+import { getPreferences, type LanguagePref } from '../preferences/store'
 import { EN } from './en'
 import { ZH } from './zh'
 
 export type Lang = 'zh' | 'en'
-export type LanguagePref = 'system' | 'zh' | 'en'
+export type { LanguagePref }
 export type Dict = Record<string, string>
 
 const DICTS: Record<Lang, Dict> = { en: EN, zh: ZH }
@@ -22,22 +23,10 @@ export function resolveLang(pref: LanguagePref): Lang {
   return nav.toLowerCase().startsWith('zh') ? 'zh' : 'en'
 }
 
-function langFromStorage(): Lang {
-  try {
-    const raw = JSON.parse(localStorage.getItem('veloxmark.preferences') ?? '{}') as {
-      language?: unknown
-    }
-    const pref =
-      raw.language === 'zh' || raw.language === 'en' || raw.language === 'system'
-        ? raw.language
-        : 'system'
-    return resolveLang(pref)
-  } catch {
-    return resolveLang('system')
-  }
-}
-
-let currentLang: Lang = langFromStorage()
+// 3.19: boot language resolves from the preferences store (single read source;
+// the store sanitizes `veloxmark.preferences` — missing/garbage → 'system',
+// same fallback as the former inline localStorage parse).
+let currentLang: Lang = resolveLang(getPreferences().language)
 const listeners = new Set<() => void>()
 
 export function getLang(): Lang {
