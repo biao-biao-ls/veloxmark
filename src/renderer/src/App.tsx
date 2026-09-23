@@ -9,7 +9,6 @@ import {
   foldKey,
   getFoldedKeys,
   headingAtLine,
-  restoreFolds,
   toggleFold
 } from './editor/livePreview/fold'
 import {
@@ -65,6 +64,8 @@ import { useWorkspaceTree } from './hooks/useWorkspaceTree'
 import { useAppTheme } from './hooks/useAppTheme'
 import { useExport } from './hooks/useExport'
 import { useMenus } from './hooks/useMenus'
+import { useFoldSync } from './hooks/useFoldSync'
+import { useSessionPersist } from './hooks/useSessionPersist'
 import { usePreferences, useSession } from './preferences/useStore'
 import {
   clearRecentFiles,
@@ -75,7 +76,7 @@ import {
 } from './preferences/store'
 import type { SidebarMode } from './preferences/store'
 import type { LinkResolveResult } from '../../../electron/shared/api'
-import { createCommandCache, type CommandOps, type RecentItem } from './commands'
+import { createCommandCache, type CommandOps } from './commands'
 import { linkAtPos } from './editor/contextMenu/detect'
 import { setCtxRuntime } from './editor/contextMenu/registry'
 import { useE2eSeams } from './e2e/seams'
@@ -164,59 +165,13 @@ export default function App(): React.JSX.Element {
   })
   const { dirty, setDirty, filePath, filePathRef, syncAppState } = fileOps
 
-  // ---- P18: heading folds ------------------------------------------------------
-  const [foldedKeys, setFoldedKeys] = useState<ReadonlySet<string>>(() => new Set())
-  const foldSigRef = useRef<string>('')
-
-  /**
-   * Mirror the editor fold set into React (Outline triangles) and persist it
-   * under SessionState.headingFolds[filePath]. Signature-gated so frequent
-   * selection transactions stay cheap and do not spam localStorage.
-   */
-  const syncFoldedKeys = useCallback(() => {
-    const view = viewRef.current
-    if (!view) return
-    const keys = getFoldedKeys(view.state)
-    const sig = [...keys].sort().join('\n')
-    if (sig === foldSigRef.current) return
-    foldSigRef.current = sig
-    setFoldedKeys(new Set(keys))
-    // Programmatic document replacement (file open/switch) drops the outgoing
-    // file's keys inside foldField — that is not a user unfold. Persisting it
-    // would wipe the target path's session folds mid-switch, so loads skip
-    // the session write (see useFileOps suppressDirtyRef).
-    if (fileOps.suppressDirtyRef.current) return
-    const path = filePathRef.current
-    if (!path) return
-    const have = new Set(extractOutline(view.state).map((i) => foldKey(i.level, i.text)))
-    const valid = [...keys].filter((k) => have.has(k))
-    const all = getSession().headingFolds ?? {}
-    patchSession({ headingFolds: { ...all, [path]: valid } })
-  }, [viewRef, filePathRef, fileOps.suppressDirtyRef])
-  const syncFoldedKeysRef = useRef(syncFoldedKeys)
-  syncFoldedKeysRef.current = syncFoldedKeys
-
-  /** Restore session folds for `path` — keys must still match live headings. */
-  const restoreFoldsFor = useCallback(
-    (path: string | null) => {
-      const view = viewRef.current
-      if (!view) return
-      const saved = path ? getSession().headingFolds?.[path] : undefined
-      const have = new Set(extractOutline(view.state).map((i) => foldKey(i.level, i.text)))
-      const valid = new Set((saved ?? []).filter((k) => have.has(k)))
-      view.dispatch({ effects: restoreFolds.of(valid) })
-    },
-    [viewRef]
-  )
-  const restoreFoldsForRef = useRef(restoreFoldsFor)
-  restoreFoldsForRef.current = restoreFoldsFor
-
-  // File open/switch → apply that file's remembered folds.
-  // loadContent dispatches the new doc synchronously before setFilePath, so
-  // this effect (post-render) always reads outlines of the new document.
-  useEffect(() => {
-    restoreFoldsForRef.current(filePath)
-  }, [filePath])
+  // ---- P18: heading folds (useFoldSync — task 4.4 = 1.3) ----------------------
+  const { foldedKeys, syncFoldedKeysRef, restoreFoldsForRef } = useFoldSync({
+    viewRef,
+    filePathRef,
+    suppressDirtyRef: fileOps.suppressDirtyRef,
+    filePath
+  })
 
   // P12: autosave + draft pipeline. notifyChange is read through a ref from
   // the editor's once-mounted onChange (see createExtensions below).
@@ -254,57 +209,19 @@ export default function App(): React.JSX.Element {
     setShowOutline
   })
 
-  // ---- P03: session persistence ---------------------------------------------
-  // These effects fire on mount, which is *before* the restore effect runs and
-  // while restoringRef is still false. Writing then would overwrite the saved
-  // session with the initial React state — sidebarVisible true, mode 'outline',
-  // width 240 — wiping recents, last paths and the stored sidebar layout on
-  // every launch. Gate on sessionSynced, which the restore effect flips once
-  // the saved state has been applied; flipping it re-runs these effects, so
-  // the restored values are written back and later edits keep persisting.
-  useEffect(() => {
-    if (!sessionSynced) return
-    patchSession({ sidebarVisible: showOutline })
-  }, [sessionSynced, showOutline])
-  useEffect(() => {
-    if (!sessionSynced) return
-    patchSession({ sidebarMode })
-  }, [sessionSynced, sidebarMode])
-  useEffect(() => {
-    if (!sessionSynced) return
-    patchSession({ sidebarWidth })
-  }, [sessionSynced, sidebarWidth])
-  // P26: tab set persistence (paths + active) — fires when tabs change.
-  useEffect(() => {
-    if (!sessionSynced) return
-    fileOps.persistTabsSession()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionSynced, fileOps.tabInfos])
-
-  // Validated Recent Files entries for the File menu (and the macOS native
-  // menu, which receives the same list over IPC).
-  const [recentItems, setRecentItems] = useState<RecentItem[]>([])
-  useEffect(() => {
-    let cancelled = false
-    void (async () => {
-      const files = session.recentFiles
-      const items = await Promise.all(
-        files.map(async (path) => ({
-          path,
-          name: baseNameOf(path),
-          exists: await window.api.pathExists(path)
-        }))
-      )
-      if (!cancelled) setRecentItems(items)
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [session.recentFiles])
-
-  useEffect(() => {
-    void window.api.setRecentFiles(recentItems.map(({ path, exists }) => ({ path, exists })))
-  }, [recentItems])
+  // ---- P03: session persistence (useSessionPersist — task 4.4 = 1.3) --------
+  // Write side (sidebar layout / tabs / Recent Files) sunk to the hook; the
+  // sessionSynced gate rationale lives on UseSessionPersistArgs. The native-
+  // menu subscription effect below stays here (task 4.5 double-dispatch locus).
+  const { recentItems } = useSessionPersist({
+    sessionSynced,
+    showOutline,
+    sidebarMode,
+    sidebarWidth,
+    persistTabsSession: fileOps.persistTabsSession,
+    tabInfos: fileOps.tabInfos,
+    recentFiles: session.recentFiles
+  })
 
   // Native-menu Open Recent / Clear Menu clicks arrive with payloads.
   useEffect(() => {

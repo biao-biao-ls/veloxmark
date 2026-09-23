@@ -2,8 +2,8 @@
  * P18 e2e seam — heading-fold handle (task 1A split).
  *
  * Effect body moved verbatim from App.tsx (dep array kept as-is).
- * `restoreFoldsForRef` is business-shared (App's fold-sync effect writes it)
- * and stays in App. Contract: e2e/handles.d.ts `__veloxP18`.
+ * `restoreFoldsForRef` is business-shared (useFoldSync writes it — task 4.4;
+ * App only threads the ref through). Contract: e2e/handles.d.ts `__veloxP18`.
  */
 import { useEffect } from 'react'
 import {
@@ -20,7 +20,7 @@ import type { FilePathRef, RestoreFoldsForRef, ViewRef } from './types'
 export interface P18Deps {
   viewRef: ViewRef
   filePathRef: FilePathRef
-  /** Business-shared — App's fold-sync effect writes it. */
+  /** Business-shared — useFoldSync writes it; App threads it through. */
   restoreFoldsForRef: RestoreFoldsForRef
 }
 
