@@ -7,6 +7,7 @@
 @import './styles/context-menu.css';
 @import './styles/overlays.css';
 @import './styles/forms.css';
+@import './styles/buttons.css';
 @import './styles/editor-modes.css';
 @import './styles/markdown.css';
 @import './styles/ext-syntax.css';

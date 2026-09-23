@@ -1,0 +1,80 @@
+/* ---- button primitives (task 4.2 = 1.7 button-skin consolidation) --------------
+   Single-sources the shared button SKIN (color/background/border/radius/cursor/
+   hover). Geometry (padding/font-size/min-width/margin) stays per-class — the
+   size deltas are deliberate scene adaptation. Class names unchanged (DOM /
+   probe compat): `.dialog-btn` family and `.cm-search .cm-button` are comma
+   aliases onto the `.btn` primitives — new buttons should use `.btn`
+   (+ `.btn-primary` / `.btn-danger`).
+
+   Intentionally NOT in the btn family (different control families — merging
+   them would be a visual/contract regression; see
+   docs/specs/4B-button-primitives/spec.md):
+   - `.sidebar-mode-seg button`  segmented control (current-state semantics)
+   - `.sb-stat-btn`              ghost + --focus-ring / 22px hit-target contract
+   - `.mermaid-preview-bar button` chip + `.is-on` / focus-visible contract
+   - `.tab-context-menu button`  menu item
+   ---------------------------------------------------------------------------- */
+
+.btn,
+.dialog-btn,
+.cm-search .cm-button {
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn:hover,
+.dialog-btn:hover,
+.cm-search .cm-button:hover {
+  background: var(--code-bg);
+}
+
+/* Geometry: dialog family (moved verbatim from overlays.css). */
+.dialog-btn {
+  min-width: 72px;
+  padding: 5px 14px;
+  font-size: 13px;
+}
+
+/* Geometry: search-panel buttons (CM6 panel chrome needs explicit font). */
+.cm-search .cm-button {
+  margin: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.cm-search .cm-button:active {
+  background: color-mix(in srgb, var(--code-bg) 70%, var(--fg) 10%);
+}
+
+.btn-primary,
+.dialog-btn-primary {
+  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* dark accent is light blue — dark text reads better on it. NOT a token flip:
+   list-pick's dark active text is #111, a different value — kept as a local
+   theme segment (task 1B/1.6). */
+.theme-dark .btn-primary,
+.theme-dark .dialog-btn-primary {
+  color: #1e1e1e;
+}
+
+.btn-primary:hover,
+.dialog-btn-primary:hover {
+  background: var(--accent);
+  filter: brightness(1.1);
+}
+
+/* Danger (moved verbatim from forms.css — button skin was misplaced there). */
+.btn-danger,
+.dialog-btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+}

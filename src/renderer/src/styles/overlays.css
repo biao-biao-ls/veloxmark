@@ -62,38 +62,7 @@
   margin-top: 16px;
 }
 
-.dialog-btn {
-  min-width: 72px;
-  padding: 5px 14px;
-  font-size: 13px;
-  color: var(--fg);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.dialog-btn:hover {
-  background: var(--code-bg);
-}
-
-.dialog-btn-primary {
-  color: #ffffff;
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
-/* dark accent is light blue — dark text reads better on it. NOT a token flip:
-   list-pick's dark active text is #111, a different value — kept as a local
-   theme segment (task 1B/1.6). */
-.theme-dark .dialog-btn-primary {
-  color: #1e1e1e;
-}
-
-.dialog-btn-primary:hover {
-  background: var(--accent);
-  filter: brightness(1.1);
-}
+/* dialog-btn skin/geometry moved to styles/buttons.css (task 4.2 = 1.7). */
 
 /* ---- quick open (P07) --------------------------------------------------------- */
 

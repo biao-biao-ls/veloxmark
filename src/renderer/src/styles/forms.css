@@ -133,10 +133,7 @@
   cursor: default;
 }
 
-.dialog-btn-danger {
-  background: var(--danger);
-  border-color: var(--danger);
-}
+/* .dialog-btn-danger moved to styles/buttons.css (task 4.2 = 1.7). */
 
 .editor-host {
   flex: 1;

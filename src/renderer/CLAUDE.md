@@ -31,7 +31,7 @@ React 19 + CodeMirror 6 的编辑器 UI 全部。入口 `index.html` → `src/ma
 3. **Widget 纪律**：WidgetType 实现 `eq`（相等不重建 DOM）与 `ignoreEvent`；块级 widget 继承 `BlockWidget` 基类（工具栏/点击跳源/右键菜单标准挂法）。`table/widget.ts` 事件闭包**不得捕获 cell 偏移**，事件时 `resolveTableModel` 重解析（stale-instance 纪律）。
 4. **状态接入**：外部 store 用 `useSyncExternalStore`（照 `preferences/useStore.ts`）；模块单例 bus（Dialog、ctxMenu registry、mermaidLightboxBus）是既定模式，编辑器层经 `getCtxRuntime()?.toast` 反向调 UI 也是既定 seam。
 5. **文案**：一律 `t('ns.key')`，新 key 必须**同时**加 `i18n/en.ts` 与 `i18n/zh.ts`（key 全对齐有测试守护）；动态 key 用模板拼接时在测试白名单登记前缀。
-6. **样式**：token 唯一声明点 `:root`，主题只翻 `.theme-light`/`.theme-dark` token 值；间距/圆角用 `--space-*`/`--radius-*`；**不新增**选择器级 `.theme-dark` 补丁、不新增平行按钮皮肤（用现有 `.dialog-btn` 族）。
+6. **样式**：token 唯一声明点 `:root`，主题只翻 `.theme-light`/`.theme-dark` token 值；间距/圆角用 `--space-*`/`--radius-*`；**不新增**选择器级 `.theme-dark` 补丁、不新增平行按钮皮肤（新按钮用 `styles/buttons.css` 的 `.btn` 族 primitives——`.dialog-btn` 系/`.cm-search .cm-button` 为兼容别名，几何可按场景本地覆盖）。
 7. **跨进程类型**：只 import `electron/shared/api.ts`，不重声明 `window.api` 形状（`env.d.ts` 已挂钩）。
 
 ## 测试

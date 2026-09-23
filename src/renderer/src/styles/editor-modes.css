@@ -63,26 +63,7 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
-.cm-search .cm-button {
-  margin: 0;
-  padding: 4px 10px;
-  font-size: 12px;
-  font-family: inherit;
-  line-height: 1.5;
-  color: var(--fg);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.cm-search .cm-button:hover {
-  background: var(--code-bg);
-}
-
-.cm-search .cm-button:active {
-  background: color-mix(in srgb, var(--code-bg) 70%, var(--fg) 10%);
-}
+/* cm-button skin/geometry/states moved to styles/buttons.css (task 4.2 = 1.7). */
 
 .cm-search label {
   display: inline-flex;
