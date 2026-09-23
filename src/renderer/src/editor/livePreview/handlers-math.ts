@@ -11,7 +11,7 @@ import { InlineMathWidget, MathBlockWidget } from '../widgets-math'
  *
  * ORDER CONTRACT: must run after the tree pass so `tree.resolveInner` can
  * skip math-looking text inside code nodes. (Parallel hand-maintained
- * implementation with export/renderDoc.ts renderTextRun — keep in sync.)
+ * implementation with export/renderDoc/inlineText.ts renderTextRun — keep in sync.)
  */
 // ---- math (regex pass; @lezer/markdown has no math extension) ----------------
 

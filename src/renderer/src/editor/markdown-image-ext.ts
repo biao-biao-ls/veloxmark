@@ -19,7 +19,7 @@ import type { InlineContext, MarkdownConfig } from '@lezer/markdown'
  * it as a CSS transform, export writes it as inline style.
  *
  * Shared by the live-preview markdown() config (setup.ts) and the export
- * renderer (export/renderDoc.ts) so both see identical trees.
+ * renderer (export/renderDoc/) so both see identical trees.
  */
 
 const IMAGE_ATTR_RE =
