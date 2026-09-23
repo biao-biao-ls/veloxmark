@@ -37,9 +37,29 @@
   flex-shrink: 0;
 }
 
+/* 6C row glyphs: muted by default, brighten on row hover (hierarchy cue). */
+.filetree-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--fg-muted);
+}
+
+.filetree-item:hover .filetree-icon {
+  color: var(--fg);
+}
+
+.filetree-item.filetree-active .filetree-icon {
+  color: var(--accent);
+}
+
 .filetree-dir-name {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 6C: glyph must never grow the 25px row contract (virtualization math). */
+.filetree-item-fixed .filetree-icon svg {
+  display: block;
 }
 
 /* P07: fixed-height rows while virtualizing (windowing math needs it). */

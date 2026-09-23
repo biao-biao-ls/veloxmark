@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { DirNode } from '../../../../electron/shared/api'
-import { ChevronDownIcon, ChevronRightIcon } from './Icons'
+import { ChevronDownIcon, ChevronRightIcon, FileMdIcon, FolderIcon, FolderOpenIcon } from './Icons'
 import { t } from '../i18n'
+import { ancestorDirPaths, visibleRows, type FlatRow } from './filetreeRows'
 
 /** node === null means the workspace root (empty-area context menu, P07). */
 export interface TreeMenuRequest {
@@ -23,20 +24,12 @@ interface Props {
   onRenameCancel: () => void
 }
 
-interface FlatRow {
-  node: DirNode
-  depth: number
-}
-
 // Fixed row height keeps the virtualization math exact; .filetree-item is
 // line-height 1.6 * 13px ≈ 21px plus 2+2px padding → 25px with border-box.
 const ROW_HEIGHT = 25
 // Above this many visible rows, window the render (spacer divs, no abs pos).
 const VIRTUALIZE_AT = 500
 const OVERSCAN = 10
-// Directories with more children than this start collapsed — expanding a
-// huge folder stays one click away without paying the initial render cost.
-const COLLAPSE_CHILDREN_OVER = 100
 
 /** src of the in-flight drag; dragover can't read dataTransfer, so share it. */
 let dragSrcPath: string | null = null
@@ -108,14 +101,15 @@ function RenameRow({
 }
 
 /**
- * Flat markdown file tree for the folder sidebar. Visible rows are a
- * depth-first flattening of the expanded nodes (expand state is hoisted
- * here), which makes large workspaces windowable: above VIRTUALIZE_AT rows
- * only the scroll viewport (+overscan) is rendered, using top/bottom spacer
- * divs inside the sidebar's own scroll. Clicking a folder label toggles it,
- * clicking a file opens it, right-clicking opens the tree context menu;
- * files and folders are draggable onto folder rows. Empty-area right-click
- * (nav surface) opens the workspace-root menu (UX-P07-F0).
+ * Flat markdown file tree for the folder sidebar. Visible rows come from
+ * `filetreeRows.visibleRows` (depth-first flatten of open nodes — 6C: default
+ * collapsed, active-file ancestor chain revealed, rename chain forced open),
+ * which makes large workspaces windowable: above VIRTUALIZE_AT rows only the
+ * scroll viewport (+overscan) is rendered, using top/bottom spacer divs inside
+ * the sidebar's own scroll. Clicking a folder label toggles it, clicking a
+ * file opens it, right-clicking opens the tree context menu; files and
+ * folders are draggable onto folder rows. Empty-area right-click (nav
+ * surface) opens the workspace-root menu (UX-P07-F0).
  */
 export default function FileTree({
   nodes,
@@ -127,7 +121,8 @@ export default function FileTree({
   onRenameCommit,
   onRenameCancel
 }: Props): React.JSX.Element {
-  // undefined = "never touched" → fall back to the size-based default.
+  // 6C D1: untouched dirs are collapsed (no size heuristic); only explicit
+  // user toggles live here — reveal-derived openness never writes this map.
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [dropTarget, setDropTarget] = useState<string | null>(null)
   const [scrollTop, setScrollTop] = useState(0)
@@ -136,27 +131,15 @@ export default function FileTree({
 
   const sep = window.api.platform === 'win32' ? '\\' : '/'
 
-  const isExpanded = (node: DirNode): boolean =>
-    expanded[node.path] ?? (node.children?.length ?? 0) <= COLLAPSE_CHILDREN_OVER
-
-  // Ancestors of the inline-rename target stay open even if never expanded —
-  // the new file must be visible for the rename entry to exist.
-  const isAncestorOfRenaming = (node: DirNode): boolean =>
-    !!renamingPath && node.isDir && renamingPath.startsWith(node.path + sep)
-
-  const rows = useMemo(() => {
-    const out: FlatRow[] = []
-    const walk = (list: DirNode[], depth: number): void => {
-      for (const node of list) {
-        out.push({ node, depth })
-        if (node.isDir && (isExpanded(node) || isAncestorOfRenaming(node)) && node.children)
-          walk(node.children, depth + 1)
-      }
-    }
-    walk(nodes, 0)
-    return out
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes, expanded, renamingPath])
+  // 6C D2: strict-ancestor dirs of the active file are default-open (derived,
+  // never written to `expanded`) so the active row is reachable; user collapse
+  // still wins. Rename ancestors force open (UX-P07-F4).
+  const revealDirs = useMemo(() => ancestorDirPaths(activePath), [activePath])
+  const renameDirs = useMemo(() => ancestorDirPaths(renamingPath ?? null), [renamingPath])
+  const rows = useMemo(
+    () => visibleRows(nodes, { expanded, revealDirs, renameDirs }),
+    [nodes, expanded, revealDirs, renameDirs]
+  )
 
   // The sidebar is the scroll parent — track it so the window follows scroll.
   useEffect(() => {
@@ -170,6 +153,26 @@ export default function FileTree({
     setViewportH(side.clientHeight)
     return () => side.removeEventListener('scroll', onScroll)
   }, [])
+
+  // 6C D3/D5: reveal scroll — center the active row once it becomes visible
+  // (tab switch, root change, or tree data arriving late). Re-scroll only when
+  // the target path changes or first appears, so unrelated tree churn (e.g.
+  // manual expand/collapse elsewhere) never jitters the viewport.
+  const lastRevealRef = useRef<{ path: string | null; found: boolean }>({ path: null, found: false })
+  useEffect(() => {
+    const idx = rows.findIndex((r) => r.node.path === activePath)
+    const found = idx >= 0
+    const last = lastRevealRef.current
+    if (found && last.path === activePath && last.found) return
+    lastRevealRef.current = { path: activePath, found }
+    if (!found) return
+    const side = treeRef.current?.closest('.sidebar')
+    if (!side) return
+    // row i sits at treeTop + i*ROW_H inside the sidebar's scroll space.
+    const treeTop = treeRef.current?.offsetTop ?? 0
+    const rowTop = treeTop + idx * ROW_HEIGHT
+    side.scrollTop = Math.max(0, rowTop - side.clientHeight / 2 + ROW_HEIGHT / 2)
+  }, [activePath, rows])
 
   // UX-P07-F5: Esc cancels an in-flight drag (drop indicator + shared src).
   useEffect(() => {
@@ -201,7 +204,7 @@ export default function FileTree({
   const isDropAllowed = (src: string, destDir: string): boolean =>
     src !== destDir && !destDir.startsWith(src + sep)
 
-  const renderRow = ({ node, depth }: FlatRow): React.JSX.Element => {
+  const renderRow = ({ node, depth, open }: FlatRow): React.JSX.Element => {
     if (renamingPath && node.path === renamingPath) {
       return (
         <RenameRow
@@ -225,7 +228,6 @@ export default function FileTree({
       setDropTarget(null)
     }
     if (node.isDir) {
-      const open = isExpanded(node)
       return (
         <button
           key={node.path}
@@ -263,6 +265,9 @@ export default function FileTree({
           title={node.path}
         >
           {open ? <ChevronDownIcon size={12} /> : <ChevronRightIcon size={12} />}
+          <span className="filetree-icon">
+            {open ? <FolderOpenIcon size={13} /> : <FolderIcon size={13} />}
+          </span>
           <span className="filetree-dir-name">{node.name}</span>
         </button>
       )
@@ -285,6 +290,9 @@ export default function FileTree({
         }}
         title={node.path}
       >
+        <span className="filetree-icon">
+          <FileMdIcon size={13} />
+        </span>
         {node.name}
       </button>
     )

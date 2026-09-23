@@ -1463,7 +1463,10 @@ export default function App(): React.JSX.Element {
                           +
                         </button>
                       </div>
+                      {/* 6C AC1: root change remounts the tree → expansion
+                          state resets (new root starts default-collapsed). */}
                       <FileTree
+                        key={workspace.folderPath}
                         nodes={workspace.folderTree}
                         activePath={filePath}
                         renamingPath={workspace.renamingPath}
