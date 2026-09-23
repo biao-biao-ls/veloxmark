@@ -223,8 +223,11 @@
 
 ### 5B. 阅读版心与行号（P0 + P1）
 
-- [ ] **5.2 正文居中窄栏版心**：正文行与全部块 widget 统一到居中内容列（`editorMaxWidth` 偏好语义保持），F05 同列契约保持 — 规格：[docs/specs/5B-reading-measure/](specs/5B-reading-measure/)
-- [ ] **5.3 行号默认关闭**（**行为变更**）：`showLineNumbers` 默认 `true` → `false`，偏好保留可开；F06 gutter 对齐契约保持 — 同 5B 规格
+- [x] **5.2 正文居中窄栏版心**：正文行与全部块 widget 统一到居中内容列（`editorMaxWidth` 偏好语义保持），F05 同列契约保持 — 规格：[docs/specs/5B-reading-measure/](specs/5B-reading-measure/)
+- [x] **5.3 行号默认关闭**（**行为变更**）：`showLineNumbers` 默认 `true` → `false`，偏好保留可开；F06 gutter 对齐契约保持 — 同 5B 规格
+
+> ✅ **5B 收敛记录（2026-09-23）**：T1 store（0 值软上限 `min(90%, 1200px)`、`showLineNumbers` 默认关 + sanitize 翻 `=== true`——本文件默认关布尔的既定形态，存储显式 `true` 不受影响）→ T2 tokens.css 默认值同步 + 删 `.cm-md-table-wrap` 的 `max-width`（% 基准陷阱）→ T3 i18n `prefs.widthUnit` 0 值语义文案 en+zh。零新 import；`gutterCompartment`/`toggleLineNumbers`/F01 归零通道未触碰。收敛：typecheck 双配置 + **220 unit 全绿**；e2e 缝零触碰（`__velox*`/`data-op`/命令 id/`toggleLineNumbers`/`gutterCompartment` 均不在 diff）。
+> 人工冒烟清单（**行为变更单元，必做**）：① 偏好滑杆三档——0（≈1200px 居中软上限）/ 800（800px 居中）/ 4000（通栏），块 widget（表格/代码/公式/mermaid/callout/图片）与正文同列左缘；② 行号开关来回切 + 重启保持（默认关、开启后 F06 对齐、折叠 gutter 贴列）；③ 嵌套表格单元格编辑器不被列宽约束（F01）、写作模式/查找面板不回归；④ 窗口缩放 / 侧栏拖宽后列仍居中；⑤ 同视口复拍对照 `temp/typora/typora-1.png`（AC1/2）。
 
 ### 5C. 标题体系与区块节奏（P1 + P2）
 
