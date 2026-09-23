@@ -231,12 +231,18 @@
 
 ### 5C. 标题体系与区块节奏（P1 + P2）
 
-- [ ] **5.4 H2 底线统一 + 垂直节奏收敛**：H1/H2 统一浅色底线（token 化）；空行占位与块间距不叠加，同视口节奏对齐 Typora — 规格：[docs/specs/5C-block-rhythm/](specs/5C-block-rhythm/)
-- [ ] **5.5 块级公式留白收紧**：`MathBlockWidget` 上下空档收敛到约一行量级，居中/点击编辑行为不变 — 同 5C 规格
+- [x] **5.4 H2 底线统一 + 垂直节奏收敛**：H1/H2 统一浅色底线（token 化）；空行占位与块间距不叠加，同视口节奏对齐 Typora — 规格：[docs/specs/5C-block-rhythm/](specs/5C-block-rhythm/)
+- [x] **5.5 块级公式留白收紧**：`MathBlockWidget` 上下空档收敛到约一行量级，居中/点击编辑行为不变 — 同 5C 规格
+
+> ✅ **5C 收敛记录（2026-09-23）**：T1 H2 底线同 H1（`1px solid var(--border)`，H3–H6 不加）+ exportCss 平行 → T2 `katex-display` margin 归零（编辑侧 + 导出侧双处，katex.css 自带 1em 是公式发飘主因）+ math/block-gap 收敛到 `--space-2` 档（合计 ≈32px≈1 行）→ T3 标题阶梯微调（top 0.8/0.7/0.6 → 0.7/0.6/0.5em，h4–h6 未动）。`widgets-math.ts`/handlers 零触碰，**装饰快照零 diff**（AC7）；`--border` 现成 token，palette 4 处副本零触碰。inlineStyles 核对结论：class map 不表达后代选择器、富文本目标剥 `<style>`（katex margin 随 css 一起消失），无需平行。收敛：typecheck 双配置 + **220 unit 全绿**；e2e 缝零触碰。
+> 人工冒烟清单（行为不变类）：① H1–H6 目测底线/字号阶梯（仅 h1/h2 有线）；② 块级公式上下 ≈1 行、居中与点击进源码编辑不变；③ 节间/段间/列表前后节奏对照 Typora 截图 ±20% 目测（**T3 阶梯为 implement 窗口微调值，此条为最终校准点，偏差大回报再调**）；④ 空行仍占行不跳行（AC3）；⑤ 导出 HTML/PDF/复制富文本各一：h2 底线、公式间距、callout/表格无回归；⑥ 深色主题底线不刺眼。
 
 ### 5D. 侧边栏大纲精致度（P2）
 
-- [ ] **5.6 大纲层级缩进与质感**：补齐 `outline-l2`–`outline-l6` 缩进样式（现仅 `outline-l1` 有样式），hover/active 质感对齐 Typora 大纲 — 规格：[docs/specs/5D-sidebar-outline/](specs/5D-sidebar-outline/)
+- [x] **5.6 大纲层级缩进与质感**：补齐 `outline-l2`–`outline-l6` 缩进样式（现仅 `outline-l1` 有样式），hover/active 质感对齐 Typora 大纲 — 规格：[docs/specs/5D-sidebar-outline/](specs/5D-sidebar-outline/)
+
+> ✅ **5D 收敛记录（2026-09-23）**：T1 `.outline-l2`–`l6` 缩进阶梯（每级 `--space-3`，12px/级）+ active 左侧强调条（`inset 2px` box-shadow，非 border-left 防 hover 抖动）→ T2 `title` 提示。**plan 现状核实偏差修正**：`Outline.tsx` 自 first commit 即有 `title={item.text}`（D3 已满足，未改）与**内联裸 px 缩进** `12+(level-1)*14`（plan 漏看 L34）——本次迁入 CSS 阶梯并删内联（Constitution `--space-*` 纪律），实际缩进 14→12px/级仍在 AC1 的 12–16px 带内。P18 折叠钮/hover 与文件树一致性未动。收敛：typecheck 双配置 + **220 unit 全绿**；e2e 缝零触碰（`outline-fold`/`__velox*`/`data-op` 不在 diff）。
+> 人工冒烟清单（行为不变类）：① 六级标题缩进一眼可辨；② 大纲点击跳转、折叠/展开（P18 三角方向）、滚动跟随 active 切换无抖动；③ active 左侧强调条 + 加粗/强调色在深浅主题均不刺眼；④ 长标题截断 + hover `title` 全文；⑤ 文件树模式无回归。
 
 ---
 
