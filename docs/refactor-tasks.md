@@ -101,36 +101,44 @@
 
 ### 2A. 拆 widgets.ts（1445 行）
 
-- [ ] **2.1 前置：抽 `editor/blockWidget.ts`**：`BlockWidget` 基类 + `BlockToolbarItem`（`table/widget.ts` 也依赖）
-- [ ] **2.2 抽纯函数层** `editor/render-helpers.ts` + `editor/image-parse.ts`：`highlightCodeHtml`、`renderKatexHtml`、`parseImageMarkdown`、`flipTransform`、`splitHighlightedLines`（零状态、DOM-less 可测；让 `export/renderDoc.ts` 脱离 widgets 大文件）
-- [ ] **2.3 拆 mermaid 管线** `editor/mermaid/`（约 450 行）：渲染核心 + 并发闸 + 缓存 + 错误态记忆 + 导出 IO seam + `MermaidWidget`。**`mermaidCache`/`mermaidLastGood`/`mermaidIoOverride` 等模块状态必须与消费方单一归属**；同步更新 5 处 import（MermaidPreviewPanel / opsBlocks / App / renderDoc / handlers）
-- [ ] **2.4 拆图片组** `editor/image-widget.ts`（约 380 行）：`ImageWidget` + `imageCache` + 选中态/缩放工具栏；`closeAllImageSelections` 被 `editor/images.ts` 引用需改路径
-- [ ] **2.5 拆代码块组** `editor/codeBlock-widget.ts`（约 220 行）：`CodeBlockWidget`、`CodeLangChip`、scoped CSS 注入（`ensureScopedCss` 一次性守卫随之迁移）
-- [ ] **2.6 小 widget 归并**：`FrontMatterWidget`/`FootnoteRefWidget`/`FootnoteDefBackWidget`/`TaskWidget` → `editor/widgets-extended.ts`；`MathBlockWidget`/`InlineMathWidget` → `editor/widgets-math.ts`
-- [ ] **2.7 widgets.ts 收尾**：仅留 barrel 或删除；补/迁移 `widgets.p24.test.ts` 的导入路径
+- [x] **2.1 前置：抽 `editor/blockWidget.ts`**：`BlockWidget` 基类 + `BlockToolbarItem`（`table/widget.ts` 也依赖）
+- [x] **2.2 抽纯函数层** `editor/render-helpers.ts` + `editor/image-parse.ts`：`highlightCodeHtml`、`renderKatexHtml`、`parseImageMarkdown`、`flipTransform`、`splitHighlightedLines`（零状态、DOM-less 可测；让 `export/renderDoc.ts` 脱离 widgets 大文件）
+- [x] **2.3 拆 mermaid 管线** `editor/mermaid/`（约 450 行）：渲染核心 + 并发闸 + 缓存 + 错误态记忆 + 导出 IO seam + `MermaidWidget`。**`mermaidCache`/`mermaidLastGood`/`mermaidIoOverride` 等模块状态必须与消费方单一归属**；同步更新 5 处 import（MermaidPreviewPanel / opsBlocks / App / renderDoc / handlers）
+- [x] **2.4 拆图片组** `editor/image-widget.ts`（约 380 行）：`ImageWidget` + `imageCache` + 选中态/缩放工具栏；`closeAllImageSelections` 被 `editor/images.ts` 引用需改路径
+- [x] **2.5 拆代码块组** `editor/codeBlock-widget.ts`（约 220 行）：`CodeBlockWidget`、`CodeLangChip`、scoped CSS 注入（`ensureScopedCss` 一次性守卫随之迁移）
+- [x] **2.6 小 widget 归并**：`FrontMatterWidget`/`FootnoteRefWidget`/`FootnoteDefBackWidget`/`TaskWidget` → `editor/widgets-extended.ts`；`MathBlockWidget`/`InlineMathWidget` → `editor/widgets-math.ts`
+- [x] **2.7 widgets.ts 收尾**：仅留 barrel 或删除；补/迁移 `widgets.p24.test.ts` 的导入路径
+
+> ✅ **2A 收敛记录（2026-09-23）**：widgets.ts 1445 → 32 行纯 barrel；实现落 11 模块：`blockWidget`(125) / `render-helpers`(78) + `image-parse`(42) / `mermaid/`{render 77, exportIo 134, errMemory 30, widget 177, index 8} / `image-widget`(350) / `codeBlock-widget`(191) / `widgets-math`(63) / `widgets-extended`(229)。body 原样平移（含注释），**模块状态单一归属**：`mermaidCache`→`mermaid/render`、`mermaidLastGood`→`mermaid/errMemory`、`mermaidIoOverride`→`mermaid/exportIo`、`imageCache`/选中态→`image-widget`、scoped CSS 一次性守卫→`codeBlock-widget`。消费方全部改道直连（table/widget、renderDoc、MermaidPreviewPanel、opsBlocks、useAppTheme、p16、handles.d.ts、handlers-code/tree/math/extended、images.ts、App、widgets.p24.test），barrel 仅作兼容兜底（`widgets.p24.test.ts` 已迁 `render-helpers`）。非平移点 3 处（行为等价/可见性）：① `IMAGE_MARKDOWN_RE` 从 image-parse 导出（`rewriteImageNode` 回写需原始捕获组）；② `mermaidLastGood` 经 `getMermaidLastGood` 访问器读取（widget 不直接摸 Map）；③ mermaid 消费方 import 改 `editor/mermaid` 桶（handlers-code 的 CodeBlockWidget/MermaidWidget 分两路）。收敛：typecheck 双配置 + 201 unit 全绿（20 文件）；`npx madge --circular --extensions ts,tsx` **双侧 0 cycles**（renderer 176 文件 / electron 18 文件）；`window.__velox*` 缝形状零改动（`setMermaidExportIo` 类型链经 mermaid 桶钉住）。行为不变类——建议人工冒烟：mermaid 渲染/导出 SVG·PNG/灯箱、代码块折叠·复制·行号换行、聚焦代码面板 chip 与 P29 高亮、图片缩放/翻转工具栏与缓存刷新、任务勾选、front-matter/脚注跳转。规格：[docs/specs/2A-split-widgets/](specs/2A-split-widgets/)。
 
 ### 2B. 拆 commands.ts（874 行）
 
-- [ ] **2.8 零风险外提**：`fmtShortcut` → `commands/shortcutDisplay.ts`；`matchGlobalShortcut` → `commands/shortcutMatch.ts`（顺手补单测）；`MENU_LAYOUT` + `buildMenus` + `buildRecentSubmenu` → `commands/menuLayout.ts`
-- [ ] **2.9 `buildCommands` 按域拆**：`commands/fileCmds.ts` / `editCmds.ts` / `formatCmds.ts` / `tabsCmds.ts` / `viewCmds.ts` / `insertCmds.ts`，各返回 `Command[]` 后 concat。**命令 id 字面量不可改**（cdp 探针契约），拆后同步探针扫描文件范围
-- [ ] **2.10 `CommandOps` 拆域接口**（28 字段 → `FileOps & EditOps & ViewOps & …`）；同步 `useMenus.Args` 与 App.tsx 的 `commandOps` 对象字面量
-- [ ] **2.11 命令表缓存**：App.tsx `setCtxRuntime` 中 `runCommand`/`isCommandDisabled` 每次重建全表 `buildCommands().find(id)` → 改 Map 缓存（热路径）
-- [ ] **2.12 快捷键双源治理**：`commands.ts` 的 `shortcut` 与 `electron/main.ts` 的 `DARWIN_COMMAND_ACCELERATORS` 加一致性测试，或改为单源派生
+- [x] **2.8 零风险外提**：`fmtShortcut` → `commands/shortcutDisplay.ts`；`matchGlobalShortcut` → `commands/shortcutMatch.ts`（顺手补单测）；`MENU_LAYOUT` + `buildMenus` + `buildRecentSubmenu` → `commands/menuLayout.ts`
+- [x] **2.9 `buildCommands` 按域拆**：`commands/fileCmds.ts` / `editCmds.ts` / `formatCmds.ts` / `tabsCmds.ts` / `viewCmds.ts` / `insertCmds.ts`，各返回 `Command[]` 后 concat。**命令 id 字面量不可改**（cdp 探针契约），拆后同步探针扫描文件范围
+- [x] **2.10 `CommandOps` 拆域接口**（28 字段 → `FileOps & EditOps & ViewOps & …`）；同步 `useMenus.Args` 与 App.tsx 的 `commandOps` 对象字面量
+- [x] **2.11 命令表缓存**：App.tsx `setCtxRuntime` 中 `runCommand`/`isCommandDisabled` 每次重建全表 `buildCommands().find(id)` → 改 Map 缓存（热路径）
+- [x] **2.12 快捷键双源治理**：`commands.ts` 的 `shortcut` 与 `electron/main.ts` 的 `DARWIN_COMMAND_ACCELERATORS` 加一致性测试，或改为单源派生
+
+> ✅ **2B 收敛记录（2026-09-23）**：commands.ts 874 行 → `commands/` 13 模块（types 111 + 六域 builder file 77/edit 160/format 194/tabs 33/view 147/insert 33 + build 25 + shortcutDisplay 10/shortcutMatch 47/menuLayout 168 + commandCache 27 + index barrel 36）。`from './commands'` 两消费方（App/useMenus）import 零改动。**concat 序是行为**：file → edit → format → tabs → view → insert 保持 `reopenClosedTab`（Ctrl+Shift+T）遮蔽 `toggleTheme`（同键）的现状。2.10：`CommandOps` = `FileCmdOps & EditCmdOps & FormatCmdOps & TabsCmdOps & ViewCmdOps & InsertCmdOps`（`Cmd` 后缀避让 seams 的 `FileOps`），28 字段集不变 → App `commandOps` 字面量/`useMenus.Args` 零改动；跨段归属：showHelp→file、copyAs*→edit、formatDocument+链接命令→format（`openLinkAtCursor`/`copyLinkAddressAtCursor` 随之入 `FormatCmdOps`）。2.11：`commands/commandCache.ts` 按 ops 身份缓存 Map（run 闭包新鲜度与逐次 buildCommands 等价），App 热路径两处 `.find` 替换为 `cmdCache.get`。2.12：`DARWIN_COMMAND_ACCELERATORS` 平移 `electron/shared/commandAccelerators.ts`（纯数据，main.ts 改 import）+ `shortcutSync.test.ts` 双源守护（派生规则 `Ctrl+→Cmd+`，例外登记 `copyRichText → CmdOrCtrl+Shift+C`，钉住 bold/italic/inlineCode 故意无加速键）——2.18 抽 `menu/darwin.ts` 时 `commandItem` 从 shared 取表。新单测 shortcutMatch 8 用例（chord/Shift 精确/Bare-F/Option 字符 code 兜底）+ shortcutSync 3 用例。顺手修复：`Dialog.tsx` 的 CDP 缝 `window.dialog` 加 `typeof window` 守卫（node 单测可引 build 链，渲染进程行为不变）。收敛：typecheck 双配置 + 201 unit 全绿（20 文件）；renderer madge 0 cycles（164 文件）；electron madge 现存 4 环（`ipc/index` ↔ files/folder/image/window barrel 环）为**既有债**（2B 未动 ipc/*，记录备查）。**契约同步项**：cdp 探针正则扫描范围需覆盖 `src/renderer/src/commands/**`（探针脚本不在本仓库）。行为不变类——建议人工冒烟菜单栏/全局快捷键（Ctrl+Shift+T 行为=重开标签页）。规格：[docs/specs/2B-split-commands/](specs/2B-split-commands/)。
 
 ### 2C. 拆 registry.ts（532 行）
 
-- [ ] **2.13** `ctxMenuStore.ts`：runtime 单例 + menuState + listeners + 焦点归还策略（registry L39–81）
-- [ ] **2.14** `deltaRegistry.ts`：`blockDeltas` 注册表 + `registerContextMenuOps` + `__veloxCtxDebug` e2e 缝（L83–99）
-- [ ] **2.15** `menuSkeleton.ts`：`sep`/`cmdItem`/各 submenu helpers + `buildContextMenu` + `__veloxCtxLastHit` 缝（L101–310）
-- [ ] **2.16** `opsTable.ts`：表格 delta 自举段（L312–512，`TableDeltaDeps` + 9 个 op 适配器 + `table-cell` factory）；`data-op` id 不可改；UX-P28 B3 的 `setActiveCell` 语义注释随之迁移
+- [x] **2.13** `ctxMenuStore.ts`：runtime 单例 + menuState + listeners + 焦点归还策略（registry L39–81）
+- [x] **2.14** `deltaRegistry.ts`：`blockDeltas` 注册表 + `registerContextMenuOps` + `__veloxCtxDebug` e2e 缝（L83–99）
+- [x] **2.15** `menuSkeleton.ts`：`sep`/`cmdItem`/各 submenu helpers + `buildContextMenu` + `__veloxCtxLastHit` 缝（L101–310）
+- [x] **2.16** `opsTable.ts`：表格 delta 自举段（L312–512，`TableDeltaDeps` + 9 个 op 适配器 + `table-cell` factory）；`data-op` id 不可改；UX-P28 B3 的 `setActiveCell` 语义注释随之迁移
+
+> ✅ **2C 收敛记录（2026-09-23）**：registry.ts 532 行 → `ctxMenuStore`(54) + `deltaRegistry`(28) + `menuSkeleton`(235) + `opsTable`(234) + barrel/入口(54)。四段 body 原样平移（含注释与侧效块）；`registry.ts` 收为 re-export barrel + `handleEditorContextMenu` 入口，**8 个消费方 import 零改动**。非平移点 3 处（均为行为等价）：① `buildContextMenu`/`handleEditorContextMenu` 的 `runtime` 私有态访问改 `getCtxRuntime()`（随迁 ctxMenuStore）；② `sep` 提为 menuSkeleton 导出供 opsTable 共用（单源，不进 barrel）；③ `blockDeltas` 提为 deltaRegistry 导出供 menuSkeleton（barrel 不再导出）。侧效时序经 barrel re-export 链等价（`__veloxCtxDebug` 先于 `table-cell` 注册，与拆分前同序）。收敛：typecheck 双配置 + 190 unit 全绿（18 文件）、`npx madge --circular --extensions ts,tsx` 0 cycles（149 文件）、`__veloxCtxDebug`/`__veloxCtxLastHit` 形状与菜单 id 字面量核验在位。行为不变类——建议人工冒烟右键菜单（普通块/表格单元格/链接）。规格：[docs/specs/2C-split-registry/](specs/2C-split-registry/)。2.17 未做（低优先，另立单元）。
 - [ ] **2.17 opsBlocks 整理（低优先）**：抽 `blockHelpers.ts`（L25–94）；让 opsBlocks 复用 `transforms.ts` 的 dispatch 约定，消除重复的 `view.dispatch` 模式；`transforms.ts` 表格段（L133–181）可迁 `editor/table/source.ts`
 
 ### 2D. electron 小手术
 
-- [ ] **2.18 抽 macOS 原生菜单**：`NATIVE_MENU_STRINGS` + `buildDarwinMenu` + `rebuildDarwinMenu` + `recentFilesSubmenu` + `commandItem` + `NATIVE_CHECKBOX_COMMANDS`（约 280 行）→ `electron/menu/darwin.ts`
-- [ ] **2.19 游离 ipc handler 归位**：`app:rendererReady` / `app:setRecentFiles` / `app:setMenuCheckedIds` / `app:setLanguage` / `app:closeResponse`（main.ts whenReady 内联）→ `ipc/` 对应域模块，落实 `registerAllIpc` 的「按域分组」注释
-- [ ] **2.20 IPC channel 字符串收口**：`shared/api.ts` 增加 `export const IpcChannels = { … } as const`，preload 与 ipc/* 都从常量取值（补上类型契约唯一的洞）；`onMenu(channel: string)` 收窄为 `onMenu(id, …)` + `menu:` 前缀函数
-- [ ] **2.21 `ipc/window.ts` 域归位**：`clipboard:*`（6 个）、`shell:openExternal`、`app:setState` 拆出或挪至正确域模块
+- [x] **2.18 抽 macOS 原生菜单**：`NATIVE_MENU_STRINGS` + `buildDarwinMenu` + `rebuildDarwinMenu` + `recentFilesSubmenu` + `commandItem` + `NATIVE_CHECKBOX_COMMANDS`（约 280 行）→ `electron/menu/darwin.ts`
+- [x] **2.19 游离 ipc handler 归位**：`app:rendererReady` / `app:setRecentFiles` / `app:setMenuCheckedIds` / `app:setLanguage` / `app:closeResponse`（main.ts whenReady 内联）→ `ipc/` 对应域模块，落实 `registerAllIpc` 的「按域分组」注释
+- [x] **2.20 IPC channel 字符串收口**：`shared/api.ts` 增加 `export const IpcChannels = { … } as const`，preload 与 ipc/* 都从常量取值（补上类型契约唯一的洞）；`onMenu(channel: string)` 收窄为 `onMenu(id, …)` + `menu:` 前缀函数
+- [x] **2.21 `ipc/window.ts` 域归位**：`clipboard:*`（6 个）、`shell:openExternal`、`app:setState` 拆出或挪至正确域模块
+
+> ✅ **2D 收敛记录（2026-09-23）**：按 2.20 → 2.18 → 2.19+2.21 动刀（契约先行）。**2.20**：`IpcChannels` 55 个固定 channel（key = `domainAction` 骆峰，值一字节不动）+ `menuChannel(id)` 落 `shared/api.ts`；preload/`ipc/*`/`main.ts` 裸字面量全量改常量引用（含多行 handle 注册）；`onMenu` 收窄为裸 id（preload 内部 `menuChannel(id)` 前缀），消费方 useMenus（`onMenu(cmd.id)`）+ App 6 处（`'openRecent'`/`'clearRecent'`/`'closeTab'`/`'reopenClosedTab'`/`'nextTab'`/`'closeTabOrWindow'`）同步。**2.18**：`menu/darwin.ts`（~330 行）收纳菜单全量 + 菜单状态随迁（`recentFiles`/`nativeCheckedIds`/`uiLang` + 持久化）+ `setRecentFiles`/`setMenuCheckedIds`/`setUiLanguage`（状态+rebuild）+ `initDarwinMenu(getWindow)`/`installApplicationMenu`；main.ts 只剩生命周期/协议/open-queue/close 拦截（579 → 233 行）。**2.19+2.21**：新建 `ipc/app.ts`（`AppIpcDeps` 注入 `onRendererReady`/`approveClose`/菜单三同步，`closeApproved` 留 main 闭包，`app:setState` 一并归位，`app:setLanguage` 仍 `return true`）、`ipc/clipboard.ts`（6 个）、`ipc/shell.ts`（`openExternal` + 顺带收 image.ts 的 `showItemInFolder`）；window.ts 只剩 `window:*` 5 个 + `zoomBy`。**顺带解既有债**：`GetWindow` 迁叶子 `ipc/getWindow.ts`（files/folder/image/window/app type import 改走叶子，index re-export 兼容）——2B 记录的 electron 侧 4 个 madge 环消除。收敛：typecheck 双配置 + 201 unit 全绿（20 文件）；`npx madge --circular --extensions ts,tsx` **双侧 0 cycles**（electron 18 文件 / renderer 164 文件）；channel 值 diff = ∅（精确字符串替换，值全部不变）；`window.api` 面唯一变化 = `onMenu` 签名收窄（task 2.20 明示）。**遗留缺陷（行为变更，另立）**：App 的 `closeTab`/`reopenClosedTab`/`nextTab` 三监听与 useMenus 全命令 `menu:<id>` 订阅双派发（原生菜单单击会双执行，reopenClosedTab 会重开两张）——本单元机械收窄保持原状。行为不变类——建议人工冒烟：窗口关闭拦截（脏文档三选一对话框）、文件打开队列（启动期 open-file）、菜单栏/快捷键（mac 原生菜单项）。规格：[docs/specs/2D-electron-surgery/](specs/2D-electron-surgery/)。
 
 ---
 
