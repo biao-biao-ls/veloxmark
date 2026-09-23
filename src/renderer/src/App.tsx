@@ -223,20 +223,18 @@ export default function App(): React.JSX.Element {
     recentFiles: session.recentFiles
   })
 
-  // Native-menu Open Recent / Clear Menu clicks arrive with payloads.
+  // Native-menu special channels that are NOT command ids (task 4.5: tab
+  // commands closeTab/reopenClosedTab/nextTab have NO hand-rolled listeners —
+  // useMenus' generic `menu:<id>` subscription is the single dispatch surface;
+  // double-dispatch on native-menu clicks is fixed by that exclusivity).
   useEffect(() => {
+    // Open Recent / Clear Menu clicks arrive with payloads.
     const offOpen = window.api.onMenu('openRecent', (path?: string) => {
       if (path) void fileOps.openRecentFile(path)
     })
     const offClear = window.api.onMenu('clearRecent', () => clearRecentFiles())
-    // P26 native-menu tab commands (darwin File menu + Cmd/Ctrl+W routing).
-    const offCloseTab = window.api.onMenu('closeTab', () => {
-      void fileOps.closeTab(fileOps.getActiveTabId())
-    })
-    const offReopenTab = window.api.onMenu('reopenClosedTab', () => {
-      void fileOps.reopenClosedTab()
-    })
-    const offNextTab = window.api.onMenu('nextTab', () => fileOps.nextTab())
+    // Cmd/Ctrl+W dedicated route (main before-input-event; not a command id —
+    // this is its only listener).
     const offCloseOrWindow = window.api.onMenu('closeTabOrWindow', () => {
       // Spec: Cmd/Ctrl+W closes a tab only when tabs>1; otherwise it keeps
       // the window-close semantics (P12 intercept runs on window:close).
@@ -251,13 +249,15 @@ export default function App(): React.JSX.Element {
     return () => {
       offOpen()
       offClear()
-      offCloseTab()
-      offReopenTab()
-      offNextTab()
       offCloseOrWindow()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fileOps])
+  }, [
+    fileOps.openRecentFile,
+    fileOps.closeTab,
+    fileOps.getActiveTabId,
+    fileOps.getTabCount,
+    fileOps.queryClose
+  ])
 
   // Minimal session restore (full snapshot restore belongs to P12): reopen the
   // last folder workspace and file. System open-file events queued in main
