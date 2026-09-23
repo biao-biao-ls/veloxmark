@@ -256,8 +256,12 @@
 
 ### 6A. 文件/大纲双 tab 信息架构（P0）
 
-- [ ] **6.1 「文件 | 大纲」双 tab 栏落地**：侧栏头部双 tab（下划线指示）并列互切；搜索入口收编不劣化；session 记忆沿用；files 空态（无根引导「打开文件夹」）— 规格：[docs/specs/6A-sidebar-tabs/](specs/6A-sidebar-tabs/)
-- [ ] **6.2 打开文档不自动切换侧栏模式**（**行为变更**）：树点击/QuickOpen/搜索/命令任意打开路径后侧栏驻留当前 tab；「‹ 文件」单向返回由双 tab 取代 — 同 6A 规格
+- [x] **6.1 「文件 | 大纲」双 tab 栏落地**：侧栏头部双 tab（下划线指示）并列互切；搜索入口收编不劣化；session 记忆沿用；files 空态（无根引导「打开文件夹」）— 规格：[docs/specs/6A-sidebar-tabs/](specs/6A-sidebar-tabs/)
+- [x] **6.2 打开文档不自动切换侧栏模式**（**行为变更**）：树点击/QuickOpen/搜索/命令任意打开路径后侧栏驻留当前 tab；「‹ 文件」单向返回由双 tab 取代 — 同 6A 规格
+
+> ✅ **6A 收敛记录（2026-09-23）**：T1 `useDocIo`（`OpenDocPathOpts.quiet` 删除——e2e 缝 `openPath` 本就不传 opts；`setSidebarMode`/`restoringRef` 参数删除；两处 `setSidebarMode('outline')` 删除，打开路径全程不再触碰侧栏模式）→ T2 `useFileOps` 透传面收窄（`SidebarMode`/`DocTabInfo` 单源再导出保留）+ `useWorkspaceTree.openFileFromTree` 删 3 处切模式（`loadFolder` 的 `setSidebarMode('files')` 保留——显式打开文件夹仍进文件 tab）→ T3 App 三区：restore 静默 opts 收为 `{ activate: false }`、`restoringRef` 清尸（唯一读者已删，`useSessionPersist` 注释同步）、aside 双 tab 化（`sidebar-tabs`/`sidebar-tab` role=tab、搜索入口收编到 tab 行右侧、outline 头部与「‹ 文件」钮删除、files 无根空态卡）→ T4 i18n 新 4 键（`sidebar.tabs`/`sidebar.tab.files`/`sidebar.tab.outline`/`sidebar.filesEmpty`，en+zh）+ 删孤儿键 `app.filesBack`（SearchPanel 用的是 `search.backFiles`，未动）→ T5 `chrome.css` `.sidebar-tab` 族（透明底线占位防 active 抖高）+ `.sidebar-empty`。D2 纪律：SearchPanel/`sidebar-mode-seg` 零触碰；`toggleOutline`/`getSidebarMode` 语义保持。收敛：typecheck 双配置 + **220 unit 全绿**；`npx madge --circular` 0 环（import 有变动）；e2e 缝零触碰（`__velox*`/`data-op`/命令 id 均不在 diff；grep 命中的 `openFolder` 系 `cmd.openFolder` i18n key 与既有 `workspace.openFolder` 调用）。
+> **探针契约同步项（外部 cdp 仓库）**：原「任一路径打开文件后 `getSidebarMode()==='outline'`」断言与新语义相反，需改为「侧栏驻留原 tab（files 打开树文件后仍为 files）」；「点 outline 的『‹ 文件』返回」类步骤改为直接点「文件」tab。
+> 人工冒烟清单（**行为变更单元，必做**）：① 任意路径打开文档（树点击 / QuickOpen / 搜索结果 / 命令 openFileByPath）后侧栏驻留当前 tab——文件 tab 点文件**不再**跳大纲；② 双 tab 下划线互切即时，active 强调色与 5D 大纲 active 语言一致，切 tab 不丢树展开态/滚动位；③ 搜索入口不劣化：tab 行放大镜（有工作区才显示）进全局搜索，SearchPanel 内 seg/返回钮行为原样；④ files 空态（无工作区）：引导文案 + 「打开文件夹…」按钮真的拉起目录对话框；有工作区时目录名头部 + 「+」新建文件不回归；⑤ 大纲 tab：无头部返回钮后列表/active 跳转/P18 折叠无回归；⑥ 会话记忆：侧栏设 outline → 重启回 outline，设 files → 重启回 files（restore 顺序：文件集恢复后再落 `saved.sidebarMode`）；⑦ 深浅主题下 tab 下划线/hover 可辨、侧栏拖宽（resizer）不回归。
 
 ### 6B. 树根跟随当前文档（P0·产品语义，行为变更）
 
