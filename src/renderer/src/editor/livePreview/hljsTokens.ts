@@ -5,6 +5,14 @@ import hljs from 'highlight.js/lib/common'
  *
  * The rendered CodeBlockWidget (P24) and export already paint code with
  * hljs github/github-dark CSS scoped under `.theme-light`/`.theme-dark`.
+ *
+ * Color provenance (task 1C): hljs token COLORS are NOT in export/palette.ts.
+ * They live upstream in `highlight.js/styles/github.css` / `github-dark.css`
+ * (imported `?raw`) and are scoped at the consumer — `editor/widgets.ts`
+ * (`injectScopedCss`, string-replaces `.hljs` under `.theme-light`/`.theme-dark`)
+ * and `export/buildDocument.ts` (export stylesheet). This module only
+ * produces the `hljs-*` CLASS vocabulary those sheets target; changing a
+ * hljs color means patching the upstream sheet scope, not palette.ts.
  * The focused panel (P28) shows raw editor lines instead — to keep the
  * dual-state color contract, the decoration path highlights with the SAME
  * hljs vocabulary: these ranges become `Decoration.mark({ class })` where

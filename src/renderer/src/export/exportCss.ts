@@ -7,10 +7,24 @@
  * (P20) — shared with the rich-text clipboard inline styles.
  */
 
-import { DARK_PALETTE, LIGHT_PALETTE, paletteToCssVars } from './palette'
+import {
+  DARK_PALETTE,
+  LIGHT_CALLOUTS,
+  LIGHT_PALETTE,
+  DARK_CALLOUTS,
+  paletteToCssVars,
+  type CalloutColors
+} from './palette'
 
 const lightVars = `\n${paletteToCssVars(LIGHT_PALETTE)}\n`
 const darkVars = `\n${paletteToCssVars(DARK_PALETTE)}\n`
+
+/** `--co-bar`/`--co-bg` custom-property rules for one theme (palette-sourced). */
+function calloutCss(selectorPrefix: string, co: CalloutColors): string {
+  return (Object.keys(co) as (keyof CalloutColors)[])
+    .map((t) => `${selectorPrefix} .export-callout-${t} { --co-bar: ${co[t][0]}; --co-bg: ${co[t][1]}; }`)
+    .join('\n')
+}
 
 export const EXPORT_DOC_CSS = `
 .export-theme-light {${lightVars}}
@@ -296,21 +310,7 @@ export const EXPORT_DOC_CSS = `
 .export-doc .export-callout-body > :first-child { margin-top: 0; }
 .export-doc .export-callout-body > :last-child { margin-bottom: 0; }
 
-.export-doc .export-callout-note { --co-bar: #0969da; --co-bg: #f0f6fc; }
-.export-doc .export-callout-tip { --co-bar: #1a7f37; --co-bg: #eef8f2; }
-.export-doc .export-callout-important { --co-bar: #8250df; --co-bg: #f5e9f7; }
-.export-doc .export-callout-warning { --co-bar: #9a6700; --co-bg: #fff6e0; }
-.export-doc .export-callout-caution { --co-bar: #cf222e; --co-bg: #fff0ee; }
-.export-doc .export-callout-info { --co-bar: #0a7ea4; --co-bg: #e7f3ff; }
-.export-doc .export-callout-success { --co-bar: #1a7f37; --co-bg: #e6f6ec; }
-.export-doc .export-callout-danger { --co-bar: #cf222e; --co-bg: #ffebe9; }
+${calloutCss('.export-doc', LIGHT_CALLOUTS)}
 
-.export-theme-dark .export-callout-note { --co-bar: #4493f8; --co-bg: #1c2b3a; }
-.export-theme-dark .export-callout-tip { --co-bar: #3fb950; --co-bg: #1c2e1e; }
-.export-theme-dark .export-callout-important { --co-bar: #a371f7; --co-bg: #2a2140; }
-.export-theme-dark .export-callout-warning { --co-bar: #d29922; --co-bg: #3a2e12; }
-.export-theme-dark .export-callout-caution { --co-bar: #f85149; --co-bg: #3d1c20; }
-.export-theme-dark .export-callout-info { --co-bar: #58a6ff; --co-bg: #1c2b3a; }
-.export-theme-dark .export-callout-success { --co-bar: #3fb950; --co-bg: #1c2e1e; }
-.export-theme-dark .export-callout-danger { --co-bar: #f85149; --co-bg: #3d1418; }
+${calloutCss('.export-theme-dark', DARK_CALLOUTS)}
 `

@@ -1,4 +1,10 @@
-import { DARK_PALETTE, paletteFor, type Palette } from './palette'
+import {
+  DARK_CALLOUTS,
+  DARK_PALETTE,
+  LIGHT_CALLOUTS,
+  paletteFor,
+  type Palette
+} from './palette'
 
 /**
  * P20 rich-text clipboard styling.
@@ -55,28 +61,9 @@ export function classStyles(p: Palette): Record<string, string> {
   // P21 callout cards — WeChat strips classes, so each type gets an inline
   // border-left/background pair; the generic rule runs first so the type
   // rule's later declarations win the style-attribute cascade.
-  const co =
-    p === DARK_PALETTE
-      ? {
-          note: ['#4493f8', '#1c2b3a'],
-          tip: ['#3fb950', '#1c2e1e'],
-          important: ['#a371f7', '#2a2140'],
-          warning: ['#d29922', '#3a2e12'],
-          caution: ['#f85149', '#3d1c20'],
-          info: ['#58a6ff', '#1c2b3a'],
-          success: ['#3fb950', '#1c2e1e'],
-          danger: ['#f85149', '#3d1418']
-        }
-      : {
-          note: ['#0969da', '#f0f6fc'],
-          tip: ['#1a7f37', '#eef8f2'],
-          important: ['#8250df', '#f5e9f7'],
-          warning: ['#9a6700', '#fff6e0'],
-          caution: ['#cf222e', '#fff0ee'],
-          info: ['#0a7ea4', '#e7f3ff'],
-          success: ['#1a7f37', '#e6f6ec'],
-          danger: ['#cf222e', '#ffebe9']
-        }
+  // Colors single-sourced in palette.ts (task 1C) — tuple shape kept so the
+  // `co.x[0]`/`co.x[1]` call sites below stay untouched.
+  const co = p === DARK_PALETTE ? DARK_CALLOUTS : LIGHT_CALLOUTS
   return {
     'export-code': `margin:0.75em 0`,
     'export-code-lang': `font-family:${MONO};font-size:12px;color:${p.fgDim};margin-bottom:4px`,
