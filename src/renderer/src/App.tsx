@@ -85,14 +85,10 @@ import { installP12Handle } from './e2e/seams/p12'
 export default function App(): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const viewRef = useRef<EditorView | null>(null)
-  // True only while the startup restore is replaying lastFile/lastFolder, so
-  // openRecentFile does not fight the restored sidebar mode.
-  const restoringRef = useRef(false)
-  // Separate from restoringRef: that one brackets the async restore body, while
-  // this stays false from first render until the restore attempt is resolved,
-  // so the session-persistence effects below cannot write during the gap.
-  // State rather than a ref, because flipping it must re-run those effects —
-  // a ref would leave them permanently skipped after their mount run.
+  // Stays false from first render until the startup restore attempt is
+  // resolved, so the session-persistence effects below cannot write during the
+  // gap. State rather than a ref, because flipping it must re-run those
+  // effects — a ref would leave them permanently skipped after their mount run.
   const [sessionSynced, setSessionSynced] = useState(false)
 
   // macOS: native traffic lights + menu-bar shortcuts; Win/Linux: custom titlebar.
@@ -157,8 +153,6 @@ export default function App(): React.JSX.Element {
   const fileOps = useFileOps({
     viewRef,
     updateOutline,
-    setSidebarMode,
-    restoringRef,
     onSaveFailed: showToast,
     // wave⑥-6 F3: format-on-save throw — one-shot, distinct copy from save failures.
     onFormatOnSaveFailed: () => showToast(t('format.onSaveFailed'))
@@ -272,7 +266,6 @@ export default function App(): React.JSX.Element {
     }
     const saved = getSession()
     void (async () => {
-      restoringRef.current = true
       try {
         if (saved.lastFolderPath && (await window.api.pathExists(saved.lastFolderPath))) {
           await workspace.loadFolder(saved.lastFolderPath)
@@ -288,7 +281,7 @@ export default function App(): React.JSX.Element {
         const missingNames: string[] = []
         for (const p of openTabs) {
           if (await window.api.pathExists(p)) {
-            await fileOps.openDocPath(p, { activate: false, quiet: true })
+            await fileOps.openDocPath(p, { activate: false })
           } else {
             // wave⑥/⑦ F3: list-form (names, capped) — count-only toast is
             // not actionable when several tabs fail to restore.
@@ -296,12 +289,12 @@ export default function App(): React.JSX.Element {
           }
         }
         if (saved.activePath && (await window.api.pathExists(saved.activePath))) {
-          await fileOps.openDocPath(saved.activePath, { quiet: true })
+          await fileOps.openDocPath(saved.activePath)
         } else if (openTabs.length > 0) {
           // Activate the first restored tab that exists.
           for (const p of openTabs) {
             if (await window.api.pathExists(p)) {
-              await fileOps.openDocPath(p, { quiet: true })
+              await fileOps.openDocPath(p)
               break
             }
           }
@@ -327,7 +320,6 @@ export default function App(): React.JSX.Element {
       } catch {
         // restore is best-effort
       } finally {
-        restoringRef.current = false
         // Re-enable the session-persistence effects only now, so they fire for
         // the restored state rather than clobbering it mid-boot.
         setSessionSynced(true)
@@ -1423,70 +1415,29 @@ export default function App(): React.JSX.Element {
                 onSwitchMode={switchSidebarMode}
                 backMode={sidebarBackModeRef.current}
               />
-            ) : sidebarMode === 'files' && workspace.folderPath ? (
-              <>
-                <div className="sidebar-header" title={workspace.folderPath}>
-                  <span className="sidebar-title">{folderName}</span>
-                  <button
-                    className="sidebar-action"
-                    onClick={openGlobalSearch}
-                    title={t('app.searchInFolder')}
-                  >
-                    <SearchIcon size={13} />
-                  </button>
-                  <button
-                    className="sidebar-action"
-                    onClick={() => void workspace.treeNewFile(workspace.folderPath!)}
-                    title={t('app.newFile')}
-                  >
-                    +
-                  </button>
-                </div>
-                <FileTree
-                  nodes={workspace.folderTree}
-                  activePath={filePath}
-                  renamingPath={workspace.renamingPath}
-                  onOpen={(path) => void workspace.openFileFromTree(path)}
-                  onContextMenu={workspace.setTreeMenu}
-                  onMove={(src, dest) => void workspace.treeMove(src, dest)}
-                  onRenameCommit={(node, name) => void workspace.finishInlineRename(node, name)}
-                  onRenameCancel={workspace.cancelInlineRename}
-                />
-                {/* P07: right-click on the empty area under the tree → root menu
-                    (rows stopPropagation, so only bare clicks land here). */}
-                <div
-                  className="filetree-blank"
-                  onContextMenu={(e) => {
-                    e.preventDefault()
-                    workspace.setTreeMenu({
-                      x: e.clientX,
-                      y: e.clientY,
-                      node: null
-                    })
-                  }}
-                />
-                {workspace.treeMenu && (
-                  <TreeMenu
-                    x={workspace.treeMenu.x}
-                    y={workspace.treeMenu.y}
-                    items={workspace.treeMenuItems}
-                    onClose={() => workspace.setTreeMenu(null)}
-                  />
-                )}
-              </>
             ) : (
               <>
-                <div className="sidebar-header">
-                  {workspace.folderPath && (
-                    <button
-                      className="sidebar-back"
-                      onClick={() => setSidebarMode('files')}
-                      title={t('app.filesBack')}
-                    >
-                      {t('app.filesBack')}
-                    </button>
-                  )}
-                  <span>{t('outline.title')}</span>
+                {/* 6A: dual-tab IA — Files/Outline stay addressable without
+                    navigating away; search entry lives on the tab row for both. */}
+                <div className="sidebar-tabs" role="tablist" aria-label={t('sidebar.tabs')}>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={sidebarMode === 'files'}
+                    className={`sidebar-tab${sidebarMode === 'files' ? ' is-active' : ''}`}
+                    onClick={() => setSidebarMode('files')}
+                  >
+                    {t('sidebar.tab.files')}
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={sidebarMode === 'outline'}
+                    className={`sidebar-tab${sidebarMode === 'outline' ? ' is-active' : ''}`}
+                    onClick={() => setSidebarMode('outline')}
+                  >
+                    {t('sidebar.tab.outline')}
+                  </button>
                   {workspace.folderPath && (
                     <button
                       className="sidebar-action"
@@ -1497,15 +1448,76 @@ export default function App(): React.JSX.Element {
                     </button>
                   )}
                 </div>
-                <Outline
-                  items={outline}
-                  activePos={activePos}
-                  onSelect={goToHeading}
-                  foldedKeys={foldedKeys}
-                  onToggleFold={(_pos, key) => {
-                    viewRef.current?.dispatch({ effects: toggleFold.of(key) })
-                  }}
-                />
+                {sidebarMode === 'files' ? (
+                  workspace.folderPath ? (
+                    <>
+                      <div className="sidebar-header" title={workspace.folderPath}>
+                        <span className="sidebar-title">{folderName}</span>
+                        <button
+                          className="sidebar-action"
+                          onClick={() => void workspace.treeNewFile(workspace.folderPath!)}
+                          title={t('app.newFile')}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <FileTree
+                        nodes={workspace.folderTree}
+                        activePath={filePath}
+                        renamingPath={workspace.renamingPath}
+                        onOpen={(path) => void workspace.openFileFromTree(path)}
+                        onContextMenu={workspace.setTreeMenu}
+                        onMove={(src, dest) => void workspace.treeMove(src, dest)}
+                        onRenameCommit={(node, name) => void workspace.finishInlineRename(node, name)}
+                        onRenameCancel={workspace.cancelInlineRename}
+                      />
+                      {/* P07: right-click on the empty area under the tree → root menu
+                          (rows stopPropagation, so only bare clicks land here). */}
+                      <div
+                        className="filetree-blank"
+                        onContextMenu={(e) => {
+                          e.preventDefault()
+                          workspace.setTreeMenu({
+                            x: e.clientX,
+                            y: e.clientY,
+                            node: null
+                          })
+                        }}
+                      />
+                      {workspace.treeMenu && (
+                        <TreeMenu
+                          x={workspace.treeMenu.x}
+                          y={workspace.treeMenu.y}
+                          items={workspace.treeMenuItems}
+                          onClose={() => workspace.setTreeMenu(null)}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    /* 6A: files tab without a workspace — guide to open one
+                       instead of silently falling back to the outline. */
+                    <div className="sidebar-empty">
+                      <p>{t('sidebar.filesEmpty')}</p>
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={() => void workspace.openFolder()}
+                      >
+                        {t('cmd.openFolder')}
+                      </button>
+                    </div>
+                  )
+                ) : (
+                  <Outline
+                    items={outline}
+                    activePos={activePos}
+                    onSelect={goToHeading}
+                    foldedKeys={foldedKeys}
+                    onToggleFold={(_pos, key) => {
+                      viewRef.current?.dispatch({ effects: toggleFold.of(key) })
+                    }}
+                  />
+                )}
               </>
             )}
           </aside>

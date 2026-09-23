@@ -90,27 +90,23 @@ export function useWorkspaceTree({
     [loadFolder]
   )
 
-  // Open a file picked from the folder tree — switches the sidebar to outline.
+  // Open a file picked from the folder tree. 6A: the sidebar stays on the
+  // files tab (Typora file-tab semantics) — opens never switch sidebar mode.
   const openFileFromTree = useCallback(
     async (path: string) => {
       // P26: tree opens go through the tab layer — already-open files just
       // activate; new files become a tab (no content replacement, no gate).
       if (openDocPath) {
         await openDocPath(path)
-        setSidebarMode('outline')
         return
       }
-      if (filePathRef.current === path) {
-        setSidebarMode('outline')
-        return
-      }
+      if (filePathRef.current === path) return
       if (!(await confirmDiscard())) return
       const content = await window.api.readFile(path)
       setBaseDir(path)
       loadContent(content, path)
-      setSidebarMode('outline')
     },
-    [openDocPath, filePathRef, confirmDiscard, loadContent, setSidebarMode, setBaseDir]
+    [openDocPath, filePathRef, confirmDiscard, loadContent, setBaseDir]
   )
 
   const joinPath = useCallback((dir: string, name: string): string => {

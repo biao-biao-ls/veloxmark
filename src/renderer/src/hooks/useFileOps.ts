@@ -33,9 +33,6 @@ export type { DocTabInfo }
 interface Args {
   viewRef: RefObject<EditorView | null>
   updateOutline: () => void
-  setSidebarMode: (mode: SidebarMode) => void
-  /** P03 session restore only — suppress the outline switch for one open. */
-  restoringRef: RefObject<boolean>
   /** wave③ toast 统一: manual Save/Save As write failures surface here. */
   onSaveFailed?: (message: string) => void
   /** UX-P23 wave⑥-6 F3: format-on-save throw → one-shot toast; save continues. */
@@ -45,8 +42,6 @@ interface Args {
 export function useFileOps({
   viewRef,
   updateOutline,
-  setSidebarMode,
-  restoringRef,
   onSaveFailed,
   onFormatOnSaveFailed
 }: Args) {
@@ -63,7 +58,7 @@ export function useFileOps({
   }, [])
 
   const store = useTabStore({ viewRef, updateOutline, notifySaveFailed })
-  const io = useDocIo({ viewRef, store, setSidebarMode, restoringRef, notifySaveFailed, onFormatOnSaveFailedRef, updateOutline })
+  const io = useDocIo({ viewRef, store, notifySaveFailed, onFormatOnSaveFailedRef, updateOutline })
 
   /** P12 three-option gate (buffer-replacement paths / e2e). */
   const confirmDiscard = useCallback(

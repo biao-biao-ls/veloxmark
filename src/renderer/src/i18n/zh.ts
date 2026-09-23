@@ -343,7 +343,10 @@ export const ZH: Record<string, string> = {
   // ---- outline / sidebar -----------------------------------------------------
   'outline.empty': '暂无标题',
   'outline.title': '大纲',
-  'app.filesBack': '‹ 文件',
+  'sidebar.tabs': '侧栏标签',
+  'sidebar.tab.files': '文件',
+  'sidebar.tab.outline': '大纲',
+  'sidebar.filesEmpty': '打开文件夹以浏览其中的 Markdown 文件',
   'app.newFile': '新建文件',
   'app.searchInFolder': '搜索文件夹（Ctrl+Shift+F）',
 

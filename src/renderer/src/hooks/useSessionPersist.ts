@@ -17,8 +17,8 @@ import type { SidebarMode } from '../preferences/store'
 
 export interface UseSessionPersistArgs {
   /**
-   * These effects fire on mount, which is *before* the restore effect runs and
-   * while restoringRef is still false. Writing then would overwrite the saved
+   * These effects fire on mount, which is *before* the startup restore effect
+   * has applied the saved session. Writing then would overwrite the saved
    * session with the initial React state — sidebarVisible true, mode 'outline',
    * width 240 — wiping recents, last paths and the stored sidebar layout on
    * every launch. Gate on sessionSynced, which the restore effect flips once

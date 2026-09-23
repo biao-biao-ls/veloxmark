@@ -14,7 +14,7 @@
 import { useCallback, useEffect, type RefObject } from 'react'
 import { EditorView } from '@codemirror/view'
 import { dialog } from '../components/Dialog'
-import { addRecentFile, getPreferences, patchSession, type SidebarMode } from '../preferences/store'
+import { addRecentFile, getPreferences, patchSession } from '../preferences/store'
 import { formatMarkdown } from '../editor/format'
 import { t } from '../i18n'
 import { showSaveDialog } from '../export/e2eSaveDialog'
@@ -25,8 +25,6 @@ import type { SaveAllResult } from './tabClosePolicy'
 export interface OpenDocPathOpts {
   /** false = open in background (session restore); default true. */
   activate?: boolean
-  /** true = skip the outline sidebar switch (restore/search keep mode). */
-  quiet?: boolean
   /** Optional cursor offset applied after activation. */
   pos?: number
 }
@@ -50,16 +48,12 @@ export interface DocIo {
 export function useDocIo({
   viewRef,
   store,
-  setSidebarMode,
-  restoringRef,
   notifySaveFailed,
   onFormatOnSaveFailedRef,
   updateOutline
 }: {
   viewRef: RefObject<EditorView | null>
   store: TabStore
-  setSidebarMode: (mode: SidebarMode) => void
-  restoringRef: RefObject<boolean>
   notifySaveFailed: (path: string | null, err: unknown) => void
   onFormatOnSaveFailedRef: RefObject<(() => void) | undefined>
   updateOutline: () => void
@@ -110,7 +104,6 @@ export function useDocIo({
               })
               view.focus()
             }
-            if (!opts?.quiet && !restoringRef.current) setSidebarMode('outline')
           }
           return true
         }
@@ -149,13 +142,12 @@ export function useDocIo({
           })
           view.focus()
         }
-        if (!opts?.quiet && !restoringRef.current) setSidebarMode('outline')
       } else {
         refreshTabs()
       }
       return true
     },
-    [allTabs, activateTab, makeState, addTab, refreshTabs, restoringRef, setSidebarMode, viewRef]
+    [allTabs, activateTab, makeState, addTab, refreshTabs, viewRef]
   )
 
   /**
@@ -411,9 +403,9 @@ export function useDocIo({
   // Open a specific path (Recent Files entries, session restore).
   const openRecentFile = useCallback(
     async (path: string) => {
-      await openDocPath(path, { quiet: restoringRef.current })
+      await openDocPath(path)
     },
-    [openDocPath, restoringRef]
+    [openDocPath]
   )
 
   // macOS Finder "Open With" delivers paths before/after mount — subscribe here.
@@ -424,11 +416,11 @@ export function useDocIo({
   /**
    * P13: open a workspace path (search results, deep links) as a tab, with
    * optional cursor placement. Already-open files activate their existing
-   * tab (acceptance 2). Leaves the sidebar mode untouched.
+   * tab (acceptance 2). Sidebar mode is never touched by opens (6A).
    */
   const openFileByPath = useCallback(
     async (path: string, pos?: number): Promise<boolean> => {
-      return openDocPath(path, { pos, quiet: true })
+      return openDocPath(path, { pos })
     },
     [openDocPath]
   )
