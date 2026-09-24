@@ -23,7 +23,7 @@
   `ops.ts` 增加 `moveRowOp`/`moveColOp`（交换相邻行/列，列移动时 `aligns` 随列走），右键菜单补「上移该行 / 下移该行 / 左移该列 / 右移该列」4 项。纯函数 + `ops` 单测；菜单 id 进 cdp 契约时同步 `opsTable.ts` id 字面量注释。
   AC：任意行/列可上/下/左/右移动；首行（表头）不上移、首列不左移（按钮禁用或 no-op 语义在 plan 定）；undo 一步还原；移动列后对齐属性跟随。
 
-- [ ] **② 7.2 表格结构操作快捷键**（spec `7B-table-shortcuts`，依赖 ①）
+- [x] **② 7.2 表格结构操作快捷键**（spec `7B-table-shortcuts`，依赖 ①）
   编辑表格时绑定 Ctrl+Enter（下方插行）、Alt+↑/↓（移行）、Alt+←/→（移列），与 Typora 一致。落点：`keymap.ts`（嵌套单元格编辑态）+ 主编辑器/生命周期侧（激活态未进单元格时）。
   AC：快捷键仅在表格编辑激活态生效，不劫持全局；与 ① 菜单项同 userEvent/同 toast 语义；`shortcutSync` 相关测试若涉及须同步。
 
