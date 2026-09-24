@@ -420,12 +420,17 @@
   position: relative;
   margin: 0 var(--editor-gutter);
   padding: 16px;
-  border: 1px solid var(--border);
+  /* 10B: box chrome dropped (mermaid-default.png — chart on the page). The
+     transparent border reserves the hover frame's space (zero shift). */
+  border: 1px solid transparent;
   border-radius: 6px;
-  background: var(--widget-surface);
   text-align: center;
   cursor: pointer;
   overflow-x: auto;
+}
+
+.cm-md-mermaid:hover {
+  border-color: var(--border);
 }
 
 .cm-md-mermaid-svg {
@@ -525,9 +530,15 @@
 
 /* 10A: focused-mermaid dual pane — live preview trailing the P28 source panel
    (previewBelow). Shares the .cm-md-mermaid render-host chrome above; only the
-   seam gap under the source panel is preview-specific. */
+   seam gap under the source panel is preview-specific.
+   10B: state split (baselines differ) — the idle wrap went flat; the preview
+   keeps a light box per mermaid-focus.png (white surface beside the gray
+   source panel). */
 .cm-md-mermaid-preview {
   margin-top: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
 }
 
 /* P16: fullscreen mermaid lightbox (App-root portal, singleton) */

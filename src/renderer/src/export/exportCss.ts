@@ -180,9 +180,6 @@ export const EXPORT_DOC_CSS = `
 .export-doc .export-mermaid {
   margin: 0.5em 0;
   padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg-alt);
   text-align: center;
   overflow-x: auto;
 }
