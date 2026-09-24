@@ -66,7 +66,7 @@
   聚焦态右上/右下角显示语言 chip（对照 `mermaid-focus.png`），点击可切换 fence 语言（mermaid ↔ 普通代码，与 ⑦ 共用语言列表）。
   AC：切走 mermaid 后按普通代码块渲染；切回即恢复图表渲染。
 
-- [ ] **⑫ 7.7 列宽跨会话持久化**（spec `7F-colwidth-persist`；**决策后实施**）
+- [x] **⑫ 7.7 列宽跨会话持久化**（spec `7F-colwidth-persist`）——已收敛 2026-09-25：**决策取 session store 按文件路径**（`headingFolds` 房内先例；侧车形态/.gitignore 产品决策随不选侧车而消解，spec 决策记录）；写口 `useTableWidthSync`（签名门 + 500ms 去抖）、读口 `restoreColWidths` 全量替换防串扰；`.md` 零触碰。
   `colWidths` 现为会话级 Map（`state.ts`）。持久化方案：元数据侧车（不污染 .md 正文，符合「Markdown 唯一数据源」）或按文件路径存 preferences store（plan 择一，[NEEDS CLARIFICATION: 侧车文件形态与 .gitignore 策略需产品决策]）。
   AC：重开文件列宽保持；文档行列数变化时陈旧宽度合理失效或钳制；不向 .md 写入非 Markdown 内容。
 
