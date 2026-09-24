@@ -51,3 +51,14 @@ npm run typecheck && npm run test:unit
 - 单测覆盖：upsert 去重移动、置顶序、历史挤出（10）、置顶上限（5）、移除、旧 `lastFolderPath` 迁移
 - e2e 缝 grep：既有契约不在 diff
 - 人工冒烟：目录点击切根（走显式根）；蓝点跟随；置顶/移除持久化；列表/树切换即时 + 重启保持 + 排序共用；列表行打开/高亮/右键与树视图一致；深浅主题
+
+# 6F 实现细化（2026-09-24，implement 时决策落档）
+
+- **D6 置顶钮 toggle 语义**（AC3 只列「置顶/移除」二操作的补全）：`togglePinRecent`——未置顶 → 置顶（进置顶组尾，保持相对序）；已置顶再点 → 取消置顶回落**历史区首**（作为「刚被使用」）；满 5 置顶再点新项 = no-op 返回原引用。hover 钮 title/aria 随态切 `ops.recents.pin`/`unpin`。
+- **D7 upsert 落点**：plan 表点名 `useTreeRoot.ts`，实际收编点是 **`useWorkspaceTree.applyTreeRoot`**（根写侧唯一漏斗，6B 记录③同款修正）——`patchSession({ lastFolderPath })` 写侧删除，替换为 `upsertRecent` 进 `preferences.recentFolders`（历史首/已置顶时 upsert 返回原引用则不写 store，防无谓通知）。`useTreeRoot` 仅更新头注释。
+- **D8 路径同一性**：`pathKey`（去尾分隔符 + `\`→`/` + 小写）落在 `filetree/recents.ts`（pathUtil 无归一器，不扩面）；蓝点比较、去重、移除全走 `pathKey`；源路径字符串原样保留。
+- **D9 列表视图排序语义**：扁平行 = `flattenFiles`（新纯函数，落 `filetreeRows.ts` 配单测，plan 原写「实现在 FileTree.tsx」——纯逻辑按宪法抽测）递归收集全部文件 → **按 6E 当前键全局排序**（`sortTreeNodes` 复用；纯文件列表下 groupFolders 为 no-op）。「共用 6E 排序」= 共用键/升降/比较器；树视图保持层级内序。副标题 = `relDir`（`subdir/`，根层空）**右对齐暗色**（VSCode 扁平列表惯例），分隔符随平台。
+- **D10 迁移收口**：`useSessionPersist` 启动一次性迁移（空依赖 effect：读 `lastFolderPath` → `upsertRecent` → 清槽；strict-mode 双跑幂等）；迁移后 `lastFolderPath` 字段保留类型面但**不再有写侧**（D5 收编完成）。
+- **D11 面板溢出**：`.sidebar-ops` 增 `max-height: min(70vh, 520px)` + `overflow-y: auto`（15 recents + 五项 + 排序行在小窗不溢出）。
+- **i18n 新 key**：`ops.recents` / `ops.recents.pin|unpin|remove|current`（en+zh 同加）。图标 `PinIcon`/`TrashIcon` 补入 Icons.tsx（禁 emoji）。
+- **D8 探针面登记（只增不改）**：`data-op` `sidebar.ops.recent.item`（行容器，带 `data-path`）|`sidebar.ops.recent.open`|`sidebar.ops.recent.pin`|`sidebar.ops.recent.remove`；class `.sidebar-ops-recents*`/`.sidebar-ops-recent*`/`.recents-current`/`.filetree-list-name`/`.filetree-list-sub`。
