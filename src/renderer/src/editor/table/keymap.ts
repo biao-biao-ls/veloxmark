@@ -40,14 +40,37 @@ export interface NestedNavFns {
  * 7B shared binding table — key literals live here ONCE for both the in-cell
  * keymap and the main-editor backstop (⑨ shortcut hints read this source).
  */
+export const STRUCT_KEYS: ReadonlyArray<{ key: string; cmd: StructCmd }> = [
+  { key: 'Ctrl-Enter', cmd: 'insertRowBelow' },
+  { key: 'Alt-ArrowUp', cmd: 'moveRowUp' },
+  { key: 'Alt-ArrowDown', cmd: 'moveRowDown' },
+  { key: 'Alt-ArrowLeft', cmd: 'moveColLeft' },
+  { key: 'Alt-ArrowRight', cmd: 'moveColRight' }
+]
+
 export function structKeyBindings(tryRun: StructTryFn): KeyBinding[] {
-  return [
-    { key: 'Ctrl-Enter', run: (v) => tryRun(v, 'insertRowBelow') },
-    { key: 'Alt-ArrowUp', run: (v) => tryRun(v, 'moveRowUp') },
-    { key: 'Alt-ArrowDown', run: (v) => tryRun(v, 'moveRowDown') },
-    { key: 'Alt-ArrowLeft', run: (v) => tryRun(v, 'moveColLeft') },
-    { key: 'Alt-ArrowRight', run: (v) => tryRun(v, 'moveColRight') }
-  ]
+  return STRUCT_KEYS.map(({ key, cmd }) => ({ key, run: (v: EditorView) => tryRun(v, cmd) }))
+}
+
+/** Arrow-name → glyph for shortcut-hint display (7D). */
+const KEY_GLYPHS: Record<string, string> = {
+  ArrowUp: '↑',
+  ArrowDown: '↓',
+  ArrowLeft: '←',
+  ArrowRight: '→'
+}
+
+/**
+ * 7D pure display converter: CM key syntax → fmtShortcut input style
+ * (`Ctrl-Enter` → `Ctrl+Enter`, `Alt-ArrowUp` → `Alt+↑`). Enter stays a word
+ * (对照 table-btn-4.png: `Ctrl+Enter`). The caller runs fmtShortcut for the
+ * mac ⌘/⇧/⌥ pass — this module keeps its zero project-import discipline.
+ */
+export function cmKeyToDisplay(key: string): string {
+  return key
+    .split('-')
+    .map((seg) => KEY_GLYPHS[seg] ?? seg)
+    .join('+')
 }
 
 /**

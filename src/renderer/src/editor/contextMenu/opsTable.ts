@@ -22,6 +22,8 @@ import {
   type TableOp
 } from '../table/ops'
 import { unescapeCell, type TableModel } from '../table/parse'
+import { cmKeyToDisplay, STRUCT_KEYS, type StructCmd } from '../table/keymap'
+import { fmtShortcut } from '../../commands/shortcutDisplay'
 import {
   deleteTableRange,
   formatTableSourceRange,
@@ -52,6 +54,14 @@ export interface TableDeltaDeps {
  */
 export function tableDeltaItems(deps: TableDeltaDeps, rt: CtxRuntime): CtxMenuItem[] {
   const { view, tableFrom, row, col } = deps
+  // 7D: shortcut hints — derived from the STRUCT_KEYS single source (7B file
+  // header contract: key literals live in keymap.ts ONCE). Display-ready via
+  // fmtShortcut (mac ⌘ pass), same convention as commands/menuLayout.ts.
+  const isMac = window.api.platform === 'darwin'
+  const structShortcut = (cmd: StructCmd): string | undefined => {
+    const hit = STRUCT_KEYS.find((k) => k.cmd === cmd)
+    return hit ? fmtShortcut(cmKeyToDisplay(hit.key), isMac) : undefined
+  }
   // 7A boundary disable (first half of the double insurance — the ops return
   // null at edges too): fresh dims at menu-build time via modelSpan re-parse.
   const dims = (() => {
@@ -68,6 +78,7 @@ export function tableDeltaItems(deps: TableDeltaDeps, rt: CtxRuntime): CtxMenuIt
     {
       id: 'insertRowBelow',
       label: t('ctx.insertRowBelow'),
+      shortcut: structShortcut('insertRowBelow'),
       run: () => deps.runOp((m) => insertRowBelowOp(m, row), 'input.table.insertRow')
     },
     {
@@ -104,24 +115,28 @@ export function tableDeltaItems(deps: TableDeltaDeps, rt: CtxRuntime): CtxMenuIt
     {
       id: 'moveRowUp',
       label: t('ctx.moveRowUp'),
+      shortcut: structShortcut('moveRowUp'),
       disabled: row <= 0,
       run: () => deps.runOp((m) => moveRowUpOp(m, row, col), 'input.table.moveRow')
     },
     {
       id: 'moveRowDown',
       label: t('ctx.moveRowDown'),
+      shortcut: structShortcut('moveRowDown'),
       disabled: row >= dims.rows - 1,
       run: () => deps.runOp((m) => moveRowDownOp(m, row, col), 'input.table.moveRow')
     },
     {
       id: 'moveColLeft',
       label: t('ctx.moveColLeft'),
+      shortcut: structShortcut('moveColLeft'),
       disabled: col <= 0,
       run: () => deps.runOp((m) => moveColLeftOp(m, row, col), 'input.table.moveCol')
     },
     {
       id: 'moveColRight',
       label: t('ctx.moveColRight'),
+      shortcut: structShortcut('moveColRight'),
       disabled: col >= dims.cols - 1,
       run: () => deps.runOp((m) => moveColRightOp(m, row, col), 'input.table.moveCol')
     },
