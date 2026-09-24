@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron'
 import { watch, type FSWatcher } from 'node:fs'
-import { readdir } from 'node:fs/promises'
+import { readdir, stat } from 'node:fs/promises'
 import { basename, isAbsolute, join } from 'node:path'
 import { IpcChannels, type DirNode, type FolderScanOptions } from '../shared/api'
 import { IMAGE_FILE_EXT, queueImageChange, stopImageChangeBroadcast } from './image'
@@ -79,12 +79,22 @@ async function listMarkdownTree(dirPath: string, depth = 0): Promise<DirNode[]> 
     if (!scanOptions.showHiddenFiles && entry.name.startsWith('.')) continue
     if (isIgnored(entry.name)) continue
     const full = join(dirPath, entry.name)
+    // 6E: sort timestamps gathered at scan time (renderer comparators never
+    // re-scan). Entry vanished mid-scan → omit both fields (sort treats as last).
+    let times: Pick<DirNode, 'mtimeMs' | 'birthtimeMs'> = {}
+    try {
+      const st = await stat(full)
+      times = { mtimeMs: st.mtimeMs, birthtimeMs: st.birthtimeMs }
+    } catch {
+      times = {}
+    }
     if (entry.isDirectory()) {
       const children = await listMarkdownTree(full, depth + 1)
       // keep a folder only when it (recursively) holds markdown files
-      if (children.length > 0) dirs.push({ name: entry.name, path: full, isDir: true, children })
+      if (children.length > 0)
+        dirs.push({ name: entry.name, path: full, isDir: true, children, ...times })
     } else if (entry.isFile() && MD_EXT.test(entry.name)) {
-      files.push({ name: entry.name, path: full, isDir: false })
+      files.push({ name: entry.name, path: full, isDir: false, ...times })
     }
   }
   const byName = (a: DirNode, b: DirNode): number => a.name.localeCompare(b.name)

@@ -3,6 +3,8 @@ import type { DirNode } from '../../../../electron/shared/api'
 import { ChevronDownIcon, ChevronRightIcon, FileMdIcon, FolderIcon, FolderOpenIcon } from './Icons'
 import { t } from '../i18n'
 import { ancestorDirPaths, visibleRows, type FlatRow } from './filetreeRows'
+import { sortTreeNodes } from '../filetree/sort'
+import { usePreferences } from '../preferences/useStore'
 
 /** node === null means the workspace root (empty-area context menu, P07). */
 export interface TreeMenuRequest {
@@ -141,9 +143,14 @@ export default function FileTree({
   // still wins. Rename ancestors force open (UX-P07-F4).
   const revealDirs = useMemo(() => ancestorDirPaths(activePath), [activePath])
   const renameDirs = useMemo(() => ancestorDirPaths(renamingPath ?? null), [renamingPath])
+  // 6E D4: sort is a pure pre-pass on the scan tree (per-level; shared with the
+  // 6.12 list fork) — inserted before the 6C flatten seam. Reactive to the
+  // ops-panel sort row via preferences (instant re-sort, spec AC1).
+  const fileTreeSort = usePreferences().fileTreeSort
+  const sortedNodes = useMemo(() => sortTreeNodes(nodes, fileTreeSort), [nodes, fileTreeSort])
   const rows = useMemo(
-    () => visibleRows(nodes, { expanded, revealDirs, renameDirs }),
-    [nodes, expanded, revealDirs, renameDirs]
+    () => visibleRows(sortedNodes, { expanded, revealDirs, renameDirs }),
+    [sortedNodes, expanded, revealDirs, renameDirs]
   )
 
   // The sidebar is the scroll parent — track it so the window follows scroll.

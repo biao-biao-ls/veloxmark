@@ -11,6 +11,8 @@
  * consumes them, so every setPreferences() takes effect immediately.
  */
 
+import { DEFAULT_TREE_SORT, type TreeSortOptions } from '../filetree/sort'
+
 export const PREFERENCES_VERSION = 1
 
 export type ThemeMode = 'light' | 'dark' | 'system'
@@ -55,6 +57,8 @@ export interface Preferences {
   showHiddenFiles: boolean
   /** 6D D7: file-tree view mode (render fork lands in 6.12). */
   fileTreeView: FileTreeView
+  /** 6E D5: file-tree sort state (comparators in filetree/sort.ts). */
+  fileTreeSort: TreeSortOptions
   // ---- focus modes (P08) -----------------------------------------------------
   /** Dim every top-level block the cursor is not in. */
   focusMode: boolean
@@ -144,6 +148,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   folderIgnoreNames: ['node_modules', '.git', '.svn', '.hg', 'dist', 'out', 'build', '.DS_Store'],
   showHiddenFiles: false,
   fileTreeView: 'tree',
+  fileTreeSort: { ...DEFAULT_TREE_SORT },
   focusMode: false,
   typewriterMode: false,
   sourceMode: false,
@@ -223,6 +228,16 @@ function migrateLegacyKeys(raw: Partial<Preferences>): Partial<Preferences> {
   return next
 }
 
+function sanitizeTreeSort(v: unknown): TreeSortOptions {
+  const s = (v && typeof v === 'object' ? v : {}) as Partial<TreeSortOptions>
+  return {
+    groupFolders: s.groupFolders !== false,
+    key:
+      s.key === 'name' || s.key === 'mtime' || s.key === 'birthtime' ? s.key : 'natural',
+    dir: s.dir === 'desc' ? 'desc' : 'asc'
+  }
+}
+
 function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
   const p = { ...DEFAULT_PREFERENCES, ...(raw ?? {}) }
   const num = (v: unknown, fallback: number, min: number, max: number): number =>
@@ -264,6 +279,9 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
       : [...DEFAULT_PREFERENCES.folderIgnoreNames],
     showHiddenFiles: p.showHiddenFiles === true,
     fileTreeView: p.fileTreeView === 'list' ? 'list' : 'tree',
+    // 6E D5: lenient — missing/partial blobs fall back per field, invalid
+    // enums → DEFAULT_TREE_SORT's key/'asc'.
+    fileTreeSort: sanitizeTreeSort(p.fileTreeSort),
     focusMode: p.focusMode === true,
     formatOnSave: p.formatOnSave === true,
     codeBlockCollapseLines:

@@ -150,6 +150,26 @@ export function ListIcon({ size = 14, ...rest }: IconProps) {
 }
 
 /** 6D view toggle: tree view glyph (branching rows). */
+/** 6E sort-by-modified-time glyph (sort row). */
+export function ClockIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </Svg>
+  )
+}
+
+/** 6E sort-by-created-time glyph (plain file, sort row). */
+export function FileIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+      <path d="M14 3v5h5" />
+    </Svg>
+  )
+}
+
 export function TreeIcon({ size = 14, ...rest }: IconProps) {
   return (
     <Svg size={size} {...rest}>

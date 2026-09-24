@@ -10,6 +10,10 @@ export interface DirNode {
   path: string
   isDir: boolean
   children?: DirNode[]
+  /** 6E: last-modified (ms) for sort-by-mtime; optional (stat 失败时缺省). */
+  mtimeMs?: number
+  /** 6E: creation time (ms) for sort-by-birthtime; optional (同上). */
+  birthtimeMs?: number
 }
 
 export interface OpenFileResult {

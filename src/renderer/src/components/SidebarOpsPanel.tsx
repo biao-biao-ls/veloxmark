@@ -1,13 +1,17 @@
 /**
  * 6D「操作」面板（`temp/typora/typora-4.png`）：底部操作栏触发的下拉浮层，
- * 顶部标题「操作」+ ⊗ 关闭，五操作项。开合经模块单例 bus（`sidebarOpsBus`）——
- * 面板自身持开合态；Esc / 外点 / resize / ⊗ 关闭（TreeMenu 同交互面）。
- * 6E 排序行、6F「最近使用的目录」段后续插入同一容器，本单元只搭容器与五项。
+ * 顶部标题「操作」+ ⊗ 关闭，五操作项；6E 排序行（分组 toggle + 四键互斥单选，
+ * 点按选中/再按翻转升降）插在同一容器五项之后。开合经模块单例 bus
+ * （`sidebarOpsBus`）——面板自身持开合态；Esc / 外点 / resize / ⊗ 关闭
+ * （TreeMenu 同交互面）。6F「最近使用的目录」段后续插入同一容器。
  */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { registerSidebarOps } from './sidebarOpsBus'
-import { CloseIcon } from './Icons'
+import { ClockIcon, CloseIcon, FileIcon, FolderIcon } from './Icons'
 import { t } from '../i18n'
+import { pressSortKey, toggleGroupFolders, type TreeSortKey } from '../filetree/sort'
+import { setPreferences } from '../preferences/store'
+import { usePreferences } from '../preferences/useStore'
 
 export interface SidebarOpsActions {
   onNewFile: () => void
@@ -21,6 +25,9 @@ export default function SidebarOpsPanel(actions: SidebarOpsActions): React.JSX.E
   const [anchor, setAnchor] = useState<DOMRect | null>(null)
   const ref = useRef<HTMLDivElement | null>(null)
   const [pos, setPos] = useState({ left: 0, bottom: 0 })
+  // 6E: sort state reacts via the preferences store (instant re-sort in the
+  // tree; persisted across restarts — AC1/AC6).
+  const sort = usePreferences().fileTreeSort
 
   // Singleton registration: trigger presses toggle (open with this anchor /
   // close when already open — the AC3 two-entry, one-panel rule).
@@ -74,6 +81,30 @@ export default function SidebarOpsPanel(actions: SidebarOpsActions): React.JSX.E
     { op: 'sidebar.ops.refresh', labelKey: 'ops.refresh', run: actions.onRefresh }
   ]
 
+  // 6E: sort row glyphs per typora-4.png 排序行（↑A / ↑🕐 / ↑📄，方向箭头随 dir 翻转）。
+  const dirArrow = sort.dir === 'asc' ? '↑' : '↓'
+  const sortKeys: Array<{
+    key: TreeSortKey
+    op: string
+    labelKey: string
+    glyph: React.JSX.Element | string
+  }> = [
+    { key: 'natural', op: 'sidebar.ops.sort.natural', labelKey: 'ops.sort.natural', glyph: '123' },
+    { key: 'name', op: 'sidebar.ops.sort.name', labelKey: 'ops.sort.name', glyph: 'A' },
+    {
+      key: 'mtime',
+      op: 'sidebar.ops.sort.mtime',
+      labelKey: 'ops.sort.mtime',
+      glyph: <ClockIcon size={12} />
+    },
+    {
+      key: 'birthtime',
+      op: 'sidebar.ops.sort.birthtime',
+      labelKey: 'ops.sort.birthtime',
+      glyph: <FileIcon size={12} />
+    }
+  ]
+
   return (
     <div
       ref={ref}
@@ -109,6 +140,40 @@ export default function SidebarOpsPanel(actions: SidebarOpsActions): React.JSX.E
           {t(item.labelKey)}
         </button>
       ))}
+      {/* 6E sort row — toggles, not actions: clicks must NOT close the panel. */}
+      <div className="sidebar-ops-sort" role="group" aria-label={t('ops.sort')}>
+        <span className="sidebar-ops-sort-label">{t('ops.sort')}</span>
+        <button
+          type="button"
+          className={`sidebar-ops-sort-btn${sort.groupFolders ? ' is-active' : ''}`}
+          data-op="sidebar.ops.sort.groupFolders"
+          aria-pressed={sort.groupFolders}
+          aria-label={t('ops.sort.groupFolders')}
+          title={t('ops.sort.groupFolders')}
+          onClick={() => setPreferences({ fileTreeSort: toggleGroupFolders(sort) })}
+        >
+          <FolderIcon size={13} />
+        </button>
+        {sortKeys.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            className={`sidebar-ops-sort-btn${sort.key === item.key ? ' is-active' : ''}`}
+            data-op={item.op}
+            aria-pressed={sort.key === item.key}
+            aria-label={t(item.labelKey)}
+            title={t(item.labelKey)}
+            onClick={() => setPreferences({ fileTreeSort: pressSortKey(sort, item.key) })}
+          >
+            <span className="sidebar-ops-sort-dir">{dirArrow}</span>
+            {typeof item.glyph === 'string' ? (
+              <span className="sidebar-ops-sort-glyph">{item.glyph}</span>
+            ) : (
+              item.glyph
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

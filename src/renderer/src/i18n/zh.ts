@@ -353,6 +353,12 @@ export const ZH: Record<string, string> = {
   'ops.reveal': '在资源管理器中显示',
   'ops.refresh': '刷新',
   'ops.toggleView': '切换列表/树视图',
+  'ops.sort': '排序',
+  'ops.sort.groupFolders': '按文件夹分组',
+  'ops.sort.natural': '自然排序',
+  'ops.sort.name': '按文件名排序',
+  'ops.sort.mtime': '按修改时间排序',
+  'ops.sort.birthtime': '按创建时间排序',
   'app.newFile': '新建文件',
   'app.searchInFolder': '搜索文件夹（Ctrl+Shift+F）',
 

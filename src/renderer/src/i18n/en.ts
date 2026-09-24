@@ -357,6 +357,12 @@ export const EN: Record<string, string> = {
   'ops.reveal': 'Reveal in Folder',
   'ops.refresh': 'Refresh',
   'ops.toggleView': 'Toggle list/tree view',
+  'ops.sort': 'Sort',
+  'ops.sort.groupFolders': 'Group by folder',
+  'ops.sort.natural': 'Natural sort',
+  'ops.sort.name': 'Sort by name',
+  'ops.sort.mtime': 'Sort by modified time',
+  'ops.sort.birthtime': 'Sort by created time',
   'app.newFile': 'New file',
   'app.searchInFolder': 'Search in folder (Ctrl+Shift+F)',
 
