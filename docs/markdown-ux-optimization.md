@@ -57,7 +57,8 @@
   `opsTable.ts` 表单项填 `shortcut`（② 绑定后），菜单右列渲染提示（对照 `table-btn-4.png` 观感）。
   AC：有快捷键的项均显示提示；无快捷键项不占位；mac 下显示 ⌘ 风格（走现有 `fmtShortcut`）。
 
-- [ ] **⑩ 8.4 KaTeX 错误态补跳源码入口**（spec `8C-math-error-nav`）
+- [x] **⑩ 8.4 KaTeX 错误态补跳源码入口**（spec `8C-math-error-nav`）
+  已收敛 2026-09-25：非法 TeX 块下方错误条 +「跳到源码」（事件时 `findMathBlockAt` 重解析至 `$$` 起点）；皮肤与 mermaid 错误条共享选择器列表（mermaid class 零改）；合法 TeX 同壳零新 DOM。
   公式渲染失败时错误条提供「跳到源码」按钮（对照 mermaid `cm-md-mermaid-jump` 同款交互）。
   AC：错误条可点击定位到 `$$` 起点；正常渲染时无错误条。
 
