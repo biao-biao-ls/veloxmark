@@ -97,10 +97,13 @@ export class CodeBlockWidget extends BlockWidget {
     if (this.ui?.wrap) wrap.classList.add('cm-md-code-block-wrap')
     if (collapsed) wrap.classList.add('cm-md-code-block-collapsed')
 
-    const label = document.createElement('div')
-    label.className = 'cm-md-code-lang'
-    label.textContent = this.lang || 'text'
-    wrap.appendChild(label)
+    // 9B: language demoted from the top bar to a hover badge bottom-right —
+    // same visual slot as the 9A focused chip (langDisplayName, 9.3 casing).
+    // Read-only: clicks bubble to wrapWithGap's click-to-source.
+    const badge = document.createElement('span')
+    badge.className = 'cm-md-code-idle-chip'
+    badge.textContent = langDisplayName(this.lang)
+    wrap.appendChild(badge)
 
     const pre = document.createElement('pre')
     const codeEl = document.createElement('code')

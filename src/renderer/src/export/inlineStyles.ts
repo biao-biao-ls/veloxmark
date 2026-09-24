@@ -66,7 +66,6 @@ export function classStyles(p: Palette): Record<string, string> {
   const co = p === DARK_PALETTE ? DARK_CALLOUTS : LIGHT_CALLOUTS
   return {
     'export-code': `margin:0.75em 0`,
-    'export-code-lang': `font-family:${MONO};font-size:12px;color:${p.fgDim};margin-bottom:4px`,
     'export-mermaid': `margin:0.75em 0;text-align:center`,
     'export-mermaid-error': `color:#d1242f;font-family:${MONO};font-size:13px;text-align:left`,
     'export-math-block': `margin:0.75em 0;overflow-x:auto`,

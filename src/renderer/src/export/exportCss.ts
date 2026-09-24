@@ -119,15 +119,6 @@ export const EXPORT_DOC_CSS = `
   background: transparent;
 }
 
-.export-doc .export-code-lang {
-  font-size: 11px;
-  color: var(--fg-dim);
-  padding: 2px 12px;
-  border-bottom: 1px solid var(--border);
-  font-family: Consolas, monospace;
-  text-transform: lowercase;
-}
-
 .export-doc blockquote {
   border-left: 4px solid var(--quote-border);
   color: var(--fg-dim);

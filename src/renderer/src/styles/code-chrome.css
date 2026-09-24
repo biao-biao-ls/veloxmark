@@ -82,10 +82,11 @@
   opacity: 1;
 }
 /* Language chip — 9A: parked bottom-right of the (hidden) closing-fence line
-   (对照 code-focus.png), clickable language switcher. Visual values carry over
-   from the rendered widget's .cm-md-code-lang label; lowercase dropped (9.3
-   display names keep their casing). Absolute-on-line = zero layout cost. */
-.cm-md-code-src-chip {
+   (对照 code-focus.png), clickable language switcher. 9B: the idle-state badge
+   shares this skin (same slot, langDisplayName casing, 9.3) — extend the
+   selector list rather than copying values. Absolute = zero layout cost. */
+.cm-md-code-src-chip,
+.cm-md-code-idle-chip {
   display: inline-block;
   position: absolute;
   right: var(--space-2);
@@ -102,5 +103,19 @@
 
 .cm-md-code-src-chip:hover {
   color: var(--accent);
+}
+
+/* 9B idle badge: hover-revealed (8A math-hover-chip reveal pattern); hidden
+   while collapsed — the expander owns the full-width bottom row. */
+.cm-md-code-idle-chip {
+  opacity: 0;
+}
+
+.cm-md-code-block:hover .cm-md-code-idle-chip {
+  opacity: 1;
+}
+
+.cm-md-code-block-collapsed .cm-md-code-idle-chip {
+  display: none;
 }
 

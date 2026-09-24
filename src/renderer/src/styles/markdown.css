@@ -396,15 +396,6 @@
   cursor: pointer;
 }
 
-.cm-md-code-lang {
-  font-size: 11px;
-  color: var(--fg-dim);
-  padding: 2px 12px;
-  border-bottom: 1px solid var(--border);
-  font-family: Consolas, monospace;
-  text-transform: lowercase;
-}
-
 /* Content inside a block widget isn't selectable (contenteditable=false); the
    pointer cursor signals the whole block is a click target (jump to source). */
 

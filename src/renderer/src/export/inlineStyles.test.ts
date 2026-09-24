@@ -56,7 +56,7 @@ describe('inline style maps (P20)', () => {
 
   it('class styles cover renderDoc helper classes', () => {
     const cls = classStyles(LIGHT_PALETTE)
-    for (const name of ['export-code-lang', 'export-mermaid-error', 'export-mark', 'export-footnotes']) {
+    for (const name of ['export-code', 'export-mermaid-error', 'export-mark', 'export-footnotes']) {
       expect(cls[name], name).toBeTruthy()
     }
   })

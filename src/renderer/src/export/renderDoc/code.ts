@@ -29,6 +29,9 @@ export async function renderFencedCode(node: SyntaxNode, ctx: RenderCtx): Promis
 }
 
 export function codeBlockHtml(lang: string, highlighted: string): string {
-  const label = lang ? `<div class="export-code-lang">${escapeHtml(lang)}</div>` : ''
-  return `<div class="export-code">${label}<pre><code class="hljs">${highlighted}</code></pre></div>`
+  // 9B: no language label — the export look mirrors the idle widget (rounded
+  // box + code only). `lang` kept for call-site symmetry (a `language-x` class
+  // is explicitly out of scope — exports only subtract chrome here).
+  void lang
+  return `<div class="export-code"><pre><code class="hljs">${highlighted}</code></pre></div>`
 }
