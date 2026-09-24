@@ -49,3 +49,14 @@ npm run typecheck && npm run test:unit
   3. 内联新建与内联改名视觉一致、互斥不叠
   4. 拷贝路径/重命名/删除/拖拽不回归；删除确认流不变
   5. 深浅主题
+
+## 实现细化（2026-09-24 implement 时决策）
+
+- **D6 菜单项模型扩展**：`TreeMenuItem` 改 union（`{ sep: true }` | `{ label, danger?, op?, action }`），渲染层发 `.tree-menu-sep` 分隔线；`data-op` **只挂新项**（`tree.openInTab`/`tree.revealInOS`/`tree.refresh`），既有项不带 op——探针面 additive-only。容器行为（定位/翻转/关闭）零改动。
+- **D7 刷新落位**：按 D5 修订句执行——「刷新」进**空白档 + 目录档**，文件档不放（D5 目录布局表漏列「刷新」，以修订句为准）。
+- **D8 commitTreeCreate 语义**：空名 = 取消（不 alert 直接关）；非法名（分隔符/`.`/`..`）alert + 关（文件→`tree.invalidName`，目录→`tree.invalidFolderName`，沿用既有文案）；`window.api.pathExists` 预检重名 → `tree.nameExists` alert（AC2 不静默覆盖，且不打建节点 IPC）；`.md` 自动后缀仅「文件 + 无扩展名」；**仅当后缀被追加时**建后 `setRenamingPath` 进内联改名（UX-P07-F4 保持——用户显式给了扩展名就不再打扰）；blur = 提交（对齐 RenameRow 行为）。
+- **D9 CreateRow 与 RenameRow 全同 chrome**（AC5）：`.filetree-item filetree-renaming` + `.filetree-rename-input`，Enter 提交 / Esc 取消 / blur 提交；placeholder `tree.namePlaceholder`，aria-label 复用 `tree.newFile`/`tree.newFolder`；行 key `__create__`。
+- **D10 行拼接规则**：tree 模式找到父目录行 → 插其后（depth = 父 + 1，视觉落在子层顶部）；父链经 fake-child `parentPath + sep + 'n'` 并入 `renameDirs` 强开集（父行必须可见）。父 = 根 / 列表视图 / 行内找不到 → 插 index 0。拼接进同一 rows 数组（`viewRows`），虚拟化行高数学保持精确；**空树 + pendingCreate** 时不渲染 `tree.noMarkdown` 空态（新工作区第一个文件就建在这里）。
+- **D11 互斥与重置**：begin-create 清 `renamingPath`；`renamingPath` 非空 effect 清 `pendingCreate`（覆盖建后改名交接）；`folderPath` 变更 effect 同清 `pendingCreate`/`selection`。
+- **D12 prompt 文案键退役**：`tree.newFileName`/`tree.newFolderName` 从 en+zh 删除（新建 prompt 已删；`treeRename` 菜单 dialog 保留 prompt，用 `tree.rename*Msg` 不受影响）；新增 `tree.openInTab`/`tree.nameExists`/`tree.namePlaceholder`（en+zh 对齐）。
+- **D13 纯函数抽出**：`withMarkdownSuffix(name, kind)` / `isInvalidTreeName(name)` 导出自 `useWorkspaceTree.ts`（与 `resolveNewFileTarget` 同居），单测 +5（`useWorkspaceTree.test.ts`，279→284）。
