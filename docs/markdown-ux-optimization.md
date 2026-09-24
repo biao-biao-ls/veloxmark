@@ -53,7 +53,7 @@
   hover 块级公式时显示整行浅灰底纹带 + 右上「公式 `</>`」chip（对照 `math-hover.png`），点击公式或 chip 进入源码编辑。纯 CSS/装饰层，不改 P09 语义。
   AC：hover 有底纹 + chip；移出即隐；深浅主题走 token；点击行为与现 click-to-source 一致（③ 落地后即进双区编辑）。
 
-- [ ] **⑨ 7.6 菜单快捷键提示**（spec `7B` 内或独立，依赖 ②）
+- [x] **⑨ 7.6 菜单快捷键提示**（spec `7D-menu-shortcut-hints`，依赖 ②）（已收敛 2026-09-24：提示自 `STRUCT_KEYS` 单一真源推导，含 mac ⌘ 风格）
   `opsTable.ts` 表单项填 `shortcut`（② 绑定后），菜单右列渲染提示（对照 `table-btn-4.png` 观感）。
   AC：有快捷键的项均显示提示；无快捷键项不占位；mac 下显示 ⌘ 风格（走现有 `fmtShortcut`）。
 
