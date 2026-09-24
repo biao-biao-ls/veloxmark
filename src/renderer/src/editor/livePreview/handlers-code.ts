@@ -124,9 +124,11 @@ function fenceBody(state: BuildCtx['state'], node: SyntaxNodeRef): string {
  * 1. Line classes per fence line: base chrome on every line, `-first`/`-last`
  *    caps (a single-line unclosed fence gets both — CSS rules compose).
  * 2. Opening fence `[CodeMark.from, CodeInfo.to]` (CodeMark alone when no
- *    info string): replaced by a CodeLangChip while untouched; cursor on the
- *    line reveals raw ```lang (markTouched, P09 contract).
- * 3. Closing fence CodeMark: hidden while untouched, same reveal contract.
+ *    info string): hidden while untouched; cursor on the line reveals raw
+ *    ```lang (markTouched, P09 contract). (9A: the language chip moved to the
+ *    closing fence.)
+ * 3. Closing fence CodeMark: replaced by the interactive CodeLangChip while
+ *    untouched (bottom-right of the panel, 9A), same reveal contract.
  */
 function buildFocusedCodePanel(
   node: SyntaxNodeRef,
@@ -165,15 +167,19 @@ function buildFocusedCodePanel(
   if (openMark) {
     const openTo = infoNode ? infoNode.to : openMark.to
     if (!ctx.markTouched(openMark.from, openTo)) {
-      ctx.decos.push({
-        from: openMark.from,
-        to: openTo,
-        value: Decoration.replace({ widget: new CodeLangChip(lang) })
-      })
+      // 9A: the opening fence hides plain — the language chip moved to the
+      // closing fence (bottom-right, interactive switcher).
+      ctx.decos.push({ from: openMark.from, to: openTo, value: hide })
     }
   }
   if (closeMark && !ctx.markTouched(closeMark.from, closeMark.to)) {
-    ctx.decos.push({ from: closeMark.from, to: closeMark.to, value: hide })
+    ctx.decos.push({
+      from: closeMark.from,
+      to: closeMark.to,
+      value: Decoration.replace({
+        widget: new CodeLangChip(lang, node.from, ctx.config.i18nEpoch ?? 0)
+      })
+    })
   }
 
   // P29: hljs token marks over the content lines only — same palette as the

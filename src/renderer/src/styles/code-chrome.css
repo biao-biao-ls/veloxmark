@@ -72,6 +72,8 @@
   border-bottom: 1px solid var(--border);
   border-radius: 0 0 var(--cb-radius) var(--cb-radius);
   padding-bottom: var(--space-1);
+  /* 9A: chip anchor (8B dualPane chip convention — line class relative). */
+  position: relative;
 }
 /* P28 × P08: panel decorations exist only while the cursor is inside the
    block, i.e. on cm-focus-active lines. Focus-mode dim is opacity-only, but
@@ -79,15 +81,26 @@
 .cm-editor.cm-focus-mode .cm-line.cm-md-code-src {
   opacity: 1;
 }
-/* Language chip on the (hidden) opening-fence line — same visual values as
-   the rendered widget's .cm-md-code-lang label, minus its border-bottom. */
+/* Language chip — 9A: parked bottom-right of the (hidden) closing-fence line
+   (对照 code-focus.png), clickable language switcher. Visual values carry over
+   from the rendered widget's .cm-md-code-lang label; lowercase dropped (9.3
+   display names keep their casing). Absolute-on-line = zero layout cost. */
 .cm-md-code-src-chip {
   display: inline-block;
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-1);
   font-family: Consolas, monospace;
   font-size: 11px;
   color: var(--fg-dim);
-  text-transform: lowercase;
   padding: 2px 12px;
   user-select: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.cm-md-code-src-chip:hover {
+  color: var(--accent);
 }
 

@@ -2,6 +2,7 @@ import githubCss from 'highlight.js/styles/github.css?raw'
 import githubDarkCss from 'highlight.js/styles/github-dark.css?raw'
 import { EditorView, WidgetType } from '@codemirror/view'
 import { t } from '../i18n'
+import { langDisplayName, openCodeLangPicker, switchFenceLang } from './codeLangPicker'
 import { toggleCodeBlockFold } from './livePreview/codeBlockUi'
 import { BlockWidget, type BlockToolbarItem } from './blockWidget'
 import { highlightCodeHtml, splitHighlightedLines } from './render-helpers'
@@ -166,26 +167,57 @@ export class CodeBlockWidget extends BlockWidget {
 }
 
 /**
- * P28: language chip shown in place of the hidden ```lang fence line while a
- * fenced code block is focused (panel-edit state). Text is the raw lang id
- * (`text` fallback matches CodeBlockWidget's label contract); language names
+ * P28/9A: language chip of the focused fence panel. 9A moved it from the
+ * opening fence to the CLOSING fence (bottom-right, 对照 code-focus.png) and
+ * made it interactive: click opens the language picker, pick rewrites the
+ * fence info string (switchFenceLang). Text is the readable display name (9.3,
+ * `text` fallback matches CodeBlockWidget's label contract); language names
  * are never translated, so identity is just the lang string.
  */
 export class CodeLangChip extends WidgetType {
-  constructor(readonly lang: string) {
+  constructor(
+    readonly lang: string,
+    /** Hint to the FencedCode start — events re-resolve the node from here. */
+    readonly fenceFrom: number,
+    readonly i18nEpoch = 0
+  ) {
     super()
   }
   eq(other: CodeLangChip): boolean {
-    return other.lang === this.lang
+    return (
+      other.lang === this.lang &&
+      other.fenceFrom === this.fenceFrom &&
+      other.i18nEpoch === this.i18nEpoch
+    )
   }
-  toDOM(): HTMLElement {
+  // The chip self-handles its events (button → picker); CM must not treat a
+  // press as a fence-touching cursor move (that would reveal ``` and kill the
+  // chip mid-click).
+  ignoreEvent(): boolean {
+    return true
+  }
+  toDOM(view: EditorView): HTMLElement {
     // P29: pull in the scoped hljs CSS — the focused panel can be on screen
     // before any CodeBlockWidget ever rendered, and token marks need colors
     // from the first frame.
     ensureScopedCss()
-    const el = document.createElement('span')
+    const el = document.createElement('button')
+    el.type = 'button'
     el.className = 'cm-md-code-src-chip'
-    el.textContent = this.lang || 'text'
+    el.textContent = langDisplayName(this.lang)
+    el.title = t('codeLang.title')
+    const stop = (e: Event): void => {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    el.addEventListener('mousedown', stop)
+    el.addEventListener('click', (e) => {
+      stop(e)
+      openCodeLangPicker(el, {
+        current: this.lang,
+        onPick: (id) => switchFenceLang(view, this.fenceFrom, id)
+      })
+    })
     return el
   }
 }

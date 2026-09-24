@@ -146,7 +146,7 @@ describe('P28 focused code-block panel', () => {
   const lineClassAt = (hits: DecoHit[], pos: number): string | undefined =>
     hits.find((h) => h.from === pos && h.className?.includes('cm-md-code-src'))?.className
 
-  it('cursor in fence body → panel line classes + chip + hidden closing fence', () => {
+  it('cursor in fence body → panel line classes + chip on closing fence + hidden opening fence', () => {
     const { hits } = build(DOC, DOC.indexOf('const x') + 3)
     // No rendered widget while focused — panel replaces it.
     expect(hits.some((h) => h.widgetName === 'CodeBlockWidget')).toBe(false)
@@ -155,29 +155,32 @@ describe('P28 focused code-block panel', () => {
     expect(lineClassAt(hits, DOC.indexOf('const x'))).toContain('cm-md-code-src-body')
     expect(lineClassAt(hits, DOC.indexOf('const y'))).toContain('cm-md-code-src-body')
     expect(lineClassAt(hits, CLOSE_FROM)).toContain('cm-md-code-src-last')
-    // Opening ```js hidden → replaced by the language chip.
+    // 9A: opening ```js hidden (empty replace); the language chip parks on the
+    // closing fence (bottom-right switcher).
+    expect(hasHiddenRange(hits, OPEN_FROM, OPEN_TO)).toBe(true)
     const chip = hits.find((h) => h.widgetName === 'CodeLangChip')
     expect(chip).toBeTruthy()
-    expect(chip!.from).toBe(OPEN_FROM)
-    expect(chip!.to).toBe(OPEN_TO)
+    expect(chip!.from).toBe(CLOSE_FROM)
+    expect(chip!.to).toBe(CLOSE_FROM + 3)
     expect(chip!.widgetLang).toBe('js')
-    // Closing ``` hidden (empty replace).
-    expect(hasHiddenRange(hits, CLOSE_FROM, CLOSE_FROM + 3)).toBe(true)
   })
 
-  it('cursor on the opening fence line reveals ```lang (chip gone), closing stays hidden', () => {
+  it('cursor on the opening fence line reveals ```lang (open hide gone), chip stays on the closing fence', () => {
     const { hits } = build(DOC, OPEN_FROM + 2)
-    expect(hits.some((h) => h.widgetName === 'CodeLangChip')).toBe(false)
+    expect(hasHiddenRange(hits, OPEN_FROM, OPEN_TO)).toBe(false)
     // Panel chrome still applies while the cursor is on the fence line.
     expect(lineClassAt(hits, OPEN_FROM)).toContain('cm-md-code-src-first')
-    // Closing fence untouched → still hidden.
-    expect(hasHiddenRange(hits, CLOSE_FROM, CLOSE_FROM + 3)).toBe(true)
+    // Closing fence untouched → chip still shown.
+    const chip = hits.find((h) => h.widgetName === 'CodeLangChip')
+    expect(chip).toBeTruthy()
+    expect(chip!.from).toBe(CLOSE_FROM)
   })
 
-  it('cursor on the closing fence line reveals it (hide gone), chip still shown', () => {
+  it('cursor on the closing fence line reveals it (chip gone), opening stays hidden', () => {
     const { hits } = build(DOC, CLOSE_FROM + 1)
+    expect(hits.some((h) => h.widgetName === 'CodeLangChip')).toBe(false)
     expect(hasHiddenRange(hits, CLOSE_FROM, CLOSE_FROM + 3)).toBe(false)
-    expect(hits.some((h) => h.widgetName === 'CodeLangChip')).toBe(true)
+    expect(hasHiddenRange(hits, OPEN_FROM, OPEN_TO)).toBe(true)
   })
 
   it('cursor outside the fence → rendered CodeBlockWidget, no panel/chip', () => {
