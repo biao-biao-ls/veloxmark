@@ -58,3 +58,16 @@ npm run typecheck && npm run test:unit
   4. 五操作各触发一次：新建 / 搜索开 QuickOpen / 资源管理器定位根 / 打开文件夹对话框 / 刷新（外部删文件后刷新恢复）
   5. 视图切换按钮状态可切 + 重启保持（渲染差异待 6.12）
   6. 深浅主题
+
+---
+
+# 6D 实现细化（2026-09-24，implement 前核实与决策落档）
+
+- **D6 核实结论**：`window.api.showItemInFolder` 已完整 expose（`shared/api.ts:317` + `preload.ts:87` + `ipc/shell.ts:14`）——**零 electron 改动**，文件切法表该行作废。
+- **D5 实现**：`refreshTree()` = 对当前根重发 `folder:watch`（强制重扫，树照走 `folder:tree` 订阅通道推给渲染端；**顺带复活降级/失效的 watcher**——比直读 `folder:list` 更贴「watcher 降级兜底」语义，`watchEpoch` 竞态守卫原样覆盖）。`folder.ts` recursive-watch 静默降级补 `console.warn` 可见（勿扩面，不加 API）。
+- **D2 实现**：弹层互斥 = `components/sidebarOpsBus.ts` 模块单例（mermaidLightboxBus 同构，宪法好模式；面板自身持开合态）。关闭面 = Esc / 外点 mousedown / resize / ⊗（TreeMenu 同交互面）；外点判定跳过 `[data-op="sidebar.ops.open"]` 触发钮（否则触发钮 toggle 会被 mousedown-close 吃掉）；与 TreeMenu 靠外点 mousedown 天然互斥。
+- **D3 实现**：选中态上提 = `useWorkspaceTree.selection {path,isDir}` + FileTree 受控 `selectedPath`/`onSelect`（6G 右键菜单直接复用）；落点解析抽纯函数 `resolveNewFileTarget`（选中目录 → 选中/激活文件 dirname → 根）配单测。顶部头部「+」同接落点解析（行为改进与 AC2 一致，头部版式不动）；换根复位选中态。已知角落：钉住根 + 激活文档在根外时，「激活文件目录」档落点在树外（AC2 字面语义，新建行不可见但文件正确创建）。
+- **D1 实现**：底栏 `position: sticky; bottom: 0` 于 `.sidebar` 滚动容器末位——**不动滚动父**（6C 虚拟化/reveal 的 `offsetTop`/scrollTop 数学零影响）。布局对齐 `typora-2.png`：`+` | 目录名（flex:1 居中，title=全路径）| `⋮` + 列表/树图标（图标表当前视图态）。
+- **图标**：`MoreVerticalIcon`/`ListIcon`/`TreeIcon` 入 `Icons.tsx`（同源 Lucide 几何、currentColor 描边）。
+- **i18n 新 key**：`ops.title`/`ops.search`/`ops.reveal`/`ops.refresh`/`ops.toggleView`/`ops.bar`（en+zh）；「新建文件」「打开文件夹…」复用 `app.newFile`/`cmd.openFolder`（文案逐字一致，不造重复 key）。
+- **D8 登记微调**：两个开面板触发钮（目录名 + `⋮`）共用 `data-op="sidebar.ops.open"`（AC3 同一入口语义）；⊗ 关闭钮增 `data-op="sidebar.ops.close"`（只增不改）。
