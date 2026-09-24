@@ -2,7 +2,8 @@ import { EditorView, WidgetType } from '@codemirror/view'
 import { t } from '../i18n'
 import { BlockWidget } from './blockWidget'
 import { exitMathEdit } from './mathEdit'
-import { renderKatexHtml } from './render-helpers'
+import { findMathBlockAt } from './livePreview/mathScan'
+import { renderKatexChecked, renderKatexHtml } from './render-helpers'
 
 // ---- math widgets (P04) -----------------------------------------------------
 // (2.6: MathBlockWidget and InlineMathWidget moved verbatim from
@@ -30,7 +31,37 @@ export class MathBlockWidget extends BlockWidget {
   toDOM(view: EditorView): HTMLElement {
     const el = document.createElement('div')
     el.className = 'cm-md-math-block'
-    el.innerHTML = renderKatexHtml(this.tex, true)
+    const rendered = renderKatexChecked(this.tex, true)
+    el.innerHTML = rendered.html
+    // 8C: error bar + jump-to-source (mermaid error-bar parity) — invalid TeX
+    // only; valid renders keep zero extra DOM (same-shell contract).
+    if (!rendered.ok) {
+      const bar = document.createElement('div')
+      bar.className = 'cm-md-math-error'
+      bar.textContent = t('math.renderFailed')
+      const jump = document.createElement('button')
+      jump.type = 'button'
+      jump.className = 'cm-md-math-jump'
+      jump.textContent = t('math.jumpToSource')
+      const stop = (e: Event): void => {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+      jump.addEventListener('mousedown', stop)
+      jump.addEventListener('click', (e) => {
+        stop(e)
+        // Stale-instance discipline: sourceFrom is a hint — the block start is
+        // re-resolved against the CURRENT doc at click time (mathScan seam).
+        const match = findMathBlockAt(view.state.sliceDoc(), this.sourceFrom)
+        const anchor = match
+          ? match.start
+          : Math.min(this.sourceFrom, view.state.doc.length)
+        view.dispatch({ selection: { anchor }, scrollIntoView: true })
+        view.focus()
+      })
+      bar.appendChild(jump)
+      el.appendChild(bar)
+    }
     // 8A hover hint chip (top-right, absolute — zero layout cost): signals
     // "click to edit source"; the click bubbles to wrapWithGap's
     // click-to-source (same semantics as clicking anywhere on the block).

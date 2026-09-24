@@ -293,6 +293,8 @@ export const ZH: Record<string, string> = {
   'prefs.codeBlockLineNumbers': '代码块内显示行号',
   'prefs.codeBlockWrap': '代码块长行软换行',
   'codeBlock.expand': '展开 {n} 行',
+  'math.renderFailed': '公式渲染失败',
+  'math.jumpToSource': '跳到源码',
   'codeBlock.fold': '折叠',
   'codeLang.title': '选择语言',
   'codeLang.search': '搜索语言…',

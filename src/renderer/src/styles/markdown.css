@@ -487,7 +487,8 @@
   pointer-events: none;
 }
 
-.cm-md-mermaid-error {
+.cm-md-mermaid-error,
+.cm-md-math-error {
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -504,13 +505,17 @@
   word-break: break-word;
 }
 
-.theme-dark .cm-md-mermaid-error {
+.theme-dark .cm-md-mermaid-error,
+.theme-dark .cm-md-math-error {
   color: #fcd34d;
   background: rgba(245, 158, 11, 0.18);
   border-left-color: #d97706;
 }
 
-.cm-md-mermaid-jump {
+/* 8C: math error bar shares the mermaid error-bar skin (selector-list share —
+   no copied rules; mermaid class names untouched for the e2e seam). */
+.cm-md-mermaid-jump,
+.cm-md-math-jump {
   flex-shrink: 0;
   margin-left: auto;
   padding: 1px 8px;
@@ -522,7 +527,8 @@
   border-radius: 4px;
 }
 
-.cm-md-mermaid-jump:hover {
+.cm-md-mermaid-jump:hover,
+.cm-md-math-jump:hover {
   filter: brightness(1.15);
 }
 

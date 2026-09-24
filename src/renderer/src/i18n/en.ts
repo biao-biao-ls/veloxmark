@@ -295,6 +295,8 @@ export const EN: Record<string, string> = {
   'prefs.codeBlockLineNumbers': 'Line numbers in code blocks',
   'prefs.codeBlockWrap': 'Soft-wrap long lines in code blocks',
   'codeBlock.expand': 'Expand {n} lines',
+  'math.renderFailed': 'Failed to render formula',
+  'math.jumpToSource': 'Jump to source',
   'codeBlock.fold': 'Fold',
   'codeLang.title': 'Select language',
   'codeLang.search': 'Search languages…',

@@ -35,6 +35,24 @@ export function renderKatexHtml(tex: string, displayMode: boolean): string {
 }
 
 /**
+ * 8C: checked variant — `ok` probes KaTeX with `throwOnError: true`; `html` is
+ * ALWAYS the same `renderKatexHtml` output (valid TeX renders byte-identical to
+ * the pre-8C widgets — the probe never changes the render surface).
+ */
+export function renderKatexChecked(
+  tex: string,
+  displayMode: boolean
+): { ok: boolean; html: string } {
+  let ok = true
+  try {
+    katex.renderToString(tex, { displayMode, throwOnError: true })
+  } catch {
+    ok = false
+  }
+  return { ok, html: renderKatexHtml(tex, displayMode) }
+}
+
+/**
  * P24: span-aware highlighted-line splitter. hljs output wraps tokens in
  * <span>s that may cross line breaks; splitting on '\n' alone would leave
  * unbalanced tags and wreck the line-number layout. Close every open span at
