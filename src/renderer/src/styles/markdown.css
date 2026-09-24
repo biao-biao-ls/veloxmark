@@ -526,6 +526,13 @@
   filter: brightness(1.15);
 }
 
+/* 10A: focused-mermaid dual pane — live preview trailing the P28 source panel
+   (previewBelow). Shares the .cm-md-mermaid render-host chrome above; only the
+   seam gap under the source panel is preview-specific. */
+.cm-md-mermaid-preview {
+  margin-top: var(--space-2);
+}
+
 /* P16: fullscreen mermaid lightbox (App-root portal, singleton) */
 .vm-mermaid-lightbox {
   position: fixed;

@@ -2,7 +2,8 @@ import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common'
 import { Decoration } from '@codemirror/view'
 import { hide, type BuildCtx } from './handlers-ctx'
 import { CodeBlockWidget, CodeLangChip } from '../codeBlock-widget'
-import { MermaidWidget } from '../mermaid'
+import { MermaidPreviewWidget, MermaidWidget } from '../mermaid'
+import { previewBelow } from './dualPane'
 import { TableWidget } from '../table/widget'
 import { getTableEdit } from '../table/state'
 import { codeBlockKey, getCodeBlockExpanded } from './codeBlockUi'
@@ -58,13 +59,29 @@ export function enterFencedCode(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
   // bottom preview panel is syntax-tree based and orthogonal to decorations.
   if (ctx.blockTouched(node.from, node.to)) {
     buildFocusedCodePanel(node, lang, infoNode, ctx)
+    // 10A: focused mermaid gets the dual-pane preview trailing the panel
+    // (previewBelow / dualPane convention — same shell as MermaidWidget via
+    // mountMermaidRender). P25 bottom panel stays as a parallel surface.
+    if (lang === 'mermaid') {
+      const doc = state.doc
+      const last = doc.lineAt(node.to)
+      ctx.decos.push(
+        previewBelow(
+          Math.min(last.to + 1, doc.length),
+          new MermaidPreviewWidget(
+            fenceBody(state, node),
+            node.from,
+            node.to,
+            ctx.config.theme,
+            ctx.config.i18nEpoch ?? 0
+          )
+        )
+      )
+    }
     return false
   }
 
-  const textNode = node.node.getChild('CodeText')
-  let code = textNode ? state.sliceDoc(textNode.from, textNode.to) : ''
-  if (code.startsWith('\n')) code = code.slice(1)
-  if (code.endsWith('\n')) code = code.slice(0, -1)
+  const code = fenceBody(state, node)
 
   const doc = state.doc
   const lineFrom = doc.lineAt(node.from).from
@@ -89,6 +106,15 @@ export function enterFencedCode(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
     value: Decoration.replace({ widget, block: true })
   })
   return false
+}
+
+/** FencedCode body text (CodeText slice, leading/trailing newline stripped). */
+function fenceBody(state: BuildCtx['state'], node: SyntaxNodeRef): string {
+  const textNode = node.node.getChild('CodeText')
+  let code = textNode ? state.sliceDoc(textNode.from, textNode.to) : ''
+  if (code.startsWith('\n')) code = code.slice(1)
+  if (code.endsWith('\n')) code = code.slice(0, -1)
+  return code
 }
 
 /**
