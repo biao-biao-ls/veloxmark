@@ -340,3 +340,39 @@ describe('5A list rendering', () => {
     expect(listLineAt(touched.hits, 0)!.className).toContain('cm-md-list-open')
   })
 })
+
+// ---- 10C: mermaid language chip / lang dispatch (⑪ 10.3) --------------------
+// Lang dispatch reads ONLY the fence info string (never the body) — switching
+// the info via the 9A chip swaps chart rendering for plain code and back.
+
+describe('10C mermaid lang dispatch', () => {
+  const MERMAID_DOC = '```mermaid\ngraph TD;\n  A-->B\n```\n\ntail\n'
+  // Same diagram-like body under a non-mermaid info string (switch-away shape).
+  const JS_DOC = '```js\ngraph TD;\n  A-->B\n```\n\ntail\n'
+
+  it('focused mermaid → MermaidPreviewWidget trails the panel, no MermaidWidget (AC1)', () => {
+    const { hits } = build(MERMAID_DOC, MERMAID_DOC.indexOf('graph') + 1)
+    const preview = hits.find((h) => h.widgetName === 'MermaidPreviewWidget')
+    expect(preview).toBeTruthy()
+    expect(preview!.block).toBe(true)
+    expect(hits.some((h) => h.widgetName === 'MermaidWidget')).toBe(false)
+  })
+
+  it('focused non-mermaid fence → no MermaidPreviewWidget (AC2 switch-away)', () => {
+    const { hits } = build(JS_DOC, JS_DOC.indexOf('graph') + 1)
+    expect(hits.some((h) => h.widgetName === 'MermaidPreviewWidget')).toBe(false)
+  })
+
+  it('idle mermaid → MermaidWidget chart render (AC4 switch-back)', () => {
+    const { hits } = build(MERMAID_DOC, MERMAID_DOC.indexOf('tail'))
+    const widget = hits.find((h) => h.widgetName === 'MermaidWidget')
+    expect(widget).toBeTruthy()
+    expect(widget!.block).toBe(true)
+  })
+
+  it('idle non-mermaid with diagram-like body → CodeBlockWidget, not MermaidWidget (AC3)', () => {
+    const { hits } = build(JS_DOC, JS_DOC.indexOf('tail'))
+    expect(hits.some((h) => h.widgetName === 'CodeBlockWidget')).toBe(true)
+    expect(hits.some((h) => h.widgetName === 'MermaidWidget')).toBe(false)
+  })
+})
