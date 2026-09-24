@@ -168,24 +168,34 @@ export function tableDeltaItems(deps: TableDeltaDeps, rt: CtxRuntime): CtxMenuIt
       id: 'deleteTable',
       label: t('ctx.deleteTable'),
       danger: true,
-      run: () => {
-        const span = deps.modelSpan()
-        void rt
-          .confirm({
-            title: t('ctx.deleteTable'),
-            message: t('ctx.deleteTableConfirm'),
-            confirmLabel: t('ctx.deleteTable'),
-            danger: true
-          })
-          .then((ok) => {
-            if (ok) {
-              deleteTableRange(view, span.from, span.to)
-              rt.toast(t('toast.tableDeleted'))
-            }
-          })
-      }
+      run: () => confirmDeleteTable(view, deps.modelSpan(), rt)
     }
   ]
+}
+
+/**
+ * 7C: shared delete-table flow (menu item + toolbar 🗑) — same confirm shape,
+ * same `deleteTableRange`, same `toast.tableDeleted`. The span must be
+ * re-resolved at event time (stale-instance discipline).
+ */
+export function confirmDeleteTable(
+  view: EditorView,
+  span: { from: number; to: number },
+  rt: CtxRuntime
+): void {
+  void rt
+    .confirm({
+      title: t('ctx.deleteTable'),
+      message: t('ctx.deleteTableConfirm'),
+      confirmLabel: t('ctx.deleteTable'),
+      danger: true
+    })
+    .then((ok) => {
+      if (ok) {
+        deleteTableRange(view, span.from, span.to)
+        rt.toast(t('toast.tableDeleted'))
+      }
+    })
 }
 
 // Op adapters — thin wrappers over the P10 pure ops; deps.runOp supplies the

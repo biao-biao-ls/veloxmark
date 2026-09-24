@@ -40,7 +40,7 @@ import {
   setAlignOp,
   type TableOp
 } from './ops'
-import { openGridPicker } from './gridPicker'
+import { mountTableToolbar } from './toolbar'
 import { getTableEdit, setActiveCell, setColWidth } from './state'
 import {
   activeNestedView,
@@ -365,31 +365,8 @@ export class TableWidget extends BlockWidget {
     table.appendChild(tbody)
     wrap.appendChild(table)
 
+    // Hover bar stays copy-only (7C moved ⊞ to the edit toolbar).
     const toolbarItems: BlockToolbarItem[] = [
-      {
-        // 7E: rows×cols grid picker — interim toolbar home until the 7C
-        // unified toolbar lands (popover semantics travel with the move).
-        label: '⊞',
-        title: t('table.gridPickerTitle'),
-        onClick: (btn) => {
-          // Stale-instance discipline: dims + anchor resolve at event time.
-          const resolved = resolveTableModel(view, this.sourceFrom)
-          if (!resolved) return
-          openGridPicker(btn, {
-            initRow: resolved.model.cells.length,
-            initCol: resolved.model.colCount,
-            onPick: (rows, cols) => {
-              const a = getTableEdit(view.state).active
-              runTableOp(
-                view,
-                this.sourceFrom,
-                (m) => resizeTableOp(m, rows, cols, a?.row ?? 0, a?.col ?? 0),
-                'input.table.resize'
-              )
-            }
-          })
-        }
-      },
       {
         label: t('toolbar.copy'),
         title: t('table.copyTitle'),
@@ -402,15 +379,31 @@ export class TableWidget extends BlockWidget {
     // any pending cell text, exit cell editing, and jump the cursor to the
     // table source (which then reveals the raw Markdown — existing escape hatch).
     const outer = document.createElement('div')
-    outer.className = 'cm-md-block-gap'
+    // .cm-md-table-outer: positioning scope for the 7C edit toolbar only —
+    // the shared .cm-md-block-gap rule stays untouched.
+    outer.className = 'cm-md-block-gap cm-md-table-outer'
     outer.appendChild(wrap)
     outer.addEventListener('mousedown', (e) => {
-      if (e.target instanceof Element && e.target.closest('.cm-md-block-toolbar, .cm-md-table')) {
+      if (
+        e.target instanceof Element &&
+        e.target.closest('.cm-md-block-toolbar, .cm-md-table, .cm-md-table-toolbar')
+      ) {
         return
       }
       e.preventDefault()
       clearTableEditAndFocusSource(view, this.sourceFrom)
     })
+    // 7C: edit toolbar — mounted only while editing; dies with this widget DOM.
+    // Build-time model/active paint only (align pressed state); events re-resolve.
+    if (active) {
+      mountTableToolbar(outer, {
+        view,
+        sourceFrom: this.sourceFrom,
+        model,
+        row: active.row,
+        col: active.col
+      })
+    }
     return outer
   }
 

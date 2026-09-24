@@ -483,5 +483,6 @@ export const EN: Record<string, string> = {
   'tableHandle.deleteCol': 'Delete column',
   'tableHandle.colGrip': 'Drag to resize column (this session only)',
   'table.copyTitle': 'Copy table as Markdown',
-  'table.gridPickerTitle': 'Resize rows × cols'
+  'table.gridPickerTitle': 'Resize rows × cols',
+  'table.moreTitle': 'More actions'
 }

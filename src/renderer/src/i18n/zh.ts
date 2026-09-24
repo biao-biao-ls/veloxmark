@@ -479,5 +479,6 @@ export const ZH: Record<string, string> = {
   'tableHandle.deleteCol': '删除列',
   'tableHandle.colGrip': '拖动调整列宽（仅本次会话）',
   'table.copyTitle': '以 Markdown 复制表格',
-  'table.gridPickerTitle': '调整行列数'
+  'table.gridPickerTitle': '调整行列数',
+  'table.moreTitle': '更多操作'
 }

@@ -1012,6 +1012,46 @@
   opacity: 0.5;
 }
 
+/* ---- 7C: edit-state table toolbar (⊞ + align keys | ⋮ + 🗑) ----
+   Child of the gap outer (positioning scope), absolute just ABOVE the wrap —
+   NOT inside wrap (overflow-x:auto clips escaped children) and NOT in the
+   28px col-handle band (data-table-handle probes live there). The ~--space-1
+   overlap into the gap padding is paint-only: zero layout shift (UX-P28 F3). */
+.cm-md-table-outer {
+  position: relative;
+}
+
+.cm-md-table-toolbar {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% - var(--space-1));
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  z-index: 3;
+  /* empty strip between the groups stays click-through (outer click-to-source) */
+  pointer-events: none;
+}
+
+.cm-md-table-toolbar-group {
+  display: flex;
+  gap: 1px;
+  pointer-events: auto;
+}
+
+/* pressed = the column's current align (build-time projection of the colon row) */
+.cm-md-table-toolbar-btn.is-pressed {
+  opacity: 1;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* AC9: the hover copy bar is a sibling surface — hide it while editing so the
+   two bars never stack. Idle mounts keep the existing hover reveal. */
+.cm-md-table-wrap.cm-md-table-editing .cm-md-block-toolbar {
+  display: none;
+}
+
 .cm-md-table-menu {
   z-index: 3000;
 }
