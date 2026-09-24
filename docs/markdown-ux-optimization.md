@@ -76,7 +76,7 @@
   对照 `code-default.png`：静息态去掉横贯的 `.cm-md-code-lang` 顶栏，语言降级为 hover/聚焦时的角标（或并入 ⑦ 的右下角 chip）。涉及 widget 结构与 `export/renderDoc` 平行契约同步。
   AC：静息态观感与 `code-default.png` 一致（圆角灰底 + 高亮、无横条）；复制/折叠按钮不回退；导出 HTML 样式同步。
 
-- [ ] **⑭ 10.2 mermaid 静息态去边框盒**（spec `10B-mermaid-idle-chrome`）
+- [x] **⑭ 10.2 mermaid 静息态去边框盒**（spec `10B-mermaid-idle-chrome`）——已收敛 2026-09-25：静息扁平（透明边框占位 + hover 轻边框零位移）；**两态分叉**（修订 10A「两态同改」假设）——聚焦预览按 `mermaid-focus.png` 保留轻盒；错误条/badge/placeholder 不回退；导出同步去盒。
   对照 `mermaid-default.png`：静息态改为无边框/无底色（或仅 hover 时浮现轻边框），导出侧平行契约同步。
   AC：观感与 `mermaid-default.png` 对齐；错误条/更新中 badge 不回退。
 
