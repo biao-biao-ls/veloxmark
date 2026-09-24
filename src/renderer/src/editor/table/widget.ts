@@ -57,16 +57,29 @@ import {
   handleTsvPaste,
   moveCell,
   openTableContextMenu,
-  runTableOp
+  runTableOp,
+  tryStructCmd
 } from './commands'
-import type { Dir, NestedNavFns } from './keymap'
+import { structKeyBindings, type Dir, type NestedNavFns } from './keymap'
 
 // Public entry re-exports (3.11/3.12): lifecycle.ts binds activeNestedView /
 // resolveWithFallback / exitTableEdit here; setup.ts binds setNestedPreviewField.
 export { setNestedPreviewField, activeNestedView, resolveWithFallback, exitTableEdit }
 
 /** Command callbacks injected into the nested session (cycle-break seam). */
-const tableNav: NestedNavFns = { move: moveCell, exit: exitTableEdit, tsv: handleTsvPaste }
+const tableNav: NestedNavFns = {
+  move: moveCell,
+  exit: exitTableEdit,
+  tsv: handleTsvPaste,
+  struct: tryStructCmd
+}
+
+/**
+ * 7B: main-editor backstop bindings (prepended to setup.ts's keymap.of) —
+ * tryStructCmd returns false outside table edit, so keys fall through to the
+ * default bindings and nothing is hijacked globally.
+ */
+export const tableStructBindings = structKeyBindings(tryStructCmd)
 
 // ---- widget ------------------------------------------------------------------
 

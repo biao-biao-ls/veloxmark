@@ -15,6 +15,16 @@ export type Dir = 'next' | 'prev' | 'up' | 'down' | 'out'
 
 export type MoveCellFn = (nested: EditorView, main: EditorView, dir: Dir) => void
 
+/** 7B structure-op vocabulary (Ctrl+Enter / Alt+arrows — Typora parity). */
+export type StructCmd = 'insertRowBelow' | 'moveRowUp' | 'moveRowDown' | 'moveColLeft' | 'moveColRight'
+
+/**
+ * 7B handler: run `cmd` against the table editing session of `view` (the MAIN
+ * view). Returns true when the key was taken — false falls through to the
+ * default bindings (non-table contexts must not be hijacked).
+ */
+export type StructTryFn = (view: EditorView, cmd: StructCmd) => boolean
+
 /**
  * Command callbacks the nested session needs — injected so nestedSession →
  * keymap stays acyclic (see file header).
@@ -23,6 +33,21 @@ export interface NestedNavFns {
   move: MoveCellFn
   exit: (main: EditorView, opts?: { select?: 'none' | 'after' }) => void
   tsv: (main: EditorView, text: string) => void
+  struct: StructTryFn
+}
+
+/**
+ * 7B shared binding table — key literals live here ONCE for both the in-cell
+ * keymap and the main-editor backstop (⑨ shortcut hints read this source).
+ */
+export function structKeyBindings(tryRun: StructTryFn): KeyBinding[] {
+  return [
+    { key: 'Ctrl-Enter', run: (v) => tryRun(v, 'insertRowBelow') },
+    { key: 'Alt-ArrowUp', run: (v) => tryRun(v, 'moveRowUp') },
+    { key: 'Alt-ArrowDown', run: (v) => tryRun(v, 'moveRowDown') },
+    { key: 'Alt-ArrowLeft', run: (v) => tryRun(v, 'moveColLeft') },
+    { key: 'Alt-ArrowRight', run: (v) => tryRun(v, 'moveColRight') }
+  ]
 }
 
 /**
@@ -64,8 +89,11 @@ export const nestedCellTheme = EditorView.theme({
   }
 })
 
-export function cellKeymap(main: EditorView, move: MoveCellFn): KeyBinding[] {
+export function cellKeymap(main: EditorView, nav: NestedNavFns): KeyBinding[] {
+  const move = nav.move
   return [
+    // 7B: structure shortcuts — cmd runs against `main` (the table session).
+    ...structKeyBindings((_v, cmd) => nav.struct(main, cmd)),
     { key: 'Tab', run: (v) => (move(v, main, 'next'), true) },
     { key: 'Shift-Tab', run: (v) => (move(v, main, 'prev'), true) },
     { key: 'Enter', run: (v) => (move(v, main, 'down'), true) },

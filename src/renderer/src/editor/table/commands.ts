@@ -24,11 +24,11 @@ import type { EditorView } from '@codemirror/view'
 import { t } from '../../i18n'
 import { getCtxRuntime, buildContextMenu, openContextMenu } from '../contextMenu/registry'
 import { escapeCell, formatTable, isSentinelCell, type TableModel } from './parse'
-import { gridWithCellText, pasteTsvOp, type TableOp } from './ops'
+import { gridWithCellText, insertRowOp, moveColOp, moveRowOp, pasteTsvOp, type TableOp } from './ops'
 import { getTableEdit, setActiveCell } from './state'
 import { resolveTableModel, resolveWithFallback } from './resolve'
 import { activeNestedView } from './nestedSession'
-import type { Dir } from './keymap'
+import type { Dir, StructCmd } from './keymap'
 
 type CellChange = { from: number; to: number; insert: string }
 
@@ -250,6 +250,38 @@ export function runTableOp(
   })
   const toastKey = STRUCTURE_TOASTS[userEvent]
   if (toastKey) getCtxRuntime()?.toast(t(toastKey))
+}
+
+/**
+ * 7B: structure shortcuts (Ctrl+Enter insert row below, Alt+arrows move
+ * row/col) — same ops/userEvents/toasts as the ① menu items via runTableOp
+ * (pending fold + nextActive follow + single-step undo). Returns true when
+ * the key was taken (table edit active); false lets the main-editor side
+ * fall through to default bindings (no global hijack).
+ */
+export function tryStructCmd(main: EditorView, cmd: StructCmd): boolean {
+  // Stale-instance discipline: read the anchor at event time from state.
+  const a = getTableEdit(main.state).active
+  if (!a) return false
+  const { row, col, tableFrom } = a
+  switch (cmd) {
+    case 'insertRowBelow':
+      runTableOp(main, tableFrom, (m) => insertRowOp(m, row), 'input.table.insertRow')
+      break
+    case 'moveRowUp':
+      runTableOp(main, tableFrom, (m) => moveRowOp(m, row, col, -1), 'input.table.moveRow')
+      break
+    case 'moveRowDown':
+      runTableOp(main, tableFrom, (m) => moveRowOp(m, row, col, 1), 'input.table.moveRow')
+      break
+    case 'moveColLeft':
+      runTableOp(main, tableFrom, (m) => moveColOp(m, row, col, -1), 'input.table.moveCol')
+      break
+    case 'moveColRight':
+      runTableOp(main, tableFrom, (m) => moveColOp(m, row, col, 1), 'input.table.moveCol')
+      break
+  }
+  return true
 }
 
 /** Commit pending nested text (if any) without changing the active cell. */

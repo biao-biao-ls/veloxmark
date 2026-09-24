@@ -32,7 +32,7 @@ import {
 } from './livePreview'
 import { tableEditField } from './table/state'
 import { tableEditLifecycle } from './table/lifecycle'
-import { setNestedPreviewField } from './table/widget'
+import { setNestedPreviewField, tableStructBindings } from './table/widget'
 import { getCtxRuntime, handleEditorContextMenu } from './contextMenu/registry'
 import { compartmentThemes, ThemeName } from './theme'
 
@@ -138,7 +138,9 @@ export function createExtensions(
     // lists are steered through language data when narrowing becomes necessary;
     // the engine itself skips closing before word chars (apostrophe-safe).
     closeBrackets(),
-    keymap.of([...searchKeymap, ...historyKeymap, ...defaultKeymap, indentWithTab]),
+    // 7B: table structure shortcuts FIRST — tryStructCmd returns false outside
+    // table edit, so keys fall through to the defaults (no global hijack).
+    keymap.of([...tableStructBindings, ...searchKeymap, ...historyKeymap, ...defaultKeymap, indentWithTab]),
     // P27: unified editor context menu — editor surface only. Chrome panels,
     // existing float menus and the table widget's own cell handler own their
     // contextmenu paths; this handler never swallows theirs.

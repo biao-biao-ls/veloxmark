@@ -196,7 +196,7 @@ export function mountCellEditor(
         nestedCellTheme,
         EditorView.lineWrapping,
         history(),
-        keymap.of([...cellKeymap(main, nav.move), ...defaultKeymap, ...historyKeymap]),
+        keymap.of([...cellKeymap(main, nav), ...defaultKeymap, ...historyKeymap]),
         // diag-P28 B1-gap: selection-leave auto-exit only fires on MAIN-editor
         // selection changes. Clicks outside the editor (panels, other apps)
         // blur the nested view without touching main selection — exit there
