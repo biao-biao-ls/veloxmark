@@ -62,7 +62,7 @@
   公式渲染失败时错误条提供「跳到源码」按钮（对照 mermaid `cm-md-mermaid-jump` 同款交互）。
   AC：错误条可点击定位到 `$$` 起点；正常渲染时无错误条。
 
-- [ ] **⑪ 10.3 「mermaid」聚焦提示 chip + 语言切换**（spec `10A` 内，依赖 ⑦ 的语言列表）
+- [x] **⑪ 10.3 「mermaid」聚焦提示 chip + 语言切换**（spec `10C-mermaid-lang-chip`，依赖 ⑦ 的语言列表）——已收敛 2026-09-25：9A 通用机制前置达成（chip/列表/切换全 fence 含 mermaid）；本项补钉切走/切回分派 4 例（build.test.ts，生产代码零改动）；chip 位置取 9A 公约闭栏右下（与 `mermaid-focus.png` 预览区右上同一拼缝，plan 显式记录）。
   聚焦态右上/右下角显示语言 chip（对照 `mermaid-focus.png`），点击可切换 fence 语言（mermaid ↔ 普通代码，与 ⑦ 共用语言列表）。
   AC：切走 mermaid 后按普通代码块渲染；切回即恢复图表渲染。
 
