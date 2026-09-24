@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { DirNode } from '../../../../electron/shared/api'
 import { ChevronDownIcon, ChevronRightIcon, FileMdIcon, FolderIcon, FolderOpenIcon } from './Icons'
 import { t } from '../i18n'
-import { ancestorDirPaths, visibleRows, type FlatRow } from './filetreeRows'
+import { ancestorDirPaths, flattenFiles, visibleRows, type FlatRow } from './filetreeRows'
 import { sortTreeNodes } from '../filetree/sort'
 import { usePreferences } from '../preferences/useStore'
 
@@ -146,12 +146,30 @@ export default function FileTree({
   // 6E D4: sort is a pure pre-pass on the scan tree (per-level; shared with the
   // 6.12 list fork) — inserted before the 6C flatten seam. Reactive to the
   // ops-panel sort row via preferences (instant re-sort, spec AC1).
-  const fileTreeSort = usePreferences().fileTreeSort
+  const prefs = usePreferences()
+  const fileTreeSort = prefs.fileTreeSort
+  const fileTreeView = prefs.fileTreeView
   const sortedNodes = useMemo(() => sortTreeNodes(nodes, fileTreeSort), [nodes, fileTreeSort])
-  const rows = useMemo(
-    () => visibleRows(sortedNodes, { expanded, revealDirs, renameDirs }),
-    [sortedNodes, expanded, revealDirs, renameDirs]
-  )
+  // 6F D2: list view = all md files flattened with a relDir subtitle, globally
+  // ordered by the shared 6E key (groupFolders is a no-op on files-only input).
+  // Tree view keeps the 6C flatten. Both feed the same row renderer/virtualizer.
+  const rows = useMemo(() => {
+    if (fileTreeView === 'list') {
+      const flat = flattenFiles(sortedNodes, sep)
+      const relByPath = new Map(flat.map((r) => [r.node.path, r.relDir]))
+      const sorted = sortTreeNodes(
+        flat.map((r) => r.node),
+        fileTreeSort
+      )
+      return sorted.map((node) => ({
+        node,
+        depth: 0,
+        open: false,
+        relDir: relByPath.get(node.path) ?? ''
+      }))
+    }
+    return visibleRows(sortedNodes, { expanded, revealDirs, renameDirs })
+  }, [fileTreeView, sortedNodes, fileTreeSort, sep, expanded, revealDirs, renameDirs])
 
   // The sidebar is the scroll parent — track it so the window follows scroll.
   useEffect(() => {
@@ -216,7 +234,12 @@ export default function FileTree({
   const isDropAllowed = (src: string, destDir: string): boolean =>
     src !== destDir && !destDir.startsWith(src + sep)
 
-  const renderRow = ({ node, depth, open }: FlatRow): React.JSX.Element => {
+  const renderRow = ({
+    node,
+    depth,
+    open,
+    relDir
+  }: FlatRow & { relDir?: string }): React.JSX.Element => {
     if (renamingPath && node.path === renamingPath) {
       return (
         <RenameRow
@@ -315,7 +338,14 @@ export default function FileTree({
         <span className="filetree-icon">
           <FileMdIcon size={13} />
         </span>
-        {node.name}
+        {relDir === undefined ? (
+          node.name
+        ) : (
+          <>
+            <span className="filetree-list-name">{node.name}</span>
+            {relDir ? <span className="filetree-list-sub">{relDir}</span> : null}
+          </>
+        )}
       </button>
     )
   }

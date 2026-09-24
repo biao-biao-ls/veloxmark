@@ -359,6 +359,11 @@ export const ZH: Record<string, string> = {
   'ops.sort.name': '按文件名排序',
   'ops.sort.mtime': '按修改时间排序',
   'ops.sort.birthtime': '按创建时间排序',
+  'ops.recents': '最近使用的目录',
+  'ops.recents.pin': '置顶',
+  'ops.recents.unpin': '取消置顶',
+  'ops.recents.remove': '移除',
+  'ops.recents.current': '当前目录',
   'app.newFile': '新建文件',
   'app.searchInFolder': '搜索文件夹（Ctrl+Shift+F）',
 

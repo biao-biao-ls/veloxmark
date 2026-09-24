@@ -30,6 +30,29 @@ export interface VisibleRowsOpts {
 }
 
 /**
+ * 6F D2 list-view rows — all markdown files flattened (recursive, sorted-tree
+ * input order irrelevant: the list view re-sorts globally via 6E). `relDir` is
+ * the display subtitle (`subdir/` prefix of `subdir/name.md`), '' at root.
+ */
+export interface FileListRow {
+  node: DirNode
+  relDir: string
+}
+
+/** Flatten every file under `nodes`; `sep` joins the subtitle segments. */
+export function flattenFiles(nodes: DirNode[], sep = '/'): FileListRow[] {
+  const out: FileListRow[] = []
+  const walk = (list: DirNode[], prefix: string): void => {
+    for (const node of list) {
+      if (node.isDir) walk(node.children ?? [], prefix + node.name + sep)
+      else out.push({ node, relDir: prefix })
+    }
+  }
+  walk(nodes, '')
+  return out
+}
+
+/**
  * Strict-ancestor directory paths of `path` (never includes `path` itself) —
  * the reveal chain of an active file, or the force-open chain of a rename
  * target. Extra prefixes outside the current tree are harmless (no node

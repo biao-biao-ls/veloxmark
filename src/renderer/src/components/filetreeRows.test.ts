@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { DirNode } from '../../../../electron/shared/api'
-import { ancestorDirPaths, isDirOpen, visibleRows } from './filetreeRows'
+import { ancestorDirPaths, flattenFiles, isDirOpen, visibleRows } from './filetreeRows'
 
 const dir = (name: string, path: string, children: DirNode[] = []): DirNode => ({
   name,
@@ -19,6 +19,29 @@ const tree: DirNode[] = [
   ]),
   file('root.md', 'C:\\w\\root.md')
 ]
+
+describe('flattenFiles (6F list view)', () => {
+  it('recursively flattens files with relDir subtitles; root level is empty', () => {
+    expect(flattenFiles(tree)).toEqual([
+      { node: tree[0].children![0].children![0], relDir: 'docs/deep/' },
+      { node: tree[0].children![1], relDir: 'docs/' },
+      { node: tree[1], relDir: '' }
+    ])
+  })
+
+  it('sep parameter joins subtitle segments (win32 style)', () => {
+    expect(flattenFiles(tree, '\\').map((r) => r.relDir)).toEqual([
+      'docs\\deep\\',
+      'docs\\',
+      ''
+    ])
+  })
+
+  it('empty tree → empty list; dirs without files contribute nothing', () => {
+    expect(flattenFiles([])).toEqual([])
+    expect(flattenFiles([dir('empty', 'C:\\w\\empty', [])])).toEqual([])
+  })
+})
 
 describe('ancestorDirPaths', () => {
   it('collects strict ancestor dirs (win32 + posix)', () => {

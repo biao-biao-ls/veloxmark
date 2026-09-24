@@ -18,8 +18,8 @@
  * Boot note: there is no mount-time auto-apply. The initial root is
  * established by the explicit channels or by the first activation transition
  * (session restore reopens documents; their activation rebuilds the root).
- * `lastFolderPath` is write-only here (recent-root slot for 6F recents) —
- * 6.4a removed its session-restore auto-mount.
+ * (6F: the old `lastFolderPath` recent-root slot is retired — roots now feed
+ * the preferences `recentFolders` list via applyTreeRoot's MRU upsert.)
  */
 import { useCallback, useEffect, useRef } from 'react'
 import { baseDirOf } from '../pathUtil'

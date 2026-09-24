@@ -12,8 +12,9 @@ import { useEffect, useState } from 'react'
 import type { RecentItem } from '../commands'
 import type { DocTabInfo } from './docTabs'
 import { baseNameOf } from '../pathUtil'
-import { patchSession } from '../preferences/store'
+import { getPreferences, getSession, patchSession, setPreferences } from '../preferences/store'
 import type { SidebarMode } from '../preferences/store'
+import { upsertRecent } from '../filetree/recents'
 
 export interface UseSessionPersistArgs {
   /**
@@ -43,6 +44,18 @@ export function useSessionPersist({
   tabInfos,
   recentFiles
 }: UseSessionPersistArgs): { recentItems: RecentItem[] } {
+  // 6F D5 一次性迁移：pre-6F 单值最近根槽 lastFolderPath 并入 recentFolders
+  // （进历史区首）后清空——此后写侧只在 applyTreeRoot 的 recents upsert。
+  // 空依赖 + 读 null 即跳过：strict-mode 双跑幂等。
+  useEffect(() => {
+    const last = getSession().lastFolderPath
+    if (!last) return
+    patchSession({ lastFolderPath: null })
+    const p = getPreferences()
+    const recentFolders = upsertRecent(p.recentFolders, last)
+    if (recentFolders !== p.recentFolders) setPreferences({ recentFolders })
+  }, [])
+
   useEffect(() => {
     if (!sessionSynced) return
     patchSession({ sidebarVisible: showOutline })

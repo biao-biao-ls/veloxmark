@@ -1555,6 +1555,8 @@ export default function App(): React.JSX.Element {
                         }}
                         onOpenFolder={() => void workspace.openFolder()}
                         onRefresh={() => void workspace.refreshTree()}
+                        onOpenRecent={(path) => void workspace.loadFolder(path)}
+                        currentRoot={workspace.folderPath}
                       />
                       {workspace.treeMenu && (
                         <TreeMenu

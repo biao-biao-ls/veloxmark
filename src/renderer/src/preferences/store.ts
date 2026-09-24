@@ -12,6 +12,7 @@
  */
 
 import { DEFAULT_TREE_SORT, type TreeSortOptions } from '../filetree/sort'
+import { visibleRecents, type RecentFolder } from '../filetree/recents'
 
 export const PREFERENCES_VERSION = 1
 
@@ -53,6 +54,8 @@ export interface Preferences {
   // ---- folder workspace (P07) ------------------------------------------------
   /** File-tree entry names to hide; `*` / `?` wildcards, matched in main. */
   folderIgnoreNames: string[]
+  /** 6F D1: recent folders for the ops panel (display order: pinned + MRU). */
+  recentFolders: RecentFolder[]
   /** Include `.`-prefixed entries in the file tree (still subject to ignores). */
   showHiddenFiles: boolean
   /** 6D D7: file-tree view mode (render fork lands in 6.12). */
@@ -103,6 +106,10 @@ export interface SessionState {
   sidebarMode: SidebarMode | null
   sidebarWidth: number | null
   lastFilePath: string | null
+  /**
+   * Pre-6F single recent-root slot. Retired by 6F (D5): consumed once at boot
+   * into preferences.recentFolders, then cleared; no longer written.
+   */
   lastFolderPath: string | null
   /** Most-recent-first, max 10. */
   recentFiles: string[]
@@ -146,6 +153,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   copyExternalImages: true,
   downloadRemoteImages: false,
   folderIgnoreNames: ['node_modules', '.git', '.svn', '.hg', 'dist', 'out', 'build', '.DS_Store'],
+  recentFolders: [],
   showHiddenFiles: false,
   fileTreeView: 'tree',
   fileTreeSort: { ...DEFAULT_TREE_SORT },
@@ -278,6 +286,18 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
         ]
       : [...DEFAULT_PREFERENCES.folderIgnoreNames],
     showHiddenFiles: p.showHiddenFiles === true,
+    // 6F D1: lenient — drop non-entries, then re-apply display order + caps
+    // (pinned ≤5 + history ≤10) in case the stored blob drifted.
+    recentFolders: Array.isArray(p.recentFolders)
+      ? visibleRecents(
+          p.recentFolders
+            .filter(
+              (e): e is RecentFolder =>
+                !!e && typeof (e as RecentFolder).path === 'string' && (e as RecentFolder).path.trim() !== ''
+            )
+            .map((e) => (e.pinned ? { path: e.path, pinned: true } : { path: e.path }))
+        )
+      : [],
     fileTreeView: p.fileTreeView === 'list' ? 'list' : 'tree',
     // 6E D5: lenient — missing/partial blobs fall back per field, invalid
     // enums → DEFAULT_TREE_SORT's key/'asc'.

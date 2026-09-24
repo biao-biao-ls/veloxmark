@@ -150,6 +150,25 @@ export function ListIcon({ size = 14, ...rest }: IconProps) {
 }
 
 /** 6D view toggle: tree view glyph (branching rows). */
+/** 6F recents: pin-to-top action (ops panel hover). */
+export function PinIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 17v5" />
+      <path d="M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.3V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.7a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
+    </Svg>
+  )
+}
+
+/** 6F recents: remove action (ops panel hover). */
+export function TrashIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
+    </Svg>
+  )
+}
+
 /** 6E sort-by-modified-time glyph (sort row). */
 export function ClockIcon(props: IconProps) {
   return (

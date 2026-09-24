@@ -363,6 +363,11 @@ export const EN: Record<string, string> = {
   'ops.sort.name': 'Sort by name',
   'ops.sort.mtime': 'Sort by modified time',
   'ops.sort.birthtime': 'Sort by created time',
+  'ops.recents': 'Recently used folders',
+  'ops.recents.pin': 'Pin',
+  'ops.recents.unpin': 'Unpin',
+  'ops.recents.remove': 'Remove',
+  'ops.recents.current': 'Current folder',
   'app.newFile': 'New file',
   'app.searchInFolder': 'Search in folder (Ctrl+Shift+F)',
 

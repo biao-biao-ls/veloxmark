@@ -169,11 +169,14 @@
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
-/* 6D「操作」panel: fixed popup opening upward from the bottom-bar triggers. */
+/* 6D「操作」panel: fixed popup opening upward from the bottom-bar triggers.
+   6F: capped height + scroll (15 recents + actions + sort row). */
 .sidebar-ops {
   position: fixed;
   z-index: 1000;
   min-width: 180px;
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
   padding: var(--space-1);
   background: var(--bg);
   border: 1px solid var(--border);
@@ -276,6 +279,116 @@
   font-size: 10px;
   font-weight: 600;
   line-height: 1;
+}
+
+/* 6F「最近使用的目录」段 (typora-4.png): name rows, current-root dot,
+   hover pin/remove (visible on keyboard focus too). */
+.sidebar-ops-recents {
+  margin-top: var(--space-1);
+  padding: var(--space-1) 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-ops-recents-title {
+  padding: var(--space-1) var(--space-2);
+  color: var(--fg-dim);
+  font-size: 12px;
+}
+
+.sidebar-ops-recent {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: var(--space-1);
+  border-radius: var(--radius-sm);
+}
+
+.sidebar-ops-recent:hover {
+  background: var(--code-bg);
+}
+
+.sidebar-ops-recent-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font-size: 13px;
+  text-align: left;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.sidebar-ops-recent-main:hover {
+  color: var(--accent);
+}
+
+.sidebar-ops-recent-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recents-current {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.sidebar-ops-recent-act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  background: transparent;
+  border: none;
+  color: var(--fg-dim);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+}
+
+.sidebar-ops-recent:hover .sidebar-ops-recent-act,
+.sidebar-ops-recent-act:focus-visible {
+  opacity: 1;
+}
+
+.sidebar-ops-recent-act:hover {
+  color: var(--fg);
+  background: var(--bg);
+}
+
+.sidebar-ops-recent-act.is-active {
+  color: var(--accent);
+}
+
+/* 6F D2 list-view rows: name + right-aligned dim relative-dir subtitle. */
+.filetree-list-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filetree-list-sub {
+  margin-left: auto;
+  padding-left: var(--space-2);
+  flex-shrink: 0;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fg-muted);
+  font-size: 11px;
+  user-select: none;
 }
 
 /* ---- tree context menu ------------------------------------------------------ */

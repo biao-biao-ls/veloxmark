@@ -3,7 +3,8 @@ import type { DirNode, FolderScanOptions } from '../../../../electron/shared/api
 import type { TreeMenuRequest } from '../components/FileTree'
 import type { TreeMenuItem } from '../components/TreeMenu'
 import { dialog } from '../components/Dialog'
-import { getPreferences, getSession, patchSession } from '../preferences/store'
+import { getPreferences, getSession, patchSession, setPreferences } from '../preferences/store'
+import { upsertRecent } from '../filetree/recents'
 import { baseDirOf } from '../pathUtil'
 import type { SidebarMode } from './useFileOps'
 import { useTreeRoot } from './useTreeRoot'
@@ -87,15 +88,17 @@ export function useWorkspaceTree({
   const [selection, setSelection] = useState<{ path: string; isDir: boolean } | null>(null)
 
   // 6B: single funnel that applies a resolved root — retargets the one folder
-  // watcher and remembers the root as the session's recent-root slot (D5).
+  // watcher and records the root in the 6F recent-folders list (MRU upsert).
   // Mode-neutral on purpose: root follow must never flip the sidebar tab (6A).
   const applyTreeRoot = useCallback(async (dirPath: string | null) => {
     setFolderPath(dirPath)
     if (dirPath) {
-      // P03/6B D5: lastFolderPath is the recent-root slot (6F grows it into
-      // the recent-folders list). Write-side only since 6.4a — startup no
-      // longer auto-mounts it; it feeds 6F recents as an explicit-jump source.
-      patchSession({ lastFolderPath: dirPath })
+      // 6F D5 收编完成：lastFolderPath 写侧并入 recents upsert（使用即进历史区首，
+      // 面板/置顶/移除经同一 store 真源）。upsert 对「历史首/已置顶」返回原引用，
+      // 未变不写 store，避免根重应用时的无谓通知。
+      const p = getPreferences()
+      const recentFolders = upsertRecent(p.recentFolders, dirPath)
+      if (recentFolders !== p.recentFolders) setPreferences({ recentFolders })
       await window.api.watchFolder(dirPath, folderScanOptions())
     } else {
       await window.api.unwatchFolder()
