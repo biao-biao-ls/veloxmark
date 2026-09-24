@@ -67,6 +67,7 @@ import { useAppTheme } from './hooks/useAppTheme'
 import { useExport } from './hooks/useExport'
 import { useMenus } from './hooks/useMenus'
 import { useFoldSync } from './hooks/useFoldSync'
+import { useTableWidthSync } from './hooks/useTableWidthSync'
 import { useSessionPersist } from './hooks/useSessionPersist'
 import { usePreferences, useSession } from './preferences/useStore'
 import {
@@ -163,6 +164,14 @@ export default function App(): React.JSX.Element {
 
   // ---- P18: heading folds (useFoldSync — task 4.4 = 1.3) ----------------------
   const { foldedKeys, syncFoldedKeysRef, restoreFoldsForRef } = useFoldSync({
+    viewRef,
+    filePathRef,
+    suppressDirtyRef: fileOps.suppressDirtyRef,
+    filePath
+  })
+
+  // ---- 7F: table column widths (useTableWidthSync — useFoldSync mirror) --------
+  const { syncColWidthsRef } = useTableWidthSync({
     viewRef,
     filePathRef,
     suppressDirtyRef: fileOps.suppressDirtyRef,
@@ -545,6 +554,10 @@ export default function App(): React.JSX.Element {
             },
             onFoldChanged: () => {
               syncFoldedKeysRef.current()
+            },
+            // 7F: col-grip widths / session restore / mapPos offset drift.
+            onColWidthsChanged: () => {
+              syncColWidthsRef.current()
             },
             // P05: images need the document's directory for assets/ — resolve
             // true when a path exists, otherwise run Save As first.

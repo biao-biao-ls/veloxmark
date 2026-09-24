@@ -117,6 +117,8 @@ export interface SessionState {
   lastCursor: number | null
   /** P18: heading-fold keys (`level:text`) per file path. */
   headingFolds: Record<string, string[]>
+  /** 7F: table column widths (px per tableFrom) per file path. */
+  tableColWidths: Record<string, Record<string, number[]>>
   /** P25: mermaid preview panel pinned (session-only). */
   mermaidPreviewPin: boolean
   /** P26: open document tabs (file paths, tab order). */
@@ -183,6 +185,7 @@ const DEFAULT_SESSION: SessionState = {
   recentFiles: [],
   lastCursor: null,
   headingFolds: {},
+  tableColWidths: {},
   mermaidPreviewPin: false,
   openTabs: [],
   activePath: null
@@ -344,6 +347,32 @@ let preferences: Preferences = (() => {
   return sanitizePreferences(migrateLegacyKeys(raw ?? {}))
 })()
 
+/**
+ * 7F: pure shape/value sanitizer for `SessionState.tableColWidths`
+ * (`Record<filePath, Record<tableFrom, widths>>`), tested in store.test.ts.
+ * Width slots are position-preserving: invalid values collapse to 0 (the
+ * consumer's "default width" sentinel — widget.ts colgroup skips `w <= 0`)
+ * so a bad slot never shifts later columns; valid values clamp to the drag
+ * floor (40px, widget.ts col-grip parity). Empty tables/paths drop out.
+ */
+export function normalizeColWidths(raw: unknown): Record<string, Record<string, number[]>> {
+  if (!raw || typeof raw !== 'object') return {}
+  const out: Record<string, Record<string, number[]>> = {}
+  for (const [path, perTable] of Object.entries(raw as Record<string, unknown>)) {
+    if (!path || !perTable || typeof perTable !== 'object') continue
+    const tables: Record<string, number[]> = {}
+    for (const [from, widths] of Object.entries(perTable as Record<string, unknown>)) {
+      if (!Array.isArray(widths) || widths.length === 0) continue
+      const clean = widths.map((w) =>
+        typeof w === 'number' && Number.isFinite(w) && w > 0 ? Math.max(40, Math.round(w)) : 0
+      )
+      if (clean.some((w) => w > 0)) tables[from] = clean
+    }
+    if (Object.keys(tables).length > 0) out[path] = tables
+  }
+  return out
+}
+
 let session: SessionState = (() => {
   const raw = readJson<Partial<SessionState>>(SESSION_KEY)
   if (!raw) return { ...DEFAULT_SESSION }
@@ -381,7 +410,8 @@ let session: SessionState = (() => {
                 (v as unknown[]).filter((x): x is string => typeof x === 'string')
               ])
           )
-        : {}
+        : {},
+    tableColWidths: normalizeColWidths(raw.tableColWidths)
   }
 })()
 

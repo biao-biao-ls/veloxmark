@@ -30,7 +30,7 @@ import {
   livePreviewField,
   type LivePreviewConfig
 } from './livePreview'
-import { tableEditField } from './table/state'
+import { getTableEdit, restoreColWidths, setColWidth, tableEditField } from './table/state'
 import { tableEditLifecycle } from './table/lifecycle'
 import { setNestedPreviewField, tableStructBindings } from './table/widget'
 import { mathEditExitBindings } from './mathEdit'
@@ -50,6 +50,9 @@ export interface EditorCallbacks {
   onTreeChanged: () => void
   /** P18: fold set changed via toggle/restore/expand effects. */
   onFoldChanged?: () => void
+  /** 7F: colWidths map changed (col-grip setColWidth / restoreColWidths /
+   * mapPos remap on doc edits). */
+  onColWidthsChanged?: () => void
   /**
    * P05: assets need a document directory — resolves true once the document
    * has a path (Save As ran), false when the user cancelled.
@@ -185,6 +188,13 @@ export function createExtensions(
           tr.effects.some((e) => e.is(toggleFold) || e.is(restoreFolds) || e.is(expandFolds))
         ) || getFoldedKeys(update.startState) !== getFoldedKeys(update.state)
       if (foldTouched) callbacks.onFoldChanged?.()
+      // 7F: width map changes — effect-driven (col-grip setColWidth, session
+      // restoreColWidths) plus mapPos remap on doc edits (new Map identity).
+      const widthTouched =
+        update.transactions.some((tr) =>
+          tr.effects.some((e) => e.is(setColWidth) || e.is(restoreColWidths))
+        ) || getTableEdit(update.startState).colWidths !== getTableEdit(update.state).colWidths
+      if (widthTouched) callbacks.onColWidthsChanged?.()
     })
   ]
 }
