@@ -60,6 +60,19 @@ export function resolveNewFileTarget(input: {
 }
 
 /**
+ * 6G: name rules shared by the inline-create commit — `.md` auto-suffix for
+ * extension-less file names only (dirs untouched, explicit extensions kept).
+ */
+export function withMarkdownSuffix(name: string, kind: 'file' | 'dir'): string {
+  return kind === 'file' && !/\.[^./\\]+$/.test(name) ? `${name}.md` : name
+}
+
+/** 6G: separator / dot-segment names are never valid node names. */
+export function isInvalidTreeName(name: string): boolean {
+  return /[/\\]/.test(name) || name === '.' || name === '..'
+}
+
+/**
  * Folder workspace state: markdown file tree, watcher subscription, tree
  * CRUD (new/rename/delete/move) and the tree context menu.
  */
@@ -86,6 +99,12 @@ export function useWorkspaceTree({
   const [renamingPath, setRenamingPath] = useState<string | null>(null)
   // 6D D3: last-clicked tree row — steers the new-file target (6G menus reuse).
   const [selection, setSelection] = useState<{ path: string; isDir: boolean } | null>(null)
+  // 6G D3: inline-create target — a pending input row in the tree (prompt 退役).
+  // Mutually exclusive with `renamingPath` (one input row at a time).
+  const [pendingCreate, setPendingCreate] = useState<{
+    parentPath: string
+    kind: 'file' | 'dir'
+  } | null>(null)
 
   // 6B: single funnel that applies a resolved root — retargets the one folder
   // watcher and records the root in the 6F recent-folders list (MRU upsert).
@@ -141,7 +160,13 @@ export function useWorkspaceTree({
   }, [])
   useEffect(() => {
     setSelection(null)
+    setPendingCreate(null)
   }, [folderPath])
+  // Mutual exclusion (6G D3): at most one input row — entering inline rename
+  // drops any pending create (covers the post-create rename handoff too).
+  useEffect(() => {
+    if (renamingPath) setPendingCreate(null)
+  }, [renamingPath])
 
   // Finder "Open" on a folder (macOS open-file with a directory path).
   const openFolderFromSystem = useCallback(
@@ -235,27 +260,56 @@ export function useWorkspaceTree({
     [followMovedPath]
   )
 
-  const treeNewFile = useCallback(
-    async (dirPath: string) => {
-      const name = await dialog.prompt({ title: t('tree.newFile'), message: t('tree.newFileName') })
-      if (!name) return
-      if (/[/\\]/.test(name) || name === '.' || name === '..') {
-        await dialog.alert(t('tree.invalidName'))
+  // 6G D3/D4: prompt 对话框退役 — begin-create opens the inline input row
+  // (the same `filetree-renaming` mechanism the post-create rename uses).
+  const treeNewFile = useCallback((dirPath: string) => {
+    setRenamingPath(null)
+    setPendingCreate({ parentPath: dirPath, kind: 'file' })
+  }, [])
+
+  const treeNewFolder = useCallback((dirPath: string) => {
+    setRenamingPath(null)
+    setPendingCreate({ parentPath: dirPath, kind: 'dir' })
+  }, [])
+
+  const cancelTreeCreate = useCallback(() => setPendingCreate(null), [])
+
+  /**
+   * Inline-create commit: validate (empty = cancel; invalid name alerts) →
+   * duplicate check (AC2 重名提示不静默覆盖) → IPC create. When the `.md`
+   * suffix was auto-appended the fresh row hands off to inline rename so the
+   * name is still adjustable (UX-P07-F4, 6G 细化 D6).
+   */
+  const commitTreeCreate = useCallback(
+    async (name: string) => {
+      const pending = pendingCreate
+      setPendingCreate(null)
+      if (!pending || !name) return
+      if (isInvalidTreeName(name)) {
+        await dialog.alert(
+          pending.kind === 'dir' ? t('tree.invalidFolderName') : t('tree.invalidName')
+        )
         return
       }
-      const fileName = /\.[^./\\]+$/.test(name) ? name : `${name}.md`
-      const fullPath = joinPath(dirPath, fileName)
+      const isFile = pending.kind === 'file'
+      const fileName = withMarkdownSuffix(name, pending.kind)
+      const fullPath = joinPath(pending.parentPath, fileName)
+      if (await window.api.pathExists(fullPath)) {
+        await dialog.alert(t('tree.nameExists', { name: fileName }))
+        return
+      }
       try {
-        await window.api.createFile(fullPath)
+        if (isFile) await window.api.createFile(fullPath)
+        else await window.api.mkdirPath(fullPath)
       } catch (err) {
-        await dialog.alert(t('tree.createFileErr', { msg: cleanIpcMessage(err) }))
+        await dialog.alert(
+          t(isFile ? 'tree.createFileErr' : 'tree.createFolderErr', { msg: cleanIpcMessage(err) })
+        )
         return
       }
-      // UX-P07-F4: IDE-grade flow — the fresh row opens inline rename so the
-      // user can immediately adjust the auto-suffixed name.
-      setRenamingPath(fullPath)
+      if (isFile && fileName !== name) setRenamingPath(fullPath)
     },
-    [joinPath]
+    [pendingCreate, joinPath]
   )
 
   // 6D D3: bottom-bar / header「+」— create at the resolved target dir.
@@ -263,26 +317,6 @@ export function useWorkspaceTree({
     const dir = resolveNewFileTarget({ selection, activePath, root: folderPath })
     if (dir) void treeNewFile(dir)
   }, [selection, activePath, folderPath, treeNewFile])
-
-  const treeNewFolder = useCallback(
-    async (dirPath: string) => {
-      const name = await dialog.prompt({ title: t('tree.newFolder'), message: t('tree.newFolderName') })
-      if (!name) return
-      if (/[/\\]/.test(name) || name === '.' || name === '..') {
-        await dialog.alert(t('tree.invalidFolderName'))
-        return
-      }
-      const fullPath = joinPath(dirPath, name)
-      try {
-        await window.api.mkdirPath(fullPath)
-      } catch (err) {
-        await dialog.alert(t('tree.createFolderErr', { msg: cleanIpcMessage(err) }))
-        return
-      }
-      setRenamingPath(fullPath)
-    },
-    [joinPath]
-  )
 
   const treeRename = useCallback(
     async (node: DirNode) => {
@@ -365,30 +399,60 @@ export function useWorkspaceTree({
     [folderPath]
   )
 
+  // 6G D5 三档布局（分组 + 新项，probe id 只挂新项）：
+  //   文件   = [在新标签打开, 在资源管理器中显示 | 拷贝路径, 拷贝相对路径 | 重命名, 删除]
+  //   目录   = [新建文件, 新建文件夹, 在资源管理器中显示, 刷新 | 拷贝路径, 拷贝相对路径 | 重命名, 删除]
+  //   空白/根 = [新建文件, 新建文件夹, 在资源管理器中显示, 刷新 | 拷贝路径]
+  // D5 修订：「刷新」只进空白+目录档（文件档误触风险高，不放）。
   const treeMenuItems: TreeMenuItem[] = useMemo(() => {
     if (!treeMenu || !folderPath) return []
     const { node } = treeMenu
+    const revealItem = (): TreeMenuItem => ({
+      label: 'ops.reveal',
+      op: 'tree.revealInOS',
+      action: () => void window.api.showItemInFolder(node ? node.path : folderPath)
+    })
+    const refreshItem = (): TreeMenuItem => ({
+      label: 'ops.refresh',
+      op: 'tree.refresh',
+      action: () => void refreshTree()
+    })
     // Root: right-click on the empty area under the tree.
     if (!node) {
       return [
-        { label: 'tree.newFile', action: () => void treeNewFile(folderPath) },
-        { label: 'tree.newFolder', action: () => void treeNewFolder(folderPath) },
+        { label: 'tree.newFile', action: () => treeNewFile(folderPath) },
+        { label: 'tree.newFolder', action: () => treeNewFolder(folderPath) },
+        revealItem(),
+        refreshItem(),
+        { sep: true },
         { label: 'tree.copyPath', action: () => treeCopyPath(null) }
       ]
     }
     if (node.isDir) {
       return [
-        { label: 'tree.newFile', action: () => void treeNewFile(node.path) },
-        { label: 'tree.newFolder', action: () => void treeNewFolder(node.path) },
+        { label: 'tree.newFile', action: () => treeNewFile(node.path) },
+        { label: 'tree.newFolder', action: () => treeNewFolder(node.path) },
+        revealItem(),
+        refreshItem(),
+        { sep: true },
         { label: 'tree.copyPath', action: () => treeCopyPath(node) },
         { label: 'tree.copyRelPath', action: () => treeCopyRelativePath(node) },
+        { sep: true },
         { label: 'tree.rename', action: () => void treeRename(node) },
         { label: 'tree.delete', danger: true, action: () => void treeDelete(node) }
       ]
     }
     return [
+      {
+        label: 'tree.openInTab',
+        op: 'tree.openInTab',
+        action: () => void openFileFromTree(node.path)
+      },
+      revealItem(),
+      { sep: true },
       { label: 'tree.copyPath', action: () => treeCopyPath(node) },
       { label: 'tree.copyRelPath', action: () => treeCopyRelativePath(node) },
+      { sep: true },
       { label: 'tree.rename', action: () => void treeRename(node) },
       { label: 'tree.delete', danger: true, action: () => void treeDelete(node) }
     ]
@@ -400,7 +464,9 @@ export function useWorkspaceTree({
     treeCopyPath,
     treeCopyRelativePath,
     treeRename,
-    treeDelete
+    treeDelete,
+    openFileFromTree,
+    refreshTree
   ])
 
   // Watcher pushes a full tree on every (debounced) FS change.
@@ -432,6 +498,10 @@ export function useWorkspaceTree({
     /** 6D D3:「+」with the selected-dir → active-dir → root target rule. */
     treeNewFileAt,
     treeNewFolder,
+    /** 6G: inline-create input row state + commit/cancel (prompt 退役). */
+    pendingCreate,
+    commitTreeCreate,
+    cancelTreeCreate,
     treeMove,
     /** 6D D5: manual rescan / watcher-revival fallback (ops panel「刷新」). */
     refreshTree,

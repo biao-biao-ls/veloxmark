@@ -425,3 +425,9 @@
   color: var(--danger);
 }
 
+/* 6G: group divider between the D5 menu tiers. */
+.tree-menu-sep {
+  margin: var(--space-1) var(--space-2);
+  border-top: 1px solid var(--border);
+}
+

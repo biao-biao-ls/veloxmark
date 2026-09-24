@@ -1,11 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { t } from '../i18n'
 
-export interface TreeMenuItem {
-  label: string
-  danger?: boolean
-  action: () => void
-}
+export type TreeMenuItem =
+  | { sep: true }
+  | {
+      /** i18n key (rendered through `t()`). */
+      label: string
+      danger?: boolean
+      /** 6G: probe id — only the new menu items carry one (additive contract). */
+      op?: string
+      action: () => void
+    }
 
 interface Props {
   x: number
@@ -58,19 +63,24 @@ export default function TreeMenu({ x, y, items, onClose }: Props): React.JSX.Ele
       style={{ left: pos.x, top: pos.y }}
       role="menu"
     >
-      {items.map((item) => (
-        <button
-          key={item.label}
-          className={`tree-menu-item${item.danger ? ' tree-menu-danger' : ''}`}
-          role="menuitem"
-          onClick={() => {
-            onClose()
-            item.action()
-          }}
-        >
-          {t(item.label)}
-        </button>
-      ))}
+      {items.map((item, i) =>
+        'sep' in item ? (
+          <div key={`sep-${i}`} className="tree-menu-sep" role="separator" />
+        ) : (
+          <button
+            key={item.label}
+            className={`tree-menu-item${item.danger ? ' tree-menu-danger' : ''}`}
+            role="menuitem"
+            data-op={item.op}
+            onClick={() => {
+              onClose()
+              item.action()
+            }}
+          >
+            {t(item.label)}
+          </button>
+        )
+      )}
     </div>
   )
 }

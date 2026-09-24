@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveNewFileTarget } from './useWorkspaceTree'
+import { isInvalidTreeName, resolveNewFileTarget, withMarkdownSuffix } from './useWorkspaceTree'
 
 describe('resolveNewFileTarget (6D D3 priority)', () => {
   it('selected directory wins over everything', () => {
@@ -50,5 +50,38 @@ describe('resolveNewFileTarget (6D D3 priority)', () => {
 
   it('null when there is no root context at all (6.4a unfiled)', () => {
     expect(resolveNewFileTarget({ selection: null, activePath: null, root: null })).toBe(null)
+  })
+})
+
+describe('withMarkdownSuffix (6G name rules)', () => {
+  it('extension-less file name gets .md; explicit extension kept', () => {
+    expect(withMarkdownSuffix('note', 'file')).toBe('note.md')
+    expect(withMarkdownSuffix('note.txt', 'file')).toBe('note.txt')
+    expect(withMarkdownSuffix('archive.tar.gz', 'file')).toBe('archive.tar.gz')
+  })
+
+  it('dirs are never suffixed', () => {
+    expect(withMarkdownSuffix('docs', 'dir')).toBe('docs')
+    expect(withMarkdownSuffix('no.ext', 'dir')).toBe('no.ext')
+  })
+
+  it('a trailing dot-segment counts as an extension (matches the old prompt rule)', () => {
+    expect(withMarkdownSuffix('v1.2', 'file')).toBe('v1.2')
+  })
+})
+
+describe('isInvalidTreeName (6G name rules)', () => {
+  it('rejects separators and dot-segments', () => {
+    expect(isInvalidTreeName('a/b')).toBe(true)
+    expect(isInvalidTreeName('a\\b')).toBe(true)
+    expect(isInvalidTreeName('.')).toBe(true)
+    expect(isInvalidTreeName('..')).toBe(true)
+  })
+
+  it('accepts ordinary names (empty is handled as cancel before this)', () => {
+    expect(isInvalidTreeName('note')).toBe(false)
+    expect(isInvalidTreeName('note.md')).toBe(false)
+    expect(isInvalidTreeName('.hidden')).toBe(false)
+    expect(isInvalidTreeName('')).toBe(false)
   })
 })

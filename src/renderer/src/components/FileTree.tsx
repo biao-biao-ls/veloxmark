@@ -27,11 +27,17 @@ interface Props {
   /** 6D D3: controlled row selection (new-file target; 6G menus reuse). */
   selectedPath?: string | null
   onSelect?: (path: string, isDir: boolean) => void
+  /** 6G: pending inline-create target — renders the CreateRow input. */
+  pendingCreate?: { parentPath: string; kind: 'file' | 'dir' } | null
+  onCreateCommit: (name: string) => void
+  onCreateCancel: () => void
 }
 
 // Fixed row height keeps the virtualization math exact; .filetree-item is
 // line-height 1.6 * 13px ≈ 21px plus 2+2px padding → 25px with border-box.
 const ROW_HEIGHT = 25
+/** 6G render-list entry: a data row, or the spliced inline-create input. */
+type ViewRow = (FlatRow & { relDir?: string }) | { create: 'file' | 'dir'; depth: number }
 // Above this many visible rows, window the render (spacer divs, no abs pos).
 const VIRTUALIZE_AT = 500
 const OVERSCAN = 10
@@ -106,6 +112,67 @@ function RenameRow({
 }
 
 /**
+ * Inline create row (6G): an empty name input under the target parent — the
+ * prompt-dialog replacement. Same `filetree-renaming` chrome as RenameRow
+ * (AC5 visual/interaction parity): Enter/blur commits, Esc cancels.
+ */
+function CreateRow({
+  kind,
+  depth,
+  virtualize,
+  onCommit,
+  onCancel
+}: {
+  kind: 'file' | 'dir'
+  depth: number
+  virtualize: boolean
+  onCommit: (name: string) => void
+  onCancel: () => void
+}): React.JSX.Element {
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const doneRef = useRef(false)
+
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+
+  const commit = (value: string): void => {
+    if (doneRef.current) return
+    doneRef.current = true
+    onCommit(value.trim())
+  }
+
+  return (
+    <div
+      className={`filetree-item filetree-renaming${virtualize ? ' filetree-item-fixed' : ''}`}
+      style={{ paddingLeft: 12 + depth * 14 }}
+    >
+      <input
+        ref={inputRef}
+        className="filetree-rename-input"
+        defaultValue=""
+        placeholder={t('tree.namePlaceholder')}
+        aria-label={kind === 'dir' ? t('tree.newFolder') : t('tree.newFile')}
+        spellCheck={false}
+        onKeyDown={(e) => {
+          e.stopPropagation()
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            commit((e.target as HTMLInputElement).value)
+          } else if (e.key === 'Escape') {
+            e.preventDefault()
+            if (doneRef.current) return
+            doneRef.current = true
+            onCancel()
+          }
+        }}
+        onBlur={(e) => commit(e.target.value)}
+      />
+    </div>
+  )
+}
+
+/**
  * Flat markdown file tree for the folder sidebar. Visible rows come from
  * `filetreeRows.visibleRows` (depth-first flatten of open nodes — 6C: default
  * collapsed, active-file ancestor chain revealed, rename chain forced open),
@@ -126,7 +193,10 @@ export default function FileTree({
   onRenameCommit,
   onRenameCancel,
   selectedPath,
-  onSelect
+  onSelect,
+  pendingCreate,
+  onCreateCommit,
+  onCreateCancel
 }: Props): React.JSX.Element {
   // 6C D1: untouched dirs are collapsed (no size heuristic); only explicit
   // user toggles live here — reveal-derived openness never writes this map.
@@ -142,7 +212,18 @@ export default function FileTree({
   // never written to `expanded`) so the active row is reachable; user collapse
   // still wins. Rename ancestors force open (UX-P07-F4).
   const revealDirs = useMemo(() => ancestorDirPaths(activePath), [activePath])
-  const renameDirs = useMemo(() => ancestorDirPaths(renamingPath ?? null), [renamingPath])
+  // 6G: the create input's parent chain force-opens like a rename target —
+  // fake-child path so the parent dir itself is in the chain (its row must be
+  // visible: the input row is spliced right below it).
+  const createDirs = useMemo(
+    () => (pendingCreate ? ancestorDirPaths(pendingCreate.parentPath + sep + 'n') : null),
+    [pendingCreate, sep]
+  )
+  const renameDirs = useMemo(() => {
+    const dirs = ancestorDirPaths(renamingPath ?? null)
+    if (createDirs) for (const d of createDirs) dirs.add(d)
+    return dirs
+  }, [renamingPath, createDirs])
   // 6E D4: sort is a pure pre-pass on the scan tree (per-level; shared with the
   // 6.12 list fork) — inserted before the 6C flatten seam. Reactive to the
   // ops-panel sort row via preferences (instant re-sort, spec AC1).
@@ -171,6 +252,28 @@ export default function FileTree({
     return visibleRows(sortedNodes, { expanded, revealDirs, renameDirs })
   }, [fileTreeView, sortedNodes, fileTreeSort, sep, expanded, revealDirs, renameDirs])
 
+  // 6G D3: splice the CreateRow into the render list — after the parent dir row
+  // in tree mode (parent chain force-open above), index 0 when the parent is
+  // the root itself, missing from the rows, or in list view. Part of the same
+  // array as data rows so virtualization math stays exact.
+  const viewRows = useMemo((): ViewRow[] => {
+    const base: ViewRow[] = rows.map((r) => ({ ...r }))
+    if (!pendingCreate) return base
+    let at = 0
+    let depth = 0
+    if (fileTreeView !== 'list') {
+      const i = base.findIndex(
+        (r) => 'node' in r && r.node.isDir && r.node.path === pendingCreate.parentPath
+      )
+      if (i >= 0) {
+        at = i + 1
+        depth = (base[i] as FlatRow).depth + 1
+      }
+    }
+    base.splice(at, 0, { create: pendingCreate.kind, depth })
+    return base
+  }, [rows, pendingCreate, fileTreeView])
+
   // The sidebar is the scroll parent — track it so the window follows scroll.
   useEffect(() => {
     const side = treeRef.current?.closest('.sidebar')
@@ -190,7 +293,7 @@ export default function FileTree({
   // manual expand/collapse elsewhere) never jitters the viewport.
   const lastRevealRef = useRef<{ path: string | null; found: boolean }>({ path: null, found: false })
   useEffect(() => {
-    const idx = rows.findIndex((r) => r.node.path === activePath)
+    const idx = viewRows.findIndex((r) => 'node' in r && r.node.path === activePath)
     const found = idx >= 0
     const last = lastRevealRef.current
     if (found && last.path === activePath && last.found) return
@@ -202,7 +305,7 @@ export default function FileTree({
     const treeTop = treeRef.current?.offsetTop ?? 0
     const rowTop = treeTop + idx * ROW_HEIGHT
     side.scrollTop = Math.max(0, rowTop - side.clientHeight / 2 + ROW_HEIGHT / 2)
-  }, [activePath, rows])
+  }, [activePath, viewRows])
 
   // UX-P07-F5: Esc cancels an in-flight drag (drop indicator + shared src).
   useEffect(() => {
@@ -217,29 +320,42 @@ export default function FileTree({
     return () => document.removeEventListener('keydown', onKey)
   }, [dropTarget])
 
-  const virtualize = rows.length > VIRTUALIZE_AT
+  const virtualize = viewRows.length > VIRTUALIZE_AT
   let start = 0
-  let end = rows.length
+  let end = viewRows.length
   if (virtualize && viewportH > 0) {
     // row i sits at treeTop + i*ROW_H inside the sidebar's scroll space.
     const treeTop = treeRef.current?.offsetTop ?? 0
     start = Math.max(0, Math.floor((scrollTop - treeTop) / ROW_HEIGHT) - OVERSCAN)
-    end = Math.min(rows.length, Math.ceil((scrollTop + viewportH - treeTop) / ROW_HEIGHT) + OVERSCAN)
+    end = Math.min(
+      viewRows.length,
+      Math.ceil((scrollTop + viewportH - treeTop) / ROW_HEIGHT) + OVERSCAN
+    )
   }
 
-  if (nodes.length === 0) {
+  // 6G: an active create input must render even in an empty tree (the first
+  // file of a fresh workspace is created exactly here).
+  if (nodes.length === 0 && !pendingCreate) {
     return <div className="outline-empty">{t('tree.noMarkdown')}</div>
   }
 
   const isDropAllowed = (src: string, destDir: string): boolean =>
     src !== destDir && !destDir.startsWith(src + sep)
 
-  const renderRow = ({
-    node,
-    depth,
-    open,
-    relDir
-  }: FlatRow & { relDir?: string }): React.JSX.Element => {
+  const renderRow = (item: ViewRow): React.JSX.Element => {
+    if ('create' in item) {
+      return (
+        <CreateRow
+          key="__create__"
+          kind={item.create}
+          depth={item.depth}
+          virtualize={virtualize}
+          onCommit={onCreateCommit}
+          onCancel={onCreateCancel}
+        />
+      )
+    }
+    const { node, depth, open, relDir } = item
     if (renamingPath && node.path === renamingPath) {
       return (
         <RenameRow
@@ -366,11 +482,11 @@ export default function FileTree({
       {virtualize ? (
         <>
           <div style={{ height: start * ROW_HEIGHT }} />
-          {rows.slice(start, end).map(renderRow)}
-          <div style={{ height: (rows.length - end) * ROW_HEIGHT }} />
+          {viewRows.slice(start, end).map(renderRow)}
+          <div style={{ height: (viewRows.length - end) * ROW_HEIGHT }} />
         </>
       ) : (
-        rows.map(renderRow)
+        viewRows.map(renderRow)
       )}
     </nav>
   )

@@ -1485,6 +1485,9 @@ export default function App(): React.JSX.Element {
                         onMove={(src, dest) => void workspace.treeMove(src, dest)}
                         onRenameCommit={(node, name) => void workspace.finishInlineRename(node, name)}
                         onRenameCancel={workspace.cancelInlineRename}
+                        pendingCreate={workspace.pendingCreate}
+                        onCreateCommit={(name) => void workspace.commitTreeCreate(name)}
+                        onCreateCancel={workspace.cancelTreeCreate}
                       />
                       {/* P07: right-click on the empty area under the tree → root menu
                           (rows stopPropagation, so only bare clicks land here). */}
