@@ -60,3 +60,39 @@ npm run typecheck && npm run test:unit
   4. 快速连切 3+ tab：树不错闪旧内容
   5. 外部改文件（watcher）仍自动刷新；QuickOpen/搜索范围 = 当前树根
   6. 深层目录（>8 级）可见（D4）
+
+---
+
+# 6.4a 修订实施方案（2026-09-24，AC4 废止）
+
+对应 spec 修订记录（未落盘文档 → 树根 = 空，不回落最近根）。
+
+## 技术决策与理由
+
+- **R1 `resolveTreeRoot` 删 lastRoot 档**：优先级收为 显式根 → 激活文档 dirname → `null`。未落盘文档无目录上下文，宁可显式空态也不装工作区（spec 修订 What/Why）。
+- **R2 启动恢复不再挂 `lastFolderPath`**：`App.tsx` 恢复链删除 `loadFolder(saved.lastFolderPath)` 分支（原经显式根通道钉住，是启动误显树的主因）。恢复落盘 tab 后激活事件自然走跟随制重建根；纯 untitled 会话落空态。`lastFolderPath` **写侧保留**（D5 最近根槽，6F recents 数据源），读侧仅剩 6F 的一次性迁移。
+- **R3 空态卡复用 6A**：`sidebar-empty` 卡已有「打开文件夹…」按钮；文案区分「当前文档未落盘」（新 i18n key `sidebar.filesEmptyUntitled`，en+zh）——根为 null 只发生在未落盘/无文档场景，无需再分叉。
+
+## 文件切法
+
+| 源 | 改动 |
+|---|---|
+| `hooks/useTreeRoot.ts` | `ResolveTreeRootInput` 删 `lastRoot`；`resolveTreeRoot` 第 3 档恒 `null`；effect 不再读 session |
+| `hooks/useTreeRoot.test.ts` | 回落用例改为「未落盘/无文档 → null」；输入面同步 |
+| `hooks/useWorkspaceTree.ts` | `applyTreeRoot` 注释更新（`lastFolderPath` 仅写侧） |
+| `App.tsx` | 恢复链删 `loadFolder(saved.lastFolderPath)` 分支；空态卡文案按未落盘场景选 key |
+| `i18n/en.ts` + `i18n/zh.ts` | 新 key `sidebar.filesEmptyUntitled` |
+
+## 状态/契约归属
+
+- 显式根 ref 仍单一归属 `useTreeRoot`；`lastFolderPath` 写侧仍归 `applyTreeRoot`（D5）。
+- e2e 缝零触碰（`openFolder`/`getSidebarMode`/`data-op`/命令 id）。
+
+## 验证方案
+
+```bash
+npm run typecheck && npm run test:unit
+```
+
+- `npx madge --circular --extensions ts,tsx` 0 cycles（hooks import 面变化）
+- 人工冒烟（**行为变更，必做**）：① 冷启动（默认 untitled-2.md）：files tab 空态卡「当前文档未落盘」+ 引导按钮，不显任何目录树；② 打开落盘文件 → 树跟随其目录；切回 untitled tab → 回空态；③ 「打开文件夹…」钉住根后切 untitled tab → 树保持（D1 不变）；④ 重启：落盘 tab 会话恢复后树根 = 激活文档目录；纯 untitled 会话重启仍空态；⑤ 6A/6B/6C 不回归（双 tab、跟随换根、reveal）。

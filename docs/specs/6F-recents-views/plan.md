@@ -6,7 +6,7 @@
 - **D2 列表视图渲染**：扁平行 = 全部 md 文件（递归收集，复用树数据不加扫描），行 = 文件名主列 + 相对根目录副标题（`subdir/name.md` 的 `subdir/` 部分，根层不显示副标题）。行交互与树视图同路径（点击打开/右键/高亮/reveal 由 `activePath` 直接匹配）。实现在 `FileTree.tsx` 内按 `fileTreeView` 分叉 flatten（共用 `visibleRows` 的排序入口）。
 - **D3 上限**：历史区 10 项（超出挤出最旧未置顶）；置顶**占**历史上限外的独立槽位（最多 5，防滥用）——两者合计展示 ≤15。持久化全量落 preferences（数量小）。
 - **D4 「当前根蓝点」**：行尾 `.recents-current` 圆点（`--accent`），比较 `path === 当前树根`（大小写/分隔符归一用 `pathUtil` 现有语义）。
-- **D5 `lastFolderPath` 收编完成**：session 写侧并入 recents upsert（6B/D5 半程）；读侧恢复逻辑改读 `recentFolders` 历史区首项，旧 session 值一次性迁移（读到 `lastFolderPath` 时 upsert 进 recents）。
+- **D5 `lastFolderPath` 收编完成**：session 写侧并入 recents upsert（6B/D5 半程）；读侧恢复逻辑已废止（6.4a）——不再自动挂根，仅一次性迁移（读到 `lastFolderPath` 时 upsert 进 recents）。
 
 ## 文件切法
 

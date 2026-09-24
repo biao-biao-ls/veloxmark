@@ -6,7 +6,7 @@
 
 ## 背景与现状
 
-- 最近根：session `lastFolderPath` 单值（`useWorkspaceTree.ts:67-83` 恢复用；6B/D5 写侧已收编为「最近根」语义）。
+- 最近根：session `lastFolderPath` 单值（6B/D5 写侧已收编为「最近根」语义；**读侧恢复已废止**——6B 修订 6.4a 起启动不自动挂根，recents 仅作显式跳转源）。
 - Typora 面板段形态（typora-4.png）：分组标题「最近使用的目录」+ 目录行（📁 + 名），当前目录行尾蓝点，hover 显示 📌/🗑。
 - 列表/树视图：6D 已落按钮 + 偏好 `fileTreeView`（状态可切），**渲染仍是单一树**。
 - 文件树点击/右键/拖拽/内联改名交互在 6C 后集中于 `FileTree.tsx` 的行渲染路径。
@@ -22,7 +22,7 @@
 
 ## 约束
 
-- 持久化落 preferences（用户数据，跨会话）——plan D3；`lastFolderPath` 读侧兼容收编（6B/D5）不破坏 session 恢复。
+- 持久化落 preferences（用户数据，跨会话）——plan D3；`lastFolderPath` 读侧仅剩一次性迁移（6.4a 后无 session 恢复挂根）。
 - 点击目录项必须走 6B `resolveTreeRoot` 显式根通道（单一根解析源，不旁路）。
 - i18n 纪律 en+zh；间距 token 纪律；深浅主题。
 - 6D 面板组件扩展（不新开第二种面板范式）；6C 图标机制复用（目录 glyph）。
