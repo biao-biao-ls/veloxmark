@@ -227,6 +227,31 @@
   cursor: pointer;
 }
 .table-insert-cell.is-hover { background: var(--accent); border-color: var(--accent); }
+
+/* ---- 7E: rows×cols grid picker popover (table toolbar ⊞) ---- */
+.table-grid-picker {
+  position: fixed;
+  z-index: 2400;
+  display: grid;
+  grid-template-columns: repeat(12, 16px);
+  gap: 2px;
+  padding: var(--space-2);
+  background: var(--widget-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--cb-radius);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  outline: none;
+  width: fit-content;
+}
+.table-grid-picker:focus-visible { outline: 1px solid var(--accent); }
+.table-grid-picker-readout {
+  grid-column: 1 / -1;
+  margin-top: var(--space-1);
+  font-size: 11px;
+  color: var(--fg-dim);
+  text-align: center;
+  user-select: none;
+}
 .table-insert-preview {
   margin: 8px 0;
   padding: 8px;

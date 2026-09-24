@@ -36,9 +36,11 @@ import {
   insertRowOp,
   moveColOp,
   moveRowOp,
+  resizeTableOp,
   setAlignOp,
   type TableOp
 } from './ops'
+import { openGridPicker } from './gridPicker'
 import { getTableEdit, setActiveCell, setColWidth } from './state'
 import {
   activeNestedView,
@@ -365,6 +367,30 @@ export class TableWidget extends BlockWidget {
 
     const toolbarItems: BlockToolbarItem[] = [
       {
+        // 7E: rows×cols grid picker — interim toolbar home until the 7C
+        // unified toolbar lands (popover semantics travel with the move).
+        label: '⊞',
+        title: t('table.gridPickerTitle'),
+        onClick: (btn) => {
+          // Stale-instance discipline: dims + anchor resolve at event time.
+          const resolved = resolveTableModel(view, this.sourceFrom)
+          if (!resolved) return
+          openGridPicker(btn, {
+            initRow: resolved.model.cells.length,
+            initCol: resolved.model.colCount,
+            onPick: (rows, cols) => {
+              const a = getTableEdit(view.state).active
+              runTableOp(
+                view,
+                this.sourceFrom,
+                (m) => resizeTableOp(m, rows, cols, a?.row ?? 0, a?.col ?? 0),
+                'input.table.resize'
+              )
+            }
+          })
+        }
+      },
+      {
         label: t('toolbar.copy'),
         title: t('table.copyTitle'),
         onClick: (btn) => void this.copyWithFeedback(this.source, btn, t('toast.copiedTable'))
@@ -444,6 +470,8 @@ const tableTestHook = {
       moveRowDown: (m, x, y) => moveRowOp(m, x, y, 1),
       moveColLeft: (m, x, y) => moveColOp(m, y, x, -1),
       moveColRight: (m, x, y) => moveColOp(m, y, x, 1),
+      // 7E: arg = rows, arg2 = cols (anchor defaults to 0,0 on the probe path).
+      resizeTable: (m, x, y) => resizeTableOp(m, x, y),
       alignLeft: (m, x) => setAlignOp(m, x, 'left'),
       alignCenter: (m, x) => setAlignOp(m, x, 'center'),
       alignRight: (m, x) => setAlignOp(m, x, 'right')
@@ -462,6 +490,7 @@ const tableTestHook = {
         moveRowDown: 'input.table.moveRow',
         moveColLeft: 'input.table.moveCol',
         moveColRight: 'input.table.moveCol',
+        resizeTable: 'input.table.resize',
         alignLeft: 'input.table.align',
         alignCenter: 'input.table.align',
         alignRight: 'input.table.align'

@@ -146,6 +146,51 @@ export function moveColOp(model: TableModel, row: number, col: number, dir: -1 |
   }
 }
 
+/**
+ * 7E: resize the whole table to `rows` × `cols` in one op (grid picker).
+ * Grow appends empty body rows at the bottom / empty columns at the right
+ * (aligns extended with ''); shrink drops rows from the bottom / columns from
+ * the right (aligns truncated) — trailing cell content is lost (Excel-style
+ * top-left-anchored selection). The header (row 0) always survives. Returns
+ * null for targets below 1×1 or equal to the current shape (no empty
+ * transaction). `anchor` positions the post-op active cell (clamped).
+ */
+export function resizeTableOp(
+  model: TableModel,
+  rows: number,
+  cols: number,
+  anchorRow = 0,
+  anchorCol = 0
+): TableOp | null {
+  const tRows = Math.trunc(rows)
+  const tCols = Math.trunc(cols)
+  if (tRows < 1 || tCols < 1) return null
+  const grid = modelToGrid(model)
+  if (tRows === grid.length && tCols === model.colCount) return null
+  while (grid.length < tRows) grid.push(new Array(tCols).fill(''))
+  if (grid.length > tRows) grid.length = tRows
+  for (const r of grid) {
+    while (r.length < tCols) r.push('')
+    if (r.length > tCols) r.length = tCols
+  }
+  // aligns travel with columns: normalize to colCount first (ragged safe),
+  // then extend with '' or truncate to the target width.
+  const aligns = [...model.aligns]
+  while (aligns.length < model.colCount) aligns.push('')
+  aligns.length = model.colCount
+  while (aligns.length < tCols) aligns.push('')
+  if (aligns.length > tCols) aligns.length = tCols
+  return {
+    from: model.tableFrom,
+    to: model.tableTo,
+    insert: formatTable(aligns, grid),
+    nextActive: {
+      row: Math.max(0, Math.min(anchorRow, tRows - 1)),
+      col: Math.max(0, Math.min(anchorCol, tCols - 1))
+    }
+  }
+}
+
 /** Set column alignment ('' | 'left' | 'center' | 'right') + format table. */
 export function setAlignOp(model: TableModel, col: number, align: string): TableOp | null {
   if (col < 0 || col >= model.colCount) return null
