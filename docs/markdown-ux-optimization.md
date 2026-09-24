@@ -35,7 +35,7 @@
   聚焦 mermaid 时改为**图表位置就地**「源码区 + 实时预览」上下并存（对照 `mermaid-focus.png`），替代/并联 P25 底部面板（plan 决策：就地预览为主、底栏降级为可选或退役）。与 ③ 同属"块内源码/预览双区"模式，spec 显式对齐共用机制。
   AC：编辑时预览在图表原位置实时刷新；错误时沿用 last-good dim + 错误条 + 跳源码；退出编辑回纯渲染；P25 行为去留在 plan 写明。
 
-- [ ] **⑤ 7.5 已有表格的行列规模网格选择器**（spec `7E-table-resize-grid`）
+- [x] **⑤ 7.5 已有表格的行列规模网格选择器**（spec `7E-table-resize-grid`）（已收敛 2026-09-24：⊞ 过渡挂 hover 块工具栏，⑥ 落地时移交）
   复用 `TableInsertDialog` 的 20×12 网格交互做成工具栏 ⊞ popover：向右/下拖 = 加行/列，向左/上拖 = 删行/列，底部「R × C」读数（对照 `table-btn-4.png` 增删改菜单旁的 `table-btn-1.png` 网格选择器）。一次 transaction（undo 一步）。
   AC：扩/缩整表一次完成；缩到 1×1 边界不再缩；对齐数组随列增删正确伸缩；popover 键盘可达（方向键 + Enter）。
 
