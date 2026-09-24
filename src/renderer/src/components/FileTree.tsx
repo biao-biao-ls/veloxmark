@@ -22,6 +22,9 @@ interface Props {
   renamingPath?: string | null
   onRenameCommit: (node: DirNode, name: string) => void
   onRenameCancel: () => void
+  /** 6D D3: controlled row selection (new-file target; 6G menus reuse). */
+  selectedPath?: string | null
+  onSelect?: (path: string, isDir: boolean) => void
 }
 
 // Fixed row height keeps the virtualization math exact; .filetree-item is
@@ -119,7 +122,9 @@ export default function FileTree({
   onMove,
   renamingPath,
   onRenameCommit,
-  onRenameCancel
+  onRenameCancel,
+  selectedPath,
+  onSelect
 }: Props): React.JSX.Element {
   // 6C D1: untouched dirs are collapsed (no size heuristic); only explicit
   // user toggles live here — reveal-derived openness never writes this map.
@@ -232,8 +237,10 @@ export default function FileTree({
         <button
           key={node.path}
           className={`filetree-item filetree-dir-label${
-            dropTarget === node.path ? ' filetree-drop-target' : ''
-          }${virtualize ? ' filetree-item-fixed' : ''}`}
+            selectedPath === node.path ? ' filetree-selected' : ''
+          }${dropTarget === node.path ? ' filetree-drop-target' : ''}${
+            virtualize ? ' filetree-item-fixed' : ''
+          }`}
           style={pad}
           draggable
           onDragStart={startDrag}
@@ -256,7 +263,11 @@ export default function FileTree({
             setDropTarget(null)
             if (src && isDropAllowed(src, node.path)) onMove(src, node.path)
           }}
-          onClick={() => setExpanded((m) => ({ ...m, [node.path]: !open }))}
+          onClick={() => {
+            // 6D D3: the click selects the row (new-file target) and toggles it.
+            onSelect?.(node.path, true)
+            setExpanded((m) => ({ ...m, [node.path]: !open }))
+          }}
           onContextMenu={(e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -276,13 +287,17 @@ export default function FileTree({
       <button
         key={node.path}
         className={`filetree-item${activePath === node.path ? ' filetree-active' : ''}${
-          virtualize ? ' filetree-item-fixed' : ''
-        }`}
+          selectedPath === node.path ? ' filetree-selected' : ''
+        }${virtualize ? ' filetree-item-fixed' : ''}`}
         style={pad}
         draggable
         onDragStart={startDrag}
         onDragEnd={endDrag}
-        onClick={() => onOpen(node.path)}
+        onClick={() => {
+          // 6D D3: select then open (selection doubles as the new-file target).
+          onSelect?.(node.path, false)
+          onOpen(node.path)
+        }}
         onContextMenu={(e) => {
           e.preventDefault()
           e.stopPropagation()

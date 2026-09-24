@@ -128,3 +128,32 @@ export function FileMdIcon({ size = 14, ...rest }: IconProps) {
     </Svg>
   )
 }
+
+/** 6D bottom action bar: overflow/ops trigger glyph (vertical ellipsis). */
+export function MoreVerticalIcon({ size = 14, ...rest }: IconProps) {
+  return (
+    <Svg size={size} {...rest}>
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="12" cy="5" r="1" />
+      <circle cx="12" cy="19" r="1" />
+    </Svg>
+  )
+}
+
+/** 6D view toggle: list view glyph (bulleted lines). */
+export function ListIcon({ size = 14, ...rest }: IconProps) {
+  return (
+    <Svg size={size} {...rest}>
+      <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+    </Svg>
+  )
+}
+
+/** 6D view toggle: tree view glyph (branching rows). */
+export function TreeIcon({ size = 14, ...rest }: IconProps) {
+  return (
+    <Svg size={size} {...rest}>
+      <path d="M21 12h-8M21 6H8M21 18h-8M3 6v4c0 1.1.9 2 2 2h3M3 10v6c0 1.1.9 2 2 2h3" />
+    </Svg>
+  )
+}

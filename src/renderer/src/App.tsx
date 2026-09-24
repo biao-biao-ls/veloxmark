@@ -46,7 +46,9 @@ import { TabsBar } from './components/TabsBar'
 import MermaidLightbox from './components/MermaidLightbox'
 import { DialogHost, dialog } from './components/Dialog'
 import { EditorContextMenuHost } from './components/EditorContextMenu'
-import { SearchIcon } from './components/Icons'
+import SidebarOpsPanel from './components/SidebarOpsPanel'
+import { openSidebarOps } from './components/sidebarOpsBus'
+import { ListIcon, MoreVerticalIcon, SearchIcon, TreeIcon } from './components/Icons'
 import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch, bumpLinkEpoch, bumpI18nEpoch, updateLivePreviewConfig } from './editor/setup'
 import { invalidateImageCache } from './editor/image-widget'
 import { readEditingAssistsConfig, setHtmlPasteFallbackNotice } from './editor/assists'
@@ -1382,6 +1384,13 @@ export default function App(): React.JSX.Element {
     ? baseNameOf(workspace.folderPath) || workspace.folderPath
     : null
 
+  // 6D: both bottom-bar triggers open the ops panel singleton (AC3). Closing
+  // any tree context menu first keeps the one-popup-at-a-time rule.
+  const openOpsPanel = (e: React.MouseEvent<HTMLElement>): void => {
+    workspace.setTreeMenu(null)
+    openSidebarOps(e.currentTarget.getBoundingClientRect())
+  }
+
   return (
     <div
       className={`app theme-${theme}${isMac ? ' platform-mac' : ''}${
@@ -1456,7 +1465,7 @@ export default function App(): React.JSX.Element {
                         <span className="sidebar-title">{folderName}</span>
                         <button
                           className="sidebar-action"
-                          onClick={() => void workspace.treeNewFile(workspace.folderPath!)}
+                          onClick={() => void workspace.treeNewFileAt()}
                           title={t('app.newFile')}
                         >
                           +
@@ -1469,6 +1478,8 @@ export default function App(): React.JSX.Element {
                         nodes={workspace.folderTree}
                         activePath={filePath}
                         renamingPath={workspace.renamingPath}
+                        selectedPath={workspace.selection?.path ?? null}
+                        onSelect={workspace.selectNode}
                         onOpen={(path) => void workspace.openFileFromTree(path)}
                         onContextMenu={workspace.setTreeMenu}
                         onMove={(src, dest) => void workspace.treeMove(src, dest)}
@@ -1487,6 +1498,63 @@ export default function App(): React.JSX.Element {
                             node: null
                           })
                         }}
+                      />
+                      {/* 6D: sticky bottom action bar (typora-2.png) — new file /
+                          dir name / ops / list-tree toggle. Files tab with a
+                          root only (AC8: the unfiled empty state keeps its card). */}
+                      <div className="filetree-bottombar" role="toolbar" aria-label={t('ops.bar')}>
+                        <button
+                          type="button"
+                          className="filetree-bar-btn"
+                          data-op="sidebar.ops.newFile"
+                          title={t('app.newFile')}
+                          onClick={() => void workspace.treeNewFileAt()}
+                        >
+                          +
+                        </button>
+                        <button
+                          type="button"
+                          className="filetree-bar-dir"
+                          data-op="sidebar.ops.open"
+                          title={workspace.folderPath}
+                          onClick={openOpsPanel}
+                        >
+                          {folderName}
+                        </button>
+                        <button
+                          type="button"
+                          className="filetree-bar-btn"
+                          data-op="sidebar.ops.open"
+                          title={t('ops.title')}
+                          onClick={openOpsPanel}
+                        >
+                          <MoreVerticalIcon size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className="filetree-bar-btn"
+                          data-op="sidebar.ops.toggleView"
+                          title={t('ops.toggleView')}
+                          aria-pressed={prefs.fileTreeView === 'list'}
+                          onClick={() =>
+                            setPreferences({
+                              fileTreeView: prefs.fileTreeView === 'list' ? 'tree' : 'list'
+                            })
+                          }
+                        >
+                          {prefs.fileTreeView === 'list' ? <ListIcon size={14} /> : <TreeIcon size={14} />}
+                        </button>
+                      </div>
+                      <SidebarOpsPanel
+                        onNewFile={() => void workspace.treeNewFileAt()}
+                        onSearch={() => setShowQuickOpen(true)}
+                        onReveal={() => {
+                          if (workspace.folderPath) {
+                            window.api.showItemInFolder(workspace.folderPath)
+                          }
+                        }}
+                        onOpenFolder={() => void workspace.openFolder()}
+                        onRefresh={() => void workspace.refreshTree()}
                       />
                       {workspace.treeMenu && (
                         <TreeMenu

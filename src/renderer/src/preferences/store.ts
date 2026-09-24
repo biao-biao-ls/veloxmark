@@ -15,6 +15,8 @@ export const PREFERENCES_VERSION = 1
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type SidebarMode = 'outline' | 'files' | 'search'
+/** 6D D7: files-tab rendering — tree vs flat list (list render lands in 6.12). */
+export type FileTreeView = 'tree' | 'list'
 export type ImageRenameMode = 'timestamp' | 'keep'
 export type AutoSaveMode = 'off' | 'debounce' | 'interval'
 /** P14: UI language — 'system' follows navigator.language. */
@@ -51,6 +53,8 @@ export interface Preferences {
   folderIgnoreNames: string[]
   /** Include `.`-prefixed entries in the file tree (still subject to ignores). */
   showHiddenFiles: boolean
+  /** 6D D7: file-tree view mode (render fork lands in 6.12). */
+  fileTreeView: FileTreeView
   // ---- focus modes (P08) -----------------------------------------------------
   /** Dim every top-level block the cursor is not in. */
   focusMode: boolean
@@ -139,6 +143,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   downloadRemoteImages: false,
   folderIgnoreNames: ['node_modules', '.git', '.svn', '.hg', 'dist', 'out', 'build', '.DS_Store'],
   showHiddenFiles: false,
+  fileTreeView: 'tree',
   focusMode: false,
   typewriterMode: false,
   sourceMode: false,
@@ -258,6 +263,7 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
         ]
       : [...DEFAULT_PREFERENCES.folderIgnoreNames],
     showHiddenFiles: p.showHiddenFiles === true,
+    fileTreeView: p.fileTreeView === 'list' ? 'list' : 'tree',
     focusMode: p.focusMode === true,
     formatOnSave: p.formatOnSave === true,
     codeBlockCollapseLines:

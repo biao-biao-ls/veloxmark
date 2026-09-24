@@ -4,6 +4,7 @@ import type { TreeMenuRequest } from '../components/FileTree'
 import type { TreeMenuItem } from '../components/TreeMenu'
 import { dialog } from '../components/Dialog'
 import { getPreferences, getSession, patchSession } from '../preferences/store'
+import { baseDirOf } from '../pathUtil'
 import type { SidebarMode } from './useFileOps'
 import { useTreeRoot } from './useTreeRoot'
 import { t } from '../i18n'
@@ -41,6 +42,23 @@ function cleanIpcMessage(err: unknown): string {
 }
 
 /**
+ * 6D D3: where「+」creates a file — pure so the priority is unit-testable.
+ * Priority (AC2): selected dir → selected/active file's dir → root. The known
+ * corner (pinned root + active doc outside it → target outside the visible
+ * tree) is AC2's literal semantics, noted in the 6D plan.
+ */
+export function resolveNewFileTarget(input: {
+  selection: { path: string; isDir: boolean } | null
+  activePath: string | null
+  root: string | null
+}): string | null {
+  const sel = input.selection
+  if (sel) return sel.isDir ? sel.path : baseDirOf(sel.path)
+  if (input.activePath) return baseDirOf(input.activePath)
+  return input.root
+}
+
+/**
  * Folder workspace state: markdown file tree, watcher subscription, tree
  * CRUD (new/rename/delete/move) and the tree context menu.
  */
@@ -65,6 +83,8 @@ export function useWorkspaceTree({
   const [treeMenu, setTreeMenu] = useState<TreeMenuRequest | null>(null)
   // UX-P07-F4: node path in inline-rename mode (entered after create).
   const [renamingPath, setRenamingPath] = useState<string | null>(null)
+  // 6D D3: last-clicked tree row — steers the new-file target (6G menus reuse).
+  const [selection, setSelection] = useState<{ path: string; isDir: boolean } | null>(null)
 
   // 6B: single funnel that applies a resolved root — retargets the one folder
   // watcher and remembers the root as the session's recent-root slot (D5).
@@ -103,6 +123,22 @@ export function useWorkspaceTree({
     if (!result) return
     await loadFolder(result.folderPath)
   }, [loadFolder])
+
+  // 6D D5: manual rescan — re-watch the current root. Forces a full scan
+  // pushed over the existing folder:tree subscription and revives a degraded
+  // or dead watcher (the auto-refresh fallback when node:fs watch fails).
+  const refreshTree = useCallback(async () => {
+    if (!folderPath) return
+    await window.api.watchFolder(folderPath, folderScanOptions())
+  }, [folderPath])
+
+  // Row selection is only meaningful inside the current root.
+  const selectNode = useCallback((path: string, isDir: boolean) => {
+    setSelection({ path, isDir })
+  }, [])
+  useEffect(() => {
+    setSelection(null)
+  }, [folderPath])
 
   // Finder "Open" on a folder (macOS open-file with a directory path).
   const openFolderFromSystem = useCallback(
@@ -218,6 +254,12 @@ export function useWorkspaceTree({
     },
     [joinPath]
   )
+
+  // 6D D3: bottom-bar / header「+」— create at the resolved target dir.
+  const treeNewFileAt = useCallback(() => {
+    const dir = resolveNewFileTarget({ selection, activePath, root: folderPath })
+    if (dir) void treeNewFile(dir)
+  }, [selection, activePath, folderPath, treeNewFile])
 
   const treeNewFolder = useCallback(
     async (dirPath: string) => {
@@ -384,7 +426,14 @@ export function useWorkspaceTree({
     openFolderFromSystem,
     openFileFromTree,
     treeNewFile,
+    /** 6D D3:「+」with the selected-dir → active-dir → root target rule. */
+    treeNewFileAt,
     treeNewFolder,
-    treeMove
+    treeMove,
+    /** 6D D5: manual rescan / watcher-revival fallback (ops panel「刷新」). */
+    refreshTree,
+    /** 6D D3: controlled row selection (new-file target; 6G menus reuse). */
+    selection,
+    selectNode
   }
 }

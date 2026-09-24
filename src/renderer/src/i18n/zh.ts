@@ -347,6 +347,12 @@ export const ZH: Record<string, string> = {
   'sidebar.tab.files': '文件',
   'sidebar.tab.outline': '大纲',
   'sidebar.filesEmptyUntitled': '当前文档未落盘，打开文件夹以浏览其中的 Markdown 文件',
+  'ops.bar': '文件操作栏',
+  'ops.title': '操作',
+  'ops.search': '搜索',
+  'ops.reveal': '在资源管理器中显示',
+  'ops.refresh': '刷新',
+  'ops.toggleView': '切换列表/树视图',
   'app.newFile': '新建文件',
   'app.searchInFolder': '搜索文件夹（Ctrl+Shift+F）',
 

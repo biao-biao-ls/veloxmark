@@ -351,6 +351,12 @@ export const EN: Record<string, string> = {
   'sidebar.tab.files': 'Files',
   'sidebar.tab.outline': 'Outline',
   'sidebar.filesEmptyUntitled': 'The current document is not saved to disk — open a folder to browse its markdown files',
+  'ops.bar': 'File action bar',
+  'ops.title': 'Actions',
+  'ops.search': 'Search',
+  'ops.reveal': 'Reveal in Folder',
+  'ops.refresh': 'Refresh',
+  'ops.toggleView': 'Toggle list/tree view',
   'app.newFile': 'New file',
   'app.searchInFolder': 'Search in folder (Ctrl+Shift+F)',
 

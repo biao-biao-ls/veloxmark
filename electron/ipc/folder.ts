@@ -176,7 +176,10 @@ export function registerFolderIpc(getWindow: GetWindow): void {
         }
       })
     } catch {
-      // recursive watch unsupported — degraded: tree won't auto-refresh
+      // recursive watch unsupported — degraded: tree won't auto-refresh.
+      // 6D D5: make the degradation visible in the main-process log (was
+      // silent); the ops panel's refresh still rescans on demand.
+      console.warn('[folder] recursive watch unsupported — tree auto-refresh degraded:', dirPath)
       folderWatcher = null
     }
     const tree = await listMarkdownTree(dirPath)
