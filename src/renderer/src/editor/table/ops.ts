@@ -108,6 +108,44 @@ export function deleteColOp(model: TableModel, at: number): TableOp | null {
   }
 }
 
+/**
+ * 7A: swap UI row `row` with its neighbor `dir` (-1 up / 1 down). Header
+ * (row 0) may move DOWN (= swap with the first body row — GFM header is
+ * always the first row, so a swap simply exchanges header content); rows
+ * never move past either edge. `col` anchors the post-op active cell on the
+ * moved row. Returns null at edges (menu also disables the item).
+ */
+export function moveRowOp(model: TableModel, row: number, col: number, dir: -1 | 1): TableOp | null {
+  const grid = modelToGrid(model)
+  const target = row + dir
+  if (row < 0 || row >= grid.length) return null
+  if (target < 0 || target >= grid.length) return null
+  ;[grid[row], grid[target]] = [grid[target], grid[row]]
+  return opFrom(model, grid, { row: target, col })
+}
+
+/**
+ * 7A: swap column `col` with its neighbor `dir` (-1 left / 1 right).
+ * `aligns` travels with the column. `row` anchors the post-op active cell.
+ * Returns null at edges (menu also disables the item).
+ */
+export function moveColOp(model: TableModel, row: number, col: number, dir: -1 | 1): TableOp | null {
+  if (col < 0 || col >= model.colCount) return null
+  const target = col + dir
+  if (target < 0 || target >= model.colCount) return null
+  const grid = modelToGrid(model)
+  for (const r of grid) [r[col], r[target]] = [r[target], r[col]]
+  const aligns = [...model.aligns]
+  while (aligns.length < model.colCount) aligns.push('')
+  ;[aligns[col], aligns[target]] = [aligns[target], aligns[col]]
+  return {
+    from: model.tableFrom,
+    to: model.tableTo,
+    insert: formatTable(aligns, grid),
+    nextActive: { row, col: target }
+  }
+}
+
 /** Set column alignment ('' | 'left' | 'center' | 'right') + format table. */
 export function setAlignOp(model: TableModel, col: number, align: string): TableOp | null {
   if (col < 0 || col >= model.colCount) return null

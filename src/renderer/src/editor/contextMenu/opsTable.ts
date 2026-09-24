@@ -14,6 +14,8 @@ import {
   deleteRowOp,
   insertColOp,
   insertRowOp,
+  moveColOp,
+  moveRowOp,
   pasteCellOp,
   setAlignOp,
   writeCellOp,
@@ -50,6 +52,13 @@ export interface TableDeltaDeps {
  */
 export function tableDeltaItems(deps: TableDeltaDeps, rt: CtxRuntime): CtxMenuItem[] {
   const { view, tableFrom, row, col } = deps
+  // 7A boundary disable (first half of the double insurance — the ops return
+  // null at edges too): fresh dims at menu-build time via modelSpan re-parse.
+  const dims = (() => {
+    const s = deps.modelSpan()
+    const m = tableModelOf(view, s.from, s.to)
+    return { rows: m?.cells.length ?? 0, cols: m?.colCount ?? 0 }
+  })()
   return [
     {
       id: 'insertRowAbove',
@@ -91,6 +100,30 @@ export function tableDeltaItems(deps: TableDeltaDeps, rt: CtxRuntime): CtxMenuIt
           rt.toast(t('toast.colDeleted'))
         }
       }
+    },
+    {
+      id: 'moveRowUp',
+      label: t('ctx.moveRowUp'),
+      disabled: row <= 0,
+      run: () => deps.runOp((m) => moveRowUpOp(m, row, col), 'input.table.moveRow')
+    },
+    {
+      id: 'moveRowDown',
+      label: t('ctx.moveRowDown'),
+      disabled: row >= dims.rows - 1,
+      run: () => deps.runOp((m) => moveRowDownOp(m, row, col), 'input.table.moveRow')
+    },
+    {
+      id: 'moveColLeft',
+      label: t('ctx.moveColLeft'),
+      disabled: col <= 0,
+      run: () => deps.runOp((m) => moveColLeftOp(m, row, col), 'input.table.moveCol')
+    },
+    {
+      id: 'moveColRight',
+      label: t('ctx.moveColRight'),
+      disabled: col >= dims.cols - 1,
+      run: () => deps.runOp((m) => moveColRightOp(m, row, col), 'input.table.moveCol')
     },
     {
       id: 'alignLeft',
@@ -164,6 +197,10 @@ const deleteRowOpSafe = (m: TableModel, row: number): TableOp | null => deleteRo
 const insertColLeftOp = (m: TableModel, col: number): TableOp | null => insertColOp(m, col)
 const insertColRightOp = (m: TableModel, col: number): TableOp | null => insertColOp(m, col + 1)
 const deleteColOpSafe = (m: TableModel, col: number): TableOp | null => deleteColOp(m, col)
+const moveRowUpOp = (m: TableModel, row: number, col: number): TableOp | null => moveRowOp(m, row, col, -1)
+const moveRowDownOp = (m: TableModel, row: number, col: number): TableOp | null => moveRowOp(m, row, col, 1)
+const moveColLeftOp = (m: TableModel, row: number, col: number): TableOp | null => moveColOp(m, row, col, -1)
+const moveColRightOp = (m: TableModel, row: number, col: number): TableOp | null => moveColOp(m, row, col, 1)
 const setAlignLeftOp = (m: TableModel, col: number): TableOp | null => setAlignOp(m, col, 'left')
 const setAlignCenterOp = (m: TableModel, col: number): TableOp | null => setAlignOp(m, col, 'center')
 const setAlignRightOp = (m: TableModel, col: number): TableOp | null => setAlignOp(m, col, 'right')
@@ -172,6 +209,8 @@ const setAlignRightOp = (m: TableModel, col: number): TableOp | null => setAlign
  * table-cell delta — single source for the P10 migration ops + the three doc
  * level table actions. Both the widget path (td contextmenu → buildContextMenu
  * with a table-cell hit) and the editor-surface path (detect → same) land here:
+ * (7A adds ids `moveRowUp`/`moveRowDown`/`moveColLeft`/`moveColRight` — same
+ * contract regime, add-only.)
  * ops re-parse the model at click time (stale-instance discipline) and dispatch
  * whole-table replaces. Labels are i18n; ids are the cdp-p10/p27 contract.
  */

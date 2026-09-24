@@ -29,7 +29,16 @@ import type { ThemeName } from '../theme'
 import { t } from '../../i18n'
 import { BlockWidget, type BlockToolbarItem } from '../blockWidget'
 import { parseTableModel, renderInlineCell, type CellInfo, type TableModel } from './parse'
-import { deleteColOp, deleteRowOp, insertColOp, insertRowOp, setAlignOp } from './ops'
+import {
+  deleteColOp,
+  deleteRowOp,
+  insertColOp,
+  insertRowOp,
+  moveColOp,
+  moveRowOp,
+  setAlignOp,
+  type TableOp
+} from './ops'
 import { getTableEdit, setActiveCell, setColWidth } from './state'
 import {
   activeNestedView,
@@ -410,17 +419,24 @@ const tableTestHook = {
   clearEdit(view: EditorView): void {
     view.dispatch({ effects: setActiveCell.of(null) })
   },
-  op(view: EditorView, from: number, kind: string, arg = 0): boolean {
-    const table = {
-      insertRow: (m: TableModel, x: number) => insertRowOp(m, x),
-      deleteRow: (m: TableModel, x: number) => deleteRowOp(m, x),
-      insertCol: (m: TableModel, x: number) => insertColOp(m, x),
-      deleteCol: (m: TableModel, x: number) => deleteColOp(m, x),
-      alignLeft: (m: TableModel, x: number) => setAlignOp(m, x, 'left'),
-      alignCenter: (m: TableModel, x: number) => setAlignOp(m, x, 'center'),
-      alignRight: (m: TableModel, x: number) => setAlignOp(m, x, 'right')
-    }[kind]
-    if (!table) return false
+  op(view: EditorView, from: number, kind: string, arg = 0, arg2 = 0): boolean {
+    // 7A move kinds: arg = row (moveRow*) / col (moveCol*), arg2 = the anchor
+    // (col for rows / row for cols) so nextActive follows the moved line.
+    const table: Record<string, (m: TableModel, x: number, y: number) => TableOp | null> = {
+      insertRow: (m, x) => insertRowOp(m, x),
+      deleteRow: (m, x) => deleteRowOp(m, x),
+      insertCol: (m, x) => insertColOp(m, x),
+      deleteCol: (m, x) => deleteColOp(m, x),
+      moveRowUp: (m, x, y) => moveRowOp(m, x, y, -1),
+      moveRowDown: (m, x, y) => moveRowOp(m, x, y, 1),
+      moveColLeft: (m, x, y) => moveColOp(m, y, x, -1),
+      moveColRight: (m, x, y) => moveColOp(m, y, x, 1),
+      alignLeft: (m, x) => setAlignOp(m, x, 'left'),
+      alignCenter: (m, x) => setAlignOp(m, x, 'center'),
+      alignRight: (m, x) => setAlignOp(m, x, 'right')
+    }
+    const fn = table[kind]
+    if (!fn) return false
     // wave③: drive the SAME userEvents as product paths so dispatch-layer
     // feedback (structure toasts) are exercised end-to-end by probes too.
     const userEvent =
@@ -429,11 +445,15 @@ const tableTestHook = {
         deleteRow: 'input.table.deleteRow',
         insertCol: 'input.table.insertCol',
         deleteCol: 'input.table.deleteCol',
+        moveRowUp: 'input.table.moveRow',
+        moveRowDown: 'input.table.moveRow',
+        moveColLeft: 'input.table.moveCol',
+        moveColRight: 'input.table.moveCol',
         alignLeft: 'input.table.align',
         alignCenter: 'input.table.align',
         alignRight: 'input.table.align'
       } as Record<string, string>)[kind] ?? 'test.table.op'
-    runTableOp(view, from, (m) => table(m, arg), userEvent)
+    runTableOp(view, from, (m) => fn(m, arg, arg2), userEvent)
     return true
   },
   pasteTsv(view: EditorView, tsv: string): void {
