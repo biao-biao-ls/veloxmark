@@ -33,6 +33,7 @@ import {
 import { tableEditField } from './table/state'
 import { tableEditLifecycle } from './table/lifecycle'
 import { setNestedPreviewField, tableStructBindings } from './table/widget'
+import { mathEditExitBindings } from './mathEdit'
 import { getCtxRuntime, handleEditorContextMenu } from './contextMenu/registry'
 import { compartmentThemes, ThemeName } from './theme'
 
@@ -140,7 +141,16 @@ export function createExtensions(
     closeBrackets(),
     // 7B: table structure shortcuts FIRST — tryStructCmd returns false outside
     // table edit, so keys fall through to the defaults (no global hijack).
-    keymap.of([...tableStructBindings, ...searchKeymap, ...historyKeymap, ...defaultKeymap, indentWithTab]),
+    // 8B: math-edit Escape sits AFTER searchKeymap — search panel close wins
+    // when open; the binding only takes over inside a math block.
+    keymap.of([
+      ...tableStructBindings,
+      ...searchKeymap,
+      ...mathEditExitBindings,
+      ...historyKeymap,
+      ...defaultKeymap,
+      indentWithTab
+    ]),
     // P27: unified editor context menu — editor surface only. Chrome panels,
     // existing float menus and the table widget's own cell handler own their
     // contextmenu paths; this handler never swallows theirs.

@@ -595,6 +595,72 @@
   margin: 0;
 }
 
+/* 8A: hover hint band + top-right chip ("click to edit source"). The band is
+   the block's own hover surface — zero chrome at rest, reveal-on-hover only
+   (P09 untouched: visibility is CSS-only). */
+.cm-md-math-block:hover {
+  background: var(--widget-surface);
+  border-radius: var(--cb-radius);
+}
+
+.cm-md-math-hover-chip {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 11px;
+  color: var(--fg-dim);
+  user-select: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.cm-md-math-block:hover .cm-md-math-hover-chip {
+  opacity: 1;
+}
+
+/* 8B: focused math dual-pane — panel lines mirror the P28 code panel shell
+   (same border/surface tokens), chip is absolute in the first line (the
+   dualPane convention — zero layout cost), preview trails the block. */
+.cm-editor .cm-line.cm-md-math-src {
+  margin: 0 var(--editor-gutter);
+  padding-left: var(--space-4);
+  background: var(--widget-surface);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+.cm-editor .cm-line.cm-md-math-src-first {
+  border-top: 1px solid var(--border);
+  border-radius: var(--cb-radius) var(--cb-radius) 0 0;
+  padding-top: var(--space-1);
+}
+.cm-editor .cm-line.cm-md-math-src-last {
+  border-bottom: 1px solid var(--border);
+  border-radius: 0 0 var(--cb-radius) var(--cb-radius);
+  padding-bottom: var(--space-1);
+}
+
+.cm-md-math-edit-chip {
+  position: absolute;
+  top: 2px;
+  right: var(--space-2);
+  font-size: 11px;
+  color: var(--fg-dim);
+  user-select: none;
+  cursor: pointer;
+}
+
+.cm-md-math-preview {
+  margin: 0 var(--editor-gutter);
+  padding: var(--space-2) 0;
+  overflow-x: auto;
+  text-align: center;
+}
+.cm-md-math-preview .katex-display {
+  margin: 0;
+}
+
 .cm-md-math-inline {
   padding: 0 2px;
 }

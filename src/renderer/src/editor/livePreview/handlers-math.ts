@@ -2,12 +2,14 @@ import type { SyntaxNode } from '@lezer/common'
 import { syntaxTree } from '@codemirror/language'
 import { Decoration } from '@codemirror/view'
 import { type BuildCtx } from './handlers-ctx'
-import { InlineMathWidget, MathBlockWidget } from '../widgets-math'
+import { InlineMathWidget, MathBlockWidget, MathEditChip, MathPreviewWidget } from '../widgets-math'
+import { scanMath, type MathMatch } from './mathScan'
+import { previewBelow } from './dualPane'
 
 /**
  * Math regex pass (split from handlers.ts, task 1D). @lezer/markdown has no
- * math extension — this pass runs `$$…$$` block / single-line / `$…$` inline
- * matchAll over the whole document.
+ * math extension — this pass runs the shapes in `mathScan.ts` over the whole
+ * document and turns them into decorations.
  *
  * ORDER CONTRACT: must run after the tree pass so `tree.resolveInner` can
  * skip math-looking text inside code nodes. (Parallel hand-maintained
@@ -15,11 +17,6 @@ import { InlineMathWidget, MathBlockWidget } from '../widgets-math'
  */
 // ---- math (regex pass; @lezer/markdown has no math extension) ----------------
 
-/**
- * Scan the whole document for $$-blocks and $inline$ math. Appends
- * decorations to the context. Must run after the tree pass so
- * `tree.resolveInner` can skip math-looking text inside code nodes.
- */
 /**
  * P15 perf: syntax nodes whose spans are opaque to the math/regex passes.
  * Collected once per buildDecorations call via a single tree walk; regex
@@ -34,7 +31,6 @@ export function collectMathDecos(
 ): void {
   const { state, decos, blockTouched, markTouched } = ctx
   const doc = state.doc
-  const mathBlockRanges: Array<[number, number]> = []
 
   // One iterate pass collects code/URL spans; enter:false skips their subtrees.
   const skipRanges: Array<[number, number]> = []
@@ -54,71 +50,77 @@ export function collectMathDecos(
     const { from, to } = range
     const text = state.sliceDoc(from, to)
 
-    // multi-line: $$ on its own lines
-    const multiRe = /^([ \t]*\$\$[ \t]*\n)([\s\S]+?)(\n[ \t]*\$\$[ \t]*)$/gm
-    for (const m of text.matchAll(multiRe)) {
-      const start = from + m.index!
-      const end = start + m[0].length
-      const lineFrom = doc.lineAt(start).from
-      const lineTo = doc.lineAt(end - 1).to
-      if (inSkip(start, end)) continue
-      mathBlockRanges.push([lineFrom, lineTo])
-      if (blockTouched(lineFrom, lineTo)) continue
+    for (const m of scanMath(text, from)) {
+      if (inSkip(m.start, m.end)) continue
+      if (m.kind === 'inline') {
+        // P09: inline math follows the mark rule — a selection merely touching
+        // the span reveals it; math *blocks* below stay block-granular.
+        if (markTouched(m.start, m.end)) continue
+        decos.push({
+          from: m.start,
+          to: m.end,
+          value: Decoration.replace({ widget: new InlineMathWidget(m.content) })
+        })
+        continue
+      }
+      const lineFrom = doc.lineAt(m.start).from
+      const lineTo = doc.lineAt(m.end - 1).to
+      // 8B: cursor inside the block → source/preview dual pane instead of a
+      // bare $$…$$ dump (P28 panel pattern — text stays document-editable).
+      if (blockTouched(lineFrom, lineTo)) {
+        buildFocusedMathPanel(m, lineFrom, lineTo, ctx)
+        continue
+      }
       decos.push({
         from: lineFrom,
         to: lineTo,
         value: Decoration.replace({
-          widget: new MathBlockWidget(m[2].trim(), start, end, ctx.config.i18nEpoch ?? 0),
+          widget: new MathBlockWidget(m.content, m.start, m.end, ctx.config.i18nEpoch ?? 0),
           block: true
         })
-      })
-    }
-
-    // single-line: $$formula$$
-    const singleRe = /^([ \t]*)\$\$([^$\n]+)\$\$[ \t]*$/gm
-    for (const m of text.matchAll(singleRe)) {
-      const start = from + m.index!
-      const lineFrom = doc.lineAt(start).from
-      const lineTo = doc.lineAt(start + m[0].length - 1).to
-      if (mathBlockRanges.some(([a, b]) => lineFrom <= b && lineTo >= a)) continue
-      if (inSkip(start, start + m[0].length)) continue
-      mathBlockRanges.push([lineFrom, lineTo])
-      if (blockTouched(lineFrom, lineTo)) continue
-      decos.push({
-        from: lineFrom,
-        to: lineTo,
-        value: Decoration.replace({
-          widget: new MathBlockWidget(
-            m[2].trim(),
-            start,
-            start + m[0].length,
-            ctx.config.i18nEpoch ?? 0
-          ),
-          block: true
-        })
-      })
-    }
-
-    // inline: $tex$ — not inside code, not $$, content has no leading/trailing space
-    const inlineRe = /\$([^$\n]+?)\$/g
-    for (const m of text.matchAll(inlineRe)) {
-      const start = from + m.index!
-      const end = start + m[0].length
-      const content = m[1]
-      if (content !== content.trim()) continue
-      if (content.includes('$$')) continue
-      if (mathBlockRanges.some(([a, b]) => start <= b && end >= a)) continue
-      // P15: skip math-looking text inside code/URL spans — one range test
-      // replaces the old per-match resolveInner parent-chain walk.
-      if (inSkip(start, end)) continue
-      // P09: inline math follows the mark rule — a selection merely touching
-      // the span reveals it; math *blocks* above stay block-granular.
-      if (markTouched(start, end)) continue
-      decos.push({
-        from: start,
-        to: end,
-        value: Decoration.replace({ widget: new InlineMathWidget(content) })
       })
     }
   }
+}
+
+/**
+ * 8B focused-math panel decorations (live mode only — buildDecorations
+ * early-returns for source mode before any handler runs). Mirrors P28's
+ * buildFocusedCodePanel composition, per the dualPane convention:
+ *
+ * 1. Line classes per block line: panel chrome on every line, `-first`/`-last`
+ *    caps (a single-line block gets both — CSS rules compose).
+ * 2. 「公式 ✓」 exit chip on the first line (absolute top-right, zero layout).
+ *    `$$` delimiters stay visible — they are the text being edited.
+ * 3. Live KaTeX preview trailing the block (previewBelow).
+ */
+function buildFocusedMathPanel(
+  m: MathMatch,
+  lineFrom: number,
+  lineTo: number,
+  ctx: BuildCtx
+): void {
+  const doc = ctx.state.doc
+  const first = doc.lineAt(lineFrom)
+  const last = doc.lineAt(lineTo)
+
+  for (let line = first; ; line = doc.lineAt(line.to + 1)) {
+    const isFirst = line.from === first.from
+    const isLast = line.from === last.from
+    const cls =
+      'cm-md-math-src' +
+      (isFirst ? ' cm-md-math-src-first' : '') +
+      (!isFirst && !isLast ? ' cm-md-math-src-body' : '') +
+      (isLast ? ' cm-md-math-src-last' : '')
+    ctx.decos.push({ from: line.from, to: line.from, value: Decoration.line({ class: cls }) })
+    if (isLast) break
+  }
+
+  const epoch = ctx.config.i18nEpoch ?? 0
+  ctx.decos.push({
+    from: first.from,
+    to: first.from,
+    value: Decoration.widget({ widget: new MathEditChip(epoch), side: 1 })
+  })
+  ctx.decos.push(previewBelow(Math.min(last.to + 1, doc.length), new MathPreviewWidget(m.content, epoch)))
 }
