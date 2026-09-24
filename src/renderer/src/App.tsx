@@ -255,8 +255,10 @@ export default function App(): React.JSX.Element {
   ])
 
   // Minimal session restore (full snapshot restore belongs to P12): reopen the
-  // last folder workspace and file. System open-file events queued in main
-  // arrive right after rendererReady and simply replace whatever we load here.
+  // last session's tabs (6.4a: no auto-mount of lastFolderPath — the tree root
+  // re-derives from the activated document's directory). System open-file
+  // events queued in main arrive right after rendererReady and simply replace
+  // whatever we load here.
   const restoredRef = useRef(false)
   useEffect(() => {
     if (restoredRef.current) return
@@ -268,9 +270,6 @@ export default function App(): React.JSX.Element {
     const saved = getSession()
     void (async () => {
       try {
-        if (saved.lastFolderPath && (await window.api.pathExists(saved.lastFolderPath))) {
-          await workspace.loadFolder(saved.lastFolderPath)
-        }
         // P26: restore the whole tab set; missing files are skipped with a
         // toast (acceptance 4). Falls back to lastFilePath for old sessions.
         const openTabs =
@@ -1499,10 +1498,12 @@ export default function App(): React.JSX.Element {
                       )}
                     </>
                   ) : (
-                    /* 6A: files tab without a workspace — guide to open one
-                       instead of silently falling back to the outline. */
+                    /* 6A: files tab without a root — guide to open one
+                       instead of silently falling back to the outline.
+                       6.4a: the no-root case is an unfiled document (or no
+                       document), so the hint says so explicitly. */
                     <div className="sidebar-empty">
-                      <p>{t('sidebar.filesEmpty')}</p>
+                      <p>{t('sidebar.filesEmptyUntitled')}</p>
                       <button
                         type="button"
                         className="btn"

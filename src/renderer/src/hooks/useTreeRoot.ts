@@ -1,39 +1,41 @@
 /**
- * 6B tree-root follow (tasks 6.3/6.4) — root resolution + explicit-root pin.
+ * 6B tree-root follow (tasks 6.3/6.4; contract revised by 6.4a) — root
+ * resolution + explicit-root pin.
  *
- * The tree root model flips from "the one opened workspace folder" to
- * `resolveTreeRoot` (D1): explicit pin → active document's directory → recent
- * root (session `lastFolderPath`; 6F grows this into the recent-folders list).
+ * The tree root model is `resolveTreeRoot` (D1, as revised 2026-09-24):
+ * explicit pin → active document's directory → **empty**. An unfiled document
+ * (untitled draft, welcome, no tabs) has no directory context, so the files
+ * tab shows the empty-state card instead of pretending a workspace (the old
+ * "fall back to the recent root" clause is void — see spec revision record).
  *
  * D1 pin rule: `setExplicitRoot` (openFolder dialog / ops panel / recents /
  * `__veloxP13.openFolder`) pins and applies immediately — never re-evaluated
  * retroactively, so an explicit open always shows its folder (seam AC7). The
  * pin dies only when a *newly activated* document lands outside it
- * (`explicitRootAfterActivate`, run on activation transitions).
+ * (`explicitRootAfterActivate`, run on activation transitions). An unfiled
+ * activation keeps the pin (it lands "nowhere", not outside).
  *
  * Boot note: there is no mount-time auto-apply. The initial root is
- * established by the explicit channels (session restore's pathExists-guarded
- * `loadFolder`) or by the first activation transition — a dead `lastFolderPath`
- * must land in the files-tab empty state, not a dead-root header.
+ * established by the explicit channels or by the first activation transition
+ * (session restore reopens documents; their activation rebuilds the root).
+ * `lastFolderPath` is write-only here (recent-root slot for 6F recents) —
+ * 6.4a removed its session-restore auto-mount.
  */
 import { useCallback, useEffect, useRef } from 'react'
 import { baseDirOf } from '../pathUtil'
-import { getSession } from '../preferences/store'
 
 export interface ResolveTreeRootInput {
   /** D1 priority 1: pinned root (explicit open channels). */
   explicitRoot: string | null
   /** D1 priority 2: active document full path (null = untitled/welcome). */
   activePath: string | null
-  /** D1 priority 3: recent root (session lastFolderPath). */
-  lastRoot: string | null
 }
 
-/** D1 root priority: explicit pin → active document's directory → recent root. */
+/** D1 root priority (6.4a): explicit pin → active document's directory → empty. */
 export function resolveTreeRoot(input: ResolveTreeRootInput): string | null {
   if (input.explicitRoot) return input.explicitRoot
   if (input.activePath) return baseDirOf(input.activePath)
-  return input.lastRoot
+  return null
 }
 
 /** True when `path` is `root` itself or lives underneath it (boundary-safe). */
@@ -97,8 +99,7 @@ export function useTreeRoot(opts: UseTreeRootOpts): {
     explicitRootRef.current = explicitRootAfterActivate(explicitRootRef.current, activePath)
     const root = resolveTreeRoot({
       explicitRoot: explicitRootRef.current,
-      activePath,
-      lastRoot: getSession().lastFolderPath
+      activePath
     })
     if (root === lastEmittedRef.current) return
     lastEmittedRef.current = root

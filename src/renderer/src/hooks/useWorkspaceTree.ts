@@ -58,7 +58,8 @@ export function useWorkspaceTree({
   setShowOutline
 }: Args) {
   // 6B tree root: `folderPath` is the *resolved* root (explicit pin → active
-  // doc dir → recent root), no longer "the opened workspace folder".
+  // doc dir → empty; 6.4a dropped the recent-root fallback), no longer "the
+  // opened workspace folder".
   const [folderPath, setFolderPath] = useState<string | null>(null)
   const [folderTree, setFolderTree] = useState<DirNode[]>([])
   const [treeMenu, setTreeMenu] = useState<TreeMenuRequest | null>(null)
@@ -72,8 +73,8 @@ export function useWorkspaceTree({
     setFolderPath(dirPath)
     if (dirPath) {
       // P03/6B D5: lastFolderPath is the recent-root slot (6F grows it into
-      // the recent-folders list). Written on every root application so the
-      // AC4 fallback ("无文档时树根回落最近一次根") tracks the live root.
+      // the recent-folders list). Write-side only since 6.4a — startup no
+      // longer auto-mounts it; it feeds 6F recents as an explicit-jump source.
       patchSession({ lastFolderPath: dirPath })
       await window.api.watchFolder(dirPath, folderScanOptions())
     } else {

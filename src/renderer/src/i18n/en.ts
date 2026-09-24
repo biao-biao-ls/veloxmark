@@ -350,7 +350,7 @@ export const EN: Record<string, string> = {
   'sidebar.tabs': 'Sidebar tabs',
   'sidebar.tab.files': 'Files',
   'sidebar.tab.outline': 'Outline',
-  'sidebar.filesEmpty': 'Open a folder to browse its markdown files',
+  'sidebar.filesEmptyUntitled': 'The current document is not saved to disk — open a folder to browse its markdown files',
   'app.newFile': 'New file',
   'app.searchInFolder': 'Search in folder (Ctrl+Shift+F)',
 

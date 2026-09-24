@@ -1,37 +1,29 @@
 import { describe, expect, it } from 'vitest'
 import { explicitRootAfterActivate, isPathInside, resolveTreeRoot } from './useTreeRoot'
 
-describe('resolveTreeRoot (6B D1 priority)', () => {
-  it('explicit pin wins over active dir and recent root', () => {
-    expect(
-      resolveTreeRoot({ explicitRoot: 'C:\\proj', activePath: 'D:\\docs\\a.md', lastRoot: 'E:\\x' })
-    ).toBe('C:\\proj')
-  })
-
-  it("active document's directory when nothing is pinned", () => {
-    expect(
-      resolveTreeRoot({ explicitRoot: null, activePath: 'D:\\docs\\sub\\a.md', lastRoot: 'E:\\x' })
-    ).toBe('D:\\docs\\sub')
-  })
-
-  it('recent root for untitled / no tabs (AC4 fallback)', () => {
-    expect(resolveTreeRoot({ explicitRoot: null, activePath: null, lastRoot: 'E:\\x' })).toBe('E:\\x')
-  })
-
-  it('pin survives with no active document', () => {
-    expect(resolveTreeRoot({ explicitRoot: 'C:\\proj', activePath: null, lastRoot: 'E:\\x' })).toBe(
+describe('resolveTreeRoot (6B D1 priority, 6.4a revised)', () => {
+  it('explicit pin wins over active dir', () => {
+    expect(resolveTreeRoot({ explicitRoot: 'C:\\proj', activePath: 'D:\\docs\\a.md' })).toBe(
       'C:\\proj'
     )
   })
 
-  it('POSIX paths resolve the same way', () => {
-    expect(resolveTreeRoot({ explicitRoot: null, activePath: '/docs/sub/a.md', lastRoot: null })).toBe(
-      '/docs/sub'
+  it("active document's directory when nothing is pinned", () => {
+    expect(resolveTreeRoot({ explicitRoot: null, activePath: 'D:\\docs\\sub\\a.md' })).toBe(
+      'D:\\docs\\sub'
     )
   })
 
-  it('null when there is nothing at all', () => {
-    expect(resolveTreeRoot({ explicitRoot: null, activePath: null, lastRoot: null })).toBe(null)
+  it('empty root for untitled / no tabs (6.4a: no recent-root fallback)', () => {
+    expect(resolveTreeRoot({ explicitRoot: null, activePath: null })).toBe(null)
+  })
+
+  it('pin survives with no active document', () => {
+    expect(resolveTreeRoot({ explicitRoot: 'C:\\proj', activePath: null })).toBe('C:\\proj')
+  })
+
+  it('POSIX paths resolve the same way', () => {
+    expect(resolveTreeRoot({ explicitRoot: null, activePath: '/docs/sub/a.md' })).toBe('/docs/sub')
   })
 })
 
