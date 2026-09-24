@@ -294,8 +294,11 @@
 
 ### 6E. 文件树排序体系（P1）
 
-- [ ] **6.9 排序状态机**：按文件夹分组（toggle，**默认开**，2026-09-23 拍板）+ 自然排序 / 按文件名 / 按修改时间 / 按创建时间（四键互斥单选，点按翻转升降）— 规格：[docs/specs/6E-tree-sort/](specs/6E-tree-sort/)
-- [ ] **6.10 时间数据与持久化**：`DirNode` 增 `mtimeMs`/`birthtimeMs`、自然序/字典序比较器单测、排序偏好持久化 — 同 6E 规格
+- [x] **6.9 排序状态机**：按文件夹分组（toggle，**默认开**，2026-09-23 拍板）+ 自然排序 / 按文件名 / 按修改时间 / 按创建时间（四键互斥单选，点按翻转升降）— 规格：[docs/specs/6E-tree-sort/](specs/6E-tree-sort/)
+- [x] **6.10 时间数据与持久化**：`DirNode` 增 `mtimeMs`/`birthtimeMs`、自然序/字典序比较器单测、排序偏好持久化 — 同 6E 规格
+
+> ✅ **6E 收敛记录（2026-09-24）**：T1 新叶模块 `filetree/sort.ts`（`TreeSortOptions`/`DEFAULT_TREE_SORT`（分组默认开、natural、asc）+ `compareNatural`/`compareName`（`Intl.Collator` numeric on/off，同 `sensitivity:'base'`）+ `sortTreeNodes`（递归每层排序；`groupFolders` 目录组**恒在前**（desc 亦然）、关 = 文件目录混排；缺省时间戳**恒排后**（升降皆是）；同键同戳 `tieBreak`（name→path）收尾保证确定性；换新数组、入参不动）+ 状态机 `pressSortKey`（互斥单选：未选中 → 选中保持升降 / 已选中 → 翻转升降）/ `toggleGroupFolders`）+ **13 条单测**（验证表全项：`2.md`<`10.md` 自然 vs `10.md`<`2.md` 字典、mtime/birthtime 升降、缺省排后双方向、groupFolders on/off/desc、递归子层、空目录、纯函数、状态机 3 条）。T2 [P] `shared/api.ts` `DirNode` **只增**可选 `mtimeMs`/`birthtimeMs` + `folder.ts` `listMarkdownTree` 逐条 `stat` 采集（扫中消失 → 双字段缺省 = 排后；watcher 重扫天然刷新时间戳，比较器不回主进程重扫）。T3 store 增 `fileTreeSort` + `sanitizeTreeSort` 宽容回退（缺省/非法 → 拍板默认值）；`FileTree` 在 6C `visibleRows` 接缝前插 `sortTreeNodes` 纯前排（AC2 树/列表共用——6.12 分叉零改）；排序随偏好 store 响应式**即时重排** + localStorage 持久化（AC1/AC6）。T4 `SidebarOpsPanel` 五项后插「排序」行（label + 分组 FolderIcon toggle + 四键钮：dir 箭头 ↑↓ 随翻转同步 + `123`/`A`/ClockIcon/FileIcon 字形，激活 = accent 蓝，对齐 typora-4.png 排序行**语义**，像素级复刻不强求——plan D9）；排序钮为 toggle 交互**不关面板**（与五操作 action 语义区分）；`Icons.tsx` 补 `ClockIcon`/`FileIcon`（Lucide 几何）；i18n 新 6 key（`ops.sort` + `ops.sort.groupFolders|natural|name|mtime|birthtime`，en+zh 同加）。**plan 实现修正 1 处（AC 不变）**：`sortTreeNodes` 首版只克隆子层未排序，递归单测逮住修正为「先递归 children 再排当前层」（plan D10）。**D8 探针面登记（只增不改）**：`data-op` `sidebar.ops.sort.groupFolders|natural|name|mtime|birthtime`。QuickOpen/搜索排序、IPC channel 面、watcher 零触碰。收敛：typecheck 双配置 + **265 unit 全绿（+13）**；`npx madge --circular` 0 环（import 面变化）；e2e 缝零触碰（`DirNode` 增可选字段属 API 面只增；既有 `__velox*`/`data-op`/命令 id 不在 diff）。
+> 人工冒烟清单（**状态机 + 持久化，必做**）：①「操作」面板「排序」行五控件可视：分组 toggle 默认激活（accent），四键钮带 ↑ 箭头、自然排序默认激活；② 点「按文件名」→ 树**即时**按字典序（`10.md` 排在 `2.md` 前）；再点同一键 → 升降翻转、箭头变 ↓ 且四键箭头同步；点其他键改键后升降保持；③ 分组 toggle 关：文件目录按当前键混排（目录不再恒在前）；再开：目录组回到最前（desc 亦然）；④ 按修改/创建时间：同层按时间戳排、缺时间戳条目**恒在最后**（升降皆是）；⑤ 排序点击**不关面板**，连点多键后面板仍开、五操作项点击照常关闭；⑥ 重启：分组态 / 排序键 / 升降全部保持（AC6）；⑦ 切「列表/树」视图按钮排序设置一致生效（列表渲染待 6.12）；⑧ 大目录切换排序无卡顿（纯内存）；深浅主题下排序行清晰无 emoji。
 
 ### 6F. 最近使用的目录与列表/树视图（P1）
 

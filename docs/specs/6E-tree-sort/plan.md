@@ -51,3 +51,12 @@ npm run typecheck && npm run test:unit
 - 单测覆盖：`2.md`<`10.md`（自然）、`10.md`<`2.md`（字典）、mtime 升降、birthtime、groupFolders on/off、缺省时间排后、空目录
 - e2e 缝 grep：既有契约不在 diff（`DirNode` 增字段属 API 面只增，记录注明）
 - 人工冒烟：五控件状态可视且即时重排；重启保持；大目录排序无卡顿（纯内存）；深浅主题
+
+# 6E 实现细化（2026-09-24，implement 时决策落档）
+
+- **D6 类型归属**：`TreeSortOptions`/`TreeSortKey`/`TreeSortDir` + `DEFAULT_TREE_SORT` 定义在 `filetree/sort.ts`（排序语义归排序模块）；store `import type` 复用为 `fileTreeSort` 的形状，sanitize 帮手 `sanitizeTreeSort` 宽容回退（缺省/非法 → `groupFolders !== false` / key `'natural'` / dir `'asc'`）。
+- **D7 状态机进纯模块**：`pressSortKey(current, key)`（未选中→选中保持升降；已选中→翻转）与 `toggleGroupFolders(current)` 落在 sort.ts 并配单测——面板只做 `setPreferences({ fileTreeSort: … })`，行为可测不进组件。
+- **D8 缺省时间戳语义**：`mtimeMs`/`birthtimeMs` 缺失**恒排后**（升降皆是，验证表「缺省时间排后」）；同键同戳收尾 `tieBreak`（nameCollator name → path，确定性）。
+- **D9 排序行观感**（typora-4.png 排序行像素级复刻不强求，语义对齐）：「排序」label + 5 钮 = FolderIcon 分组 toggle + 四键钮（当前 dir 箭头 ↑/↓ 前缀 + 字形：`123` 自然 / `A` 名称 / ClockIcon 修改 / FileIcon 创建）；激活键与 toggle 开 = `--accent`（参考图蓝色态）。data-op：`sidebar.ops.sort.groupFolders|natural|name|mtime|birthtime`（只增）。排序行为 toggle 交互（**不关面板**，与五操作项 action 语义区分）。
+- **D10 递归排序实现修正**：`sortTreeNodes` 每层「先递归 children 再排当前层」（首版只克隆子层未排序，被递归单测逮住修正）；`{...n, children: 新数组}` 换新容器、节点对象复用，入参不动（纯函数单测钉住）。
+- **i18n 新 key**：`ops.sort` / `ops.sort.groupFolders|natural|name|mtime|birthtime`（en+zh 同加）。图标 `ClockIcon`/`FileIcon` 补入 Icons.tsx。
