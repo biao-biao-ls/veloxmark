@@ -72,7 +72,7 @@
 
 ### P2 — 观感对齐
 
-- [ ] **⑬ 9.2 静息态去语言顶栏**（spec `9B-code-idle-chrome`）
+- [x] **⑬ 9.2 静息态去语言顶栏**（spec `9B-code-idle-chrome`）——已收敛 2026-09-25：顶栏整删，语言降级为 hover 右下角标（与 ⑦ chip 同槽同皮肤，`langDisplayName` 显示名）；折叠态角标避让展开按钮；导出侧平行契约同步（`.export-code-lang` 四件套移除，`codeBlockHtml` 形态钉测）。
   对照 `code-default.png`：静息态去掉横贯的 `.cm-md-code-lang` 顶栏，语言降级为 hover/聚焦时的角标（或并入 ⑦ 的右下角 chip）。涉及 widget 结构与 `export/renderDoc` 平行契约同步。
   AC：静息态观感与 `code-default.png` 一致（圆角灰底 + 高亮、无横条）；复制/折叠按钮不回退；导出 HTML 样式同步。
 
