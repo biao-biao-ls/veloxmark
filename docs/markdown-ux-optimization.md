@@ -27,7 +27,7 @@
   编辑表格时绑定 Ctrl+Enter（下方插行）、Alt+↑/↓（移行）、Alt+←/→（移列），与 Typora 一致。落点：`keymap.ts`（嵌套单元格编辑态）+ 主编辑器/生命周期侧（激活态未进单元格时）。
   AC：快捷键仅在表格编辑激活态生效，不劫持全局；与 ① 菜单项同 userEvent/同 toast 语义；`shortcutSync` 相关测试若涉及须同步。
 
-- [ ] **③ 8.2 公式编辑态源码/预览并排**（spec `8B-math-edit-preview`）——**公式 UX 头号差距**
+- [x] **③ 8.2 公式编辑态源码/预览并排**（spec `8B-math-edit-preview`）——**公式 UX 头号差距**
   聚焦编辑 `$$…$$` 时不再整块塌回裸源码：改为**上方源码区（语法着色）+ 下方实时 KaTeX 预览**，右上「公式 ✓」chip 点击/Escape 退出回纯渲染态（对照 `math-focus.png`）。实现倾向：仿 mermaid P25 的"源码在文档、预览为投影"路线或嵌套编辑器（对照表格 nestedSession 先例），plan 择一；本项沉淀「块内源码/预览双区」共用机制，④ 直接复用。
   AC：编辑时 KaTeX 实时刷新（可接受 debounce）；无效 TeX 时预览区显示错误态但源码可继续编辑；「公式 ✓」+ Escape 均可退出；undo 语义不破坏；行内公式编辑行为不变（17 另管）。
 
@@ -49,7 +49,7 @@
   聚焦态语言 chip 移到右下角（对照 `code-focus.png`），点击弹出语言列表（常用语言 + 搜索，复用 ListPickDialog 模式），选择后改写 fence info 串。**含 9.3**：语言 id 显示为可读名称（`typescript` → `TypeScript`），列表常用优先；未知 id 原样显示。开栏处的 CodeLangChip 可退役或保留双处同步（plan 决策）。
   AC：选语言后高亮即时切换；非法/未知语言名不崩；chip 仅聚焦态可见；常见语言显示名正确。
 
-- [ ] **⑧ 8.1 公式 hover 提示带**（spec `8A-math-hover-hint`；可提前并入 ③ 的 spec 一并做——chip 本就是双区编辑的入口）
+- [x] **⑧ 8.1 公式 hover 提示带**（spec `8A-math-hover-hint`；可提前并入 ③ 的 spec 一并做——chip 本就是双区编辑的入口）**已并入 8B 一并收敛（2026-09-24）**
   hover 块级公式时显示整行浅灰底纹带 + 右上「公式 `</>`」chip（对照 `math-hover.png`），点击公式或 chip 进入源码编辑。纯 CSS/装饰层，不改 P09 语义。
   AC：hover 有底纹 + chip；移出即隐；深浅主题走 token；点击行为与现 click-to-source 一致（③ 落地后即进双区编辑）。
 
