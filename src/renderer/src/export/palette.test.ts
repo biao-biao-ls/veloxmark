@@ -26,7 +26,7 @@ import {
   type PaletteToken
 } from './palette'
 import { EXPORT_DOC_CSS } from './exportCss'
-import { classStyles } from './inlineStyles'
+import { classStyles, tagStyles } from './inlineStyles'
 
 function styleSource(name: 'themes' | 'markdown'): string {
   return readFileSync(
@@ -111,6 +111,19 @@ describe('generated export surfaces pin to palette (byte-level rule lines)', () 
         expect(cls[`export-callout-${name}`], `${name} bar`).toContain(co[name][0])
         expect(cls[`export-callout-${name}`], `${name} bg`).toContain(co[name][1])
       }
+    }
+  })
+
+  // 7H: table surfaces consume the palette table tokens — th/zebra no longer
+  // borrow --bg-alt (which left export th and zebra indistinguishable).
+  it('EXPORT_DOC_CSS table rules consume the table tokens', () => {
+    expect(EXPORT_DOC_CSS).toContain('background: var(--table-header-bg);')
+    expect(EXPORT_DOC_CSS).toContain('background: var(--table-stripe-bg);')
+  })
+
+  it('tagStyles th carries the table header token value', () => {
+    for (const p of [LIGHT_PALETTE, DARK_PALETTE] as const) {
+      expect(tagStyles(p).th, 'th bg').toContain(p.tableHeaderBg)
     }
   })
 })

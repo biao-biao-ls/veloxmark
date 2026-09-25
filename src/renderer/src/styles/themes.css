@@ -22,8 +22,10 @@
      never consume chrome tokens. */
   --widget-surface: #fafafa;
   /* F02: table hierarchy tokens — header clearly deeper than zebra stripe;
-     neither borrows --bg-sidebar (chrome color) for content roles. */
-  --table-header-bg: #e8e8e8;
+     neither borrows --bg-sidebar (chrome color) for content roles.
+     7H: header lightened to the Typora baseline (#f0f0f0, was #e8e8e8) —
+     synced with export/palette.ts LIGHT_PALETTE (palette.test.ts guards). */
+  --table-header-bg: #f0f0f0;
   --table-stripe-bg: #f6f6f6;
   /* color: text */
   --fg: #333333;

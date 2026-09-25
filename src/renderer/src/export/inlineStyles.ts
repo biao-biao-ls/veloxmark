@@ -47,7 +47,7 @@ export function tagStyles(p: Palette): Record<string, string> {
     ol: `margin:0.75em 0;padding-left:1.6em;color:${p.fg};font-family:${SANS}`,
     li: `margin:0.25em 0;color:${p.fg};font-family:${SANS};font-size:16px;line-height:1.6`,
     table: `border-collapse:collapse;margin:0.75em 0;font-family:${SANS};font-size:15px;color:${p.fg}`,
-    th: `border:1px solid ${p.border};padding:6px 10px;background:${p.bgAlt};font-weight:650;text-align:left`,
+    th: `border:1px solid ${p.border};padding:6px 10px;background:${p.tableHeaderBg};font-weight:650;text-align:left`,
     td: `border:1px solid ${p.border};padding:6px 10px`,
     mark: `background:${p.highlightBg};color:inherit;padding:0 0.15em`,
     sup: `font-size:0.75em;vertical-align:super`,
@@ -124,7 +124,7 @@ export function inlineStyleFragment(fragmentHtml: string, theme: 'light' | 'dark
     const rows = table.querySelectorAll('tr')
     rows.forEach((tr, i) => {
       if (i > 0 && i % 2 === 1) {
-        for (const cell of tr.children) mergeStyle(cell, `background:${p.bgAlt}`)
+        for (const cell of tr.children) mergeStyle(cell, `background:${p.tableStripeBg}`)
       }
     })
   }

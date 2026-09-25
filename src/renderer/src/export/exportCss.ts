@@ -169,12 +169,12 @@ export const EXPORT_DOC_CSS = `
 }
 
 .export-doc th {
-  background: var(--bg-alt);
+  background: var(--table-header-bg);
   font-weight: 600;
 }
 
 .export-doc tbody tr:nth-child(2n) {
-  background: var(--bg-alt);
+  background: var(--table-stripe-bg);
 }
 
 .export-doc .export-mermaid {

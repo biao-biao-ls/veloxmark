@@ -31,6 +31,9 @@ export type PaletteToken =
   | 'codeBg'
   | 'hrColor'
   | 'highlightBg'
+  // 7H: table content surfaces (F02 hierarchy — header deeper than zebra).
+  | 'tableHeaderBg'
+  | 'tableStripeBg'
 
 export type Palette = Record<PaletteToken, string>
 
@@ -51,7 +54,10 @@ export const RUNTIME_CSS_VAR: Record<PaletteToken, string> = {
   quoteBorder: '--quote-border',
   codeBg: '--code-bg',
   hrColor: '--hr-color',
-  highlightBg: '--highlight-bg'
+  highlightBg: '--highlight-bg',
+  // 7H: kebab names match paletteToCssVars derivation — no collision here.
+  tableHeaderBg: '--table-header-bg',
+  tableStripeBg: '--table-stripe-bg'
 }
 
 export const LIGHT_PALETTE: Palette = {
@@ -65,7 +71,11 @@ export const LIGHT_PALETTE: Palette = {
   quoteBorder: '#d0d7de',
   codeBg: 'rgba(175, 184, 193, 0.2)',
   hrColor: '#d8dee4',
-  highlightBg: '#fff8c5'
+  highlightBg: '#fff8c5',
+  // 7H: header band lightened to the Typora baseline (#f0f0f0, was #e8e8e8) —
+  // still clearly deeper than the zebra stripe (F02 hierarchy).
+  tableHeaderBg: '#f0f0f0',
+  tableStripeBg: '#f6f6f6'
 }
 
 export const DARK_PALETTE: Palette = {
@@ -81,7 +91,10 @@ export const DARK_PALETTE: Palette = {
   hrColor: '#444444',
   // wave⑥-5 P20-F2: synced to styles.css `.theme-dark --highlight-bg`
   // (P11-F3 opaque solid — rgba form was ~2.3:1 vs fg in AA math).
-  highlightBg: '#654a15'
+  highlightBg: '#654a15',
+  // 7H: values moved from themes.css unchanged (no dark baseline — untuned).
+  tableHeaderBg: '#2d2d2e',
+  tableStripeBg: '#252526'
 }
 
 export function paletteFor(theme: 'light' | 'dark'): Palette {

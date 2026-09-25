@@ -25,12 +25,17 @@ describe('export palette (P20)', () => {
     expect(css).toContain('--quote-border: #d0d7de;')
     expect(css).toContain('--code-bg: rgba(175, 184, 193, 0.2);')
     expect(css).toContain('--highlight-bg: #fff8c5;')
+    // 7H: table surface tokens join the palette (kebab derivation, no collision).
+    expect(css).toContain('--table-header-bg: #f0f0f0;')
+    expect(css).toContain('--table-stripe-bg: #f6f6f6;')
   })
 
   it('wave⑥-5: dark palette synced to styles.css .theme-dark (F04/P11-F3)', () => {
     const css = paletteToCssVars(DARK_PALETTE)
     expect(css).toContain('--fg-dim: #9a9a9a;')
     expect(css).toContain('--highlight-bg: #654a15;')
+    expect(css).toContain('--table-header-bg: #2d2d2e;')
+    expect(css).toContain('--table-stripe-bg: #252526;')
   })
 })
 
