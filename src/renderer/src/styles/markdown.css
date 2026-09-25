@@ -678,6 +678,16 @@
 
 .cm-md-math-inline {
   padding: 0 2px;
+  /* 8D: "click to edit" affordance — same pointer precedent as the block. */
+  cursor: pointer;
+}
+
+/* 8D: hover tint hint (inline sibling of the 8A block hover band) — paint-only,
+   P09 markTouched reveal contract untouched. The existing 2px padding is part
+   of the padding-box the background paints, giving the tint a breathing rim. */
+.cm-md-math-inline:hover {
+  background: var(--widget-surface);
+  border-radius: var(--radius-sm);
 }
 
 /* block toolbar (P06): hover controls shared by code/math/mermaid/table widgets */
