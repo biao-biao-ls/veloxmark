@@ -84,7 +84,7 @@
   56px/28px 常驻预留槽（UX-P28 F3 零抖动代价）导致表格缩进脱离正文列。方案：编辑态才撑开槽位 + overlay/transform 吸收抖动，或把手改 overlay 不占 layout。**零布局抖动契约不得回退**——编辑态进/出仍不许推挤正文。
   AC：静息态表格与正文同列、上方无 28px 空隙；进/出编辑态正文零位移（或位移 ≤ 1px 且 plan 中论证）；把手不遮挡单元格文本。
 
-- [ ] **⑯ 7.10 表格静息态视觉微调**（spec `7H-table-visual-tune`）
+- [x] **⑯ 7.10 表格静息态视觉微调**（spec `7H-table-visual-tune`）——已收敛 2026-09-25：**table token 入 palette 单源**——`tableHeaderBg`/`tableStripeBg` 并入 `PaletteToken`（既有 themes.css 对齐循环自动守护），导出两面（exportCss/inlineStyles）th/zebra 由借 `bgAlt`（同色无层级）切同源 token，编辑器↔导出表格取色一次收拢；light 表头 `#e8e8e8 → #f0f0f0`（对齐基准浅灰、仍深于 zebra 保 F02 层级），th `border-bottom: 2px` 覆盖删除（四周统一 1px，导出本就 1px）；dark 值原样搬家不猜新值；测试 +2 例（导出面字节钉 + tagStyles 值钉）。
   对照 `table-default.png`：表头底色更浅、th 下边框 1px 统一细线（现 2px）等；改色走 `export/palette.ts` 单源 + `palette.test.ts` 对齐流程。
   AC：深浅主题各冒烟一张对照截图；palette 测试通过；不新增 `.theme-dark` 选择器补丁。
 
