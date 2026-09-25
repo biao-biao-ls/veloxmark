@@ -88,7 +88,7 @@
   对照 `table-default.png`：表头底色更浅、th 下边框 1px 统一细线（现 2px）等；改色走 `export/palette.ts` 单源 + `palette.test.ts` 对齐流程。
   AC：深浅主题各冒烟一张对照截图；palette 测试通过；不新增 `.theme-dark` 选择器补丁。
 
-- [ ] **⑰ 8.3 行内公式 hover 高亮**（spec `8A` 内或独立）
+- [x] **⑰ 8.3 行内公式 hover 高亮**（spec 独立 `8D-math-inline-hover`）——已收敛 2026-09-25：**纯 CSS 一条 hover 规则**——`.cm-md-math-inline:hover` 浅灰底纹（`--widget-surface`，与 8A 块级 hover 同 token）+ `--radius-sm` 圆角 + `cursor: pointer`（块级先例）；2px 既有 padding 即底纹呼吸区；P09 `markTouched` 显源码契约零触碰（纯 CSS 构造性成立）；导出侧零改动（8A 同先例）。8A 已并入 8B 无独立目录，本项取独立 spec 续字母 8D。
   行内公式 hover 显示浅色底纹提示可点击编辑；点击行为沿用 markTouched 显源码。
   AC：仅视觉提示，不改显隐契约；选区触碰显源码（P09）不变。
 
