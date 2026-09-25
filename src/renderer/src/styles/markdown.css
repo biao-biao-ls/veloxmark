@@ -828,21 +828,32 @@
 
 .cm-md-table-wrap {
   position: relative;
-  margin: 0 var(--editor-gutter);
-  /* F05/5B: same column as prose — column width is owned by .cm-content
-     (var(--editor-max-width)); widgets align via margin: 0 var(--editor-gutter).
+  /* 7G: negative-margin absorption — the handle slots stay CONSTANT in the
+     padding box (overflow-x:auto clips escaped children, so the slots must
+     remain scrollport geometry) but their LAYOUT effect is cancelled by
+     negative margins, so the table lands exactly on the prose column and the
+     28px top dead space is gone (baseline: table-default.png). Every box
+     value is state-independent → enter/exit editing shifts NOTHING (UX-P28 F3
+     zero-shift contract, now 0px by construction). */
+  margin: calc(-1 * var(--table-col-handle-gutter, 28px)) var(--editor-gutter) 0
+    calc(var(--editor-gutter) - var(--table-handle-gutter, 56px));
+  /* F05/5B: column width is owned by .cm-content (var(--editor-max-width)).
+     With margin-left above, the wrap's CONTENT box left edge = the .cm-line
+     prose left edge (--editor-gutter) and its width = the prose column →
+     table width:100% spans the prose column, right edge flush.
      Deliberately NO max-width here: a % would resolve against the content
      column and shrink tables below it once the soft cap applies. */
   overflow-x: auto;
   cursor: pointer;
-  /* UX-P28 F3: constant left gutter for in-cell absolute handles.
-     Same value idle+edit → zero layout shift on enter/exit editing. */
+  /* UX-P28 F3: constant left gutter for in-cell absolute handles (row buttons
+     at right:100% + margin, ~53px left of the first column). 7G: the negative
+     margin-left makes this slot straddle the content/gutter boundary — see
+     .cm-md-table-handle-btn z-index for the fold-gutter coexistence note. */
   padding-left: var(--table-handle-gutter, 56px);
   /* diag-P28: constant TOP gutter for column handles (positioned above the
      header row, OUTSIDE header cells — they must never overlap header text).
-     Same idle+edit value → zero layout shift. 28px = 22px button + 4px gap
-     + 2px clearance; the strip lives inside the wrap's padding box so the
-     overflow-x:auto scrollport still shows it without scrollbars. */
+     28px = 22px button + 4px gap + 2px clearance. 7G: the negative margin-top
+     parks this strip in the inter-block gap (transparent when idle). */
   padding-top: var(--table-col-handle-gutter, 28px);
 }
 
@@ -951,7 +962,6 @@
   top: 2px;
   right: 100%;
   pointer-events: auto;
-  z-index: 1;
 }
 .cm-md-table-btn-row-insert { margin-right: 30px; }
 .cm-md-table-btn-row-delete { margin-right: 4px; }
@@ -966,13 +976,20 @@
   bottom: 100%;
   margin-bottom: 4px;
   pointer-events: auto;
-  z-index: 1;
 }
 .cm-md-table-btn-col-insert { left: 2px; }
 .cm-md-table-btn-col-delete { left: 28px; }
 
 .cm-md-table-handle-btn {
   display: inline-block;
+  /* 7G: the row-handle slot now straddles the cm-content/gutter boundary
+     (negative-margin absorption). .cm-gutters is a flex sibling with
+     z-index: 200 and an opaque background — park the handles above it.
+     Function loss is nil: the gutter element beside the table widget has no
+     fold arrow (folding is heading-only) and line-number digits render at
+     the TOP of that tall element (the top band), vertically clear of the
+     row buttons at data-row heights. */
+  z-index: 210;
   /* UX-P10 F3: hit-area ≥22×22px (professional target — was 18×18). */
   width: 22px;
   height: 22px;
@@ -1024,18 +1041,25 @@
    Child of the gap outer (positioning scope), absolute just ABOVE the wrap —
    NOT inside wrap (overflow-x:auto clips escaped children) and NOT in the
    28px col-handle band (data-table-handle probes live there). The ~--space-1
-   overlap into the gap padding is paint-only: zero layout shift (UX-P28 F3). */
+   overlap into the gap padding is paint-only: zero layout shift (UX-P28 F3).
+   7G: the col-handle strip rides the wrap's negative margin-top up into the
+   inter-block gap, so the toolbar is raised by exactly one strip height —
+   the toolbar → col-band → table stack stays pixel-identical relative to the
+   table. Edit chrome now PAINTS over the previous block's bottom (~46px)
+   instead of reserving layout space: the necessary corollary of the zero-shift
+   contract (same paint-only class as the original 7C overlap). */
 .cm-md-table-outer {
   position: relative;
 }
 
 .cm-md-table-toolbar {
   position: absolute;
-  left: 0;
-  bottom: calc(100% - var(--space-1));
+  /* 7G: frame aligned to the table column (baseline: table-focus.png). */
+  left: var(--editor-gutter);
+  bottom: calc(100% + var(--table-col-handle-gutter, 28px) - var(--space-1));
   display: flex;
   justify-content: space-between;
-  width: 100%;
+  width: calc(100% - var(--editor-gutter) * 2);
   z-index: 3;
   /* empty strip between the groups stays click-through (outer click-to-source) */
   pointer-events: none;
