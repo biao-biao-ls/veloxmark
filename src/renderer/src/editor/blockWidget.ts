@@ -65,8 +65,10 @@ export abstract class BlockWidget extends WidgetType {
     return outer
   }
 
-  /** Build the hover toolbar (top-right) and append it to `wrap`. */
-  protected attachBlockToolbar(wrap: HTMLElement, items: BlockToolbarItem[]): void {
+  /** Build the hover toolbar (top-right) and append it to `wrap`. Returns the
+      bar so callers can dock extra cluster items into its flex row (11A-N2:
+      hint chips are the rightmost corner element of the cluster). */
+  protected attachBlockToolbar(wrap: HTMLElement, items: BlockToolbarItem[]): HTMLElement {
     const bar = document.createElement('div')
     bar.className = 'cm-md-block-toolbar'
     for (const item of items) {
@@ -87,6 +89,7 @@ export abstract class BlockWidget extends WidgetType {
       bar.appendChild(btn)
     }
     wrap.appendChild(bar)
+    return bar
   }
 
   /**

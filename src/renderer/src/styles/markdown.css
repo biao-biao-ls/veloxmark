@@ -618,20 +618,16 @@
   border-radius: var(--cb-radius);
 }
 
+/* 11A-N2 (A1 fix): the hint chip is the rightmost (corner) item INSIDE the
+   top-right hover cluster's flex row (.cm-md-block-toolbar) — it used to be a
+   second absolute at the same top:4/right:6 anchor, where the opaque action
+   buttons covered it on hover. The bar's hover reveal carries the chip; the
+   click still bubbles to click-to-source (N3). */
 .cm-md-math-hover-chip {
-  position: absolute;
-  top: 4px;
-  right: 6px;
   font-size: 11px;
   color: var(--fg-dim);
   user-select: none;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.cm-md-math-block:hover .cm-md-math-hover-chip {
-  opacity: 1;
 }
 
 /* 8B: focused math dual-pane — panel lines mirror the P28 code panel shell

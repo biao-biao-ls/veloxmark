@@ -62,21 +62,23 @@ export class MathBlockWidget extends BlockWidget {
       bar.appendChild(jump)
       el.appendChild(bar)
     }
-    // 8A hover hint chip (top-right, absolute — zero layout cost): signals
-    // "click to edit source"; the click bubbles to wrapWithGap's
-    // click-to-source (same semantics as clicking anywhere on the block).
+    // 8A hover hint chip: signals "click to edit source"; the click bubbles to
+    // wrapWithGap's click-to-source (same semantics as clicking anywhere on the
+    // block). 11A-N2 (A1 fix): docked into the toolbar row as the rightmost
+    // (corner) item — a second absolute at the toolbar's top:4/right:6 anchor
+    // left the opaque action buttons covering the chip on hover.
     const chip = document.createElement('span')
     chip.className = 'cm-md-math-hover-chip'
     chip.textContent = `${t('math.chipLabel')} </>`
     chip.title = t('math.chipEnterTitle')
-    el.appendChild(chip)
-    this.attachBlockToolbar(el, [
+    const bar = this.attachBlockToolbar(el, [
       {
         label: t('toolbar.copy'),
         title: t('math.copyTitle'),
         onClick: (btn) => void this.copyWithFeedback(this.tex, btn, t('toast.copiedTex'))
       }
     ])
+    bar.appendChild(chip)
     return this.wrapWithGap(el, view)
   }
 }
