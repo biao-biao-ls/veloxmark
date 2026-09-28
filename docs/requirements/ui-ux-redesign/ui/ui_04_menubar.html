@@ -1,0 +1,976 @@
+<!-- ui_04 menubar -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ui_04 · 顶部菜单栏 — VeloxMark UI/UX 重设计</title>
+<style>
+/* ========== Design Tokens ========== */
+:root {
+  --bg: #ffffff;
+  --bg-sidebar: #fafafa;
+  --border: #e5e5e5;
+  --accent: #0969da;
+  --danger: #d1242f;
+  --bg-inset: #f2f2f2;
+  --fg: #333333;
+  --fg-dim: #6b6b6b;
+  --fg-disabled: #b0b0b0;
+  --widget-surface: #fafafa;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-sm: 3px;
+  --radius-md: 8px;
+
+  --shadow-pop: 0 4px 16px rgba(0, 0, 0, 0.18);
+  --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.28);
+  --shadow-menu: 0 6px 24px rgba(0, 0, 0, 0.12);
+
+  --font-ui: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, sans-serif;
+
+    --table-header-bg: #f0f0f0;
+    --table-stripe-bg: #f6f6f6;
+    --on-accent: #ffffff;}
+.theme-dark {
+  --bg: #1e1e1e;
+  --bg-sidebar: #252526;
+  --border: #333333;
+  --accent: #58a6ff;
+  --danger: #f85149;
+  --bg-inset: #2a2a2b;
+  --fg: #d4d4d4;
+  --fg-dim: #9a9a9a;
+  --fg-disabled: #6a6a6a;
+
+    --table-header-bg: #2d2d2e;
+    --table-stripe-bg: #252526;
+    --widget-surface: #252526;
+    --on-accent: #0d1117;}
+
+/* ========== Base ========== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { min-width: 1200px; }
+body {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg);
+  background: var(--bg-sidebar);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+
+/* ========== 场景横幅 ========== */
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-5);
+  background: var(--bg-inset);
+  border-bottom: 1px solid var(--border);
+}
+.scene-tag {
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 1px var(--space-2);
+  white-space: nowrap;
+}
+.banner-title {
+  flex: 1;
+  font-size: 12px;
+  color: var(--fg-dim);
+  letter-spacing: 0.2px;
+}
+.banner-title b { color: var(--fg); font-weight: 600; }
+.banner-nav { display: flex; align-items: center; gap: var(--space-1); }
+.banner-nav a {
+  min-width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--fg-dim);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+}
+.banner-nav a:hover { background: var(--bg-inset); color: var(--fg); }
+.banner-nav a.is-current {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+/* ========== 应用窗口外壳 ========== */
+.window {
+  margin: var(--space-5) auto var(--space-7);
+  width: min(1560px, calc(100% - var(--space-7)));
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+}
+
+/* 菜单栏行 + 窗口控件 */
+.titlebar {
+  display: flex;
+  align-items: stretch;
+  height: 36px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.menubar {
+  display: flex;
+  align-items: stretch;
+  padding-left: var(--space-2);
+  gap: 2px;
+  flex: 1;
+}
+.menubar-brand {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-3) 0 var(--space-2);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-dim);
+  letter-spacing: 0.3px;
+}
+.menu-root {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-3);
+  font-size: 13px;
+  color: var(--fg);
+  border-radius: var(--radius-sm);
+  margin: 4px 0;
+  cursor: default;
+}
+.menu-root.is-active {
+  background: var(--bg-inset);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+.win-controls { display: flex; align-items: stretch; }
+.win-btn {
+  width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-dim);
+  font-size: 11px;
+  cursor: default;
+}
+.win-btn:hover { background: var(--bg-inset); color: var(--fg); }
+.win-btn.is-close:hover { background: var(--danger); color: var(--on-accent); }
+
+/* 标签栏 */
+.tabbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 34px;
+  padding: 0 var(--space-2);
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 28px;
+  padding: 0 var(--space-3);
+  font-size: 12px;
+  color: var(--fg-dim);
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  cursor: default;
+}
+.tab.is-active {
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--fg);
+}
+.tab-close {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--fg-dim);
+  border-radius: var(--radius-sm);
+}
+.tab.is-active .tab-close:hover { background: var(--bg-inset); }
+.tab-dirty {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.tab-plus {
+  width: 24px;
+  height: 24px;
+  margin: 0 0 var(--space-1) var(--space-1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-dim);
+  border-radius: var(--radius-sm);
+  cursor: default;
+}
+.tab-plus:hover { background: var(--bg-inset); color: var(--fg); }
+
+/* ========== 主体：舞台 + 右侧标注栏 ========== */
+.main {
+  display: flex;
+  align-items: stretch;
+  min-height: 720px;
+}
+.stage {
+  position: relative;
+  flex: 1;
+  padding: var(--space-6) var(--space-5) var(--space-6) var(--space-6);
+  overflow: hidden;
+}
+.rail {
+  width: 300px;
+  flex: none;
+  border-left: 1px solid var(--border);
+  background: var(--widget-surface);
+  padding: var(--space-5) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: var(--space-4);
+}
+
+/* 弱化正文背景 */
+.doc-ghost {
+  position: absolute;
+  inset: 0;
+  padding: var(--space-7) var(--space-6);
+  opacity: 0.28;
+  pointer-events: none;
+  user-select: none;
+}
+.doc-ghost .g-h { height: 18px; width: 42%; background: var(--fg-disabled); border-radius: var(--radius-sm); margin-bottom: var(--space-4); }
+.doc-ghost .g-line { height: 8px; background: var(--border); border-radius: var(--radius-sm); margin-bottom: var(--space-3); }
+.doc-ghost .g-block {
+  height: 96px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-inset);
+  margin: var(--space-5) 0;
+}
+
+/* ========== 菜单面板三联 ========== */
+.panels {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+.panels.panels-row2 {
+  margin-top: var(--space-6);
+  gap: var(--space-5);
+}
+/* 样张区 2×2 网格（1280 宽内收排，不砍样张） */
+.sample-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 232px);
+  gap: var(--space-5);
+  align-content: start;
+}
+.panel-col { position: relative; }
+.panel-col.col-edit { z-index: 30; }
+.panel-caption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  padding-left: 2px;
+  font-size: 11px;
+  color: var(--fg-dim);
+}
+.panel-caption::before {
+  content: "▼";
+  font-size: 9px;
+  color: var(--accent);
+}
+.menu-panel {
+  width: 260px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-menu);
+  padding: var(--space-2) var(--space-1);
+}
+.menu-panel.is-wide { width: 292px; }
+.panel-col.col-sample .menu-panel { width: 232px; }
+.menu-panel.is-overflow {
+  max-height: 232px;
+  overflow: hidden;
+}
+
+/* 菜单分组 */
+.mgroup { padding: var(--space-1) 0; }
+.mgroup-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) 11px var(--space-1);
+  font-size: 11px;
+  color: var(--fg-dim);
+  letter-spacing: 0.4px;
+}
+.group-note {
+  font-size: 10px;
+  color: var(--fg-disabled);
+  letter-spacing: 0;
+}
+.msep {
+  height: 1px;
+  margin: var(--space-1) 10px;
+  background: var(--border);
+}
+
+/* 菜单项 */
+.mi {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 30px;
+  padding: 0 11px;
+  border-radius: var(--radius-sm);
+  cursor: default;
+  color: var(--fg);
+}
+.mi.is-hover { background: var(--bg-inset); }
+.mi.is-disabled { color: var(--fg-disabled); }
+.mi-check {
+  width: 12px;
+  flex: none;
+  font-size: 11px;
+  color: var(--accent);
+  text-align: center;
+}
+.mi-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 动态条目（最近文件等）：不计 52 项定额，刻意不用 mi-label */
+.mi-dyn { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--fg); }
+.mi-key {
+  flex: none;
+  font-size: 11px;
+  color: var(--fg-dim);
+  letter-spacing: 0.2px;
+}
+.mi.is-disabled .mi-key { color: var(--fg-disabled); }
+.mi-key.is-pending { color: var(--fg-disabled); }
+.mi-arrow { flex: none; font-size: 11px; color: var(--fg-dim); margin-left: var(--space-2); }
+.badge-conflict {
+  flex: none;
+  margin-left: var(--space-2);
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* 子菜单（格式）：贴编辑面板右缘 hover 延展 */
+.submenu {
+  position: absolute;
+  left: calc(100% + 6px);
+  top: -6px;
+  width: 190px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left-width: 1px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-menu);
+  padding: var(--space-2) var(--space-1);
+  z-index: 40;
+}
+/* 下边缘自动上翻目标态：贴窗口下缘时整菜单上翻，末项不裁切 */
+.submenu.submenu--flip {
+  top: auto;
+  bottom: -6px;
+}
+.submenu-bridge {
+  position: absolute;
+  left: calc(100% - 1px);
+  top: 14px;
+  width: 7px;
+  height: 1px;
+  background: var(--accent);
+}
+.submenu-tag {
+  position: absolute;
+  left: calc(100% + 6px);
+  top: -30px;
+  width: 190px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 11px;
+  color: var(--fg-dim);
+}
+.submenu-tag.submenu-tag--flip { top: auto; bottom: -30px; }
+.submenu-tag::before {
+  content: "";
+  width: 14px;
+  height: 1px;
+  background: var(--accent);
+}
+.submenu .mi { height: 28px; }
+
+/* ========== 防溢出细节放大卡 ========== */
+.overflow-card {
+  margin-top: var(--space-5);
+  width: 272px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  padding: var(--space-3);
+}
+.overflow-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+.overflow-card-title {
+  font-size: 11px;
+  color: var(--fg-dim);
+  letter-spacing: 0.3px;
+}
+.zoom-chip {
+  font-size: 10px;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 0 6px;
+  line-height: 1.6;
+}
+.mini-scroll {
+  position: relative;
+  height: 148px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+.mini-scroll .mi { height: 24px; font-size: 12px; padding: 0 9px; }
+.mini-scroll .mi-key { font-size: 10px; }
+.mini-track {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  bottom: 22px;
+  width: 4px;
+  border-radius: 999px;
+  background: var(--bg-inset);
+}
+.mini-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 46px;
+  border-radius: 999px;
+  background: var(--fg-disabled);
+}
+.mini-fold {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: 10px;
+  color: var(--fg-dim);
+  background: var(--bg-inset);
+  border-top: 1px solid var(--border);
+}
+.overflow-caption {
+  margin-top: var(--space-2);
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--fg-dim);
+}
+.overflow-caption b { color: var(--fg); font-weight: 600; }
+
+/* ========== 右栏卡片 ========== */
+.card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+.card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+.card-text {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--fg-dim);
+}
+.card-text b { color: var(--fg); font-weight: 600; }
+.metric-row {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.metric {
+  flex: 1;
+  background: var(--widget-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  text-align: center;
+}
+.metric-num { font-size: 15px; font-weight: 600; color: var(--accent); }
+.metric-label { font-size: 10px; color: var(--fg-dim); margin-top: 2px; }
+.note-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-2); }
+.note-list li {
+  position: relative;
+  padding-left: var(--space-3);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--fg-dim);
+}
+.note-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.note-list b { color: var(--fg); font-weight: 600; }
+
+/* ========== 状态栏 ========== */
+.statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 26px;
+  padding: 0 var(--space-4);
+  font-size: 11px;
+  color: var(--fg-dim);
+  background: var(--bg-sidebar);
+  border-top: 1px solid var(--border);
+}
+.statusbar-right { display: flex; gap: var(--space-4); }
+</style>
+</head>
+<body>
+
+<!-- 场景横幅 -->
+<div class="banner">
+  <span class="scene-tag">场景 4/7</span>
+  <div class="banner-title"><b>顶部菜单栏</b>——信息架构重排 · 快捷键回显 · 防溢出</div>
+  <nav class="banner-nav">
+    <a href="ui_01_main_quiet.html">1</a>
+    <a href="ui_02_table_edit.html">2</a>
+    <a href="ui_03_table_menu.html">3</a>
+    <a href="ui_04_menubar.html" class="is-current">4</a>
+    <a href="ui_05_sidebar.html">5</a>
+    <a href="ui_06_render_zone.html">6</a>
+    <a href="ui_07_global.html">7</a>
+  </nav>
+</div>
+
+<div class="window">
+
+  <!-- 菜单栏 + 窗口控件 -->
+  <div class="titlebar">
+    <div class="menubar">
+      <span class="menubar-brand">VeloxMark</span>
+      <span class="menu-root is-active">文件</span>
+      <span class="menu-root is-active">编辑</span>
+      <span class="menu-root is-active">视图</span>
+      <span class="menu-root">插入</span>
+      <span class="menu-root">帮助</span>
+    </div>
+    <div class="win-controls">
+      <span class="win-btn">—</span>
+      <span class="win-btn">▢</span>
+      <span class="win-btn is-close">✕</span>
+    </div>
+  </div>
+
+  <!-- 标签栏 -->
+  <div class="tabbar">
+    <div class="tab is-active">
+      <span>项目说明.md</span>
+      <span class="tab-dirty"></span>
+      <span class="tab-close">✕</span>
+    </div>
+    <div class="tab">
+      <span>会议纪要.md</span>
+      <span class="tab-close">✕</span>
+    </div>
+    <span class="tab-plus">＋</span>
+  </div>
+
+  <!-- 主体 -->
+  <div class="main">
+
+    <!-- 舞台：三联下拉 + 子菜单 + 防溢出 -->
+    <div class="stage">
+
+      <!-- 弱化正文 -->
+      <div class="doc-ghost" aria-hidden="true">
+        <div class="g-h"></div>
+        <div class="g-line" style="width:88%"></div>
+        <div class="g-line" style="width:76%"></div>
+        <div class="g-line" style="width:82%"></div>
+        <div class="g-block"></div>
+        <div class="g-line" style="width:90%"></div>
+        <div class="g-line" style="width:64%"></div>
+        <div class="g-line" style="width:80%"></div>
+        <div class="g-line" style="width:52%"></div>
+      </div>
+
+      <div class="panels">
+
+        <!-- ===== 文件 ===== -->
+        <div class="panel-col">
+          <div class="panel-caption">文件 · 下拉（5 组 · 12 项）</div>
+          <div class="menu-panel is-wide">
+            <div class="mgroup">
+              <div class="mgroup-title"><span>新建与打开</span></div>
+              <div class="mi"><span class="mi-label">新建</span><span class="mi-key">Ctrl+N</span></div>
+              <div class="mi"><span class="mi-label">打开…</span><span class="mi-key">Ctrl+O</span></div>
+              <div class="mi"><span class="mi-label">打开文件夹…</span><span class="mi-key">Ctrl+Shift+O</span></div>
+              <div class="mi"><span class="mi-label">快速打开…</span><span class="mi-key">Ctrl+P</span></div>
+              <div class="mi"><span class="mi-label">打开最近</span><span class="mi-arrow">▸</span></div>
+            </div>
+            <div class="msep"></div>
+            <div class="mgroup">
+              <div class="mgroup-title"><span>保存</span></div>
+              <div class="mi"><span class="mi-label">保存</span><span class="mi-key">Ctrl+S</span></div>
+              <div class="mi"><span class="mi-label">另存为…</span><span class="mi-key">Ctrl+Shift+S</span></div>
+            </div>
+            <div class="msep"></div>
+            <div class="mgroup">
+              <div class="mgroup-title"><span>标签页</span></div>
+              <div class="mi"><span class="mi-label">关闭标签</span><span class="mi-key">Ctrl+W</span></div>
+              <div class="mi" title="id: reopenClosedTab · §8-1 与 toggleTheme 同抢 Ctrl+Shift+T">
+                <span class="mi-label">重新打开已关标签</span>
+                <span class="badge-conflict">冲突待裁决</span>
+                <span class="mi-key">Ctrl+Shift+T</span>
+              </div>
+              <div class="mi"><span class="mi-label">下一个标签</span><span class="mi-key">Ctrl+Tab</span></div>
+            </div>
+            <div class="msep"></div>
+            <div class="mgroup">
+              <div class="mgroup-title"><span>导出</span></div>
+              <div class="mi"><span class="mi-label">导出</span><span class="mi-arrow">▸</span></div>
+            </div>
+            <div class="msep"></div>
+            <div class="mgroup">
+              <div class="mgroup-title"><span>设置</span></div>
+              <div class="mi"><span class="mi-label">偏好设置…</span><span class="mi-key">Ctrl+,</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 编辑 ===== -->
+        <div class="panel-col col-edit">
+          <div class="panel-caption">编辑 · 下拉（5 组 · 12 项 + 格式 ▸ 5 项）</div>
+          <div class="menu-panel">
+            <div class="mgroup">
+              <div class="mgroup-title"><span>历史</span></div>
+              <div class="mi"><span class="mi-label">撤销</span><span class="mi-key">Ctrl+Z</span></div>
+              <div class="mi"><span class="mi-label">重做</span><span class="mi-key">Ctrl+Y</span></div>
+            </div>
+            <div class="msep"></div>
+            <div class="mgroup">
+              <div class="mgroup-title"><span>剪贴板</span></div>
+              <div class="mi"><span class="mi-label">剪切</span><span class="mi-key">Ctrl+X</span></div>
+              <div class="mi"><span class="mi-label">复制</span><span class="mi-key">Ctrl+C</span></div>
+              <div class="mi"><span class="mi-label">粘贴</span><span class="mi-key">Ctrl+V</span></div>
+              <div class="mi"><span class="mi-label">复制为富文本</span><span class="mi-key">Ctrl+Shift+C</span></div>
+              <div class="mi"><span class="mi-label">复制为 HTML</span><span class="mi-key"></span></div>
+              <div class="mi"><span class="mi-label">全选</span><span class="mi-key">Ctrl+A</span></div>
+            </div>
+            <div class="msep"></div>
+            <div class="mgroup">
+              <div class="mgroup-title"><span>查找与整理</span></div>
+              <div class="mi"><span class="mi-label">查找</span><span class="mi-key">Ctrl+F</span></div>
+              <div class="mi"><span class="mi-label">格式化文档</span><span class="mi-key">Shift+Alt+F</span></div>
+            </div>
+            <div class="msep"></div>
+            <div class="mgroup">
+              <div class="mgroup-title"><span>格式</span></div>
+              <!-- hover 示意项 = 子菜单父项；贴下缘 → 自动上翻目标态（末项「删除线」不裁切） -->
+              <div class="mi is-hover">
+                <span class="mi-label">格式</span>
+                <span class="mi-arrow">▸</span>
+                <div class="submenu-bridge"></div>
+                <div class="submenu-tag submenu-tag--flip">下边缘自动上翻 · hover 延展</div>
+                <div class="submenu submenu--flip">
+                  <div class="mi"><span class="mi-label">加粗</span><span class="mi-key">Ctrl+B</span></div>
+                  <div class="mi"><span class="mi-label">斜体</span><span class="mi-key">Ctrl+I</span></div>
+                  <div class="mi"><span class="mi-label">行内代码</span><span class="mi-key">Ctrl+E</span></div>
+                  <div class="mi"><span class="mi-label">删除线</span><span class="mi-key"></span></div>
+                  <div class="mi"><span class="mi-label">高亮</span><span class="mi-key"></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="msep"></div>
+            <div class="mgroup">
+              <div class="mgroup-title"><span>选区导出</span></div>
+              <div class="mi is-disabled"><span class="mi-label">导出选区为 HTML…</span><span class="mi-key"></span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===== 视图 + 下拉样张补齐（附录 B 52 项定额） ===== -->
+      <div class="panels panels-row2">
+
+        <!-- ===== 视图 ===== -->
+        <div class="panel-col col-view">
+          <div class="panel-caption">视图 · 下拉（6 组 · 15 项 · 全栏最长）</div>
+          <div class="menu-panel is-overflow">
+            <div class="mgroup">
+              <div class="mgroup-title"><span>侧栏与搜索</span></div>
+              <div class="mi"><span class="mi-check">✓</span><span class="mi-label">切换大纲</span><span class="mi-key"></span></div>
+              <div class="mi"><span class="mi-check"></span><span class="mi-label">文件夹内搜索…</span><span class="mi-key">Ctrl+Shift+F</span></div>
+            </div>
+            <div class="msep"></div>
+            <div class="mgroup">
+              <div class="mgroup-title"><span>折叠</span></div>
+              <div class="mi"><span class="mi-check"></span><span class="mi-label">折叠全部</span><span class="mi-key"></span></div>
+              <div class="mi"><span class="mi-check"></span><span class="mi-label">展开全部</span><span class="mi-key"></span></div>
+            </div>
+            <div class="msep"></div>
+            <div class="mgroup">
+              <div class="mgroup-title"><span>模式</span></div>
+              <div class="mi"><span class="mi-check"></span><span class="mi-label">专注模式</span><span class="mi-key">F8</span></div>
+              <div class="mi"><span class="mi-check"></span><span class="mi-label">打字机模式</span><span class="mi-key">F9</span></div>
+              <div class="mi"><span class="mi-check"></span><span class="mi-label">源码模式</span><span class="mi-key">Ctrl+/</span></div>
+            </div>
+            <div class="msep"></div>
+            <div class="mgroup">
+              <div class="mgroup-title"><span>输入辅助</span></div>
+              <div class="mi"><span class="mi-check">✓</span><span class="mi-label">输入辅助</span><span class="mi-key"></span></div>
+              <div class="mi"><span class="mi-check"></span><span class="mi-label">粘贴时包裹裸链接</span><span class="mi-key"></span></div>
+              <div class="mi"><span class="mi-check"></span><span class="mi-label">粘贴 HTML 转 Markdown</span><span class="mi-key"></span></div>
+            </div>
+            <div class="msep"></div>
+            <div class="mgroup">
+              <div class="mgroup-title"><span>缩放</span><span class="group-note">键位待定 · 期 3 入总表</span></div>
+              <div class="mi"><span class="mi-check"></span><span class="mi-label">放大</span><span class="mi-key is-pending">待定</span></div>
+              <div class="mi"><span class="mi-check"></span><span class="mi-label">缩小</span><span class="mi-key is-pending">待定</span></div>
+              <div class="mi"><span class="mi-check"></span><span class="mi-label">重置缩放</span><span class="mi-key is-pending">待定</span></div>
+            </div>
+            <div class="msep"></div>
+            <div class="mgroup">
+              <div class="mgroup-title"><span>开发与主题</span></div>
+              <div class="mi" title="id: toggleDevTools · §8-2 双源未裁决">
+                <span class="mi-check"></span>
+                <span class="mi-label">开发者工具</span>
+                <span class="mi-key is-pending">待定</span>
+              </div>
+              <div class="mi" title="id: toggleTheme · §8-1 与 reopenClosedTab 同抢 Ctrl+Shift+T">
+                <span class="mi-check"></span>
+                <span class="mi-label">切换主题</span>
+                <span class="badge-conflict">冲突待裁决</span>
+                <span class="mi-key">Ctrl+Shift+T</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 防溢出细节放大 -->
+          <div class="overflow-card">
+            <div class="overflow-card-head">
+              <div class="overflow-card-title">细节放大 · 防溢出</div>
+              <div class="zoom-chip">限高滚动</div>
+            </div>
+            <div class="mini-scroll">
+              <div class="mi"><span class="mi-label">切换大纲</span></div>
+              <div class="mi"><span class="mi-label">开发者工具</span><span class="mi-key is-pending">待定</span></div>
+              <div class="mi">
+                <span class="mi-label">切换主题</span>
+                <span class="badge-conflict">冲突待裁决</span>
+                <span class="mi-key">Ctrl+Shift+T</span>
+              </div>
+              <div class="mi"><span class="mi-label">折叠全部</span></div>
+              <div class="mi"><span class="mi-label">专注模式</span><span class="mi-key">F8</span></div>
+              <div class="mi"><span class="mi-label">输入辅助</span></div>
+              <div class="mi"><span class="mi-label">放大</span><span class="mi-key is-pending">待定</span></div>
+              <div class="mini-track"><div class="mini-thumb"></div></div>
+              <div class="mini-fold">⌃ 下边缘上翻（更多）</div>
+            </div>
+            <div class="overflow-caption">
+              <b>15 项全栏最长</b> → 限高滚动 + 下边缘上翻；子菜单 hover 延展不丢失。
+              「格式 ▸」同规则<b>贴下缘自动上翻</b>（见中列），768 高视口内末项「删除线」完整可见。
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 子菜单 / 下拉样张补齐（附录 B 52 项定额） ===== -->
+        <div class="sample-grid">
+
+        <!-- ===== 打开最近 ▸ 子菜单样张 ===== -->
+        <div class="panel-col col-sample">
+          <div class="panel-caption">打开最近 ▸ 子菜单（L3 · 1 项计入定额）</div>
+          <div class="menu-panel">
+            <div class="mgroup">
+              <div class="mgroup-title"><span>最近文件</span><span class="group-note">动态条目 · 不计数</span></div>
+              <div class="mi" title="id: 动态（最近条目）"><span class="mi-dyn">项目说明.md</span></div>
+              <div class="mi" title="id: 动态（最近条目）"><span class="mi-dyn">会议纪要.md</span></div>
+              <div class="mi is-disabled" title="路径失效 → 灰显即语义"><span class="mi-dyn">已删除的笔记.md</span></div>
+            </div>
+            <div class="msep"></div>
+            <div class="mgroup">
+              <div class="mi" title="id: clearMenu"><span class="mi-label">清空列表</span><span class="mi-key"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 导出 ▸ 子菜单样张 ===== -->
+        <div class="panel-col col-sample">
+          <div class="panel-caption">导出 ▸ 子菜单（L3 · 2 项计入定额）</div>
+          <div class="menu-panel">
+            <div class="mgroup">
+              <div class="mi" title="id: exportPdf"><span class="mi-label">PDF…</span><span class="mi-key"></span></div>
+              <div class="mi" title="id: exportHtml"><span class="mi-label">HTML…</span><span class="mi-key"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 插入 · 下拉样张 ===== -->
+        <div class="panel-col col-sample">
+          <div class="panel-caption">插入 · 下拉（2 组 · 4 项计入定额）</div>
+          <div class="menu-panel">
+            <div class="mgroup">
+              <div class="mgroup-title"><span>表格</span></div>
+              <div class="mi" title="id: insertTable"><span class="mi-label">插入表格…</span><span class="mi-key"></span></div>
+              <div class="mi" title="id: convertToTable"><span class="mi-label">选区转表格…</span><span class="mi-key"></span></div>
+            </div>
+            <div class="msep"></div>
+            <div class="mgroup">
+              <div class="mgroup-title"><span>图表与容器</span></div>
+              <div class="mi" title="id: insertMermaidDiagram"><span class="mi-label">Mermaid 图表…</span><span class="mi-key"></span></div>
+              <div class="mi" title="id: insertCallout"><span class="mi-label">插入 Callout…</span><span class="mi-key"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 帮助 · 下拉样张 ===== -->
+        <div class="panel-col col-sample">
+          <div class="panel-caption">帮助 · 下拉（1 项计入定额）</div>
+          <div class="menu-panel">
+            <div class="mgroup">
+              <div class="mi" title="id: showHelp"><span class="mi-label">Markdown 语法参考</span><span class="mi-key"></span></div>
+            </div>
+          </div>
+        </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧标注栏 -->
+    <aside class="rail">
+
+      <!-- 设计标注 -->
+      <div class="card">
+        <div class="card-title">设计标注 · 顶部菜单栏</div>
+        <ul class="note-list">
+          <li>语义分组：分隔线 → <b>组名升级</b>，一眼可见的信息架构</li>
+          <li><b>行业习惯命名</b>（新建/打开/另存为/偏好设置…）</li>
+          <li>命令 id 全部不变（<b>e2e 缝</b>：window.__velox* / data-op）</li>
+          <li>展开时延 <b>≤200ms</b>，菜单下拉投影 0 6px 24px</li>
+          <li>深浅主题对比度 <b>≥4.5:1</b>（.theme-dark token 翻值）</li>
+          <li>「格式 ▸」贴下缘<b>自动上翻</b>：768 高视口内 5 项全可见（末项删除线不裁切）</li>
+          <li><b>Ctrl+Shift+T 冲突双挂</b>：reopenClosedTab 与 toggleTheme 均标「冲突待裁决」（§8-1）</li>
+          <li>缩放 / 开发者工具键位双源未裁决 → 回显<b>「待定」</b>（§8-2），不空显</li>
+        </ul>
+      </div>
+
+      <!-- 快捷键回显一致性 -->
+      <div class="card">
+        <div class="card-title">快捷键回显一致性</div>
+        <div class="card-text">
+          回显由快捷键总表单源派生（命令注册表 <b>shortcut</b> + <b>STRUCT_KEYS</b> → <b>fmtShortcut</b>）·
+          有快捷键项回显率 <b>100%</b> · 一致率 <b>100%</b> · 消除双源漂移。
+        </div>
+        <div class="metric-row">
+          <div class="metric"><div class="metric-num">100%</div><div class="metric-label">回显率</div></div>
+          <div class="metric"><div class="metric-num">100%</div><div class="metric-label">一致率</div></div>
+          <div class="metric"><div class="metric-num">0</div><div class="metric-label">双源漂移</div></div>
+        </div>
+      </div>
+
+      <!-- 菜单项计数（附录 B 口径） -->
+      <div class="card">
+        <div class="card-title">菜单项计数 · 52 项定额</div>
+        <div class="card-text">
+          硬计数：<b>文件 12 / 编辑 12 / 视图 15 / 插入 4 / 帮助 1</b> = 根面板 44 项；
+          + 子菜单 8 项（打开最近 1 · 导出 2 · 格式 5）<b>= 52</b>（menu-tree 附录 B 口径）。
+          本次补齐缺 8 项样张：<b>清空列表</b> / <b>PDF…</b> / <b>HTML…</b> / 插入 4 / 帮助 1，
+          命令 id 逐字对合同：clearMenu · exportPdf · exportHtml · insertTable · convertToTable · insertMermaidDiagram · insertCallout · showHelp。
+        </div>
+        <div class="metric-row">
+          <div class="metric"><div class="metric-num">52</div><div class="metric-label">定额合计</div></div>
+          <div class="metric"><div class="metric-num">44</div><div class="metric-label">根面板 5 菜单</div></div>
+          <div class="metric"><div class="metric-num">8</div><div class="metric-label">子菜单项</div></div>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- 状态栏 -->
+  <div class="statusbar">
+    <span>Markdown · UTF-8 · 行 12，列 8 · 字数 1,284</span>
+    <span class="statusbar-right">
+      <span>输入辅助：开</span>
+      <span>大纲</span>
+      <span>100%</span>
+    </span>
+  </div>
+
+</div>
+
+</body>
+</html>

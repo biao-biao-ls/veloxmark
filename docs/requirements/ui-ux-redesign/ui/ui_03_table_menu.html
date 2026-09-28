@@ -1,0 +1,1059 @@
+<!-- ui_03 table_menu -->
+<!DOCTYPE html>
+<html lang="zh-CN" class="theme-light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ui_03 表格结构操作菜单 · VeloxMark UI/UX 重设计原型</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-sidebar: #fafafa;
+    --border: #e5e5e5;
+    --accent: #0969da;
+    --danger: #d1242f;
+    --bg-inset: #f2f2f2;
+    --table-header-bg: #f0f0f0;
+    --table-stripe-bg: #f6f6f6;
+    --widget-surface: #fafafa;
+    --fg: #333333;
+    --fg-dim: #6b6b6b;
+    --fg-disabled: #b0b0b0;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+
+    --radius-sm: 3px;
+    --radius-md: 8px;
+
+    --shadow-pop: 0 4px 16px rgba(0, 0, 0, 0.18);
+    --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.28);
+    --shadow-menu: 0 6px 24px rgba(0, 0, 0, 0.12);
+
+    --font: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, sans-serif;
+
+    --tooltip-bg: #1f2328;
+    --tooltip-fg: #e6edf3;
+    --tooltip-border: #30363d;
+
+    --on-accent: #ffffff;}
+
+  .theme-dark {
+    --bg: #1e1e1e;
+    --bg-sidebar: #252526;
+    --border: #333333;
+    --accent: #58a6ff;
+    --danger: #f85149;
+    --bg-inset: #2a2a2b;
+    --table-header-bg: #2d2d2e;
+    --table-stripe-bg: #252526;
+    --widget-surface: #252526;
+    --fg: #d4d4d4;
+    --fg-dim: #9a9a9a;
+    --fg-disabled: #6a6a6a;
+    --shadow-menu: 0 6px 24px rgba(0, 0, 0, 0.45);
+    --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.55);
+    --shadow-pop: 0 4px 16px rgba(0, 0, 0, 0.5);
+
+    --tooltip-bg: #0d1117;
+
+    --on-accent: #0d1117;}
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: 13px;
+  }
+
+  body { overflow: auto; }
+
+  .app {
+    min-width: 1240px;
+    min-height: 1120px;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+  }
+
+  /* ── 菜单栏 ─────────────────────────────── */
+  .menubar {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-2) 0 var(--space-3);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    flex: none;
+  }
+  .app-mark {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-right: var(--space-5);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--fg);
+  }
+  .app-mark .logo {
+    width: 16px;
+    height: 16px;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--on-accent);
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .menu-entry {
+    height: 26px;
+    padding: 0 var(--space-3);
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--radius-sm);
+    color: var(--fg);
+    font-size: 13px;
+    cursor: default;
+  }
+  .menu-entry:hover { background: var(--bg-inset); }
+  .win-controls {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+  .win-btn {
+    width: 36px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--fg-dim);
+    font-size: 11px;
+  }
+  .win-btn.close:hover { background: var(--danger); color: var(--on-accent); }
+  .win-btn:not(.close):hover { background: var(--bg-inset); }
+
+  /* ── 标签栏 ─────────────────────────────── */
+  .tabbar {
+    height: 34px;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    padding: 0 var(--space-2);
+    background: var(--bg-sidebar);
+    border-bottom: 1px solid var(--border);
+    flex: none;
+  }
+  .tab {
+    height: 28px;
+    padding: 0 var(--space-3);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    color: var(--fg-dim);
+    font-size: 12px;
+    max-width: 200px;
+    white-space: nowrap;
+  }
+  .tab.active {
+    background: var(--bg);
+    border-color: var(--border);
+    color: var(--fg);
+    font-weight: 500;
+  }
+  .tab .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex: none;
+  }
+  .tab-add {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--fg-dim);
+    font-size: 14px;
+  }
+  .tab-add:hover { background: var(--bg-inset); }
+
+  /* ── 场景横幅 ───────────────────────────── */
+  .scene-banner {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: 0 var(--space-4);
+    background: var(--bg-inset);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--fg-dim);
+    flex: none;
+  }
+  .scene-banner .scene-title strong { color: var(--fg); font-weight: 600; }
+  .scene-nav {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+  .scene-nav a {
+    min-width: 22px;
+    height: 20px;
+    padding: 0 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--fg-dim);
+    font-size: 11px;
+    text-decoration: none;
+  }
+  .scene-nav a:hover { color: var(--accent); border-color: var(--accent); }
+  .scene-nav a.current {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+  }
+
+  /* ── 主体布局 ───────────────────────────── */
+  .shell {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    position: relative;
+  }
+
+  .sidebar {
+    width: 240px;
+    flex: none;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    padding: var(--space-3) var(--space-2);
+    font-size: 12px;
+  }
+  .sidebar-caption {
+    padding: 0 var(--space-2) var(--space-2);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-dim);
+  }
+  .tree-item {
+    height: 26px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-sm);
+    color: var(--fg);
+    white-space: nowrap;
+  }
+  .tree-item .icon { width: 14px; color: var(--fg-dim); text-align: center; flex: none; }
+  .tree-item.indent { padding-left: var(--space-5); }
+  .tree-item.active {
+    background: var(--bg-inset);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .tree-item.muted { color: var(--fg-dim); }
+
+  /* ── 正文画布 ───────────────────────────── */
+  .canvas {
+    flex: 1;
+    position: relative;
+    background: var(--bg);
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .editor {
+    position: absolute;
+    inset: 0;
+    padding: var(--space-5) var(--space-5) 80px 0;
+    display: flex;
+    gap: 0;
+    pointer-events: none;
+  }
+  .gutter {
+    width: 52px;
+    flex: none;
+    padding-top: 2px;
+    text-align: right;
+    padding-right: var(--space-3);
+    color: var(--fg-disabled);
+    font-size: 12px;
+    line-height: 24px;
+    user-select: none;
+  }
+  .doc {
+    flex: 1;
+    min-width: 0;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  .doc-h {
+    font-size: 22px;
+    font-weight: 650;
+    line-height: 1.4;
+    margin-bottom: var(--space-3);
+  }
+  .doc-p {
+    color: var(--fg);
+    margin-bottom: var(--space-4);
+    max-width: 720px;
+  }
+
+  /* 表格（编辑态：无把手、无留白） */
+  .md-table-wrap {
+    width: 420px;
+    position: relative;
+  }
+  table.md-table {
+    width: 420px;
+    border-collapse: collapse;
+    font-size: 14px;
+    line-height: 1.5;
+    background: var(--bg);
+    table-layout: fixed;
+  }
+  table.md-table th,
+  table.md-table td {
+    border: 1px solid var(--border);
+    padding: var(--space-2) var(--space-3);
+    text-align: left;
+    vertical-align: middle;
+    height: 38px;
+  }
+  table.md-table th {
+    background: var(--table-header-bg);
+    font-weight: 600;
+  }
+  table.md-table tbody tr:nth-child(2n) { background: var(--table-stripe-bg); }
+  table.md-table td.cell-active {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    background: var(--bg);
+    position: relative;
+  }
+  .caret {
+    display: inline-block;
+    width: 1px;
+    height: 17px;
+    background: var(--accent);
+    vertical-align: -3px;
+    margin-left: 1px;
+  }
+
+  /* 表格工具栏（浮于表格右上） */
+  .table-toolbar {
+    position: absolute;
+    left: 286px;
+    top: 68px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0 var(--space-1);
+    background: var(--widget-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-pop);
+    pointer-events: auto;
+  }
+  .tool-btn {
+    width: 28px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--fg-dim);
+    font-size: 14px;
+    line-height: 1;
+    cursor: default;
+  }
+  .tool-btn:hover { background: var(--bg-inset); color: var(--fg); }
+  .tool-btn.danger:hover { background: var(--danger); color: var(--on-accent); }
+  .tool-btn.source {
+    background: var(--accent);
+    color: var(--on-accent);
+    box-shadow: var(--shadow-pop);
+  }
+
+  /* ── ⋮ 菜单弹层（T 区）───────────────────── */
+  .menu-anchor-note {
+    position: absolute;
+    left: 502px;
+    top: 74px;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    pointer-events: none;
+  }
+  .menu-anchor-note::before {
+    content: "";
+    position: absolute;
+    left: -26px;
+    top: 6px;
+    width: 20px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  /* 契约：max-height 480px + overflow-y auto 内滚动（AC-04 限高滚动）。
+     5 组 19 项完整保留于滚动容器内，逐项滚动可达；静态样张只呈现滚动首屏。 */
+  .menu {
+    position: absolute;
+    left: 488px;
+    top: 108px;
+    width: 248px;
+    max-height: 480px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-menu);
+    padding: var(--space-1) 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    z-index: 30;
+    pointer-events: auto;
+  }
+  /* 可见细滚动条（真实滚动条样式化，非装饰） */
+  .menu::-webkit-scrollbar { width: 5px; }
+  .menu::-webkit-scrollbar-track {
+    background: var(--bg-inset);
+    border-radius: 2px;
+    margin: var(--space-2) 2px;
+  }
+  .menu::-webkit-scrollbar-thumb {
+    background: var(--fg-disabled);
+    border-radius: 2px;
+  }
+  .menu-inner { padding: 0; }
+
+  .menu-group-label {
+    padding: var(--space-2) var(--space-3) var(--space-1);
+    font-size: 11px;
+    line-height: 16px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--fg-dim);
+  }
+  .menu-group-label.danger-label { color: var(--fg-dim); }
+  .menu-group-label .hz {
+    display: inline-block;
+    margin-left: var(--space-2);
+    padding: 0 5px;
+    border: 1px solid var(--danger);
+    border-radius: 999px;
+    color: var(--danger);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    line-height: 14px;
+    vertical-align: 1px;
+  }
+
+  .menu-sep {
+    height: 1px;
+    margin: var(--space-1) var(--space-3);
+    background: var(--border);
+  }
+
+  .menu-item {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-3);
+    font-size: 13px;
+    color: var(--fg);
+    cursor: default;
+  }
+  .menu-item:hover { background: var(--bg-inset); }
+  .menu-item .check {
+    width: 14px;
+    flex: none;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .menu-item .label { flex: 1; white-space: nowrap; }
+  .menu-item .kbd {
+    flex: none;
+    font-size: 12px;
+    color: var(--fg-dim);
+    font-family: 'SF Mono', 'Cascadia Mono', Consolas, 'PingFang SC', monospace;
+    letter-spacing: 0.01em;
+    text-align: right;
+  }
+  .menu-item.is-disabled {
+    color: var(--fg-disabled);
+    cursor: not-allowed;
+  }
+  .menu-item.is-disabled:hover { background: transparent; }
+  .menu-item.is-disabled .kbd { color: var(--fg-disabled); }
+  .menu-item.is-danger .label { color: var(--danger); font-weight: 500; }
+  .menu-item.is-danger:hover { background: rgba(209, 36, 47, 0.08); }
+
+  /* 同源徽标 */
+  .same-source-badge {
+    position: absolute;
+    right: var(--space-5);
+    top: 505px;
+    width: 236px;
+    padding: var(--space-3);
+    border: 1px dashed var(--accent);
+    border-radius: var(--radius-md);
+    background: var(--bg);
+    color: var(--fg-dim);
+    font-size: 11px;
+    line-height: 1.7;
+    z-index: 20;
+    pointer-events: none;
+  }
+  .same-source-badge strong {
+    display: block;
+    color: var(--accent);
+    font-size: 12px;
+    margin-bottom: var(--space-1);
+  }
+
+  /* 防溢出示意角标 */
+  .overflow-chip {
+    position: absolute;
+    z-index: 20;
+    padding: var(--space-2) var(--space-3);
+    border: 1px dashed var(--fg-disabled);
+    border-radius: var(--radius-md);
+    background: var(--bg);
+    color: var(--fg-dim);
+    font-size: 11px;
+    line-height: 1.6;
+    pointer-events: none;
+  }
+  .overflow-chip strong {
+    display: block;
+    color: var(--fg);
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .overflow-chip.left {
+    right: var(--space-5);
+    top: 731px;
+    width: 236px;
+  }
+  .overflow-chip.left::after {
+    content: "";
+    position: absolute;
+    left: -18px;
+    top: 18px;
+    width: 16px;
+    height: 1px;
+    background: var(--fg-disabled);
+  }
+  .overflow-chip.right {
+    right: var(--space-5);
+    top: 609px;
+    width: 236px;
+    border-color: var(--border);
+    background: var(--widget-surface);
+  }
+  .overflow-chip.right::before {
+    content: "";
+    position: absolute;
+    left: -18px;
+    top: 18px;
+    width: 16px;
+    height: 1px;
+    background: var(--fg-disabled);
+  }
+
+  /* ── 删表确认框（D 区 200 层级）─────────── */
+  .modal-veil {
+    position: absolute;
+    left: 56px;
+    top: 238px;
+    width: 456px;
+    height: 264px;
+    background: rgba(31, 35, 40, 0.32);
+    border: 1px dashed rgba(255, 255, 255, 0.45);
+    border-radius: var(--radius-md);
+    z-index: 200;
+    pointer-events: none;
+  }
+  .modal-veil .veil-tag {
+    position: absolute;
+    left: var(--space-3);
+    top: var(--space-2);
+    padding: 2px var(--space-2);
+    border-radius: 999px;
+    background: var(--tooltip-bg);
+    color: var(--tooltip-fg);
+    border: 1px solid var(--tooltip-border);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .modal {
+    position: absolute;
+    left: 84px;
+    top: 270px;
+    width: 400px;
+    height: 200px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-modal);
+    z-index: 210;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+  }
+  .modal-title {
+    padding: var(--space-4) var(--space-5) 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--fg);
+  }
+  .modal-body {
+    flex: 1;
+    padding: var(--space-3) var(--space-5);
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--fg-dim);
+  }
+  .modal-body b { color: var(--fg); font-weight: 500; }
+  .modal-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    padding: 0 var(--space-5) var(--space-5);
+  }
+  .btn {
+    height: 30px;
+    padding: 0 var(--space-4);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--fg);
+    cursor: default;
+  }
+  .btn.secondary:hover { background: var(--bg-inset); }
+  .btn.danger {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: var(--on-accent);
+    font-weight: 500;
+  }
+  .btn.danger:hover { filter: brightness(0.94); }
+
+  /* ── 快捷键回显清单卡片 ─────────────────── */
+  .kbd-card {
+    position: absolute;
+    left: 64px;
+    top: 510px;
+    width: 440px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-menu);
+    z-index: 15;
+    overflow: hidden;
+  }
+  .kbd-card .card-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border);
+    background: var(--widget-surface);
+  }
+  .kbd-card .card-head h3 {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fg);
+  }
+  .kbd-card .card-head .pill {
+    margin-left: auto;
+    padding: 1px var(--space-2);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    color: var(--accent);
+    font-size: 10px;
+  }
+  .kbd-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .kbd-table th {
+    text-align: left;
+    padding: var(--space-2) var(--space-3);
+    color: var(--fg-dim);
+    font-weight: 500;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .kbd-table td {
+    padding: 5px var(--space-3);
+    border-bottom: 1px solid var(--border);
+    color: var(--fg);
+    vertical-align: middle;
+  }
+  .kbd-table tr:last-child td { border-bottom: none; }
+  .kbd-table .op {
+    color: var(--fg-dim);
+    font-family: 'SF Mono', 'Cascadia Mono', Consolas, monospace;
+    font-size: 11px;
+  }
+  .kbd-table .key {
+    text-align: right;
+    color: var(--fg-dim);
+    font-family: 'SF Mono', 'Cascadia Mono', Consolas, 'PingFang SC', monospace;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .kbd-card .card-note {
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--border);
+    background: var(--widget-surface);
+    color: var(--fg-dim);
+    font-size: 11px;
+    line-height: 1.7;
+  }
+
+  /* ── 设计标注面板 ───────────────────────── */
+  .design-notes {
+    position: absolute;
+    top: var(--space-5);
+    right: var(--space-5);
+    width: 236px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-pop);
+    z-index: 300;
+  }
+  .design-notes .dn-head {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border);
+    background: var(--widget-surface);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--fg);
+  }
+  .design-notes ul {
+    list-style: none;
+    padding: var(--space-3) var(--space-4) var(--space-4);
+  }
+  .design-notes li {
+    position: relative;
+    padding: 4px 0 4px var(--space-3);
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--fg-dim);
+    border-bottom: 1px dashed var(--border);
+  }
+  .design-notes li:last-child { border-bottom: none; }
+  .design-notes li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 11px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .design-notes li.danger-dot::before { background: var(--danger); }
+  .design-notes li b { color: var(--fg); font-weight: 600; }
+
+  /* ── 状态栏 ─────────────────────────────── */
+  .statusbar {
+    height: 26px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: 0 var(--space-4);
+    background: var(--bg-sidebar);
+    border-top: 1px solid var(--border);
+    color: var(--fg-dim);
+    font-size: 11px;
+  }
+  .statusbar .right { margin-left: auto; display: flex; gap: var(--space-4); }
+  .statusbar .ok { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 菜单栏 -->
+  <header class="menubar">
+    <div class="app-mark"><span class="logo">V</span>VeloxMark</div>
+    <div class="menu-entry">文件</div>
+    <div class="menu-entry">编辑</div>
+    <div class="menu-entry">视图</div>
+    <div class="menu-entry">插入</div>
+    <div class="menu-entry">帮助</div>
+    <div class="win-controls">
+      <div class="win-btn">–</div>
+      <div class="win-btn">▢</div>
+      <div class="win-btn close">✕</div>
+    </div>
+  </header>
+
+  <!-- 标签栏 -->
+  <div class="tabbar">
+    <div class="tab active"><span class="dot"></span>产品排期.md</div>
+    <div class="tab">会议纪要.md</div>
+    <div class="tab-add">＋</div>
+  </div>
+
+  <!-- 场景横幅 -->
+  <div class="scene-banner">
+    <div class="scene-title"><strong>场景 3/7</strong> · 表格结构操作菜单——四面同源 · 分组重排 · 快捷键回显</div>
+    <nav class="scene-nav">
+      <a href="ui_01_main_quiet.html">1</a>
+      <a href="ui_02_table_edit.html">2</a>
+      <a href="ui_03_table_menu.html" class="current">3</a>
+      <a href="ui_04_menubar.html">4</a>
+      <a href="ui_05_sidebar.html">5</a>
+      <a href="ui_06_render_zone.html">6</a>
+      <a href="ui_07_global.html">7</a>
+    </nav>
+  </div>
+
+  <!-- 主体 -->
+  <div class="shell">
+
+    <!-- 左导航 -->
+    <aside class="sidebar">
+      <div class="sidebar-caption">文件树</div>
+      <div class="tree-item"><span class="icon">▾</span>产品文档</div>
+      <div class="tree-item indent active"><span class="icon">▤</span>产品排期.md</div>
+      <div class="tree-item indent"><span class="icon">▤</span>会议纪要.md</div>
+      <div class="tree-item indent"><span class="icon">▤</span>需求评审.md</div>
+      <div class="tree-item"><span class="icon">▾</span>assets</div>
+      <div class="tree-item indent muted"><span class="icon">▦</span>cover.png</div>
+      <div class="tree-item indent muted"><span class="icon">▦</span>arch.svg</div>
+      <div class="tree-item"><span class="icon">▸</span>归档</div>
+      <div class="tree-item"><span class="icon">▤</span>README.md</div>
+    </aside>
+
+    <!-- 正文画布 -->
+    <main class="canvas">
+
+      <!-- 行号 + 正文 -->
+      <div class="editor">
+        <div class="gutter">
+          1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11
+        </div>
+        <div class="doc">
+          <div class="doc-h">产品排期</div>
+          <div class="doc-p">本表汇总本季度里程碑。</div>
+
+          <div class="md-table-wrap">
+            <table class="md-table">
+              <thead>
+                <tr>
+                  <th class="cell-active">名称<span class="caret"></span></th>
+                  <th>负责人</th>
+                  <th>状态</th>
+                  <th>截止</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>需求评审</td>
+                  <td>张三</td>
+                  <td>进行中</td>
+                  <td>10-12</td>
+                </tr>
+                <tr>
+                  <td>原型设计</td>
+                  <td>李四</td>
+                  <td>待开始</td>
+                  <td>10-20</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 表格工具栏（⋮ 高亮 = 菜单展开源）；data-op 与 menu-tree §4 op id 一一对应 -->
+      <div class="table-toolbar" title="表格工具栏">
+        <div class="tool-btn" data-op="TBL-TOOL-GRID" title="插入行/列">⊞</div>
+        <div class="tool-btn" data-op="alignLeft" title="左对齐">◧</div>
+        <div class="tool-btn" data-op="alignCenter" title="居中对齐">▣</div>
+        <div class="tool-btn" data-op="alignRight" title="右对齐">◨</div>
+        <div class="tool-btn source" data-op="TBL-MOR-OPN" title="更多操作（菜单展开源）">⋮</div>
+        <div class="tool-btn danger" data-op="deleteTable" title="删除表格">🗑</div>
+      </div>
+
+      <div class="menu-anchor-note">⋮ 已激活 · 菜单展开源</div>
+
+      <!-- ⋮ / 右键同源菜单；data-op 逐字取 menu-tree §4（e2e 缝硬契约） -->
+      <div class="menu" role="menu" aria-label="表格结构操作菜单">
+        <div class="menu-inner">
+
+          <div class="menu-group-label">行操作</div>
+          <div class="menu-item" data-op="insertRowAbove"><span class="check"></span><span class="label">在上方插入行</span><span class="kbd">Ctrl+Shift+Enter</span></div>
+          <div class="menu-item" data-op="insertRowBelow"><span class="check"></span><span class="label">在下方插入行</span><span class="kbd">Ctrl+Enter</span></div>
+          <div class="menu-item is-disabled" data-op="moveRowUp"><span class="check"></span><span class="label">上移该行</span><span class="kbd">Alt+↑</span></div>
+          <div class="menu-item" data-op="moveRowDown"><span class="check"></span><span class="label">下移该行</span><span class="kbd">Alt+↓</span></div>
+          <div class="menu-item" data-op="deleteRow"><span class="check"></span><span class="label">删除行</span><span class="kbd"></span></div>
+
+          <div class="menu-sep"></div>
+
+          <div class="menu-group-label">列操作</div>
+          <div class="menu-item" data-op="insertColLeft"><span class="check"></span><span class="label">在左侧插入列</span><span class="kbd">Ctrl+Shift+←</span></div>
+          <div class="menu-item" data-op="insertColRight"><span class="check"></span><span class="label">在右侧插入列</span><span class="kbd">Ctrl+Shift+→</span></div>
+          <div class="menu-item is-disabled" data-op="moveColLeft"><span class="check"></span><span class="label">左移该列</span><span class="kbd">Alt+←</span></div>
+          <div class="menu-item" data-op="moveColRight"><span class="check"></span><span class="label">右移该列</span><span class="kbd">Alt+→</span></div>
+          <div class="menu-item" data-op="deleteCol"><span class="check"></span><span class="label">删除列</span><span class="kbd"></span></div>
+
+          <div class="menu-sep"></div>
+
+          <div class="menu-group-label">对齐</div>
+          <div class="menu-item" data-op="alignLeft"><span class="check">✓</span><span class="label">左对齐</span><span class="kbd"></span></div>
+          <div class="menu-item" data-op="alignCenter"><span class="check"></span><span class="label">居中对齐</span><span class="kbd"></span></div>
+          <div class="menu-item" data-op="alignRight"><span class="check"></span><span class="label">右对齐</span><span class="kbd"></span></div>
+
+          <div class="menu-sep"></div>
+
+          <div class="menu-group-label">单元格</div>
+          <div class="menu-item" data-op="cutCell"><span class="check"></span><span class="label">剪切单元格</span><span class="kbd"></span></div>
+          <div class="menu-item" data-op="copyCell"><span class="check"></span><span class="label">拷贝单元格</span><span class="kbd"></span></div>
+          <div class="menu-item" data-op="pasteCell"><span class="check"></span><span class="label">粘贴单元格</span><span class="kbd"></span></div>
+
+          <div class="menu-sep"></div>
+
+          <div class="menu-group-label danger-label">结构删除<span class="hz">危险组</span></div>
+          <div class="menu-item" data-op="copyTable"><span class="check"></span><span class="label">拷贝表格</span><span class="kbd"></span></div>
+          <div class="menu-item" data-op="formatTableSource"><span class="check"></span><span class="label">格式化表格源码</span><span class="kbd"></span></div>
+          <div class="menu-item is-danger" data-op="deleteTable"><span class="check"></span><span class="label">删除表格</span><span class="kbd"></span></div>
+
+        </div>
+      </div>
+
+      <!-- 同源徽标 -->
+      <div class="same-source-badge">
+        <strong>同源徽标</strong>
+        ⋮ = 单元格右键菜单（同项集/分组/禁用/回显）
+      </div>
+
+      <!-- 防溢出示意 -->
+      <div class="overflow-chip left">
+        <strong>窗口边缘自动翻转</strong>
+        贴近下缘整菜单上翻 · 靠右缘子菜单左翻
+      </div>
+      <div class="overflow-chip right">
+        <strong>限高滚动 · 边缘翻转 · 全部项完整可达</strong>
+        max-height 480px + overflow-y: auto 内滚动 + 边缘翻转；静态样张呈滚动容器首屏，5 组 19 项完整保留于容器内，滚动逐项可达（可达率 100%）
+      </div>
+
+      <!-- 删表确认框 -->
+      <div class="modal-veil"><span class="veil-tag">遮罩 · D 区 200 层级</span></div>
+      <div class="modal" role="dialog" aria-label="删除表格">
+        <div class="modal-title">删除表格</div>
+        <div class="modal-body">删除后可用一步撤销还原，<b>确认删除该表格</b></div>
+        <div class="modal-foot">
+          <div class="btn secondary">取消</div>
+          <div class="btn danger">确认删除</div>
+        </div>
+      </div>
+
+      <!-- 快捷键回显清单 -->
+      <div class="kbd-card">
+        <div class="card-head">
+          <h3>快捷键回显清单</h3>
+          <span class="pill">一致率 100%</span>
+        </div>
+        <table class="kbd-table">
+          <thead>
+            <tr>
+              <th>菜单项</th>
+              <th>data-op</th>
+              <th style="text-align:right">回显键位</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>在上方插入行</td><td class="op">insertRowAbove</td><td class="key">Ctrl+Shift+Enter</td></tr>
+            <tr><td>在下方插入行</td><td class="op">insertRowBelow</td><td class="key">Ctrl+Enter</td></tr>
+            <tr><td>上移该行 <span style="color:var(--fg-disabled)">（灰显）</span></td><td class="op">moveRowUp</td><td class="key">Alt+↑</td></tr>
+            <tr><td>下移该行</td><td class="op">moveRowDown</td><td class="key">Alt+↓</td></tr>
+            <tr><td>在左侧插入列</td><td class="op">insertColLeft</td><td class="key">Ctrl+Shift+←</td></tr>
+            <tr><td>在右侧插入列</td><td class="op">insertColRight</td><td class="key">Ctrl+Shift+→</td></tr>
+            <tr><td>左移该列 <span style="color:var(--fg-disabled)">（灰显）</span></td><td class="op">moveColLeft</td><td class="key">Alt+←</td></tr>
+            <tr><td>右移该列</td><td class="op">moveColRight</td><td class="key">Alt+→</td></tr>
+          </tbody>
+        </table>
+        <div class="card-note">
+          无快捷键 11 项右侧留空；回显由快捷键总表单源派生，一致率 100%。
+          有键 8 项 + 无键 11 项 = 全菜单 19 项。
+        </div>
+      </div>
+
+      <!-- 设计标注 -->
+      <aside class="design-notes">
+        <div class="dn-head">设计标注 · 表格结构菜单</div>
+        <ul>
+          <li><b>5 组语义分组</b>：行操作 / 列操作 / 对齐 / 单元格 / 结构删除，组名 --fg-dim 大写字距，组间细分隔线。</li>
+          <li><b>快捷键回显 100%</b>：有键项右侧回显（12px --fg-dim 等宽感），无键 11 项留空。</li>
+          <li><b>表头保护灰显即语义</b>：上移该行 / 左移该列 disabled（--fg-disabled），不弹 toast、不报错。</li>
+          <li><b>限高滚动 + 边缘翻转</b>：max-height 480px + overflow-y auto 内滚动 + 窗口边缘自动翻转；静态样张呈滚动首屏，全 19 项保留在滚动容器内、逐项滚动可达（可达率 100%）。</li>
+          <li class="danger-dot"><b>危险组视觉弱化 / 危险色</b>：删除类聚「结构删除」组，「删除表格」文字 --danger。</li>
+          <li><b>⋮ 与右键完全同源</b>：同项集 / 同分组 / 同禁用规则 / 同快捷键回显，四面（快捷键·工具栏·⋮·右键）同 op 同 toast。</li>
+        </ul>
+      </aside>
+
+    </main>
+  </div>
+
+  <!-- 状态栏 -->
+  <footer class="statusbar">
+    <span class="ok">已保存</span>
+    <span>Markdown</span>
+    <span>UTF-8</span>
+    <span>LF</span>
+    <div class="right">
+      <span>行 5 · 列 1</span>
+      <span>表格 4 列 × 3 行</span>
+      <span>字数 236</span>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>
