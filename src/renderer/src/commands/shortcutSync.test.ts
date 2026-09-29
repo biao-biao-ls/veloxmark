@@ -18,11 +18,40 @@ const DERIVATION_EXCEPTIONS: Record<string, { accelerator: string; reason: strin
   copyRichText: {
     accelerator: 'CmdOrCtrl+Shift+C',
     reason: 'P20 registers CmdOrCtrl so the chord works on both modifiers in macOS'
+  },
+  // Q7 (accel:single-source) — darwin chords pinned; registry shortcuts land
+  // with FE-03 (key:zoomIn/zoomOut/zoomReset/toggleDevTools). Each entry pins
+  // the darwin side of the pair:
+  //   zoomIn        registry Ctrl+= ↔ darwin Cmd+Plus   (permanent: notation
+  //                 for the "=" key derives as Cmd+=, not Cmd+Plus)
+  //   zoomOut       registry Ctrl+- ↔ darwin Cmd+-      (derives exactly once
+  //   zoomReset     registry Ctrl+0 ↔ darwin Cmd+0       FE-03 registers the
+  //                 shortcuts; entries keep the pair pinned until then)
+  //   toggleDevTools registry F12 ↔ darwin Cmd+Alt+I    (permanent: platform
+  //                 chords differ — no Ctrl→Cmd derivation applies)
+  zoomIn: {
+    accelerator: 'Cmd+Plus',
+    reason: 'Q7: registry Ctrl+= derives as Cmd+= but mac writes the = key as Plus'
+  },
+  zoomOut: {
+    accelerator: 'Cmd+-',
+    reason: 'Q7: darwin Cmd+- pinned; registry Ctrl+- (FE-03) derives to the same chord'
+  },
+  zoomReset: {
+    accelerator: 'Cmd+0',
+    reason: 'Q7: darwin Cmd+0 pinned; registry Ctrl+0 (FE-03) derives to the same chord'
+  },
+  toggleDevTools: {
+    accelerator: 'Cmd+Alt+I',
+    reason: 'Q7: registry F12 (Win/Linux) and darwin Cmd+Alt+I are platform-native chords'
   }
 }
 
 /** Intentionally accelerator-free (CM6 keymap owns the chords in-editor). */
 const NO_ACCELERATOR_BY_DESIGN = ['bold', 'italic', 'inlineCode']
+
+/** Q6: chord withdrawn — Ctrl+Shift+T is owned solely by reopenClosedTab. */
+const NO_ACCELERATOR_BY_RULING = ['toggleTheme']
 
 function stubOps(): CommandOps {
   const noop = (): void => {}
@@ -90,6 +119,15 @@ describe('DARWIN_COMMAND_ACCELERATORS ↔ Command.shortcut', () => {
       expect(
         DARWIN_COMMAND_ACCELERATORS[id],
         `"${id}" must not gain an accelerator (CM6 keymap owns Mod chords in-editor)`
+      ).toBeUndefined()
+    }
+  })
+
+  it('Q6: toggleTheme stays accelerator-free (chord owned by reopenClosedTab)', () => {
+    for (const id of NO_ACCELERATOR_BY_RULING) {
+      expect(
+        DARWIN_COMMAND_ACCELERATORS[id],
+        `"${id}" must not regain an accelerator (Q6 ruling: Ctrl+Shift+T is reopenClosedTab's)`
       ).toBeUndefined()
     }
   })
