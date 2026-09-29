@@ -341,7 +341,7 @@
       ],
       "assignee": "",
       "phase": {
-        "dev": "pending",
+        "dev": "done",
         "selfTest": "-"
       },
       "artifact": "",

@@ -96,6 +96,8 @@ electron/menu/darwin.ts（macOS 原生菜单，加速键走 DARWIN_COMMAND_ACCEL
 | 样式 token 层（styles/tokens.css 等） | 新浮层/菜单/网格样式 | 只补 token 不写裸值（宪法） |
 | 主题翻值（.theme-light/.theme-dark） | 深浅主题 | 新组件零主题补丁，全部走 token |
 
+> **原生菜单分组登记（CHANGE-4）**：darwin 原生菜单分组对齐 menu-tree §3；**原生菜单空组不渲染分组头**——历史组（undo/redo 归 CM6 keymap，无原生项）与折叠组（foldAll/unfoldAll 不在 AC-FN-09 冻结 id 集合 35 项内）整组省略。命令 id 契约不变，差异登记于 change-log CHANGE-4。
+
 ## 4. 核心处理流程
 
 ### 4.1 表格结构操作三入口同源 + 单事务 undo（Mermaid flowchart）
@@ -146,7 +148,7 @@ stateDiagram-v2
 
 - **Command（命令）**：`{ id: 命令id 字面量（cdp 硬契约）, label: i18n key, shortcut?: 显示键位, run }`；三消费方（MenuBar/全局快捷键/mac 原生菜单）同源于命令注册表；`shortcut` 与 `DARWIN_COMMAND_ACCELERATORS` 双源由 shortcutSync.test 守护（Q7 后 4 命令纳入）。
 - **TableOp（表格操作）**：opsTable.ts 16 个 op id 为同源语义键（快捷键/工具栏/⋮/右键四面共用）；每 op 声明 `{ 键位?, 禁用规则, toast 文案, undo 事务边界 }`。**禁用规则仅两项**：首行上移、首列左移（AC-RULE-07；删表头行=身份下移+末行禁删为唯一例外禁用，PEND-12）。
-- **ContractSet（e2e 契约集）**：`data-op` / `data-table-handle` / `window.__velox*` / 命令 id 字面量；演进须登记（本需求登记：`data-table-handle` 删 4 留 1，其余挂 `data-op`，见 ADR）。
+- **ContractSet（e2e 契约集）**：`data-op` / `data-table-handle` / `window.__velox*` / 命令 id 字面量；演进须登记（本需求登记：`data-table-handle` 删 4 留 1，其余挂 `data-op`，见 ADR；⊞ 工具栏项取 `data-op="resizeTable"`（op id 命名空间），弃原型 `TBL-TOOL-GRID`（menu-tree 节点码），⋮ 保留 `TBL-MOR-OPN`，e2e 探针以 `resizeTable` 为准——CHANGE-3）。
 - **CtxMenuItem（弹层项）**：`{ id(data-op), label, shortcut?, disabled?, checked?, danger?, separator?, submenu? }`；⋮ 与右键同源渲染；新增**键盘遍历语义**（方向键/Enter/Escape，Q8 兜底通道）。
 - **StoredState（存储态）**：Preferences（用户偏好）/ SessionState（高频会话态）双键分居；新态平铺追加 + 白名单 sanitizer（Q10）。
 

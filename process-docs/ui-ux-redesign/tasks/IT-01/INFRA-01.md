@@ -23,7 +23,8 @@ discovered-sections: []
 discovered-dependencies: []
 spawned-tasks: []
 implementation-notes: "scripts/cdp-*.mjs 探针脚本不在本仓工作区（package.json test:smoke 引用 cdp-smoke.mjs，探针脚本随外部 e2e 环境提供）；本任务交付物为 e2e/seams 与 handles.d.ts 契约登记 + 探针断言变更清单，验收以 npm run test:smoke + 契约面断言测试为准。"
-doc-drift: []
+doc-drift:
+  - "CHANGE-3（merged）：⊞ 工具栏项 data-op 取 resizeTable（op id 命名空间）、弃原型 TBL-TOOL-GRID，探针断言以 resizeTable 为准——已合并登记至 tech-design#5 ContractSet + ac.md#AC-RULE-17"
 ---
 
 # INFRA-01 - e2e 契约 delta 探针同步（data-table-handle 删4留1 登记与断言迁移）

@@ -31,7 +31,7 @@
 - 更新时间: 2026-09-29
 
 ## CHANGE-3: 表格工具栏 ⊞ 的 data-op 取 resizeTable（ui_03 原型为 TBL-TOOL-GRID）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 中（DOM 契约面字面量，e2e 探针消费）
 - 模块: 表格编辑视图（editor/table 工具栏契约面）
@@ -46,7 +46,7 @@
 - 更新时间: 2026-09-29
 
 ## CHANGE-4: 原生菜单空组省略登记（历史组/折叠组不渲染分组头）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 低（呈现层分组，命令 id 契约不变）
 - 模块: macOS 原生菜单（darwin 菜单分组呈现层）
@@ -88,4 +88,18 @@
 - 变更前: 基线只声明关闭触发名为「超界滚动选择（滚动到边界继续选择）」，未给出可操作的输入手势定义
 - 变更后: 落地定义：**限高滚动面板滚到上/下边界后继续向外滚动（wheel overscroll，deltaY 穿界）即视为该触发**——收拢至关闭态（含子菜单）并焦点回正文；内容未超限的面板不产生该触发。MenuBar 下拉与 contextMenu（⋮/右键）同源生效（popup.detectOverscrollSelection 纯函数）
 - 变更原因: PRD 5.5/AC 均未定义手势细节，需可实现可验收口径；选取「边界继续滚动」字面语义（滚动到边界 + 继续），并以纯函数断言钉住（popupOverflow.test.ts）
+- 更新时间: 2026-09-29
+
+## CHANGE-7: toggleDevTools 需登记永久派生例外（文档仅点名 zoomIn）
+- 状态: merged
+- 类型: Updated
+- 风险等级: 低（双源守护登记口径，键位行为不变）
+- 模块: 加速键单源（DARWIN_COMMAND_ACCELERATORS ↔ commands shortcut 双源守护）
+- 来源: 任务 IT-02/BE-01（doc-drift 兜底补登记）
+- 关联任务: IT-02/BE-01
+- 涉及基线:
+  - api: MENU-menubar.md#34-快捷键回显单源派生（DERIVATION_EXCEPTIONS 例外清单）
+- 变更前: MENU-menubar §3.4 仅点名 zoomIn（Ctrl+=↔Cmd+Plus）需登记 DERIVATION_EXCEPTIONS，未提 toggleDevTools
+- 变更后: toggleDevTools（registry F12 ↔ darwin Cmd+Alt+I）同为**永久**派生例外，须在 §3.4 例外清单补一句登记（平台原生键差异：F12 派生为 F12 ≠ Cmd+Alt+I）；已在 shortcutSync.test 注明原因并钉住
+- 变更原因: BE-01 实现/测试实测确认 F12 派生与 darwin Cmd+Alt+I 不可能一致，例外不可省；文档漏列会造成后人误以为「仅 zoomIn 例外」而误删测试登记（doc-drift 兜底）
 - 更新时间: 2026-09-29

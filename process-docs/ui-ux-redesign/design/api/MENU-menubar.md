@@ -96,7 +96,7 @@
 | `toggleDevTools` | `F12` | `Cmd+Alt+I` | `window.api.windowToggleDevTools()`（复用） | 开发者工具 ▸ `F12` |
 
 - **单源收敛**：darwin.ts 现手写 accelerator（`Cmd+Plus`/`Cmd+-`/`Cmd+0`/`Alt+Cmd+I`）迁入 `DARWIN_COMMAND_ACCELERATORS`，darwin 菜单构建改读单源映射（Q7：darwin.ts 手写加速键改走单源）；
-- 双源同步规则：注册表 `shortcut` 与加速键映射按 `shortcutSync.test` 派生规则守护（`Ctrl+`→`Cmd+` 惯例），例外登记 `DERIVATION_EXCEPTIONS` 并注明原因（如 zoomIn 的 `Ctrl+=` ↔ `Cmd+Plus` 为惯例写法差异，需登记）；
+- 双源同步规则：注册表 `shortcut` 与加速键映射按 `shortcutSync.test` 派生规则守护（`Ctrl+`→`Cmd+` 惯例），例外登记 `DERIVATION_EXCEPTIONS` 并注明原因（永久例外两条：zoomIn 的 `Ctrl+=` ↔ `Cmd+Plus` 为惯例写法差异；toggleDevTools 的 `F12` ↔ `Cmd+Alt+I` 为平台原生键差异、派生不可一致——均需登记，CHANGE-7）；
 - AC-RULE-11 零例外：补注册后菜单回显自动齐（回显派生自注册表）。
 
 ### 3.5 弹层限高滚动 + 边缘翻转可达（AC-RULE-10）
