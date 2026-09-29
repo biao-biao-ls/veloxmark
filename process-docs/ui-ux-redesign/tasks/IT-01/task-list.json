@@ -346,7 +346,7 @@
       "dependencies": [],
       "assignee": "",
       "phase": {
-        "dev": "pending",
+        "dev": "done",
         "selfTest": "-"
       },
       "artifact": "",
@@ -377,7 +377,7 @@
       "dependencies": [],
       "assignee": "",
       "phase": {
-        "dev": "pending",
+        "dev": "done",
         "selfTest": "-"
       },
       "artifact": "",
