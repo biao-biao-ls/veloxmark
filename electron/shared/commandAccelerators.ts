@@ -8,7 +8,8 @@
  * commandItem 与 renderer 单测（commands/shortcutSync.test.ts）共引。
  * 与 renderer `Command.shortcut` 是双源——派生规则与例外由该测试守护；
  * 行为约定：bold/italic/inlineCode 故意无加速键（CM6 keymap 拥有 Mod-B/I/E，
- * 原生加速键会与之抢注）。
+ * 原生加速键会与之抢注）；toggleTheme 故意无加速键（Q6：Ctrl+Shift+T 唯一
+ * 归属 reopenClosedTab，切换主题仅 Titlebar 按钮 + 菜单入口）。
  */
 export const DARWIN_COMMAND_ACCELERATORS: Record<string, string> = {
   newFile: 'Cmd+N',
@@ -18,13 +19,19 @@ export const DARWIN_COMMAND_ACCELERATORS: Record<string, string> = {
   saveFile: 'Cmd+S',
   saveFileAs: 'Cmd+Shift+S',
   openPreferences: 'Cmd+,',
-  toggleTheme: 'Cmd+Shift+T',
   // P08 writing modes. UX-P08: Typewriter Mode gains F9 parity with Focus (F8).
   // Inline-format toggles intentionally have NO accelerator here: the CM6
   // keymap owns Mod-B/I/E in the editor, and a native accelerator would race it.
   toggleFocusMode: 'F8',
   toggleTypewriterMode: 'F9',
   toggleSourceMode: 'Cmd+/',
+  // Q7 (accel:single-source): zoom/devtools chords migrated from handwritten
+  // darwin.ts literals. zoomIn is 'Cmd+Plus' (= key) — a documented derivation
+  // exception vs the registry's 'Ctrl+=' (see shortcutSync.test).
+  zoomIn: 'Cmd+Plus',
+  zoomOut: 'Cmd+-',
+  zoomReset: 'Cmd+0',
+  toggleDevTools: 'Cmd+Alt+I',
   // P13 folder-wide search.
   globalSearch: 'Cmd+Shift+F',
   // P20 rich-text clipboard (no conflicting registered accelerator).

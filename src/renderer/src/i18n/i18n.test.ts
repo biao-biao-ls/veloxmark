@@ -125,7 +125,9 @@ describe('native menu strings (third dictionary, 3.17)', () => {
   const zhSrc = menuSource.slice(menuSource.indexOf('  zh: {'))
 
   function menuKeyLiterals(source: string): string[] {
-    return [...source.matchAll(/^\s*'?([\w]+)'?:/gm)]
+    // `[\w.]+` so namespaced group keys ('menu.grp.*', BE-02) stay inside the
+    // duplicate-literal scan just like the short unquoted keys.
+    return [...source.matchAll(/^\s*'?([\w.]+)'?:/gm)]
       .map((m) => m[1])
       .filter((k) => k !== 'en' && k !== 'zh')
   }

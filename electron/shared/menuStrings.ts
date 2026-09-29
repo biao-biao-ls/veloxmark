@@ -77,7 +77,28 @@ export const NATIVE_MENU_STRINGS: Record<'zh' | 'en', Record<string, string>> = 
     fullscreen: 'Enter Full Screen',
     front: 'Bring All to Front',
     help: 'Help',
-    showHelp: 'Markdown Syntax Reference'
+    showHelp: 'Markdown Syntax Reference',
+    // ---- menu-tree §3 semantic group names (BE-02, menu:native-parity) ----
+    // Key names mirror the renderer i18n menu.grp.* keys (FE-01 same inventory,
+    // third dictionary maintained independently but semantically aligned).
+    'menu.grp.newOpen': 'New & Open',
+    'menu.grp.save': 'Save',
+    'menu.grp.tabs': 'Tabs',
+    'menu.grp.export': 'Export',
+    'menu.grp.settings': 'Settings',
+    'menu.grp.history': 'History',
+    'menu.grp.clipboard': 'Clipboard',
+    'menu.grp.findOrganize': 'Find & Organize',
+    'menu.grp.format': 'Format',
+    'menu.grp.selectionExport': 'Selection Export',
+    'menu.grp.sidebarSearch': 'Sidebar & Search',
+    'menu.grp.fold': 'Fold',
+    'menu.grp.mode': 'Mode',
+    'menu.grp.inputAssist': 'Input Assists',
+    'menu.grp.zoom': 'Zoom',
+    'menu.grp.devTheme': 'Dev & Theme',
+    'menu.grp.table': 'Table',
+    'menu.grp.chartContainer': 'Charts & Containers'
   },
   zh: {
     app: 'VeloxMark',
@@ -146,6 +167,26 @@ export const NATIVE_MENU_STRINGS: Record<'zh' | 'en', Record<string, string>> = 
     fullscreen: '进入全屏幕',
     front: '前置所有窗口',
     help: '帮助',
-    showHelp: 'Markdown 语法参考'
+    showHelp: 'Markdown 语法参考',
+    // ---- menu-tree §3 语义分组名（BE-02，menu:native-parity）----
+    // key 与渲染端 i18n menu.grp.* 同名同义（FE-01 同一清单，第 3 份字典独立维护）。
+    'menu.grp.newOpen': '新建与打开',
+    'menu.grp.save': '保存',
+    'menu.grp.tabs': '标签页',
+    'menu.grp.export': '导出',
+    'menu.grp.settings': '设置',
+    'menu.grp.history': '历史',
+    'menu.grp.clipboard': '剪贴板',
+    'menu.grp.findOrganize': '查找与整理',
+    'menu.grp.format': '格式',
+    'menu.grp.selectionExport': '选区导出',
+    'menu.grp.sidebarSearch': '侧栏与搜索',
+    'menu.grp.fold': '折叠',
+    'menu.grp.mode': '模式',
+    'menu.grp.inputAssist': '输入辅助',
+    'menu.grp.zoom': '缩放',
+    'menu.grp.devTheme': '开发与主题',
+    'menu.grp.table': '表格',
+    'menu.grp.chartContainer': '图表与容器'
   }
 }
