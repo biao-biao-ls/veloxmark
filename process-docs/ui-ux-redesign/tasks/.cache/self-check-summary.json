@@ -1,0 +1,44 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "checkName": "任务详情完整性",
+      "passed": true,
+      "details": []
+    },
+    {
+      "checkName": "跨迭代依赖无环",
+      "passed": true,
+      "details": []
+    },
+    {
+      "checkName": "AC 全覆盖",
+      "passed": true,
+      "details": []
+    },
+    {
+      "checkName": "功能点覆盖",
+      "passed": true,
+      "details": []
+    },
+    {
+      "checkName": "e2e-paths 结构",
+      "passed": true,
+      "details": []
+    },
+    {
+      "checkName": "角色契约",
+      "passed": true,
+      "details": []
+    },
+    {
+      "checkName": "依赖引用可解析",
+      "passed": true,
+      "details": []
+    }
+  ],
+  "checkCount": 7,
+  "passedCount": 7,
+  "failedCount": 0,
+  "summary": "任务详情完整性:PASS; 跨迭代依赖无环:PASS; AC 全覆盖:PASS; 功能点覆盖:PASS; e2e-paths 结构:PASS; 角色契约:PASS; 依赖引用可解析:PASS"
+}
