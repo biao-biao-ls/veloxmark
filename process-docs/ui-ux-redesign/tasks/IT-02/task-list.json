@@ -430,7 +430,7 @@
       "assignee": "",
       "phase": {
         "dev": "done",
-        "selfTest": "-"
+        "selfTest": "done"
       },
       "artifact": "",
       "detailFile": "BE-01.md"
@@ -444,7 +444,7 @@
       "assignee": "",
       "phase": {
         "dev": "done",
-        "selfTest": "-"
+        "selfTest": "done"
       },
       "artifact": "",
       "detailFile": "BE-02.md"
