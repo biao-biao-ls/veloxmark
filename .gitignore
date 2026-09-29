@@ -6,3 +6,4 @@ build/icon.iconset/
 .DS_Store
 .claude/
 temp
+/projects/

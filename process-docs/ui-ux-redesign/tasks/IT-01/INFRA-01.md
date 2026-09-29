@@ -4,7 +4,7 @@ task-id: INFRA-01
 task-name: "e2e 契约 delta 探针同步（data-table-handle 删4留1 登记与断言迁移）"
 role: 基础设施
 page: "全局域基建（e2e 契约面/探针断言）"
-project-dir: "src/renderer"
+project-dir: "projects/typora/src/renderer"
 depends-on: "FE-03（去增删把手与 data-op 契约迁移（删4留1/左侧留白清零/工具栏⋮挂 data-op））、FE-04（表格工具栏与⋮/右键同源菜单（五组分组/回显单源/禁用规则/键盘通道兜底））"
 acceptance-criteria:
   - AC-RULE-17: 未验证
