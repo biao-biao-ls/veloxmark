@@ -6,6 +6,7 @@ import { buildDecorations } from './build'
 import { getLivePreviewConfig } from './config'
 import { foldField } from './fold'
 import { calloutFoldField } from './calloutFold'
+import { quoteFoldField } from './quoteFold'
 import { codeBlockUiField } from './codeBlockUi'
 
 /**
@@ -40,6 +41,10 @@ export const livePreviewField = StateField.define<DecorationSet>({
     // P21: callout fold overrides — same effect-only identity signal.
     const calloutFoldChanged =
       tr.state.field(calloutFoldField, false) !== tr.startState.field(calloutFoldField, false)
+    // FE-08: long-quote folds — effect-only toggles/restores + auto-expand
+    // key drops, same identity signal.
+    const quoteFoldChanged =
+      tr.state.field(quoteFoldField, false) !== tr.startState.field(quoteFoldField, false)
     // P24: code-block expand/fold toggles are effect-only — identity signal.
     const codeBlockUiChanged =
       tr.state.field(codeBlockUiField, false) !== tr.startState.field(codeBlockUiField, false)
@@ -51,6 +56,7 @@ export const livePreviewField = StateField.define<DecorationSet>({
       tableEditChanged ||
       foldChanged ||
       calloutFoldChanged ||
+      quoteFoldChanged ||
       codeBlockUiChanged
     ) {
       return buildDecorations(tr.state, getLivePreviewConfig(tr.state))

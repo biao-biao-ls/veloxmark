@@ -9,8 +9,9 @@
  *       span.velox-ctx-shortcut
  *     div.velox-ctx-sub (submenu panel, item buttons inside carry data-op too)
  *
- * Keyboard: ↑↓ move, →/Enter open submenu, ←/Esc close level, Enter runs,
- * Esc closes everything and focus returns to the editor (store contract).
+ * Keyboard: ↑↓ move, →/Enter open submenu, ← closes level, Enter runs,
+ * Esc is owned by the useHushLayer bus (one-shot close-all; modal topmost
+ * first) and focus returns to the editor (store contract).
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react'
 import { createPortal } from 'react-dom'
@@ -19,7 +20,17 @@ import {
   getContextMenuState,
   subscribeContextMenu
 } from '../editor/contextMenu/registry'
+import {
+  computeSubPosition,
+  detectOverscrollSelection,
+  measurePopupLayout,
+  POPUP_EDGE_MARGIN
+} from '../editor/contextMenu/popup'
+import { openActiveIndex } from '../editor/contextMenu/keyboardNav'
 import type { CtxMenuItem } from '../editor/contextMenu/types'
+import { hushLayers } from '../hooks/useHushLayer'
+import { isDialogOverlayTarget } from './Dialog'
+import { t } from '../i18n'
 
 interface FlatEntry {
   item: CtxMenuItem
@@ -30,11 +41,11 @@ interface FlatEntry {
 function flatten(items: CtxMenuItem[], openSub: string | null): FlatEntry[] {
   const out: FlatEntry[] = []
   for (const item of items) {
-    if (item.separator) continue
+    if (item.separator || item.groupTitle !== undefined) continue
     out.push({ item, level: 'top' })
     if (item.submenu && openSub === item.id) {
       for (const child of item.submenu) {
-        if (child.separator) continue
+        if (child.separator || child.groupTitle !== undefined) continue
         out.push({ item: child, level: 'sub', parentId: item.id })
       }
     }
@@ -90,24 +101,39 @@ export function EditorContextMenuHost(): ReactElement | null {
   const rootRef = useRef<HTMLDivElement>(null)
   const subRefs = useRef<Map<string, HTMLDivElement | null>>(new Map())
   const [openSub, setOpenSub] = useState<string | null>(null)
-  const [activeIdx, setActiveIdx] = useState(0)
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
+  const [activeIdx, setActiveIdx] = useState(-1)
+  const [pos, setPos] = useState<{ left: number; top: number; maxHeight?: number } | null>(null)
+  const [subLayout, setSubLayout] = useState<{
+    id: string
+    maxHeight: number
+    flipX: boolean
+    flipY: boolean
+    left: number
+    top: number
+  } | null>(null)
   const restoreFocus = useRef(false)
 
   // Reset per-open transient state (new x/y/items each open replaces state).
-  const openKey = state ? `${state.x}:${state.y}:${state.items.length}:${state.items.map((i) => i.id).join(',')}` : ''
-  const lastKey = useRef('')
-  useEffect(() => {
-    if (openKey && openKey !== lastKey.current) {
-      lastKey.current = openKey
-      setOpenSub(null)
-      setActiveIdx(0)
-      setPos(null)
-      restoreFocus.current = true
-    } else if (!openKey) {
-      lastKey.current = ''
-    }
-  }, [openKey])
+  // Render-phase adjustment (React "adjust state on prop change" pattern):
+  // the previous passive-effect reset ran AFTER the layout measure effect and
+  // wiped pos (left/top/maxHeight never stuck); it also left a one-frame stale
+  // submenu. pos itself is owned by the layout effect below.
+  const openKey = state
+    ? `${state.via ?? 'pointer'}:${state.x}:${state.y}:${state.items.length}:${state.items.map((i) => i.id).join(',')}`
+    : ''
+  const [lastOpenKey, setLastOpenKey] = useState('')
+  if (state && openKey && openKey !== lastOpenKey) {
+    setLastOpenKey(openKey)
+    setOpenSub(null)
+    // FE-04 r2 打开即预选口径（keyboardNav.openActiveIndex，与 MenuBar 同型同改）：
+    // 指针打开静息无预选（设计 ui_03 静息全白，高亮仅真实 hover）；键盘打开
+    // （Shift+F10/Menu）首项默认激活（IT-02/FE-05 菜单键盘通道口径）。
+    setActiveIdx(openActiveIndex(state.via ?? 'pointer', flatten(state.items, null).map((f) => f.item)))
+    setSubLayout(null)
+    restoreFocus.current = true
+  } else if (!openKey && lastOpenKey) {
+    setLastOpenKey('')
+  }
 
   // Close bookkeeping — focus-return is the store's job; we only guard that
   // focus lands inside the editor when the menu had taken it.
@@ -120,13 +146,29 @@ export function EditorContextMenuHost(): ReactElement | null {
     openedAt.current = performance.now()
     const onDown = (e: Event): void => {
       const target = e.target as Node | null
+      // FE-09 PEND-04: modal overlay owns its gestures (overlay-blank = the
+      // confirm's own cancel) — lower layers yield in the stacking case.
+      if (isDialogOverlayTarget(e.target)) return
       if (rootRef.current && target && rootRef.current.contains(target)) return
       for (const el of subRefs.current.values()) {
         if (el && target && el.contains(target)) return
       }
       closeContextMenu()
     }
-    const onScroll = (): void => {
+    const onScroll = (e: Event): void => {
+      const target = e.target as Node | null
+      // 限高内滚动是能力面（AC-FN-05/AC-RULE-10）——面板自身的滚动绝不是
+      // 关闭信号；只有菜单外（页面/编辑器）滚动才按既有约定收拢。
+      const insideMenu =
+        (rootRef.current != null && target != null && rootRef.current.contains(target)) ||
+        [...subRefs.current.values()].some(
+          (el) => el != null && target != null && el.contains(target)
+        )
+      if (insideMenu) {
+        // 根面板滚动时 fixed 子面板不跟随 → 收拢子级（一级保持），scroll 不冒泡
+        if (rootRef.current != null && target === rootRef.current) setOpenSub(null)
+        return
+      }
       if (performance.now() - openedAt.current < 300) return
       closeContextMenu()
     }
@@ -145,15 +187,58 @@ export function EditorContextMenuHost(): ReactElement | null {
     }
   }, [state])
 
-  // Viewport clamp after items render (menu height depends on them).
+  // Limit-height + edge-flip via the shared popup base (AC-RULE-10，⋮/右键同源):
+  // point anchor at the open coords; 贴下缘整菜单上翻（AC-FN-05），超高内滚动。
   useLayoutEffect(() => {
     if (!state || !rootRef.current) return
-    const rect = rootRef.current.getBoundingClientRect()
-    const margin = 8
-    const left = Math.max(margin, Math.min(state.x, window.innerWidth - rect.width - margin))
-    const top = Math.max(margin, Math.min(state.y, window.innerHeight - rect.height - margin))
-    setPos({ left, top })
+    const panel = rootRef.current
+    const layout = measurePopupLayout({
+      anchorRect: { top: state.y, bottom: state.y, left: state.x, right: state.x },
+      panel,
+      maxHeightCap: state.maxHeightCap
+    })
+    const width = panel.offsetWidth
+    const height = Math.min(panel.scrollHeight, layout.maxHeight)
+    const margin = POPUP_EDGE_MARGIN
+    const left = Math.max(margin, Math.min(state.x, window.innerWidth - width - margin))
+    const top =
+      layout.placement === 'top'
+        ? Math.max(margin, state.y - height)
+        : Math.max(margin, Math.min(state.y, window.innerHeight - height - margin))
+    setPos({ left, top, maxHeight: layout.maxHeight })
   }, [state, tick])
+
+  // Submenu (复制为…▶ / 段落▶ / …) shares the same base: 贴右缘左翻、贴下缘上翻。
+  // fixed 落点逃逸根面板 overflow 裁切（AC-FN-08 完整展开），几何同源 popup 基座。
+  useLayoutEffect(() => {
+    if (!state || !openSub) {
+      setSubLayout(null)
+      return
+    }
+    const panel = subRefs.current.get(openSub)
+    const row = rootRef.current?.querySelector<HTMLElement>(`[data-op="${openSub}"]`)
+    if (!panel || !row) return
+    const a = row.getBoundingClientRect()
+    const anchorRect = { top: a.top, bottom: a.bottom, left: a.left, right: a.right }
+    const layout = measurePopupLayout({ anchorRect, panel })
+    const pos = computeSubPosition({
+      anchorRect,
+      panelSize: {
+        width: panel.offsetWidth,
+        height: Math.min(panel.scrollHeight, layout.maxHeight)
+      },
+      placement: layout.placement,
+      submenuPlacement: layout.submenuPlacement
+    })
+    setSubLayout({
+      id: openSub,
+      maxHeight: layout.maxHeight,
+      flipX: layout.submenuPlacement === 'left',
+      flipY: layout.placement === 'top',
+      left: pos.left,
+      top: pos.top
+    })
+  }, [state, tick, openSub])
 
   // Focus the menu root so keyboard works immediately; content stays focused
   // behind us — the store returns focus to .cm-content on close.
@@ -180,7 +265,8 @@ export function EditorContextMenuHost(): ReactElement | null {
         if (e.key === 'Escape') {
           e.preventDefault()
           e.stopPropagation()
-          closeContextMenu()
+          // FE-09: Esc is owned by the hush bus (modal topmost first).
+          hushLayers.consumeTop()
         }
         return
       }
@@ -188,12 +274,14 @@ export function EditorContextMenuHost(): ReactElement | null {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
         e.stopPropagation()
-        const next = enabled[(posIdx + 1 + enabled.length) % enabled.length]
+        // 无激活项（指针打开静息）→ ↓ 落首项；否则循环下一项（cycleNavIndex 同语义）。
+        const next = enabled[posIdx === -1 ? 0 : (posIdx + 1) % enabled.length]
         setActiveIdx(next.i)
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
         e.stopPropagation()
-        const next = enabled[(posIdx - 1 + enabled.length) % enabled.length]
+        // 无激活项 → ↑ 落末项（cycleNavIndex(dir=-1) 同语义，勿落 n-2）。
+        const next = enabled[posIdx === -1 ? enabled.length - 1 : (posIdx - 1 + enabled.length) % enabled.length]
         setActiveIdx(next.i)
       } else if (e.key === 'ArrowRight') {
         e.preventDefault()
@@ -213,8 +301,12 @@ export function EditorContextMenuHost(): ReactElement | null {
       } else if (e.key === 'Escape') {
         e.preventDefault()
         e.stopPropagation()
-        if (openSub) setOpenSub(null)
-        else closeContextMenu()
+        // FE-09 (glb-hush:one-shot): Esc is owned by the hush bus — one Esc
+        // collapses the whole menu (submenu included) together with any other
+        // chrome; with a confirm modal open it closes only that (PEND-04) and
+        // a second Esc does the full collapse. stopPropagation here keeps the
+        // document-level bus from double-consuming the same gesture.
+        hushLayers.consumeTop()
       }
     },
     [state, openSub, activeIdx, runItem]
@@ -231,6 +323,19 @@ export function EditorContextMenuHost(): ReactElement | null {
   // .app child instead — not CM6-managed, and .app has no transform, so
   // position:fixed stays viewport-relative.
   const portalHost = document.querySelector('.app') ?? document.body
+  const onPanelWheel = (e: React.WheelEvent<HTMLDivElement>): void => {
+    // AC-FN-10 path 4（超界滚动选择）：限高面板滚到边界继续滚 → 收拢并焦点回正文
+    // （closeContextMenu 自带焦点归还合同）。
+    const el = e.currentTarget
+    const edge = detectOverscrollSelection({
+      scrollTop: el.scrollTop,
+      deltaY: e.deltaY,
+      scrollHeight: el.scrollHeight,
+      clientHeight: el.clientHeight
+    })
+    if (edge !== 'none') closeContextMenu()
+  }
+
   return createPortal(
     <div
       ref={rootRef}
@@ -240,13 +345,22 @@ export function EditorContextMenuHost(): ReactElement | null {
       style={{
         left: pos?.left ?? Math.max(8, state.x),
         top: pos?.top ?? Math.max(8, state.y),
+        maxHeight: pos?.maxHeight,
         visibility: pos || state ? 'visible' : 'hidden'
       }}
       onKeyDown={onKeyDown}
+      onWheel={onPanelWheel}
       data-velox-ctx="root"
     >
       {state.items.map((item, idx) => {
         if (item.separator) return <div key={`sep-${item.id}-${idx}`} className="velox-ctx-sep" role="separator" />
+        if (item.groupTitle !== undefined)
+          return (
+            <div key={`grp-${item.id}-${idx}`} className="velox-ctx-group-label" role="presentation">
+              {item.groupTitle}
+              {item.danger ? <span className="velox-ctx-group-badge">{t('menu.grp.dangerBadge')}</span> : null}
+            </div>
+          )
         const flatIdx = flat.findIndex((f) => f.level === 'top' && f.item.id === item.id)
         return (
           <div key={item.id} className="velox-ctx-row">
@@ -262,10 +376,31 @@ export function EditorContextMenuHost(): ReactElement | null {
             />
             {item.submenu?.length && openSub === item.id ? (
               <div
-                className="velox-ctx-sub"
+                className={[
+                  'velox-ctx-sub',
+                  subLayout?.id === item.id && subLayout.flipX ? 'velox-ctx-sub--flip' : '',
+                  subLayout?.id === item.id && subLayout.flipY ? 'velox-ctx-sub--up' : ''
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
                 role="menu"
                 ref={(el) => {
                   subRefs.current.set(item.id, el)
+                }}
+                style={
+                  subLayout?.id === item.id
+                    ? {
+                        left: subLayout.left,
+                        top: subLayout.top,
+                        right: 'auto',
+                        bottom: 'auto',
+                        maxHeight: subLayout.maxHeight
+                      }
+                    : undefined
+                }
+                onWheel={(e) => {
+                  e.stopPropagation()
+                  onPanelWheel(e)
                 }}
               >
                 {item.submenu.map((child, cidx) => {

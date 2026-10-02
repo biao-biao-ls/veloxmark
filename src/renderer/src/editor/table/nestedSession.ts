@@ -26,6 +26,7 @@ import { markdown } from '@codemirror/lang-markdown'
 import { GFM } from '@lezer/markdown'
 import type { ThemeName } from '../theme'
 import { livePreviewConfigFacet } from '../livePreview/config'
+import { hushLayers } from '../../hooks/useHushLayer'
 import { escapeCell, isSentinelCell } from './parse'
 import { getTableEdit } from './state'
 import { resolveWithFallback } from './resolve'
@@ -78,6 +79,77 @@ export function getHandoff(key: string): string | null {
     return text
   }
   return null
+}
+
+/**
+ * P0 (AC-PEND-11/AC-OP-02/AC-ERR-01/AC-RULE-08) — handoff-suppress flag for
+ * structural dispatches. runTableOp / the table-cell delta's runOp fold the
+ * pending nested text into their single whole-table transaction
+ * (modelWithPendingText), so the destroy-side handoff must NOT also write the
+ * old cell text back: with ops.ts nextActive fixed at `{row: idx, col: 0}` /
+ * `{row: 0, col}` the post-op active cell can coincide with the OLD widget's
+ * `spec.active` (e.g. insertRowAbove at (0,0) — Q5 header migration puts the
+ * new empty row at (0,0)), and the coord-only `isRetarget` check cannot tell
+ * "rebuild same cell" from "structural op at a colliding coordinate". The
+ * microtask commit would then pollute the new empty header with the demoted
+ * header's text in a SECOND transaction (two undo entries — one Ctrl+Z cannot
+ * restore). Widget destroy runs synchronously inside `view.dispatch`, so a
+ * depth counter armed around the structural dispatch covers the capture.
+ */
+let handoffSuppressDepth = 0
+
+/** Run `fn` with the destroy-end handoff capture disabled (see flag above). */
+export function withHandoffSuppressed<T>(fn: () => T): T {
+  handoffSuppressDepth++
+  try {
+    return fn()
+  } finally {
+    handoffSuppressDepth--
+  }
+}
+
+/**
+ * Destroy-end decision (pure): should the pending text be preserved (stash +
+ * microtask commit)? False when suppressed (structural op owns the text in its
+ * own transaction), when there is no own cell, or on a hop/retarget (the new
+ * mount owns the session and the old text was already committed).
+ */
+export function shouldHandoff(
+  stateActive: { row: number; col: number } | null,
+  own: { row: number; col: number } | null,
+  suppressed: boolean
+): boolean {
+  if (suppressed || !own) return false
+  const isRetarget =
+    stateActive != null && (stateActive.row !== own.row || stateActive.col !== own.col)
+  return !isRetarget
+}
+
+/**
+ * Destroy end part 1.5: the capture side of the handoff, extracted so state
+ * level tests can exercise it headless (widget rendering is forbidden in unit
+ * tests). Decides via `shouldHandoff`, stashes the one-shot handoff and
+ * schedules the microtask commit. `pendingText` is the nested editor's escaped
+ * text captured BEFORE the nested view is destroyed.
+ */
+export function captureHandoff(
+  view: EditorView | null,
+  own: { row: number; col: number } | null,
+  sourceFrom: number,
+  pendingText: string
+): void {
+  const stateActive = view ? getTableEdit(view.state).active : null
+  if (!view || !own || !shouldHandoff(stateActive, own, handoffSuppressDepth > 0)) return
+  const resolved = resolveWithFallback(view, sourceFrom, sourceFrom)
+  const cell = resolved?.model.cells[own.row]?.[own.col]
+  const key = handoffKey(sourceFrom, own.row, own.col)
+  // Only set handoff if pending differs from committed source.
+  if (cell && !isSentinelCell(cell) && pendingText !== cell.text) {
+    pendingHandoff = { key, text: pendingText }
+  }
+  // Microtask commit: runs after the CM6 update task completes.
+  // Commits pending text without clearing active (rebuild preserves session).
+  commitHandoff(view, own.row, own.col, pendingText)
 }
 
 /**
@@ -134,27 +206,11 @@ export function destroyHandoff(
     // instead would point at the NEW cell on hops (state already moved)
     // while `maybe` still holds the OLD cell's text — the handoff then
     // seeds the hop TARGET with the source cell's text and the microtask
-    // clobbers the target's source with it.
+    // clobbers the target's source with it. The capture (stash + microtask)
+    // lives in captureHandoff; its guard layers the P0 suppress flag (armed
+    // around structural dispatches) over the hop/retarget check.
     const pendingText = escapeCell(maybe.state.doc.toString())
-    const stateActive = view ? getTableEdit(view.state).active : null
-    // Hop (or re-target): activateCellAt/runTableOp already committed this
-    // cell's pending text in the same transaction and the new mount owns
-    // the session — skip handoff + microtask entirely.
-    const isRetarget =
-      stateActive != null &&
-      (stateActive.row !== own?.row || stateActive.col !== own?.col)
-    if (view && own && !isRetarget) {
-      const resolved = resolveWithFallback(view, sourceFrom, sourceFrom)
-      const cell = resolved?.model.cells[own.row]?.[own.col]
-      const key = handoffKey(sourceFrom, own.row, own.col)
-      // Only set handoff if pending differs from committed source.
-      if (cell && !isSentinelCell(cell) && pendingText !== cell.text) {
-        pendingHandoff = { key, text: pendingText }
-      }
-      // Microtask commit: runs after the CM6 update task completes.
-      // Commits pending text without clearing active (rebuild preserves session).
-      commitHandoff(view, own.row, own.col, pendingText)
-    }
+    captureHandoff(view, own, sourceFrom, pendingText)
     maybe.destroy()
     if (nestedViewInstance === maybe) nestedViewInstance = null
     const wv = (window as unknown as { __veloxTableCellView?: EditorView }).__veloxTableCellView
@@ -215,6 +271,14 @@ export function mountCellEditor(
             const wrap = u.view.dom.closest?.('.cm-md-table-wrap')
             const ae = document.activeElement
             if (wrap && ae && ae !== document.body && wrap.contains(ae)) return
+            // FE-09 (glb-hush:one-shot): a registered hush float owns the
+            // gesture — the table's own ⋮/right-click menu, ⊞ picker, menubar
+            // dropdown and modal are all layer-stack surfaces. Blur here is
+            // "focus moved into a float", not "clicked outside": the hush bus
+            // collapses the stack (chrome-tier close = exitTableEdit) when the
+            // gesture is consumed, so don't race it with an early exit (that
+            // race is what unmounted the toolbar the moment ⋮ opened).
+            if (ae && hushLayers.isLayerTarget(ae)) return
             nav.exit(main, { select: 'none' })
           }, 0)
         }),

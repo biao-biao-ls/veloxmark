@@ -24,7 +24,7 @@
 | `nav-fold:granularity` | op 语义 | 复用 | 折叠含全部子章节；标题行保留；折叠三角不移动光标 | PRD 6.4 | AC-FN-15 | PRD 冻结 |
 | `nav-outline:active-follow` | 滚动联动 | 修改 | 滚动正文时当前可视章节对应大纲项 active 高亮并随滚动切换 | PRD 6.3 | AC-FN-11 | PRD 冻结 |
 | `nav-outline:jump` | 点击 | 修改 | 点击大纲项正文定位到该标题（平滑跳转），该大纲项保持 active；目标在折叠区内先自动展开 | PRD 6.3 | AC-FN-11 | PRD 冻结 + 本域细化 |
-| `nav-gaps:outline-sort` | — | 登记不实现 | 大纲拖拽排序**不实现**（文档结构重写风险大；剪切/粘贴替代） | PRD 6.3、PRD 12 #2 | AC-FN-13（不实现项登记） | Q9 |
+| `nav-gaps:outline-sort` | — | 登记不实现 | 大纲排序**不实现**（文档结构重写风险大；剪切/粘贴替代） | PRD 6.3、PRD 12 #2 | AC-FN-13（不实现项登记） | Q9 |
 | `nav-gaps:multi-select` | — | 登记不实现 | 文件树节点多选**不实现**（批量文件安全语义成本过高） | PRD 6.3、PRD 12 #2 | AC-FN-13（不实现项登记） | Q9 |
 
 ---

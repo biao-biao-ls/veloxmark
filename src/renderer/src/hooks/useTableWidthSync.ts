@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { getTableEdit, restoreColWidths } from '../editor/table/state'
 import { getSession, patchSession } from '../preferences/store'
 import type { FilePathRef, ViewRef } from '../e2e/seams/types'
+import { createSigGate, type SigGate } from './syncGate'
 
 /** Same shape convention as SyncFoldedKeysRef — see useFoldSync. */
 export type SyncColWidthsRef = { current: () => void }
@@ -42,7 +43,9 @@ export function useTableWidthSync({
   suppressDirtyRef,
   filePath
 }: UseTableWidthSyncArgs): UseTableWidthSyncResult {
-  const widthSigRef = useRef<string>('')
+  // Shared signature gate (useFoldSync/useQuoteFold parity): force is a
+  // boolean, never a '' sentinel (syncGate.ts why-note).
+  const sigGateRef = useRef<SigGate>(createSigGate())
   const writeTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   /** Sorted-key serialization — Map iteration order is not stable across rebuilds. */
@@ -57,9 +60,9 @@ export function useTableWidthSync({
 
   const syncColWidths = useCallback(() => {
     const rec = snapshot()
-    const sig = JSON.stringify(Object.entries(rec))
-    if (sig === widthSigRef.current) return
-    widthSigRef.current = sig
+    // Sorted-key JSON sig (map identity churns on remaps); the gate is the
+    // shared one — apply on change OR forced re-sync (restore path).
+    if (!sigGateRef.current.consume(JSON.stringify(Object.entries(rec)))) return
     // Programmatic document replacement (file open/switch) mapPos-scrambles the
     // outgoing file's offsets — persisting mid-switch would poison storage
     // (useFoldSync's suppressDirty gate, same rationale).
@@ -89,7 +92,9 @@ export function useTableWidthSync({
         const n = Number(from)
         if (Number.isFinite(n)) map.set(n, widths)
       }
-      widthSigRef.current = '' // force the next sync to re-evaluate
+      // Force the next sync even when the restored map is empty (restore must
+      // re-evaluate; empty-state sigs are legal values, not force signals).
+      sigGateRef.current.forceNext()
       view.dispatch({ effects: restoreColWidths.of(map) })
     },
     [viewRef]

@@ -10,7 +10,6 @@ interface Props {
   theme: ThemeName
   toggleOutline: () => void
   toggleTheme: () => void
-  formatShortcut: (shortcut: string) => string
   /** P12: ms timestamp of the last autosave/draft-save; null = none yet. */
   autoSaveAt?: number | null
   /** UX-P12 F3: sticky "Auto-save failed HH:MM" label; overrides the saved slot. */
@@ -33,7 +32,6 @@ export default function Titlebar({
   theme,
   toggleOutline,
   toggleTheme,
-  formatShortcut,
   autoSaveAt,
   autoSaveError,
   hideSavedAt,
@@ -58,7 +56,7 @@ export default function Titlebar({
         window.api.windowMaximizeRestore()
       }}
     >
-      <img className="tb-logo" src="/icon.png" alt="VeloxMark" draggable={false} />
+      {/* FE-01#8 / IT-04-FE-02#1: brand text lives in MenuBar (ui_04 .menubar-brand). */}
       <MenuBar menus={menus} />
       <span className="tb-title">
         {dirty && <span className="tb-dirty">• </span>}

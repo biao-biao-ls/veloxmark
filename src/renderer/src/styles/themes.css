@@ -9,6 +9,13 @@
   --border: #e5e5e5;
   --accent: #0969da;
   --danger: #d1242f;
+  /* r2 FE-05 (CHANGE-16): composed focus ring re-declared on both theme
+     sides. var(--accent) substitutes at the declaring element's
+     computed-value time and descendants inherit the substituted value —
+     a :root-only declaration would bake the light accent into the dark
+     ring. Re-stating the same expression here flips the ring per theme
+     (constitution: theme blocks only flip token values). */
+  --focus-ring: 0 0 0 1px var(--accent);
   /* Inset chip/readout surface (table-insert sniff badge, lightbox zoom
      readout). One step off --bg; opaque solid so contrast math stays honest. */
   --bg-inset: #f2f2f2;
@@ -44,6 +51,56 @@
   --tooltip-border: #30363d;
   /* P16 mermaid lightbox scrim (task 1B/1.6: was a literal + .theme-dark patch). */
   --lightbox-scrim: rgba(15, 18, 22, 0.72);
+  /* IT-03 FE-01 render-zone float/fold family (REN-render-zone). Content-widget
+     floats never borrow chrome tokens (F08): surface/border get their own
+     split; handle-accent is the drag-handle accent block; drop-indicator is
+     the drag insert line; summary-fg is the fold summary/line-count gray.
+     Values mirror the ui_06 design vocabulary today; semantic split lets them
+     drift independently later. on-accent/accent-soft come from the same design
+     (text on accent surfaces / soft accent hover fill). */
+  --float-bg: #ffffff;
+  --float-border: #e5e5e5;
+  --handle-accent: #0969da;
+  --drop-indicator: rgba(9, 105, 218, 0.35);
+  --summary-fg: #6b6b6b;
+  --on-accent: #ffffff;
+  --accent-soft: rgba(9, 105, 218, 0.12);
+  /* task checkbox checkmark (ui_06 .task-box.is-checked) — SVG data URI can't
+     ride currentColor, so the stroke is theme-split here to match --on-accent. */
+  --task-check-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-6' fill='none' stroke='%23ffffff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  /* IT-01 FE-11 global-overlay family (toast / ⊞ grid picker).
+     --toast-* is the dark receipt-surface family (ui_07 toast 规范 — semantic
+     split from the --tooltip-* hover-card family, same values today).
+     --accent-soft-strong is the grid-picker selected-cell fill (ui_02).
+     --danger-soft is the danger menu-item hover fill (ui_03 light value; dark
+     derives from the --danger hue at the --accent-soft alpha step).
+     --shadow-menu is the menu-bar dropdown/submenu elevation (ui_04 .menu-panel
+     box-shadow: var(--shadow-menu); ui_03 flips the same pair). It was deleted
+     in replica-review batch G (zero consumers then) and re-declared here by the
+     menu-face batch (批 C) that owns the .menu-dropdown wiring — dark side
+     raises the alpha to 0.45 per ui_03/ui_04. The ⋮/float/context-menu family
+     stays on the theme-independent --shadow-pop. */
+  --toast-bg: #1f2328;
+  --toast-fg: #e6edf3;
+  --toast-border: #30363d;
+  /* batch10 #5 (AC-NF-09): toast action accent — the receipt surface is the
+     same deep #1f2328 in BOTH themes, so the undo-button accent must read
+     against THAT surface, not the app chrome. Light --accent (#0969da) on it
+     measured 3.04:1 (AA fail); this bright variant (dark-theme accent value)
+     measures 6.25:1. Do NOT alias to --accent — the toast face is theme-
+     invariant and global --accent must stay chrome-scoped (four-copy blast
+     radius). Same value both sides, like --toast-bg. */
+  --toast-accent: #58a6ff;
+  --accent-soft-strong: rgba(9, 105, 218, 0.22);
+  --danger-soft: rgba(209, 36, 47, 0.08);
+  /* Menu-bar dropdown/submenu elevation (ui_04 .menu-panel; light alpha 0.12). */
+  --shadow-menu: 0 6px 24px rgba(0, 0, 0, 0.12);
+  /* IT-03 FE-10 formula/mermaid error-bar amber family (ren-block:audit-preserve).
+     Was hardcoded in markdown.css behind a .theme-dark patch — theme-split here
+     only (F08); values unchanged from the pre-audit rendering. */
+  --errbar-fg: #b45309;
+  --errbar-bg: rgba(245, 158, 11, 0.14);
+  --errbar-border: #f59e0b;
 }
 
 .theme-dark {
@@ -53,6 +110,9 @@
   --border: #333333;
   --accent: #58a6ff;
   --danger: #f85149;
+  /* See light theme — composed focus ring re-declares so var(--accent)
+     substitutes against the dark accent. */
+  --focus-ring: 0 0 0 1px var(--accent);
   /* See light theme — inset chip/readout surface. */
   --bg-inset: #2a2a2b;
   /* color: content surface */
@@ -82,6 +142,36 @@
   --tooltip-border: #30363d;
   /* See light theme — lightbox scrim (deeper mask on dark chrome). */
   --lightbox-scrim: rgba(0, 0, 0, 0.82);
+  /* See light theme — render-zone float/fold family (IT-03 FE-01). */
+  --float-bg: #1e1e1e;
+  --float-border: #333333;
+  --handle-accent: #58a6ff;
+  --drop-indicator: rgba(88, 166, 255, 0.45);
+  --summary-fg: #9a9a9a;
+  --on-accent: #0d1117;
+  --accent-soft: rgba(88, 166, 255, 0.14);
+  /* See light theme — checkmark stroke flips to --on-accent (dark on the
+     light-blue accent fill). */
+  --task-check-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-6' fill='none' stroke='%230d1117' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  /* See light theme — IT-01 FE-11 global-overlay family. --toast-bg stays
+     #1f2328 in BOTH themes (ui_07 band-note「深底 #1f2328 白字 #e6edf3 …
+     双主题一致」— the receipt is the same deep surface regardless of theme;
+     not the --tooltip-* dark flip #0d1117). */
+  --toast-bg: #1f2328;
+  --toast-fg: #e6edf3;
+  --toast-border: #30363d;
+  /* See light theme — toast action accent (batch10 #5). Same value as the dark
+     --accent; kept as its own token so the toast face never re-couples to
+     chrome accent flips. */
+  --toast-accent: #58a6ff;
+  --accent-soft-strong: rgba(88, 166, 255, 0.26);
+  --danger-soft: rgba(248, 81, 73, 0.1);
+  /* See light theme — menu elevation; dark raises alpha to 0.45 (ui_03/ui_04). */
+  --shadow-menu: 0 6px 24px rgba(0, 0, 0, 0.45);
+  /* See light theme — formula/mermaid error-bar amber family (IT-03 FE-10). */
+  --errbar-fg: #fcd34d;
+  --errbar-bg: rgba(245, 158, 11, 0.18);
+  --errbar-border: #d97706;
 }
 
 .app {

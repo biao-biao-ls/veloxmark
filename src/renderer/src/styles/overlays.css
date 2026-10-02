@@ -229,10 +229,13 @@
 .table-insert-cell.is-hover { background: var(--accent); border-color: var(--accent); }
 
 /* ---- 9A: code language picker popover (focused-panel lang chip) ----
-   DOM singleton (gridPicker pattern); items reuse the P16 .list-pick-item skin. */
+   DOM singleton (gridPicker pattern); items reuse the P16 .list-pick-item skin.
+   FE-09 P2a: z 1500 = popover tier（低于 .dialog-overlay 2000 确认框恒最大，
+   高于 .editor-context-menu 1000）——与 .table-grid-picker 同层（契约见
+   overlayZOrder.test.ts）。 */
 .code-lang-picker {
   position: fixed;
-  z-index: 2400;
+  z-index: 1500;
   display: flex;
   flex-direction: column;
   width: 240px;
@@ -269,29 +272,87 @@
   color: var(--fg-dim);
 }
 
-/* ---- 7E: rows×cols grid picker popover (table toolbar ⊞) ---- */
+/* ---- 7E/FE-05: rows×cols grid picker popover (table toolbar ⊞) ----
+   1:1 对照 ui_02 .grid-pop/.gcell/.grid-pop-label：22px 格点（--grid-cell-*，
+   FE-11 基座）、选区 --accent-soft-strong 底 + --accent 边、读数「R × C」
+   （<b> 部分 accent/600）。FE-05 上界动态（max(20,R0)×max(12,C0)，列数模板
+   由 JS 内联设定）；格点区视口 = 基准上界 20 行全展（批 E：12 行限高曾把
+   小表矩阵截成 12 行观感），仅超限表（R0>20）在 60vh 天花板内滚动
+   （AC-RULE-10 边缘可达）；列向同口径（批 CR-13）：12 列全展，C0>12
+   横向滚动，超限列右缘可达（AC-ERR-13）。读数下方挂 4 预设按钮组（.btn 族复用）。
+   浮层 chrome 对齐设计纯灰边（批 E：去 :focus-visible accent 外环）。
+   FE-09 P2a: z 1500 = popover tier（低于 .dialog-overlay 2000 确认框恒最大，
+   高于 .editor-context-menu 1000；与 .code-lang-picker 同层，契约见
+   overlayZOrder.test.ts）。 */
 .table-grid-picker {
   position: fixed;
-  z-index: 2400;
-  display: grid;
-  grid-template-columns: repeat(12, 16px);
-  gap: 2px;
+  z-index: 1500;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
   padding: var(--space-2);
   background: var(--widget-surface);
   border: 1px solid var(--border);
-  border-radius: var(--cb-radius);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
   outline: none;
   width: fit-content;
 }
-.table-grid-picker:focus-visible { outline: 1px solid var(--accent); }
+.table-grid-picker-cells {
+  display: grid;
+  gap: var(--grid-cell-gap);
+  /* Cap at the GRID_MAX_ROW / GRID_MAX_COL base bounds so a normal table's
+     20×12 matrix fully expands; only over-limit matrices (R0>20 / C0>12)
+     scroll (AC-RULE-10). Horizontal mirror of the height cap: a C0>12 matrix
+     used to bleed past the viewport with no sideways reach (the :295 anchor
+     clamp only keeps the left edge) — max-width + overflow-x keeps every
+     over-limit column selectable (AC-ERR-13) without touching preset layout
+     (shell stays fit-content at the 12-col bound, same as a normal matrix). */
+  max-height: min(60vh, calc(var(--grid-cell-size) * 20 + var(--grid-cell-gap) * 19));
+  max-width: min(92vw, calc(var(--grid-cell-size) * 12 + var(--grid-cell-gap) * 11));
+  overflow-x: auto;
+  overflow-y: auto;
+}
+.table-grid-cell {
+  box-sizing: border-box;
+  width: var(--grid-cell-size);
+  height: var(--grid-cell-size);
+  background: var(--bg);
+  border: 1px solid var(--bg-inset);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+/* ui_02 .gcell.sel — selection uniform, no solid anchor variant (批 E). */
+.table-grid-cell.is-hover {
+  background: var(--accent-soft-strong);
+  border-color: var(--accent);
+}
 .table-grid-picker-readout {
-  grid-column: 1 / -1;
-  margin-top: var(--space-1);
-  font-size: 11px;
+  font-size: 12px;
+  line-height: 1.4;
   color: var(--fg-dim);
   text-align: center;
   user-select: none;
+}
+.table-grid-picker-readout b {
+  color: var(--accent);
+  font-weight: 600;
+}
+/* ui_02 .grid-pop-label line 668 tail「· 缩放整表」— gray small print; the
+   parent already carries 12px/--fg-dim (label body), the explicit color keeps
+   the tail gray even if the readout body is ever re-tinted. */
+.table-grid-picker-readout-suffix {
+  color: var(--fg-dim);
+  font-size: 12px;
+}
+.table-grid-picker-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.table-grid-picker-preset {
+  padding: 2px var(--space-2);
+  font-size: 12px;
 }
 .table-insert-preview {
   margin: 8px 0;

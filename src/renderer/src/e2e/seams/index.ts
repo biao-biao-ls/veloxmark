@@ -14,7 +14,8 @@
  *
  * Hook call order mirrors the original App.tsx effect order; each usePXXSeam
  * keeps its original dep array verbatim, so handle rebuild timing is
- * unchanged. Contract: e2e/handles.d.ts.
+ * unchanged. Contract: e2e/handles.d.ts（仅 window.__velox* JS handle 类型）。
+ * DOM 属性契约（data-table-handle/data-op）单源 = editor/table/contract.ts，勿在 e2e/ 登记。
  */
 import { useP13Seam, type P13Deps } from './p13'
 import { useP14Seam, type P14Deps } from './p14'

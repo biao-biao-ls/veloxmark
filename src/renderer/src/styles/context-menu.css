@@ -3,7 +3,9 @@
 .velox-ctx-menu {
   position: fixed;
   z-index: 1000;
-  min-width: 200px;
+  /* ui_03 `.menu` width 248px（FE-04#8 / CHANGE-13）：表菜单内容自然宽 ~225px，
+     下限收敛到设计宽；更长的块级菜单继续自然撑开（≤320px）。 */
+  min-width: 248px;
   max-width: 320px;
   max-height: calc(100vh - 24px);
   overflow-y: auto;
@@ -14,6 +16,28 @@
   border-radius: 6px;
   box-shadow: var(--shadow-pop);
   outline: none;
+  /* ui_03 可见细滚动条（FE-04#9 / 批 A 复核）：5px 深色定制，替换 Windows 系统
+     18px 浅灰条。Chromium 在声明 scrollbar-width/color 标准属性时忽略
+     ::-webkit-scrollbar（实测 gutter 11px/17px），故此处只走 webkit 伪元素
+     通道，不声明标准滚动条属性。 */
+}
+
+.editor-context-menu::-webkit-scrollbar,
+.velox-ctx-menu::-webkit-scrollbar {
+  width: 5px;
+}
+
+.editor-context-menu::-webkit-scrollbar-track,
+.velox-ctx-menu::-webkit-scrollbar-track {
+  background: var(--bg-inset);
+  border-radius: 2px;
+  margin: var(--space-2) 2px;
+}
+
+.editor-context-menu::-webkit-scrollbar-thumb,
+.velox-ctx-menu::-webkit-scrollbar-thumb {
+  background: var(--fg-disabled);
+  border-radius: 2px;
 }
 .velox-ctx-row {
   position: relative;
@@ -38,10 +62,16 @@
 }
 .velox-ctx-item.velox-ctx-disabled,
 .velox-ctx-item:disabled {
-  color: var(--fg-dim);
-  opacity: 0.55;
+  /* FE-01/FE-04 灰显规格 + ui_03 `.menu-item.is-disabled`：--fg-disabled 单 token
+     （kbd 回显同色），不再 fg-dim×opacity 近似。 */
+  color: var(--fg-disabled);
+  opacity: 1;
   cursor: default;
   background: transparent;
+}
+.velox-ctx-item.velox-ctx-disabled .velox-ctx-shortcut,
+.velox-ctx-item:disabled .velox-ctx-shortcut {
+  color: var(--fg-disabled);
 }
 .velox-ctx-item.velox-ctx-danger {
   color: var(--danger);
@@ -68,10 +98,32 @@
   margin: 4px 6px;
   background: var(--border);
 }
+.velox-ctx-group-label {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  user-select: none;
+}
+.velox-ctx-group-badge {
+  display: inline-block;
+  margin-left: var(--space-2);
+  padding: 0 5px;
+  border: 1px solid var(--danger);
+  border-radius: 999px;
+  color: var(--danger);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  line-height: 14px;
+  vertical-align: 1px;
+}
 .velox-ctx-sub {
-  position: absolute;
-  left: 100%;
-  top: 0;
+  /* fixed 逃逸根面板 overflow 裁切（AC-FN-08 完整展开）；left/top/max-height
+     由 popup 基座（computeSubPosition）内联注入。`velox-ctx-sub--flip`/`--up`
+     仅作方向语义标记。 */
+  position: fixed;
   min-width: 170px;
   padding: 4px;
   background: var(--bg);
@@ -79,5 +131,25 @@
   border-radius: 6px;
   box-shadow: var(--shadow-pop);
   z-index: 1001;
+  /* AC-RULE-10 限高内滚动：max-height 由 popup 基座内联注入（与主面板同源）。 */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* 与主面板同款 5px 深色定制细条（ui_03 / FE-04#9，家族内两处一致）；
+     同样只走 webkit 通道，不声明标准滚动条属性。 */
+}
+
+.velox-ctx-sub::-webkit-scrollbar {
+  width: 5px;
+}
+
+.velox-ctx-sub::-webkit-scrollbar-track {
+  background: var(--bg-inset);
+  border-radius: 2px;
+  margin: var(--space-2) 2px;
+}
+
+.velox-ctx-sub::-webkit-scrollbar-thumb {
+  background: var(--fg-disabled);
+  border-radius: 2px;
 }
 

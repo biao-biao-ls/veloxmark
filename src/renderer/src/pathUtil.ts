@@ -18,3 +18,17 @@ export function baseDirOf(path: string): string {
 export function baseNameOf(path: string): string {
   return path.replace(/^.*[\\/]/, '')
 }
+
+/**
+ * Canonical compare key — both separators collapse to `/`. Windows tree scans
+ * yield `\` paths while some open paths arrive with `/` (e2e seams, session
+ * restore); raw `===` then misses the active-file row (FE-06 r2 #11).
+ */
+export function pathKey(path: string): string {
+  return path.replace(/\\/g, '/')
+}
+
+/** Separator-insensitive path equality (same path in `\` or `/` form). */
+export function pathsEqual(a: string, b: string): boolean {
+  return pathKey(a) === pathKey(b)
+}

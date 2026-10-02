@@ -6,6 +6,7 @@
 @import './styles/filetree.css';
 @import './styles/context-menu.css';
 @import './styles/overlays.css';
+@import './styles/toast.css';
 @import './styles/forms.css';
 @import './styles/buttons.css';
 @import './styles/editor-modes.css';
@@ -16,3 +17,4 @@
 @import './styles/code-chrome.css';
 @import './styles/mermaid-preview.css';
 @import './styles/tabs.css';
+@import './styles/render-zone.css';

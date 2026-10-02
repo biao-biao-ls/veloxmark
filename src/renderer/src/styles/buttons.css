@@ -31,6 +31,21 @@
   background: var(--code-bg);
 }
 
+/* batch10 #6: pressed/disabled affordance for the skinned family (was UA-only;
+   a disabled .btn-primary on the accent fill looked enabled). .cm-search
+   .cm-button:active keeps its own rule below (higher specificity scene skin). */
+.btn:active:not(:disabled),
+.dialog-btn:active:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.btn:disabled,
+.dialog-btn:disabled,
+.cm-search .cm-button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
 /* Geometry: dialog family (moved verbatim from overlays.css). */
 .dialog-btn {
   min-width: 72px;

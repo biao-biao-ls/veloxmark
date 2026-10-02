@@ -1,9 +1,10 @@
 /**
  * buildCommands 装配（2B）：六域 builder 按固定序 concat。
  *
- * concat 序 file → edit → format → tabs → view → insert 是行为的一部分：
- * `matchGlobalShortcut` 顺序优先，`reopenClosedTab`（tabs，Ctrl+Shift+T）必须
- * 先于 `toggleTheme`（view，同键）——保持拆分前的遮蔽现状。
+ * concat 序 file → edit → format → tabs → view → insert 是行为契约（固定不变）：
+ * `matchGlobalShortcut` 按注册序优先命中。Q6 撤键后同键遮蔽前提已消除——
+ * `reopenClosedTab`（tabs）是其快捷键的唯一归属，`toggleTheme`（view）已无
+ * 键位；顺序仍须稳定（测试/回显按序取值），只是不再承担遮蔽职责。
  */
 import { buildEditCmds } from './editCmds'
 import { buildFileCmds } from './fileCmds'

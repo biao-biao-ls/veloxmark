@@ -11,7 +11,7 @@
  *   over a user collapse — the rename entry must be reachable (UX-P07-F4).
  */
 import type { DirNode } from '../../../../electron/shared/api'
-import { baseDirOf } from '../pathUtil'
+import { baseDirOf, pathKey } from '../pathUtil'
 
 export interface FlatRow {
   node: DirNode
@@ -72,12 +72,25 @@ export function ancestorDirPaths(path: string | null): Set<string> {
   return out
 }
 
+/**
+ * Separator-insensitive set lookup — reveal/rename chains may be derived from
+ * a `/`-form open path while tree rows are win32 `\` (FE-06 r2 #11). Sets are
+ * ancestor-chain sized (depth of the tree), so a scan fallback is fine.
+ */
+function setHasPath(set: ReadonlySet<string> | undefined, path: string): boolean {
+  if (!set) return false
+  if (set.has(path)) return true
+  const key = pathKey(path)
+  for (const p of set) if (pathKey(p) === key) return true
+  return false
+}
+
 /** Effective open state for one dir node (see module header for precedence). */
 export function isDirOpen(path: string, opts: VisibleRowsOpts): boolean {
-  if (opts.renameDirs?.has(path)) return true
+  if (setHasPath(opts.renameDirs, path)) return true
   const user = opts.expanded[path]
   if (user !== undefined) return user
-  return opts.revealDirs?.has(path) ?? false
+  return setHasPath(opts.revealDirs, path)
 }
 
 /**

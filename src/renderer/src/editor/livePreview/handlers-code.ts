@@ -28,7 +28,11 @@ export function enterTable(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
   const edit = getTableEdit(ctx.state)
   const active = edit.active
   const isActive = active != null && active.tableFrom === lineFrom
-  if (!isActive && ctx.blockTouched(node.from, node.to)) return false
+  // AC-FN-29: edit chrome follows the edit session — cell-active OR the
+  // step-back edit form (active null, session on) keeps the widget/toolbar
+  // mounted (same hatch suppression as the active form).
+  const isEditing = isActive || edit.editFrom === lineFrom
+  if (!isEditing && ctx.blockTouched(node.from, node.to)) return false
   const source = ctx.state.sliceDoc(lineFrom, lineTo)
   ctx.decos.push({
     from: lineFrom,
@@ -36,6 +40,7 @@ export function enterTable(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
     value: Decoration.replace({
       widget: new TableWidget(source, lineFrom, lineTo, {
         active: isActive ? { row: active.row, col: active.col, caret: active.caret } : null,
+        editing: isEditing,
         colWidths: edit.colWidths.get(lineFrom),
         theme: ctx.config.theme,
         i18nEpoch: ctx.config.i18nEpoch ?? 0

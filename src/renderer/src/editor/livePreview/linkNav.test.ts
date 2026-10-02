@@ -11,8 +11,10 @@ import {
   getBrokenHrefs,
   isBrokenCached,
   isSkippableHref,
-  rememberLinkStatus
+  rememberLinkStatus,
+  tooltipSuppressedBy
 } from './linkNav'
+import { HOVER_CHANNELS } from '../../hooks/useHoverDiscipline'
 
 function mkState(doc: string): EditorState {
   const state = EditorState.create({ doc, extensions: [markdown({ extensions: [GFM] })] })
@@ -101,5 +103,19 @@ describe('link existence cache', () => {
     expect(isBrokenCached('/ws', './gone.md')).toBe(true)
     clearLinkCache()
     expect(isBrokenCached('/ws', './gone.md')).toBe(false)
+  })
+})
+
+describe('tooltipSuppressedBy (N1 float × tooltip mutual exclusion)', () => {
+  it('stands the tooltip down while the link float owns the stage', () => {
+    expect(tooltipSuppressedBy(HOVER_CHANNELS.linkFloat)).toBe(true)
+  })
+
+  it('leaves the tooltip free for every other channel and the idle stage', () => {
+    expect(tooltipSuppressedBy(HOVER_CHANNELS.imageFloat)).toBe(false)
+    expect(tooltipSuppressedBy(HOVER_CHANNELS.listHandle)).toBe(false)
+    expect(tooltipSuppressedBy(null)).toBe(false)
+    expect(tooltipSuppressedBy(undefined)).toBe(false)
+    expect(tooltipSuppressedBy('')).toBe(false)
   })
 })

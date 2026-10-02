@@ -15,12 +15,22 @@ import {
 } from './assists'
 import { imageInputExtension } from './images'
 import { imageSizeMarkdown } from './markdown-image-ext'
-import { foldField, foldGutterExtension, foldPlaceholderClickExtension, getFoldedKeys, toggleFold, restoreFolds, expandFolds } from './livePreview/fold'
+import { foldField, foldClickExtension, getFoldedKeys, toggleFold, restoreFolds, expandFolds } from './livePreview/fold'
 import './contextMenu/opsBlocks'
 import { calloutClickExtension, calloutFoldField } from './livePreview/calloutFold'
+import {
+  getQuoteFoldedKeys,
+  quoteFoldClickExtension,
+  quoteFoldField,
+  restoreQuoteFolds,
+  toggleQuoteFold
+} from './livePreview/quoteFold'
 import { codeBlockUiField } from './livePreview/codeBlockUi'
+import { mermaidLastGoodRemap } from './mermaid/errMemory'
 import { linkNavExtension } from './livePreview/linkNav'
+import { hoverZonesExtension } from './livePreview/hoverZones'
 import { modeClassesExtension, typewriterExtension } from './modes'
+import { undoWithAck } from '../hooks/useToast'
 import { getPreferences } from '../preferences/store'
 import {
   getLivePreviewConfig,
@@ -30,9 +40,16 @@ import {
   livePreviewField,
   type LivePreviewConfig
 } from './livePreview'
-import { getTableEdit, restoreColWidths, setColWidth, tableEditField } from './table/state'
+import {
+  getTableEdit,
+  restoreColWidths,
+  setColWidth,
+  tableEditField,
+  colWidthHistory,
+  activationHistory
+} from './table/state'
 import { tableEditLifecycle } from './table/lifecycle'
-import { setNestedPreviewField, tableStructBindings } from './table/widget'
+import { setNestedPreviewField, tableStructBindings, tableMenuBindings } from './table/widget'
 import { mathEditExitBindings } from './mathEdit'
 import { getCtxRuntime, handleEditorContextMenu } from './contextMenu/registry'
 import { compartmentThemes, ThemeName } from './theme'
@@ -50,6 +67,8 @@ export interface EditorCallbacks {
   onTreeChanged: () => void
   /** P18: fold set changed via toggle/restore/expand effects. */
   onFoldChanged?: () => void
+  /** FE-08: quote fold set changed (toggle/restore/expand + auto-expand drops). */
+  onQuoteFoldChanged?: () => void
   /** 7F: colWidths map changed (col-grip setColWidth / restoreColWidths /
    * mapPos remap on doc edits). */
   onColWidthsChanged?: () => void
@@ -85,17 +104,25 @@ export function createExtensions(
   // build → handlers → table/widget never points back into livePreview/field.
   setNestedPreviewField(livePreviewField)
   return [
-    // F06: fold gutter renders LEFT of the line numbers so the number column
-    // sits flush against the content box — the fold arrows no longer eat the
-    // number→prose dead zone (see layer-a F06 batch).
-    foldGutterExtension,
+    // F06: line numbers sit flush against the content box (see layer-a F06
+    // batch). FE-07 moved the fold entry inline (fold-caret at the heading
+    // text left) — the old fold gutter is gone, so numbers hug the prose.
     gutterCompartment.of(showLineNumbers ? lineNumbers() : []),
-    // P18 heading folds: placeholder-click reopen. lineNumbers toggles
-    // independently via its own compartment above.
-    foldPlaceholderClickExtension,
+    // FE-07 heading folds: caret / summary click toggles the section without
+    // moving the cursor. lineNumbers toggles independently via its compartment.
+    foldClickExtension,
     // P21 callouts: head-line/`⋯ N 行` chip click toggles the body fold.
     calloutClickExtension,
+    // FE-08 long quotes: summary row / fold caret click toggles the block fold.
+    quoteFoldClickExtension,
     history(),
+    // FE-06: make effect-only col-width drags undoable — history() alone drops
+    // them (no changes ⇒ no HistEvent); one Ctrl+Z restores the pre-drag widths.
+    colWidthHistory,
+    // FE-07 P1 (AC-OP-12): structure-op transactions carry setActiveCell/
+    // enterEditMode; invert them so undo re-anchors the pre-op cell (all three
+    // undo entries share this history). See invertActivation.
+    activationHistory,
     drawSelection(),
     highlightActiveLine(),
     search({ top: true }),
@@ -109,12 +136,19 @@ export function createExtensions(
     // P21: callout fold overrides (Map key = `lineFrom|TYPE`); defaults still
     // parse from the source `+/-` markers at build time.
     calloutFoldField,
+    // FE-08: long-quote folded ids (`q:{depth}:{first line}`); persisted via
+    // useQuoteFold under SessionState.quoteFolds (display-only, never .md).
+    quoteFoldField,
     // P10: active table cell / session column widths — drives enterTable.
     tableEditField,
     // UX-P28: table focus lifecycle — auto-exit on selection-leave + Escape exit.
     tableEditLifecycle,
     // P24: code-block expand memory (content-hash keyed, session-only).
     codeBlockUiField,
+    // P16/AC-ERR-11: mermaid last-good position keys — mapPos-remap on doc
+    // edits so a fence's own diagram survives edits before it (state-update
+    // timing, see errMemory.mermaidLastGoodRemap).
+    mermaidLastGoodRemap,
     // P08 mode flags are read from the store (not the args): this runs once at
     // editor creation, and the App effect keeps them in sync afterwards.
     livePreviewConfigExtension({
@@ -134,6 +168,8 @@ export function createExtensions(
     editingAssistsCompartment.of(editingAssistsExtension(assists)),
     // P17: modifier-click navigation + hover tooltip for rendered links.
     linkNavExtension,
+    // FE-03: render-zone hover hit zones → useHoverDiscipline show/hide base.
+    hoverZonesExtension,
     // Image paste/drop is core behavior — always on (Prec.high inside).
     imageInputExtension(callbacks.ensureSaved),
     themeCompartment.of(compartmentThemes[theme]),
@@ -148,8 +184,16 @@ export function createExtensions(
     // when open; the binding only takes over inside a math block.
     keymap.of([
       ...tableStructBindings,
+      ...tableMenuBindings,
       ...searchKeymap,
       ...mathEditExitBindings,
+      // FE-07/glb-undo:triple-entry — Mod-z is the keymap face of the same
+      // one-step undo as the edit-menu command and the toast button, and it
+      // posts the same「已撤销」receipt (AC-OP-12 / AC-ERR-04).
+      {
+        key: 'Mod-z',
+        run: undoWithAck
+      },
       ...historyKeymap,
       ...defaultKeymap,
       indentWithTab
@@ -188,6 +232,13 @@ export function createExtensions(
           tr.effects.some((e) => e.is(toggleFold) || e.is(restoreFolds) || e.is(expandFolds))
         ) || getFoldedKeys(update.startState) !== getFoldedKeys(update.state)
       if (foldTouched) callbacks.onFoldChanged?.()
+      // FE-08: quote fold set changes — effect-driven toggles/restores plus
+      // identity flips from auto-expand and the docChanged key-drop filter.
+      const quoteFoldTouched =
+        update.transactions.some((tr) =>
+          tr.effects.some((e) => e.is(toggleQuoteFold) || e.is(restoreQuoteFolds))
+        ) || getQuoteFoldedKeys(update.startState) !== getQuoteFoldedKeys(update.state)
+      if (quoteFoldTouched) callbacks.onQuoteFoldChanged?.()
       // 7F: width map changes — effect-driven (col-grip setColWidth, session
       // restoreColWidths) plus mapPos remap on doc edits (new Map identity).
       const widthTouched =
