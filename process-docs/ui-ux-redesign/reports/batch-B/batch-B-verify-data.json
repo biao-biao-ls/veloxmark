@@ -1,0 +1,555 @@
+{
+  "port": 9492,
+  "startedAt": "2026-10-01T04:27:19.372Z",
+  "checks": [
+    {
+      "name": "S0 无草稿对话框（全新 user-data-dir 预期内）",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "S0 夹具载入",
+      "ok": true,
+      "detail": {
+        "fp": "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/batch-b-fixture.md",
+        "h1": 1,
+        "quotes": 8
+      }
+    },
+    {
+      "name": "S1 H1 渲染字号 = 28px",
+      "ok": true,
+      "detail": {
+        "fontSize": "28px",
+        "fontWeight": "600",
+        "borderBottomWidth": "0px",
+        "borderBottomColor": "rgb(51, 51, 51)",
+        "text": "▾# 批 B 样式夹具"
+      }
+    },
+    {
+      "name": "S1 H1 无 border-bottom",
+      "ok": true,
+      "detail": {
+        "fontSize": "28px",
+        "fontWeight": "600",
+        "borderBottomWidth": "0px",
+        "borderBottomColor": "rgb(51, 51, 51)",
+        "text": "▾# 批 B 样式夹具"
+      }
+    },
+    {
+      "name": "S1 cm-md-h1 无 border-bottom",
+      "ok": true,
+      "detail": {
+        "cls": "cm-md-h1",
+        "borderBottomWidth": "0px",
+        "borderBottomStyle": "none"
+      }
+    },
+    {
+      "name": "S1 cm-md-h2 无 border-bottom",
+      "ok": true,
+      "detail": {
+        "cls": "cm-md-h2",
+        "borderBottomWidth": "0px",
+        "borderBottomStyle": "none"
+      }
+    },
+    {
+      "name": "S1 cm-md-h3 无 border-bottom",
+      "ok": true,
+      "detail": {
+        "cls": "cm-md-h3",
+        "borderBottomWidth": "0px",
+        "borderBottomStyle": "none"
+      }
+    },
+    {
+      "name": "S2 空章节渲染等宽 phantom 占位（visibility:hidden）",
+      "ok": true,
+      "detail": {
+        "text": "▾空章节",
+        "hasCaret": true,
+        "hasPhantom": true,
+        "textLeft": 354.5,
+        "slotLeft": 328.5,
+        "slotWidth": 18,
+        "slotVis": "hidden"
+      }
+    },
+    {
+      "name": "S2 非空章节渲染真 caret",
+      "ok": true,
+      "detail": {
+        "text": "▾# 批 B 样式夹具",
+        "hasCaret": true,
+        "hasPhantom": false,
+        "textLeft": 354.5,
+        "slotLeft": 328.5,
+        "slotWidth": 18,
+        "slotVis": "visible"
+      }
+    },
+    {
+      "name": "S2 占位与真 caret 左缘同列（Δ≤1px）",
+      "ok": true,
+      "detail": {
+        "ph": 328.5,
+        "real": 328.5,
+        "delta": 0
+      }
+    },
+    {
+      "name": "S2 空章节与非空章节文字左缘对齐（Δ≤1px）",
+      "ok": true,
+      "detail": {
+        "phText": 354.5,
+        "realText": 354.5,
+        "textDelta": 0
+      }
+    },
+    {
+      "name": "S2 占位盒与真 caret 盒等宽",
+      "ok": true,
+      "detail": {
+        "phW": 18,
+        "realW": 18
+      }
+    },
+    {
+      "name": "S3 引用边框竖线 = 3px",
+      "ok": true,
+      "detail": {
+        "borderLeftWidth": "3px",
+        "borderLeftColor": "rgb(208, 215, 222)",
+        "color": "rgb(51, 51, 51)",
+        "fontStyle": "normal",
+        "text": "这是一段非常非常长的引用首行文本"
+      }
+    },
+    {
+      "name": "S3 引用竖线色 = --quote-border",
+      "ok": true,
+      "detail": {
+        "borderLeftWidth": "3px",
+        "borderLeftColor": "rgb(208, 215, 222)",
+        "color": "rgb(51, 51, 51)",
+        "fontStyle": "normal",
+        "text": "这是一段非常非常长的引用首行文本"
+      }
+    },
+    {
+      "name": "S3 引用正文色 = --fg (#333)",
+      "ok": true,
+      "detail": {
+        "borderLeftWidth": "3px",
+        "borderLeftColor": "rgb(208, 215, 222)",
+        "color": "rgb(51, 51, 51)",
+        "fontStyle": "normal",
+        "text": "这是一段非常非常长的引用首行文本"
+      }
+    },
+    {
+      "name": "S3 引用正文正体（font-style: normal）",
+      "ok": true,
+      "detail": {
+        "borderLeftWidth": "3px",
+        "borderLeftColor": "rgb(208, 215, 222)",
+        "color": "rgb(51, 51, 51)",
+        "fontStyle": "normal",
+        "text": "这是一段非常非常长的引用首行文本"
+      }
+    },
+    {
+      "name": "S4 折叠入口 caret 存在（展开态）",
+      "ok": true,
+      "detail": {
+        "position": "absolute",
+        "top": "4px",
+        "right": "8px",
+        "rect": {
+          "left": 1091.5,
+          "top": 780.38,
+          "right": 1104.5,
+          "bottom": 805.97
+        },
+        "lineRect": {
+          "left": 312.5,
+          "top": 776.38,
+          "right": 1112.5,
+          "bottom": 827.56
+        },
+        "distFromLineRight": 8,
+        "distFromLineTop": 4,
+        "text": "▾"
+      }
+    },
+    {
+      "name": "S4 caret 绝对定位（position: absolute）",
+      "ok": true,
+      "detail": {
+        "position": "absolute",
+        "top": "4px",
+        "right": "8px",
+        "rect": {
+          "left": 1091.5,
+          "top": 780.38,
+          "right": 1104.5,
+          "bottom": 805.97
+        },
+        "lineRect": {
+          "left": 312.5,
+          "top": 776.38,
+          "right": 1112.5,
+          "bottom": 827.56
+        },
+        "distFromLineRight": 8,
+        "distFromLineTop": 4,
+        "text": "▾"
+      }
+    },
+    {
+      "name": "S4 caret 贴引用块右上（距右缘 ≤24px、距顶 ≤12px）",
+      "ok": true,
+      "detail": {
+        "right": 8,
+        "top": 4
+      }
+    },
+    {
+      "name": "S5 展开态 caret 可点位",
+      "ok": true,
+      "detail": {
+        "x": 1098,
+        "y": 425.17
+      }
+    },
+    {
+      "name": "S5 点 caret 折为摘要行",
+      "ok": true,
+      "detail": {
+        "present": true,
+        "row": {
+          "borderLeftWidth": "0px",
+          "borderLeftColor": "rgb(107, 107, 107)",
+          "paddingLeft": "0px",
+          "paddingRight": "0px",
+          "fontStyle": "normal",
+          "color": "rgb(107, 107, 107)",
+          "rect": {
+            "left": 331.5,
+            "top": 433.97,
+            "right": 1096.5,
+            "bottom": 462.77
+          }
+        },
+        "summary": {
+          "color": "rgb(51, 51, 51)",
+          "fontStyle": "normal",
+          "fontSize": "13px"
+        },
+        "caretLeft": 331.5,
+        "residueProbe": {
+          "x": 328.5,
+          "tag": "DIV",
+          "cls": "cm-line cm-md-quote cm-md-quote-d1",
+          "borderLeftWidth": "3px"
+        },
+        "text": "▸「这是一段非常非常长的引用首行文本用于验证摘要行的截断规则"
+      }
+    },
+    {
+      "name": "S5 摘要行正体（font-style: normal）",
+      "ok": true,
+      "detail": {
+        "borderLeftWidth": "0px",
+        "borderLeftColor": "rgb(107, 107, 107)",
+        "paddingLeft": "0px",
+        "paddingRight": "0px",
+        "fontStyle": "normal",
+        "color": "rgb(107, 107, 107)",
+        "rect": {
+          "left": 331.5,
+          "top": 433.97,
+          "right": 1096.5,
+          "bottom": 462.77
+        }
+      }
+    },
+    {
+      "name": "S5 摘要文字正体",
+      "ok": true,
+      "detail": {
+        "color": "rgb(51, 51, 51)",
+        "fontStyle": "normal",
+        "fontSize": "13px"
+      }
+    },
+    {
+      "name": "S5 摘要行无二次边框（border-left 0，残线排除）",
+      "ok": true,
+      "detail": {
+        "borderLeftWidth": "0px",
+        "borderLeftColor": "rgb(107, 107, 107)",
+        "paddingLeft": "0px",
+        "paddingRight": "0px",
+        "fontStyle": "normal",
+        "color": "rgb(107, 107, 107)",
+        "rect": {
+          "left": 331.5,
+          "top": 433.97,
+          "right": 1096.5,
+          "bottom": 462.77
+        }
+      }
+    },
+    {
+      "name": "S6 点摘要行还原完整引用",
+      "ok": true,
+      "detail": {
+        "summaryGone": true,
+        "caretBack": true,
+        "lines": 8
+      }
+    },
+    {
+      "name": "S7 标题折叠 caret 在场",
+      "ok": true,
+      "detail": {
+        "x": 337.5,
+        "y": 272.84
+      }
+    },
+    {
+      "name": "S7 点标题 caret 折叠生效",
+      "ok": true,
+      "detail": {
+        "summary": true,
+        "keys": [
+          "2:可折叠章节"
+        ]
+      }
+    },
+    {
+      "name": "S7 再点还原展开",
+      "ok": true,
+      "detail": {
+        "summary": false
+      }
+    },
+    {
+      "name": "S8 引用块外无 1px #d0d7de 灰竖线残留",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "data": {
+    "headings": {
+      "h1": {
+        "fontSize": "28px",
+        "fontWeight": "600",
+        "borderBottomWidth": "0px",
+        "borderBottomColor": "rgb(51, 51, 51)",
+        "text": "▾# 批 B 样式夹具"
+      },
+      "borders": [
+        {
+          "cls": "cm-md-h1",
+          "borderBottomWidth": "0px",
+          "borderBottomStyle": "none"
+        },
+        {
+          "cls": "cm-md-h2",
+          "borderBottomWidth": "0px",
+          "borderBottomStyle": "none"
+        },
+        {
+          "cls": "cm-md-h3",
+          "borderBottomWidth": "0px",
+          "borderBottomStyle": "none"
+        }
+      ],
+      "textLefts": [
+        {
+          "text": "▾# 批 B 样式夹具",
+          "hasCaret": true,
+          "hasPhantom": false,
+          "textLeft": 354.5,
+          "slotLeft": 328.5,
+          "slotWidth": 18,
+          "slotVis": "visible"
+        },
+        {
+          "text": "▾可折叠章节",
+          "hasCaret": true,
+          "hasPhantom": false,
+          "textLeft": 354.5,
+          "slotLeft": 328.5,
+          "slotWidth": 18,
+          "slotVis": "visible"
+        },
+        {
+          "text": "▾子节",
+          "hasCaret": true,
+          "hasPhantom": false,
+          "textLeft": 350.5,
+          "slotLeft": 328.5,
+          "slotWidth": 14,
+          "slotVis": "visible"
+        },
+        {
+          "text": "▾空章节",
+          "hasCaret": true,
+          "hasPhantom": true,
+          "textLeft": 354.5,
+          "slotLeft": 328.5,
+          "slotWidth": 18,
+          "slotVis": "hidden"
+        },
+        {
+          "text": "▾尾部章节",
+          "hasCaret": true,
+          "hasPhantom": false,
+          "textLeft": 354.5,
+          "slotLeft": 328.5,
+          "slotWidth": 18,
+          "slotVis": "visible"
+        },
+        {
+          "text": "▾引用面",
+          "hasCaret": true,
+          "hasPhantom": false,
+          "textLeft": 354.5,
+          "slotLeft": 328.5,
+          "slotWidth": 18,
+          "slotVis": "visible"
+        }
+      ]
+    },
+    "headingSlots": [
+      {
+        "text": "▾# 批 B 样式夹具",
+        "hasCaret": true,
+        "hasPhantom": false,
+        "textLeft": 354.5,
+        "slotLeft": 328.5,
+        "slotWidth": 18,
+        "slotVis": "visible"
+      },
+      {
+        "text": "▾可折叠章节",
+        "hasCaret": true,
+        "hasPhantom": false,
+        "textLeft": 354.5,
+        "slotLeft": 328.5,
+        "slotWidth": 18,
+        "slotVis": "visible"
+      },
+      {
+        "text": "▾子节",
+        "hasCaret": true,
+        "hasPhantom": false,
+        "textLeft": 350.5,
+        "slotLeft": 328.5,
+        "slotWidth": 14,
+        "slotVis": "visible"
+      },
+      {
+        "text": "▾空章节",
+        "hasCaret": true,
+        "hasPhantom": true,
+        "textLeft": 354.5,
+        "slotLeft": 328.5,
+        "slotWidth": 18,
+        "slotVis": "hidden"
+      },
+      {
+        "text": "▾尾部章节",
+        "hasCaret": true,
+        "hasPhantom": false,
+        "textLeft": 354.5,
+        "slotLeft": 328.5,
+        "slotWidth": 18,
+        "slotVis": "visible"
+      },
+      {
+        "text": "▾引用面",
+        "hasCaret": true,
+        "hasPhantom": false,
+        "textLeft": 354.5,
+        "slotLeft": 328.5,
+        "slotWidth": 18,
+        "slotVis": "visible"
+      }
+    ],
+    "quote": {
+      "line": {
+        "borderLeftWidth": "3px",
+        "borderLeftColor": "rgb(208, 215, 222)",
+        "color": "rgb(51, 51, 51)",
+        "fontStyle": "normal",
+        "text": "这是一段非常非常长的引用首行文本"
+      },
+      "caret": {
+        "position": "absolute",
+        "top": "4px",
+        "right": "8px",
+        "rect": {
+          "left": 1091.5,
+          "top": 780.38,
+          "right": 1104.5,
+          "bottom": 805.97
+        },
+        "lineRect": {
+          "left": 312.5,
+          "top": 776.38,
+          "right": 1112.5,
+          "bottom": 827.56
+        },
+        "distFromLineRight": 8,
+        "distFromLineTop": 4,
+        "text": "▾"
+      }
+    },
+    "folded": {
+      "present": true,
+      "row": {
+        "borderLeftWidth": "0px",
+        "borderLeftColor": "rgb(107, 107, 107)",
+        "paddingLeft": "0px",
+        "paddingRight": "0px",
+        "fontStyle": "normal",
+        "color": "rgb(107, 107, 107)",
+        "rect": {
+          "left": 331.5,
+          "top": 433.97,
+          "right": 1096.5,
+          "bottom": 462.77
+        }
+      },
+      "summary": {
+        "color": "rgb(51, 51, 51)",
+        "fontStyle": "normal",
+        "fontSize": "13px"
+      },
+      "caretLeft": 331.5,
+      "residueProbe": {
+        "x": 328.5,
+        "tag": "DIV",
+        "cls": "cm-line cm-md-quote cm-md-quote-d1",
+        "borderLeftWidth": "3px"
+      },
+      "text": "▸「这是一段非常非常长的引用首行文本用于验证摘要行的截断规则"
+    },
+    "expandedAgain": {
+      "summaryGone": true,
+      "caretBack": true,
+      "lines": 8
+    },
+    "residue": []
+  },
+  "finishedAt": "2026-10-01T04:27:25.607Z",
+  "passed": 29,
+  "total": 29
+}

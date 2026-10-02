@@ -1,0 +1,482 @@
+{
+  "meta": {
+    "port": 9501,
+    "startedAt": "2026-09-30T11:53:31.734Z",
+    "batch": "⑤复测2（弹窗清场修正）",
+    "dialogsCleared": {
+      "before": [
+        {
+          "text": "恢复未保存的草稿发现未保存的 Untitled 草稿（草稿时间 2026/09/30 19:30，上次会话可能崩溃）。要恢复吗？恢复草稿丢弃草稿稍后",
+          "label": "稍后"
+        }
+      ],
+      "afterLoadDoc": []
+    },
+    "finishedAt": "2026-09-30T11:53:42.708Z"
+  },
+  "checks": [
+    {
+      "name": "5.0a 点入单元格进入编辑态（7C 工具栏挂载）",
+      "ok": true
+    },
+    {
+      "name": "5.0b 结构操作后编辑视图 4×4（含空列）",
+      "ok": true,
+      "detail": {
+        "rowCount": 4,
+        "colCount": 4,
+        "cells": [
+          [
+            "左列",
+            "",
+            "中列",
+            "右列"
+          ],
+          [
+            "a1",
+            "",
+            "b1",
+            "c1"
+          ],
+          [
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "a2",
+            "",
+            "b2",
+            "c2"
+          ]
+        ],
+        "aligns": [
+          [
+            "left",
+            "center",
+            "center",
+            "right"
+          ],
+          [
+            "left",
+            "center",
+            "center",
+            "right"
+          ],
+          [
+            "left",
+            "center",
+            "center",
+            "right"
+          ],
+          [
+            "left",
+            "center",
+            "center",
+            "right"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "5.1b HTML 通道表格逐项一致（修复后回归）（AC-OP-17 判据 2）",
+      "ok": true,
+      "detail": {
+        "label": "HTML",
+        "ok": true,
+        "rowsOk": true,
+        "colsOk": true,
+        "cellsOk": true,
+        "alignsOk": true,
+        "parsed": {
+          "rowCount": 4,
+          "colCount": 4,
+          "cells": [
+            [
+              "左列",
+              "",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "",
+              "b1",
+              "c1"
+            ],
+            [
+              "",
+              "",
+              "",
+              ""
+            ],
+            [
+              "a2",
+              "",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ]
+          ]
+        },
+        "expected": {
+          "rowCount": 4,
+          "colCount": 4,
+          "cells": [
+            [
+              "左列",
+              "",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "",
+              "b1",
+              "c1"
+            ],
+            [
+              "",
+              "",
+              "",
+              ""
+            ],
+            [
+              "a2",
+              "",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "5.2b PDF 通道表格逐项一致（修复后回归）（AC-OP-17 判据 2）",
+      "ok": true,
+      "detail": {
+        "label": "PDF",
+        "ok": true,
+        "rowsOk": true,
+        "colsOk": true,
+        "cellsOk": true,
+        "alignsOk": true,
+        "parsed": {
+          "rowCount": 4,
+          "colCount": 4,
+          "cells": [
+            [
+              "左列",
+              "",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "",
+              "b1",
+              "c1"
+            ],
+            [
+              "",
+              "",
+              "",
+              ""
+            ],
+            [
+              "a2",
+              "",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ]
+          ]
+        },
+        "expected": {
+          "rowCount": 4,
+          "colCount": 4,
+          "cells": [
+            [
+              "左列",
+              "",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "",
+              "b1",
+              "c1"
+            ],
+            [
+              "",
+              "",
+              "",
+              ""
+            ],
+            [
+              "a2",
+              "",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "5.3b 富文本通道表格逐项一致（修复后回归）（AC-OP-17 判据 2）",
+      "ok": true,
+      "detail": {
+        "label": "富文本",
+        "ok": true,
+        "rowsOk": true,
+        "colsOk": true,
+        "cellsOk": true,
+        "alignsOk": true,
+        "parsed": {
+          "rowCount": 4,
+          "colCount": 4,
+          "cells": [
+            [
+              "左列",
+              "",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "",
+              "b1",
+              "c1"
+            ],
+            [
+              "",
+              "",
+              "",
+              ""
+            ],
+            [
+              "a2",
+              "",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ]
+          ]
+        },
+        "expected": {
+          "rowCount": 4,
+          "colCount": 4,
+          "cells": [
+            [
+              "左列",
+              "",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "",
+              "b1",
+              "c1"
+            ],
+            [
+              "",
+              "",
+              "",
+              ""
+            ],
+            [
+              "a2",
+              "",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "5.1c/5.2c/5.3c 冒号行在 .md 中且对齐语义已兑现（三通道 aligns 一致）",
+      "ok": true,
+      "detail": {
+        "colonLine": "| :--- | :---: | :---: | ---: |"
+      }
+    },
+    {
+      "name": "5.6b undo 空栈 Ctrl+Z 静默不动作（文档不变 + 无新增 toast/弹窗）",
+      "ok": true,
+      "detail": {
+        "drain": {
+          "drained": 4,
+          "stackEmpty": true
+        },
+        "pre": {
+          "len": 92,
+          "toastDom": "已导出 → D:/code/typora/process-docs/ui-ux-redesign/reports/IT-04-FE-02/IT-04-FE-02-export-fixed-pdf.html",
+          "dialog": null
+        },
+        "post": {
+          "len": 92,
+          "toastDom": "已导出 → D:/code/typora/process-docs/ui-ux-redesign/reports/IT-04-FE-02/IT-04-FE-02-export-fixed-pdf.html",
+          "dialog": null
+        }
+      }
+    }
+  ]
+}

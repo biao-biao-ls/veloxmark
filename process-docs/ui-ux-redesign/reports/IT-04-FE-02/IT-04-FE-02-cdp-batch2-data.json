@@ -1,0 +1,482 @@
+{
+  "meta": {
+    "port": 9501,
+    "startedAt": "2026-09-30T11:14:28.730Z",
+    "batch": "②命中区域与提示",
+    "finishedAt": "2026-09-30T11:14:32.195Z"
+  },
+  "checks": [
+    {
+      "name": "2.1 表格工具栏 6 键齐备（data-op 契约面）",
+      "ok": true,
+      "detail": {
+        "ops": [
+          "resizeTable",
+          "alignLeft",
+          "alignCenter",
+          "alignRight",
+          "TBL-MOR-OPN",
+          "deleteTable"
+        ]
+      }
+    },
+    {
+      "name": "2.1 表格工具栏 hover 提示 100%",
+      "ok": true,
+      "detail": {
+        "present": true,
+        "count": 6,
+        "btns": [
+          {
+            "op": "resizeTable",
+            "title": "调整行列数",
+            "text": "⊞"
+          },
+          {
+            "op": "alignLeft",
+            "title": "左对齐",
+            "text": "◧"
+          },
+          {
+            "op": "alignCenter",
+            "title": "居中对齐",
+            "text": "▣"
+          },
+          {
+            "op": "alignRight",
+            "title": "右对齐",
+            "text": "◨"
+          },
+          {
+            "op": "TBL-MOR-OPN",
+            "title": "更多操作",
+            "text": "⋮"
+          },
+          {
+            "op": "deleteTable",
+            "title": "删除表格",
+            "text": "🗑"
+          }
+        ]
+      }
+    },
+    {
+      "name": "2.2 块级 chrome hover 提示 100%",
+      "ok": true,
+      "detail": {
+        "total": 5,
+        "missing": []
+      }
+    },
+    {
+      "name": "2.3a 图片工具栏 hover 提示 100%",
+      "ok": false,
+      "detail": {
+        "total": 6,
+        "missing": [
+          {
+            "label": "img-toolbar",
+            "tag": "span",
+            "cls": "cm-md-image-toolbar-pct",
+            "op": null,
+            "handle": null,
+            "title": null,
+            "aria": null,
+            "text": "400%",
+            "visible": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "2.3b 链接浮层 hover 提示 100%",
+      "ok": true,
+      "detail": {
+        "total": 4,
+        "missing": []
+      }
+    },
+    {
+      "name": "2.3c RenderFloat 浮层按钮扫描",
+      "ok": true,
+      "detail": {
+        "total": 3,
+        "missing": 0
+      }
+    },
+    {
+      "name": "2.4 col-grip 与 chip hover 提示 100%",
+      "ok": false,
+      "detail": {
+        "total": 4,
+        "missing": [
+          {
+            "label": "grip-chip",
+            "tag": "span",
+            "cls": "cm-md-code-idle-chip",
+            "op": null,
+            "handle": null,
+            "title": null,
+            "aria": null,
+            "text": "JavaScript",
+            "visible": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "2.5 全量覆盖率 100%（家族并集）",
+      "ok": true,
+      "detail": {
+        "total": 17,
+        "covered": 17,
+        "missing": []
+      }
+    }
+  ],
+  "families": {
+    "chrome": [
+      {
+        "label": "chrome",
+        "tag": "span",
+        "cls": "cm-md-fold-caret cm-md-heading-fold-caret",
+        "op": null,
+        "handle": null,
+        "title": "折叠本节",
+        "aria": null,
+        "text": "▾",
+        "visible": true
+      },
+      {
+        "label": "chrome",
+        "tag": "span",
+        "cls": "cm-md-fold-caret cm-md-heading-fold-caret",
+        "op": null,
+        "handle": null,
+        "title": "折叠本节",
+        "aria": null,
+        "text": "▾",
+        "visible": true
+      },
+      {
+        "label": "chrome",
+        "tag": "button",
+        "cls": "cm-md-block-toolbar-btn",
+        "op": null,
+        "handle": null,
+        "title": "复制代码",
+        "aria": null,
+        "text": "复制",
+        "visible": true
+      },
+      {
+        "label": "chrome",
+        "tag": "button",
+        "cls": "cm-md-block-toolbar-btn",
+        "op": null,
+        "handle": null,
+        "title": "复制 TeX 源码",
+        "aria": null,
+        "text": "复制",
+        "visible": true
+      },
+      {
+        "label": "chrome",
+        "tag": "button",
+        "cls": "cm-md-block-toolbar-btn",
+        "op": null,
+        "handle": null,
+        "title": "以 Markdown 复制表格",
+        "aria": null,
+        "text": "复制",
+        "visible": true
+      }
+    ],
+    "imgToolbar": [
+      {
+        "label": "img-toolbar",
+        "tag": "span",
+        "cls": "cm-md-image-toolbar-pct",
+        "op": null,
+        "handle": null,
+        "title": null,
+        "aria": null,
+        "text": "400%",
+        "visible": true
+      },
+      {
+        "label": "img-toolbar",
+        "tag": "input",
+        "cls": "",
+        "op": null,
+        "handle": null,
+        "title": "图片尺寸",
+        "aria": null,
+        "text": "",
+        "visible": true
+      },
+      {
+        "label": "img-toolbar",
+        "tag": "button",
+        "cls": "cm-md-image-toolbar-btn",
+        "op": null,
+        "handle": null,
+        "title": "水平翻转",
+        "aria": null,
+        "text": "⇋",
+        "visible": true
+      },
+      {
+        "label": "img-toolbar",
+        "tag": "button",
+        "cls": "cm-md-image-toolbar-btn",
+        "op": null,
+        "handle": null,
+        "title": "垂直翻转",
+        "aria": null,
+        "text": "⤒",
+        "visible": true
+      },
+      {
+        "label": "img-toolbar",
+        "tag": "button",
+        "cls": "cm-md-image-toolbar-btn",
+        "op": null,
+        "handle": null,
+        "title": "恢复原始尺寸",
+        "aria": null,
+        "text": "1:1",
+        "visible": true
+      },
+      {
+        "label": "img-toolbar",
+        "tag": "button",
+        "cls": "cm-md-image-toolbar-btn",
+        "op": null,
+        "handle": null,
+        "title": "在文件管理器中显示",
+        "aria": null,
+        "text": "⏏",
+        "visible": true
+      }
+    ],
+    "linkFloat": [
+      {
+        "label": "link-float",
+        "tag": "div",
+        "cls": "cm-md-link-url",
+        "op": null,
+        "handle": null,
+        "title": "https://example.com/tip",
+        "aria": null,
+        "text": "https://example.com/tip",
+        "visible": true
+      },
+      {
+        "label": "link-float",
+        "tag": "button",
+        "cls": "cm-md-float-btn is-primary",
+        "op": null,
+        "handle": null,
+        "title": "编辑 URL",
+        "aria": "编辑 URL",
+        "text": "✎编辑 URL",
+        "visible": true
+      },
+      {
+        "label": "link-float",
+        "tag": "button",
+        "cls": "cm-md-float-btn",
+        "op": null,
+        "handle": null,
+        "title": "在系统默认浏览器打开",
+        "aria": "在系统默认浏览器打开",
+        "text": "↗外开",
+        "visible": true
+      },
+      {
+        "label": "link-float",
+        "tag": "button",
+        "cls": "cm-md-float-btn",
+        "op": null,
+        "handle": null,
+        "title": "复制完整 URL",
+        "aria": "复制完整 URL",
+        "text": "⧉复制",
+        "visible": true
+      }
+    ],
+    "renderFloat": [
+      {
+        "label": "render-float",
+        "tag": "button",
+        "cls": "cm-md-float-btn is-primary",
+        "op": null,
+        "handle": null,
+        "title": "编辑 URL",
+        "aria": "编辑 URL",
+        "text": "✎编辑 URL",
+        "visible": true
+      },
+      {
+        "label": "render-float",
+        "tag": "button",
+        "cls": "cm-md-float-btn",
+        "op": null,
+        "handle": null,
+        "title": "在系统默认浏览器打开",
+        "aria": "在系统默认浏览器打开",
+        "text": "↗外开",
+        "visible": true
+      },
+      {
+        "label": "render-float",
+        "tag": "button",
+        "cls": "cm-md-float-btn",
+        "op": null,
+        "handle": null,
+        "title": "复制完整 URL",
+        "aria": "复制完整 URL",
+        "text": "⧉复制",
+        "visible": true
+      }
+    ],
+    "gripChip": [
+      {
+        "label": "grip-chip",
+        "tag": "span",
+        "cls": "cm-md-code-idle-chip",
+        "op": null,
+        "handle": null,
+        "title": null,
+        "aria": null,
+        "text": "JavaScript",
+        "visible": true
+      },
+      {
+        "label": "grip-chip",
+        "tag": "span",
+        "cls": "cm-md-math-hover-chip",
+        "op": null,
+        "handle": null,
+        "title": "点击编辑源码",
+        "aria": null,
+        "text": "公式 </>",
+        "visible": true
+      },
+      {
+        "label": "grip-chip",
+        "tag": "span",
+        "cls": "cm-md-col-grip",
+        "op": null,
+        "handle": "col-grip",
+        "title": "拖动调整列宽（仅本次会话）",
+        "aria": null,
+        "text": "",
+        "visible": true
+      },
+      {
+        "label": "grip-chip",
+        "tag": "span",
+        "cls": "cm-md-col-grip",
+        "op": null,
+        "handle": "col-grip",
+        "title": "拖动调整列宽（仅本次会话）",
+        "aria": null,
+        "text": "",
+        "visible": true
+      }
+    ],
+    "all": {
+      "total": 17,
+      "covered": 17,
+      "rows": [
+        {
+          "k": "cm-md-fold-caret cm-md-heading-fold-caret|▾",
+          "hasTip": true,
+          "title": "折叠本节"
+        },
+        {
+          "k": "cm-md-block-toolbar-btn|复制",
+          "hasTip": true,
+          "title": "复制代码"
+        },
+        {
+          "k": "|",
+          "hasTip": true,
+          "title": "图片尺寸"
+        },
+        {
+          "k": "cm-md-image-toolbar-btn|⇋",
+          "hasTip": true,
+          "title": "水平翻转"
+        },
+        {
+          "k": "cm-md-image-toolbar-btn|⤒",
+          "hasTip": true,
+          "title": "垂直翻转"
+        },
+        {
+          "k": "cm-md-image-toolbar-btn|1:1",
+          "hasTip": true,
+          "title": "恢复原始尺寸"
+        },
+        {
+          "k": "cm-md-image-toolbar-btn|⏏",
+          "hasTip": true,
+          "title": "在文件管理器中显示"
+        },
+        {
+          "k": "col-grip",
+          "hasTip": true,
+          "title": "拖动调整列宽（仅本次会话）"
+        },
+        {
+          "k": "resizeTable",
+          "hasTip": true,
+          "title": "调整行列数"
+        },
+        {
+          "k": "alignLeft",
+          "hasTip": true,
+          "title": "左对齐"
+        },
+        {
+          "k": "alignCenter",
+          "hasTip": true,
+          "title": "居中对齐"
+        },
+        {
+          "k": "alignRight",
+          "hasTip": true,
+          "title": "右对齐"
+        },
+        {
+          "k": "TBL-MOR-OPN",
+          "hasTip": true,
+          "title": "更多操作"
+        },
+        {
+          "k": "deleteTable",
+          "hasTip": true,
+          "title": "删除表格"
+        },
+        {
+          "k": "cm-md-float-btn is-primary|✎编辑 URL",
+          "hasTip": true,
+          "title": "编辑 URL"
+        },
+        {
+          "k": "cm-md-float-btn|↗外开",
+          "hasTip": true,
+          "title": "在系统默认浏览器打开"
+        },
+        {
+          "k": "cm-md-float-btn|⧉复制",
+          "hasTip": true,
+          "title": "复制完整 URL"
+        }
+      ]
+    }
+  }
+}

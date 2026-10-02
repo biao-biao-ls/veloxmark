@@ -1,0 +1,763 @@
+{
+  "meta": {
+    "port": 9470,
+    "phase": "1",
+    "startedAt": "2026-09-30T06:20:02.220Z",
+    "fixturePath": "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it03-fe07-heading-fold-selftest.md",
+    "fixtureHashBefore": "a70954c8d5011dad36df55f6e529724376e40053daaa2a4b6e1180f4b256c0f7",
+    "fixtureMatchesDriverText": true,
+    "seams": {
+      "p12": true,
+      "p13": true,
+      "p18": true,
+      "p18ranges": true,
+      "p18session": true,
+      "p26": true,
+      "p26cursor": true,
+      "prefs": true
+    },
+    "finishedAt": "2026-09-30T06:20:17.529Z",
+    "passed": 46,
+    "total": 46
+  },
+  "scenarios": {
+    "s1": {
+      "carets": [
+        {
+          "key": "1:标题折叠自测",
+          "title": "折叠本节",
+          "text": "▾",
+          "cls": "cm-md-fold-caret cm-md-heading-fold-caret"
+        },
+        {
+          "key": "2:Alpha 章节",
+          "title": "折叠本节",
+          "text": "▾",
+          "cls": "cm-md-fold-caret cm-md-heading-fold-caret"
+        },
+        {
+          "key": "3:Alpha 子节 A",
+          "title": "折叠本节",
+          "text": "▾",
+          "cls": "cm-md-fold-caret cm-md-heading-fold-caret"
+        },
+        {
+          "key": "4:Alpha 孙节",
+          "title": "折叠本节",
+          "text": "▾",
+          "cls": "cm-md-fold-caret cm-md-heading-fold-caret"
+        },
+        {
+          "key": "3:Alpha 子节 B",
+          "title": "折叠本节",
+          "text": "▾",
+          "cls": "cm-md-fold-caret cm-md-heading-fold-caret"
+        },
+        {
+          "key": "2:Beta 章节",
+          "title": "折叠本节",
+          "text": "▾",
+          "cls": "cm-md-fold-caret cm-md-heading-fold-caret"
+        },
+        {
+          "key": "2:引用章节",
+          "title": "折叠本节",
+          "text": "▾",
+          "cls": "cm-md-fold-caret cm-md-heading-fold-caret"
+        },
+        {
+          "key": "2:仅空行",
+          "title": "折叠本节",
+          "text": "▾",
+          "cls": "cm-md-fold-caret cm-md-heading-fold-caret"
+        },
+        {
+          "key": "2:尾部章节",
+          "title": "折叠本节",
+          "text": "▾",
+          "cls": "cm-md-fold-caret cm-md-heading-fold-caret"
+        }
+      ],
+      "rows": [],
+      "outline": [
+        {
+          "i": 0,
+          "text": "▾标题折叠自测",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 1,
+          "text": "▾Alpha 章节",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 2,
+          "text": "▾Alpha 子节 A",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 3,
+          "text": "▾Alpha 孙节",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 4,
+          "text": "▾Alpha 子节 B",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 5,
+          "text": "▾Beta 章节",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 6,
+          "text": "▾引用章节",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 7,
+          "text": "▾空章节",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 8,
+          "text": "▾仅空行",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 9,
+          "text": "▾尾部章节",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        }
+      ]
+    },
+    "s2": {
+      "folded": [
+        "2:Alpha 章节"
+      ],
+      "caret": {
+        "key": "2:Alpha 章节",
+        "title": "展开本节",
+        "text": "▸",
+        "cls": "cm-md-fold-caret cm-md-heading-fold-caret"
+      },
+      "range": {
+        "key": "2:Alpha 章节",
+        "from": 34,
+        "to": 125,
+        "lines": 15
+      },
+      "summary": {
+        "key": "2:Alpha 章节",
+        "text": "（15 行内容已折叠 · 与大纲双向同步）",
+        "cls": "cm-md-fold-summary"
+      },
+      "hidden": [],
+      "cursor": {
+        "before": 0,
+        "after": 0
+      },
+      "hash": "a70954c8d5011dad36df55f6e529724376e40053daaa2a4b6e1180f4b256c0f7"
+    },
+    "s4Away": {
+      "fp": null,
+      "rows": 0
+    },
+    "s4": {
+      "session1": {
+        "headingFolds": {
+          "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it03-fe07-heading-fold-selftest.md": [
+            "2:尾部章节",
+            "2:Alpha 章节",
+            "2:Beta 章节"
+          ]
+        },
+        "p18": [
+          "2:尾部章节",
+          "2:Alpha 章节",
+          "2:Beta 章节"
+        ]
+      },
+      "entry1": [
+        "2:尾部章节",
+        "2:Alpha 章节",
+        "2:Beta 章节"
+      ],
+      "cursorOutline": {
+        "before": 0,
+        "after": 0
+      },
+      "away": {
+        "fp": null,
+        "rows": 0
+      },
+      "back": {
+        "folded": [
+          "2:Alpha 章节",
+          "2:Beta 章节",
+          "2:尾部章节"
+        ],
+        "rows": [
+          {
+            "key": "2:Alpha 章节",
+            "text": "（15 行内容已折叠 · 与大纲双向同步）",
+            "cls": "cm-md-fold-summary"
+          },
+          {
+            "key": "2:Beta 章节",
+            "text": "（4 行内容已折叠 · 与大纲双向同步）",
+            "cls": "cm-md-fold-summary"
+          },
+          {
+            "key": "2:尾部章节",
+            "text": "（2 行内容已折叠 · 与大纲双向同步）",
+            "cls": "cm-md-fold-summary"
+          }
+        ]
+      },
+      "session2": [
+        "2:Alpha 章节",
+        "2:Beta 章节",
+        "2:尾部章节"
+      ],
+      "hash": "a70954c8d5011dad36df55f6e529724376e40053daaa2a4b6e1180f4b256c0f7"
+    }
+  },
+  "checks": [
+    {
+      "name": "S0 e2e 缝可达（P12/P13/P18/P26/__veloxPrefs）",
+      "ok": true,
+      "detail": {
+        "p12": true,
+        "p13": true,
+        "p18": true,
+        "p18ranges": true,
+        "p18session": true,
+        "p26": true,
+        "p26cursor": true,
+        "prefs": true
+      }
+    },
+    {
+      "name": "S0 fixture 装载后 getDoc() 与原文零字节差",
+      "ok": true,
+      "detail": {
+        "len": 235,
+        "expected": 235,
+        "equal": true
+      }
+    },
+    {
+      "name": "S1 每个可折叠标题一个 ▾ 入口（视口并集）",
+      "ok": true,
+      "detail": [
+        "1:标题折叠自测",
+        "2:Alpha 章节",
+        "2:Beta 章节",
+        "2:仅空行",
+        "2:尾部章节",
+        "2:引用章节",
+        "3:Alpha 子节 A",
+        "3:Alpha 子节 B",
+        "4:Alpha 孙节"
+      ]
+    },
+    {
+      "name": "S1 空章节无折叠入口（空态）",
+      "ok": true,
+      "detail": [
+        "1:标题折叠自测",
+        "2:Alpha 章节",
+        "2:Beta 章节",
+        "2:仅空行",
+        "2:尾部章节",
+        "2:引用章节",
+        "3:Alpha 子节 A",
+        "3:Alpha 子节 B",
+        "4:Alpha 孙节"
+      ]
+    },
+    {
+      "name": "S1 入口属性：▾ + title 折叠本节 + testid（UI-IXD-06）",
+      "ok": true,
+      "detail": [
+        "1:标题折叠自测",
+        "2:Alpha 章节",
+        "3:Alpha 子节 A",
+        "4:Alpha 孙节",
+        "3:Alpha 子节 B",
+        "2:Beta 章节",
+        "2:引用章节",
+        "2:仅空行",
+        "2:尾部章节"
+      ]
+    },
+    {
+      "name": "S1 展开态无折叠占位行",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "S1 大纲 10 行全渲染（含空章节行）",
+      "ok": true,
+      "detail": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "name": "S1 大纲三角与正文态镜像（全 ▾）",
+      "ok": true,
+      "detail": [
+        {
+          "i": 0,
+          "text": "▾标题折叠自测",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 1,
+          "text": "▾Alpha 章节",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 2,
+          "text": "▾Alpha 子节 A",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 3,
+          "text": "▾Alpha 孙节",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 4,
+          "text": "▾Alpha 子节 B",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 5,
+          "text": "▾Beta 章节",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 6,
+          "text": "▾引用章节",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 7,
+          "text": "▾空章节",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 8,
+          "text": "▾仅空行",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        },
+        {
+          "i": 9,
+          "text": "▾尾部章节",
+          "foldText": "▾",
+          "foldTitle": "折叠本节",
+          "foldCls": "outline-fold",
+          "hasFold": true
+        }
+      ]
+    },
+    {
+      "name": "S2 点击 Alpha 标题三角折叠",
+      "ok": true,
+      "detail": {
+        "key": "2:Alpha 章节",
+        "sel": "[data-testid=\"heading-fold-caret\"][data-fold-key=\"2:Alpha 章节\"]",
+        "x": 337.5,
+        "y": 283.86,
+        "left": 328.5,
+        "top": 274.86,
+        "right": 346.5,
+        "bottom": 292.86,
+        "w": 18,
+        "h": 18
+      }
+    },
+    {
+      "name": "S2 折叠键写入 foldField（含 Alpha）",
+      "ok": true,
+      "detail": [
+        "2:Alpha 章节"
+      ]
+    },
+    {
+      "name": "S2 三角指向切换 ▸ + title 展开本节（UI-IXD-06）",
+      "ok": true,
+      "detail": {
+        "key": "2:Alpha 章节",
+        "title": "展开本节",
+        "text": "▸",
+        "cls": "cm-md-fold-caret cm-md-heading-fold-caret"
+      }
+    },
+    {
+      "name": "S2 子章节入口随折叠隐藏（全部子章节）",
+      "ok": true,
+      "detail": [
+        "1:标题折叠自测",
+        "2:Alpha 章节",
+        "2:Beta 章节",
+        "2:引用章节",
+        "2:仅空行"
+      ]
+    },
+    {
+      "name": "S2 全部子章节内容折叠隐藏（含孙级标题）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "S2 标题行保留可见",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "S2 折叠范围覆盖全部子章节（getRanges 命中）",
+      "ok": true,
+      "detail": {
+        "key": "2:Alpha 章节",
+        "from": 34,
+        "to": 125,
+        "lines": 15
+      }
+    },
+    {
+      "name": "S2 占位行文案「（N 行内容已折叠 · 与大纲双向同步）」",
+      "ok": true,
+      "detail": {
+        "summary": {
+          "key": "2:Alpha 章节",
+          "text": "（15 行内容已折叠 · 与大纲双向同步）",
+          "cls": "cm-md-fold-summary"
+        },
+        "lines": 15
+      }
+    },
+    {
+      "name": "S2 占位行样式类 cm-md-fold-summary",
+      "ok": true,
+      "detail": {
+        "key": "2:Alpha 章节",
+        "text": "（15 行内容已折叠 · 与大纲双向同步）",
+        "cls": "cm-md-fold-summary"
+      }
+    },
+    {
+      "name": "S2 其余章节不受牵连（Beta 仍 ▾）",
+      "ok": true,
+      "detail": [
+        "1:标题折叠自测▾",
+        "2:Beta 章节▾",
+        "2:引用章节▾",
+        "2:仅空行▾"
+      ]
+    },
+    {
+      "name": "S2 尾部章节不受牵连（▾）",
+      "ok": true,
+      "detail": {
+        "key": "2:尾部章节",
+        "title": "折叠本节",
+        "text": "▾",
+        "cls": "cm-md-fold-caret cm-md-heading-fold-caret"
+      }
+    },
+    {
+      "name": "S2 点三角不移动光标（PEND 交互契约）",
+      "ok": true,
+      "detail": {
+        "before": 0,
+        "after": 0
+      }
+    },
+    {
+      "name": "S2 折叠无 toast（PEND-15）",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "S2 折叠后 getDoc() 零字节变化",
+      "ok": true,
+      "detail": {
+        "equal": true
+      }
+    },
+    {
+      "name": "S2 折叠后磁盘 .md hash 不变",
+      "ok": true,
+      "detail": {
+        "before": "a70954c8d5011dad36df55f6e529724376e40053daaa2a4b6e1180f4b256c0f7",
+        "after": "a70954c8d5011dad36df55f6e529724376e40053daaa2a4b6e1180f4b256c0f7"
+      }
+    },
+    {
+      "name": "S3 点占位行展开（内容全回）",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "S3 展开后 getDoc() 零字节差",
+      "ok": true,
+      "detail": {
+        "equal": true
+      }
+    },
+    {
+      "name": "S3 再次折叠成功",
+      "ok": true,
+      "detail": [
+        "2:Alpha 章节"
+      ]
+    },
+    {
+      "name": "S3 点三角 ▸ 展开还原",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "S3 展开无 toast（PEND-15）",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "S3 展开后磁盘 .md hash 不变",
+      "ok": true,
+      "detail": {
+        "before": "a70954c8d5011dad36df55f6e529724376e40053daaa2a4b6e1180f4b256c0f7",
+        "after": "a70954c8d5011dad36df55f6e529724376e40053daaa2a4b6e1180f4b256c0f7"
+      }
+    },
+    {
+      "name": "S4 大纲侧折叠 → 正文 Beta 折叠",
+      "ok": true,
+      "detail": [
+        {
+          "key": "2:Beta 章节",
+          "text": "（4 行内容已折叠 · 与大纲双向同步）",
+          "cls": "cm-md-fold-summary"
+        }
+      ]
+    },
+    {
+      "name": "S4 大纲入口态镜像（Beta ▸ is-folded）",
+      "ok": true,
+      "detail": {
+        "i": 5,
+        "text": "▸Beta 章节",
+        "foldText": "▸",
+        "foldTitle": "展开本节",
+        "foldCls": "outline-fold is-folded",
+        "hasFold": true
+      }
+    },
+    {
+      "name": "S4 正文侧折叠 → 大纲 Tail 镜像（▸ is-folded）",
+      "ok": true,
+      "detail": {
+        "i": 9,
+        "text": "▸尾部章节",
+        "foldText": "▸",
+        "foldTitle": "展开本节",
+        "foldCls": "outline-fold is-folded",
+        "hasFold": true
+      }
+    },
+    {
+      "name": "S4 大纲侧展开 → 正文 Beta 还原",
+      "ok": true,
+      "detail": [
+        {
+          "key": "2:尾部章节",
+          "text": "（2 行内容已折叠 · 与大纲双向同步）",
+          "cls": "cm-md-fold-summary"
+        }
+      ]
+    },
+    {
+      "name": "S4 正文 Alpha 折叠 → 大纲镜像（▸）",
+      "ok": true,
+      "detail": {
+        "i": 1,
+        "text": "▸Alpha 章节",
+        "foldText": "▸",
+        "foldTitle": "展开本节",
+        "foldCls": "outline-fold is-folded",
+        "hasFold": true
+      }
+    },
+    {
+      "name": "S4 大纲侧展开 Alpha → 正文还原",
+      "ok": true,
+      "detail": [
+        "2:尾部章节"
+      ]
+    },
+    {
+      "name": "S4 仅空行章节折叠出占位行（退化点位）",
+      "ok": true,
+      "detail": [
+        {
+          "key": "2:仅空行",
+          "text": "（1 行内容已折叠 · 与大纲双向同步）",
+          "cls": "cm-md-fold-summary"
+        },
+        {
+          "key": "2:尾部章节",
+          "text": "（2 行内容已折叠 · 与大纲双向同步）",
+          "cls": "cm-md-fold-summary"
+        }
+      ]
+    },
+    {
+      "name": "S4 headingFolds 按 filePath 写入 session",
+      "ok": true,
+      "detail": [
+        "2:尾部章节",
+        "2:Alpha 章节",
+        "2:Beta 章节"
+      ]
+    },
+    {
+      "name": "S4 session 含 Alpha + Beta 折叠键",
+      "ok": true,
+      "detail": [
+        "2:尾部章节",
+        "2:Alpha 章节",
+        "2:Beta 章节"
+      ]
+    },
+    {
+      "name": "S4 大纲三角点击不移动光标",
+      "ok": true,
+      "detail": {
+        "before": 0,
+        "after": 0
+      }
+    },
+    {
+      "name": "S4 fixture 标签仍在标签栏",
+      "ok": true,
+      "detail": 1
+    },
+    {
+      "name": "S4 tab 切回后折叠仍在（AC-RULE-14）",
+      "ok": true,
+      "detail": [
+        "2:Alpha 章节",
+        "2:Beta 章节",
+        "2:尾部章节"
+      ]
+    },
+    {
+      "name": "S4 tab 切回后 getDoc() 仍 === 原文",
+      "ok": true,
+      "detail": {
+        "equal": true
+      }
+    },
+    {
+      "name": "S4 tab 切换未清空 session headingFolds",
+      "ok": true,
+      "detail": [
+        "2:Alpha 章节",
+        "2:Beta 章节",
+        "2:尾部章节"
+      ]
+    },
+    {
+      "name": "S4 同步全程无 toast（PEND-15）",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "S4 全程磁盘 .md hash 不变",
+      "ok": true,
+      "detail": {
+        "before": "a70954c8d5011dad36df55f6e529724376e40053daaa2a4b6e1180f4b256c0f7",
+        "after": "a70954c8d5011dad36df55f6e529724376e40053daaa2a4b6e1180f4b256c0f7"
+      }
+    },
+    {
+      "name": "S4 收尾：Alpha + Beta 处折叠态（供 S5 重启恢复）",
+      "ok": true,
+      "detail": [
+        "2:Alpha 章节",
+        "2:Beta 章节",
+        "2:尾部章节"
+      ]
+    }
+  ]
+}

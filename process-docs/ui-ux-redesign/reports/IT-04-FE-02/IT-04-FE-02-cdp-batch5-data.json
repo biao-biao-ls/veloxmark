@@ -1,0 +1,494 @@
+{
+  "meta": {
+    "port": 9501,
+    "startedAt": "2026-09-30T11:29:50.279Z",
+    "batch": "⑤导出与落盘对账",
+    "finishedAt": "2026-09-30T11:30:04.712Z"
+  },
+  "checks": [
+    {
+      "name": "5.0 结构操作后编辑视图表格形态",
+      "ok": true,
+      "detail": {
+        "rowCount": 4,
+        "colCount": 4,
+        "cells": [
+          [
+            "左列",
+            "",
+            "中列",
+            "右列"
+          ],
+          [
+            "a1",
+            "",
+            "b1",
+            "c1"
+          ],
+          [
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "a2",
+            "",
+            "b2",
+            "c2"
+          ]
+        ],
+        "aligns": [
+          [
+            "left",
+            "center",
+            "center",
+            "right"
+          ],
+          [
+            "left",
+            "center",
+            "center",
+            "right"
+          ],
+          [
+            "left",
+            "center",
+            "center",
+            "right"
+          ],
+          [
+            "left",
+            "center",
+            "center",
+            "right"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "5.1a HTML 通道导出物生成（AC-OP-17 判据 1）",
+      "ok": true,
+      "detail": {
+        "bytes": 378987
+      }
+    },
+    {
+      "name": "5.2a PDF 通道导出流程完成（html→打印渲染源捕获）",
+      "ok": true,
+      "detail": {
+        "bytes": 378987
+      }
+    },
+    {
+      "name": "5.3a 富文本通道复制完成",
+      "ok": true,
+      "detail": {
+        "bytes": 1790
+      }
+    },
+    {
+      "name": "5.1b HTML 通道表格逐项一致（行列/内容/对齐）（AC-OP-17 判据 2）",
+      "ok": false,
+      "detail": {
+        "label": "HTML",
+        "ok": false,
+        "rowsOk": true,
+        "colsOk": false,
+        "cellsOk": false,
+        "alignsOk": false,
+        "parsed": {
+          "rowCount": 4,
+          "colCount": 3,
+          "cells": [
+            [
+              "左列",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "b1",
+              "c1"
+            ],
+            [],
+            [
+              "a2",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "center"
+            ],
+            [
+              "left",
+              "center",
+              "center"
+            ],
+            [],
+            [
+              "left",
+              "center",
+              "center"
+            ]
+          ]
+        },
+        "expected": {
+          "rowCount": 4,
+          "colCount": 4,
+          "cells": [
+            [
+              "左列",
+              "",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "",
+              "b1",
+              "c1"
+            ],
+            [
+              "",
+              "",
+              "",
+              ""
+            ],
+            [
+              "a2",
+              "",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "5.2b PDF 通道表格逐项一致（AC-OP-17 判据 2）",
+      "ok": false,
+      "detail": {
+        "label": "PDF",
+        "ok": false,
+        "rowsOk": true,
+        "colsOk": false,
+        "cellsOk": false,
+        "alignsOk": false,
+        "parsed": {
+          "rowCount": 4,
+          "colCount": 3,
+          "cells": [
+            [
+              "左列",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "b1",
+              "c1"
+            ],
+            [],
+            [
+              "a2",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "center"
+            ],
+            [
+              "left",
+              "center",
+              "center"
+            ],
+            [],
+            [
+              "left",
+              "center",
+              "center"
+            ]
+          ]
+        },
+        "expected": {
+          "rowCount": 4,
+          "colCount": 4,
+          "cells": [
+            [
+              "左列",
+              "",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "",
+              "b1",
+              "c1"
+            ],
+            [
+              "",
+              "",
+              "",
+              ""
+            ],
+            [
+              "a2",
+              "",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "5.3b 富文本通道表格逐项一致（AC-OP-17 判据 2）",
+      "ok": false,
+      "detail": {
+        "label": "富文本",
+        "ok": false,
+        "rowsOk": true,
+        "colsOk": false,
+        "cellsOk": false,
+        "alignsOk": false,
+        "parsed": {
+          "rowCount": 4,
+          "colCount": 3,
+          "cells": [
+            [
+              "左列",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "b1",
+              "c1"
+            ],
+            [],
+            [
+              "a2",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "center"
+            ],
+            [
+              "left",
+              "center",
+              "center"
+            ],
+            [],
+            [
+              "left",
+              "center",
+              "center"
+            ]
+          ]
+        },
+        "expected": {
+          "rowCount": 4,
+          "colCount": 4,
+          "cells": [
+            [
+              "左列",
+              "",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "",
+              "b1",
+              "c1"
+            ],
+            [
+              "",
+              "",
+              "",
+              ""
+            ],
+            [
+              "a2",
+              "",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "center",
+              "right"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "5.1c/5.2c/5.3c 冒号行在 .md 中且对齐语义已兑现（三通道 aligns 一致）",
+      "ok": false,
+      "detail": {
+        "colonLine": "| :--- | :---: | :---: | ---: |"
+      }
+    },
+    {
+      "name": "5.4 三通道导出物主题 var 一致、无色差（AC-OP-17 判据 3 / UI-ELEM-06）",
+      "ok": true,
+      "detail": {
+        "html": [
+          "--accent: #0969da",
+          "--accent: #58a6ff",
+          "--bg: #1e1e1e",
+          "--bg: #ffffff",
+          "--border: #333333",
+          "--border: #e5e5e5",
+          "--fg: #333333",
+          "--fg: #d4d4d4"
+        ],
+        "pdf": [
+          "--accent: #0969da",
+          "--accent: #58a6ff",
+          "--bg: #1e1e1e",
+          "--bg: #ffffff",
+          "--border: #333333",
+          "--border: #e5e5e5",
+          "--fg: #333333",
+          "--fg: #d4d4d4"
+        ],
+        "rich": []
+      }
+    },
+    {
+      "name": "5.5 .md 源码含本次结构变更 + 状态栏「已保存」+ 无数据丢失（AC-OP-19）",
+      "ok": true,
+      "detail": {
+        "sb": {
+          "text": "已保存 19:29",
+          "cls": "sb-autosave",
+          "dirty": false
+        },
+        "diskRows": 5,
+        "expectedRows": 4
+      }
+    },
+    {
+      "name": "5.6 undo 空栈 Ctrl+Z 静默不动作（无 toast 无弹窗文档不变）",
+      "ok": false,
+      "detail": {
+        "preLen": 12,
+        "postLen": 177,
+        "doc": "# 导出对账夹具\n\n| 左列   |       | 中列    | 右列   |\n| :--- | :---: | :---: | ---: |\n| a1   |       | b1    | c1   |\n|      |       |       |      |\n| a2   |       | b2    | c2   |\n\n表后段落。\n",
+        "toast": "已撤销",
+        "dialog": false,
+        "toastDom": true
+      }
+    },
+    {
+      "name": "5.7a autosave 失败后内存态保留不丢稿",
+      "ok": true,
+      "detail": {
+        "docLen": 19,
+        "dirty": true
+      }
+    },
+    {
+      "name": "5.7b 失败提示可见（冻结口径「自动保存失败，文档可另存副本」）",
+      "ok": false,
+      "detail": {
+        "toastText": "保存失败：C:/Windows/System32/it04-fe02-unwritable.md（Error invoking remote method 'file:write': Error: EPERM: operation not permitted, open 'C:\\Windows\\System32\\it04-fe02-unwritable.md'）",
+        "sb": "已保存 19:29",
+        "sbCls": "sb-autosave",
+        "frozenExactMatch": false,
+        "frozenReference": "自动保存失败，文档可另存副本",
+        "note": "与冻结口径措辞不一致——只登记不擅改（toast.autoSaveFailed 系列为动态 {reason}/{path} 变体，err.autosaveFailed 为固定句）"
+      }
+    }
+  ]
+}

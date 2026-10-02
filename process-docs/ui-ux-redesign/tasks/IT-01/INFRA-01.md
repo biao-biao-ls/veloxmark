@@ -25,6 +25,20 @@ spawned-tasks: []
 implementation-notes: "scripts/cdp-*.mjs 探针脚本不在本仓工作区（package.json test:smoke 引用 cdp-smoke.mjs，探针脚本随外部 e2e 环境提供）；本任务交付物为 e2e/seams 与 handles.d.ts 契约登记 + 探针断言变更清单，验收以 npm run test:smoke + 契约面断言测试为准。"
 doc-drift:
   - "CHANGE-3（merged）：⊞ 工具栏项 data-op 取 resizeTable（op id 命名空间）、弃原型 TBL-TOOL-GRID，探针断言以 resizeTable 为准——已合并登记至 tech-design#5 ContractSet + ac.md#AC-RULE-17"
+  - "登记位置口径取代（2026-10-02，PATH-07 r2 裁定）：删4留1/data-op 19 项的 DOM 契约登记落点为 editor/table/contract.ts 单源（ADR e2e-contract-delta.md 附录 A），e2e/ 内 handles.d.ts/seams 仅文件头指向声明、不重复登记字面量——任务文交付物/验收 grep 口径已按此修订（原「e2e/ 内存在 col-grip」断言作废）"
+business-history:
+  - pathId: "PATH-07"
+    taskId: "INFRA-01"
+    severity: P2
+    issue: "INFRA-01 交付物登记缺口：探针断言迁移对照表与契约登记未落盘"
+    verdict: "fixed"
+    timestamp: "2026-10-02T13:17:09+08:00"
+  - pathId: "PATH-07"
+    taskId: "INFRA-01"
+    severity: P2
+    issue: "r2 残余：登记位置口径未登记取代关系（e2e/ grep col-grip 0 命中 vs 任务文交付物措辞/验收断言）"
+    verdict: "fixed"
+    timestamp: "2026-10-02T13:17:09+08:00"
 ---
 
 # INFRA-01 - e2e 契约 delta 探针同步（data-table-handle 删4留1 登记与断言迁移）
@@ -71,7 +85,7 @@ doc-drift:
 - 来源：[prd.md#61-表格交互](../../requirement/prd/PRD.md#61-表格交互) / [tech-design.md#3-api-接口设计命令契约面](../../design/tech-design.md#3-api-接口设计命令契约面)
 - 触发：契约演进登记流程（AC-RULE-17）
 - 前置条件：ADR `e2e-contract-delta.md` 已锁定
-- 操作：`src/renderer/src/e2e/` seams 契约清单与 `handles.d.ts` 同步删4留1；探针断言变更清单落文档（含旧断言→新断言迁移对照）；`npm run test:smoke` 验证
+- 操作：删4留1 与 data-op 19 项登记同步至**单源** `src/renderer/src/editor/table/contract.ts`（`handles.d.ts`/seams 文件头仅指向声明、不重复登记 DOM 字面量——登记位置口径取代见 doc-drift，2026-10-02 修订）；探针断言变更清单落文档（含旧断言→新断言迁移对照）；`npm run test:smoke` 验证
 - Loading 状态：无
 - 期望效果：契约演进可审计（ADR + 登记清单 + 断言三方一致）
 - 空态处理：不适用
@@ -80,7 +94,7 @@ doc-drift:
 
 | 文件路径 | 修改内容简述 |
 |----------|--------------|
-| `src/renderer/src/e2e/handles.d.ts` 及 seams 契约清单 | `data-table-handle` 类型/登记删4留1；data-op 集合登记（19 项不变） |
+| `src/renderer/src/editor/table/contract.ts`（DOM 契约单源）+ `src/renderer/src/e2e/handles.d.ts`/seams 头注释指向 | `data-table-handle` 删4留1 与 data-op 19 项登记落 contract.ts 单源（`TABLE_HANDLE_CONTRACT`/`TABLE_MENU_OP_IDS`/`TOOLBAR_DATA_OP`）；e2e/ 仅文件头指向声明，不登记 DOM 字面量 |
 | `src/renderer/src/e2e/`（seams/p12..p26 等既有缝） | 与把手相关的缝声明核对（`window.__velox*` 零改动，仅确认无旧把手依赖） |
 | 契约面断言测试（widget/opsTable 同目录 `*.test.ts`） | DOM `data-table-handle` = `{col-grip}`、工具栏/⋮ data-op 集合 = opsTable 19 项 断言 |
 | 契约 delta 登记文档（`design/adr/e2e-contract-delta.md` 附录口径） | 探针断言变更清单（旧 4 断言下线/新 data-op 断言上线对照表） |
@@ -107,7 +121,7 @@ doc-drift:
 
 - [ ] `npm run typecheck` 输出 0 Error
 - [ ] `npm run test:unit` 中契约面断言用例全部通过（`{col-grip}` 集合 / data-op 19 项集合）
-- [ ] grep 断言：`src/renderer/src/e2e/` 内不存在 `row-insert`/`row-delete`/`col-insert-left`/`col-delete` 契约登记，存在 `col-grip`
+- [ ] grep 断言：`src/renderer/src/e2e/` 内不存在 `row-insert`/`row-delete`/`col-insert-left`/`col-delete` 契约登记，且不含 DOM 契约登记（文件头仅指向单源）；`col-grip` 登记存在于 `src/renderer/src/editor/table/contract.ts`（单源，位置口径取代见 doc-drift）
 
 ### 阶段 2：自测验收
 

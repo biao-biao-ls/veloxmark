@@ -1,0 +1,166 @@
+{
+  "meta": {
+    "port": 9555,
+    "startedAt": "2026-10-01T06:32:34.355Z"
+  },
+  "checks": [
+    {
+      "name": "S2 ⊞ 弹层打开",
+      "ok": true
+    },
+    {
+      "name": "#1 小表矩阵 20×12（cellCount=240）",
+      "ok": true,
+      "detail": {
+        "cellCount": 240
+      }
+    },
+    {
+      "name": "#1 maxRow=20 / maxCol=12",
+      "ok": true,
+      "detail": {
+        "maxRow": 20,
+        "maxCol": 12
+      }
+    },
+    {
+      "name": "#1 20 行全展（无内容溢出）",
+      "ok": false,
+      "detail": {
+        "h": 478,
+        "client": 459,
+        "overflowY": "auto"
+      }
+    },
+    {
+      "name": "#2 外框 1px #e5e5e5 灰边",
+      "ok": false,
+      "detail": "0.571429px solid rgb(229, 229, 229)"
+    },
+    {
+      "name": "#2 无 accent 外环（outline 清空）",
+      "ok": true,
+      "detail": {
+        "outlineStyle": "none",
+        "outlineWidth": "0px"
+      }
+    },
+    {
+      "name": "#2 chrome radius/shadow 对齐设计",
+      "ok": true,
+      "detail": {
+        "borderRadius": "8px",
+        "boxShadow": "rgba(0, 0, 0, 0.18) 0px 4px 16px 0px"
+      }
+    },
+    {
+      "name": "格点 22px + gap 2px",
+      "ok": true,
+      "detail": {
+        "w": "22px",
+        "h": "22px",
+        "gap": "2px"
+      }
+    },
+    {
+      "name": "#5 无实心锚点格（is-anchor=0）",
+      "ok": true,
+      "detail": {
+        "anchorCount": 0
+      }
+    },
+    {
+      "name": "#5 选区 soft-strong 底 + accent 边",
+      "ok": true,
+      "detail": {
+        "bg": "rgba(9, 105, 218, 0.22)",
+        "border": "rgb(9, 105, 218)"
+      }
+    },
+    {
+      "name": "#4 读数含 <b> 且 accent 600",
+      "ok": true,
+      "detail": {
+        "text": "4 × 3",
+        "hasB": true,
+        "bColor": "rgb(9, 105, 218)",
+        "bWeight": "600"
+      }
+    },
+    {
+      "name": "#4 读数文案「R × C」格式（#3 后缀豁免维持）",
+      "ok": true,
+      "detail": "4 × 3"
+    },
+    {
+      "name": "拖选高亮 3×4（12 格）",
+      "ok": true,
+      "detail": {
+        "selCount": 12,
+        "text": "3 × 4"
+      }
+    },
+    {
+      "name": "拖选中读数「3 × 4」accent 加粗",
+      "ok": true,
+      "detail": {
+        "text": "3 × 4",
+        "hasB": true,
+        "bColor": "rgb(9, 105, 218)",
+        "bWeight": "600"
+      }
+    },
+    {
+      "name": "Esc 关闭弹层（零变化）",
+      "ok": true
+    },
+    {
+      "name": "S4 超限表 ⊞ 打开",
+      "ok": true
+    },
+    {
+      "name": "#1 超限 25×15（maxRow=25/maxCol=15）",
+      "ok": true,
+      "detail": {
+        "maxRow": 25,
+        "maxCol": 15
+      }
+    },
+    {
+      "name": "超限矩阵限高可滚",
+      "ok": true,
+      "detail": {
+        "h": 598,
+        "client": 459,
+        "overflowY": "auto"
+      }
+    },
+    {
+      "name": "超限第 25 行滚动后可达",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "top": 687.1428833007812,
+        "wrapBottom": 709.6518249511719
+      }
+    },
+    {
+      "name": "S5 小表 ⊞ 重开",
+      "ok": true
+    },
+    {
+      "name": "拖选 3×4 松开确认一次（弹层关、表 3 行）",
+      "ok": true,
+      "detail": {
+        "pickerOpen": false,
+        "rows": 3,
+        "toast": "表格缩放为 3×4（Ctrl+Z 可撤销）"
+      }
+    },
+    {
+      "name": "冻结 toast「表格缩放为 3×4（Ctrl+Z 可撤销）」",
+      "ok": true,
+      "detail": "表格缩放为 3×4（Ctrl+Z 可撤销）"
+    }
+  ]
+}

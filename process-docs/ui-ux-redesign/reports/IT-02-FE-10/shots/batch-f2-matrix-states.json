@@ -1,0 +1,34 @@
+{
+  "light-active": {
+    "cls": "outline-item outline-l4 outline-active",
+    "hover": false,
+    "nav": false
+  },
+  "light-focus": {
+    "cls": "outline-item outline-l2 outline-kbd-focus",
+    "hover": false,
+    "nav": true,
+    "idx": "1"
+  },
+  "light-hover": {
+    "cls": "outline-item outline-l2",
+    "hover": true,
+    "nav": false
+  },
+  "dark-active": {
+    "cls": "outline-item outline-l4 outline-active",
+    "hover": false,
+    "nav": false
+  },
+  "dark-focus": {
+    "cls": "outline-item outline-l2 outline-kbd-focus",
+    "hover": false,
+    "nav": true,
+    "idx": "1"
+  },
+  "dark-hover": {
+    "cls": "outline-item outline-l2",
+    "hover": true,
+    "nav": false
+  }
+}

@@ -1,0 +1,366 @@
+{
+  "meta": {
+    "port": 9501,
+    "startedAt": "2026-09-30T11:50:13.787Z",
+    "batch": "⑤复测（空单元格修复后 + 5.6/5.7 重计）",
+    "finishedAt": "2026-09-30T11:50:31.695Z"
+  },
+  "checks": [
+    {
+      "name": "5.0b 结构操作后编辑视图表格形态（前置）",
+      "ok": false,
+      "detail": {
+        "rowCount": 3,
+        "colCount": 3,
+        "cells": [
+          [
+            "左列",
+            "中列",
+            "右列"
+          ],
+          [
+            "a1",
+            "b1",
+            "c1"
+          ],
+          [
+            "a2",
+            "b2",
+            "c2"
+          ]
+        ],
+        "aligns": [
+          [
+            "left",
+            "center",
+            "right"
+          ],
+          [
+            "left",
+            "center",
+            "right"
+          ],
+          [
+            "left",
+            "center",
+            "right"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "5.1b HTML 通道表格逐项一致（修复后回归）（AC-OP-17 判据 2）",
+      "ok": true,
+      "detail": {
+        "label": "HTML",
+        "ok": true,
+        "rowsOk": true,
+        "colsOk": true,
+        "cellsOk": true,
+        "alignsOk": true,
+        "parsed": {
+          "rowCount": 3,
+          "colCount": 3,
+          "cells": [
+            [
+              "左列",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "b1",
+              "c1"
+            ],
+            [
+              "a2",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "right"
+            ]
+          ]
+        },
+        "expected": {
+          "rowCount": 3,
+          "colCount": 3,
+          "cells": [
+            [
+              "左列",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "b1",
+              "c1"
+            ],
+            [
+              "a2",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "right"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "5.2b PDF 通道表格逐项一致（修复后回归）（AC-OP-17 判据 2）",
+      "ok": true,
+      "detail": {
+        "label": "PDF",
+        "ok": true,
+        "rowsOk": true,
+        "colsOk": true,
+        "cellsOk": true,
+        "alignsOk": true,
+        "parsed": {
+          "rowCount": 3,
+          "colCount": 3,
+          "cells": [
+            [
+              "左列",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "b1",
+              "c1"
+            ],
+            [
+              "a2",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "right"
+            ]
+          ]
+        },
+        "expected": {
+          "rowCount": 3,
+          "colCount": 3,
+          "cells": [
+            [
+              "左列",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "b1",
+              "c1"
+            ],
+            [
+              "a2",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "right"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "5.3b 富文本通道表格逐项一致（修复后回归）（AC-OP-17 判据 2）",
+      "ok": true,
+      "detail": {
+        "label": "富文本",
+        "ok": true,
+        "rowsOk": true,
+        "colsOk": true,
+        "cellsOk": true,
+        "alignsOk": true,
+        "parsed": {
+          "rowCount": 3,
+          "colCount": 3,
+          "cells": [
+            [
+              "左列",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "b1",
+              "c1"
+            ],
+            [
+              "a2",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "right"
+            ]
+          ]
+        },
+        "expected": {
+          "rowCount": 3,
+          "colCount": 3,
+          "cells": [
+            [
+              "左列",
+              "中列",
+              "右列"
+            ],
+            [
+              "a1",
+              "b1",
+              "c1"
+            ],
+            [
+              "a2",
+              "b2",
+              "c2"
+            ]
+          ],
+          "aligns": [
+            [
+              "left",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "right"
+            ],
+            [
+              "left",
+              "center",
+              "right"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "5.1c/5.2c/5.3c 冒号行在 .md 中且对齐语义已兑现（三通道 aligns 一致）",
+      "ok": true,
+      "detail": {
+        "colonLine": "| :--- | :---: | ---: |"
+      }
+    },
+    {
+      "name": "5.6b undo 空栈 Ctrl+Z 静默不动作（无 toast 无弹窗文档不变）",
+      "ok": false,
+      "detail": {
+        "drain": {
+          "drained": 1,
+          "stackEmpty": true
+        },
+        "pre": {
+          "len": 92,
+          "toastDom": "已导出 → D:/code/typora/process-docs/ui-ux-redesign/reports/IT-04-FE-02/IT-04-FE-02-export-fixed-pdf.html"
+        },
+        "post": {
+          "len": 92,
+          "doc": "# 导出对账夹具\n\n| 左列 | 中列 | 右列 |\n| :--- | :---: | ---: |\n| a1 | b1 | c1 |\n| a2 | b2 | c2 |\n\n表后段落。\n",
+          "toast": "已导出 → D:/code/typora/process-docs/ui-ux-redesign/reports/IT-04-FE-02/IT-04-FE-02-export-fixed-pdf.html",
+          "toastDom": "已导出 → D:/code/typora/process-docs/ui-ux-redesign/reports/IT-04-FE-02/IT-04-FE-02-export-fixed-pdf.html",
+          "dialog": true
+        }
+      }
+    },
+    {
+      "name": "5.7a autosave 失败后内存态保留不丢稿（含本次编辑）",
+      "ok": true,
+      "detail": {
+        "docLen": 19,
+        "dirty": true,
+        "doc": "x# 不可写路径文档\n\n原始内容行。\n"
+      }
+    },
+    {
+      "name": "5.7b autosave 失败提示可见（toast/常驻槽）+ 冻结口径登记",
+      "ok": true,
+      "detail": {
+        "toastText": "自动保存失败：C:/Windows/System32/it04-fe02-unwritable.md（Error invoking remote method 'file:write': Error: EPERM: operation not permitted, open 'C:\\Windows\\System32\\it04-fe02-unwritable.md'）",
+        "sb": "自动保存失败 19:50",
+        "sbCls": "sb-autosave sb-autosave-error",
+        "frozenExactMatch": false,
+        "frozenReference": "自动保存失败，文档可另存副本",
+        "observedKeys": "toast.autoSaveFailedPath/toast.autoSaveFailed + status.autoSaveFailed",
+        "note": "实测措辞「自动保存失败：C:/Windows/System32/it04-fe02-unwritable.md（Error invoking remote method 'file:write': Error: EPERM: operation not permitted, open 'C:\\Windows\\System32\\it04-fe02-unwritable.md'）」与冻结 err.autosaveFailed「自动保存失败，文档可另存副本」不一致——只登记不擅改（toast.autoSaveFailed{,Path} 为动态 {reason}/{path} 变体；err.autosaveFailed 无运行时消费方，属冻结保留句）"
+      }
+    }
+  ]
+}

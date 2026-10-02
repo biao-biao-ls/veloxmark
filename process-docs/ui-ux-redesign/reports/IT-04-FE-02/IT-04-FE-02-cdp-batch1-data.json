@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "port": 9501,
+    "startedAt": "2026-09-30T11:10:46.496Z",
+    "batch": "①性能与防抖",
+    "finishedAt": "2026-09-30T11:10:56.481Z"
+  },
+  "checks": [
+    {
+      "name": "S0 e2e 缝就绪",
+      "ok": true,
+      "detail": {
+        "p12": true,
+        "p15": true,
+        "p20": true,
+        "table": true,
+        "editor": true,
+        "prefs": true
+      }
+    },
+    {
+      "name": "1.1a 30×12 表格夹具就位",
+      "ok": true,
+      "detail": {
+        "rows": 30,
+        "cols": 12,
+        "wrap": true
+      }
+    },
+    {
+      "name": "1.1 30×12 结构操作「触发→视觉更新」≤100ms（AC-NF-01）",
+      "ok": false,
+      "detail": {
+        "before": 30,
+        "rows": 31,
+        "ms": 103.3,
+        "via": "keyboard"
+      }
+    },
+    {
+      "name": "1.1b __veloxP15.bench 装饰重建采样（佐证）",
+      "ok": true,
+      "detail": {
+        "lines": 2000,
+        "formulas": 20,
+        "samples": 3,
+        "avg": 29.766666650772095,
+        "p95": 51,
+        "max": 51
+      }
+    },
+    {
+      "name": "1.2 约 2000 行文档连续滚动帧率 ≥30fps（AC-NF-03）",
+      "ok": true,
+      "detail": {
+        "lines": 2000,
+        "scroller": true,
+        "frames": 126,
+        "elapsed": 3004.4,
+        "fps": 41.9
+      }
+    },
+    {
+      "name": "1.3 hover chrome 浮现防抖 ≥150ms（AC-NF-04 回归抽查；基线 165ms 级）",
+      "ok": true,
+      "detail": {
+        "revealMs": 164.9,
+        "flashes": 1,
+        "events": 11
+      }
+    },
+    {
+      "name": "1.4 快速掠过闪烁 0 次、位移 0px（AC-NF-05 回归抽查）",
+      "ok": true,
+      "detail": {
+        "flashes": 1,
+        "note": "1 次慢速悬停 + 5 次掠过合成序列，闪烁计数=chrome 浮现次数；位移 0px 由 chrome 绝对定位无 reflow 断言（IT-01 承载）"
+      }
+    },
+    {
+      "name": "1.4b 表格布局无位移（wrap 落点稳定）",
+      "ok": true,
+      "detail": {
+        "left": 328.5,
+        "top": 204.58
+      }
+    }
+  ]
+}

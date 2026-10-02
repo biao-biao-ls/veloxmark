@@ -1,0 +1,331 @@
+{
+  "meta": {
+    "port": 9266,
+    "startedAt": "2026-09-30T03:24:00.495Z",
+    "draftDialog": "no-dialog",
+    "doc0Hash": 207,
+    "finishedAt": "2026-09-30T03:24:06.869Z"
+  },
+  "scenarios": {
+    "s1": {
+      "dlg": {
+        "open": true,
+        "message": "删除后可用一步撤销还原，确认删除该表格",
+        "confirmLabel": "确认删除",
+        "cancelLabel": "取消",
+        "confirmDanger": true,
+        "orderCancelLeft": true,
+        "confirmRect": {
+          "x": 702,
+          "y": 239,
+          "left": 661,
+          "right": 743,
+          "top": 223.5,
+          "bottom": 254.5
+        },
+        "cancelRect": {
+          "x": 617,
+          "y": 239,
+          "left": 581,
+          "right": 653,
+          "top": 223.5,
+          "bottom": 254.5
+        },
+        "overlayRect": {
+          "x": 600,
+          "y": 400,
+          "left": 0,
+          "right": 1200,
+          "top": 0,
+          "bottom": 800
+        }
+      },
+      "isModal": true
+    },
+    "s2": {
+      "t0": 1790738641685,
+      "dlg": {
+        "open": false,
+        "message": null,
+        "confirmLabel": null,
+        "cancelLabel": null,
+        "confirmDanger": false,
+        "orderCancelLeft": false,
+        "confirmRect": null,
+        "cancelRect": null,
+        "overlayRect": null
+      },
+      "toast": {
+        "host": false,
+        "card": false,
+        "msg": null,
+        "btn": false,
+        "btnLabel": null,
+        "cardCount": 0
+      },
+      "unchanged": true
+    },
+    "s3": {
+      "unchanged": true,
+      "secondEscIntact": true
+    },
+    "s4": {
+      "unchanged": true
+    },
+    "s5": {
+      "tableGone": true,
+      "surroundIntact": true,
+      "toast": {
+        "host": true,
+        "card": true,
+        "msg": "已删除表格（Ctrl+Z 可撤销）",
+        "btn": true,
+        "btnLabel": "撤销",
+        "cardCount": 1
+      },
+      "restored": true
+    },
+    "s6": {
+      "rowToast": "已删除第 3 行（Ctrl+Z 可撤销）",
+      "colToast": "已删除第 3 列（Ctrl+Z 可撤销）"
+    },
+    "s7": {
+      "menuOpen": true,
+      "itemRes": "clicked",
+      "dialogMessage": "删除后可用一步撤销还原，确认删除该表格"
+    }
+  },
+  "checks": [
+    {
+      "name": "S0 e2e seams reachable (editor/table/getToast/loadDoc/dialog bus/isModalOpen)",
+      "ok": true,
+      "detail": {
+        "editor": true,
+        "table": true,
+        "p20": true,
+        "p26": true,
+        "dialogBus": true,
+        "isModalOpen": true
+      }
+    },
+    {
+      "name": "S0 fixture doc loaded (table + tail)",
+      "ok": true,
+      "detail": {
+        "len": 207
+      }
+    },
+    {
+      "name": "S1 🗑 弹出确认框",
+      "ok": true,
+      "detail": {
+        "act": "ok",
+        "clickRes": "clicked",
+        "open": true
+      }
+    },
+    {
+      "name": "S1 冻结文案逐字",
+      "ok": true,
+      "detail": "删除后可用一步撤销还原，确认删除该表格"
+    },
+    {
+      "name": "S1 「确认删除」danger 主按钮 + 「取消」次按钮",
+      "ok": true,
+      "detail": {
+        "confirmLabel": "确认删除",
+        "cancelLabel": "取消",
+        "danger": true
+      }
+    },
+    {
+      "name": "S1 按钮布局：取消左 + 确认删除右",
+      "ok": true,
+      "detail": true
+    },
+    {
+      "name": "S1 isModalOpen 挂点为 true（FE-09 分层钩子）",
+      "ok": true,
+      "detail": true
+    },
+    {
+      "name": "S2 取消关闭确认框",
+      "ok": true,
+      "detail": false
+    },
+    {
+      "name": "S2 文档逐字节不变",
+      "ok": true,
+      "detail": {
+        "lenBefore": 207,
+        "lenAfter": 207
+      }
+    },
+    {
+      "name": "S2 无 toast 回执",
+      "ok": true,
+      "detail": {
+        "host": false,
+        "card": false,
+        "msg": null,
+        "btn": false,
+        "btnLabel": null,
+        "cardCount": 0
+      }
+    },
+    {
+      "name": "S2 关框后 isModalOpen 复位 false",
+      "ok": true,
+      "detail": false
+    },
+    {
+      "name": "S3 Esc 前确认框在场",
+      "ok": true,
+      "detail": true
+    },
+    {
+      "name": "S3 Esc 仅关确认框、不删除",
+      "ok": true,
+      "detail": {
+        "open": false,
+        "unchanged": true
+      }
+    },
+    {
+      "name": "S3 无 toast 回执",
+      "ok": true,
+      "detail": {
+        "host": false,
+        "card": false,
+        "msg": null,
+        "btn": false,
+        "btnLabel": null,
+        "cardCount": 0
+      }
+    },
+    {
+      "name": "S3 再 Esc 仍不触碰文档",
+      "ok": true,
+      "detail": true
+    },
+    {
+      "name": "S4 点空白前确认框在场",
+      "ok": true,
+      "detail": true
+    },
+    {
+      "name": "S4 点空白仅关确认框、不删除",
+      "ok": true,
+      "detail": {
+        "open": false,
+        "unchanged": true
+      }
+    },
+    {
+      "name": "S4 无 toast 回执",
+      "ok": true,
+      "detail": {
+        "host": false,
+        "card": false,
+        "msg": null,
+        "btn": false,
+        "btnLabel": null,
+        "cardCount": 0
+      }
+    },
+    {
+      "name": "S5 确认后关框 + 整表移除 + 正文收拢",
+      "ok": true,
+      "detail": {
+        "tableGone": true,
+        "surroundIntact": true
+      }
+    },
+    {
+      "name": "S5 回执「已删除表格（Ctrl+Z 可撤销）」+ 撤销按钮",
+      "ok": true,
+      "detail": {
+        "host": true,
+        "card": true,
+        "msg": "已删除表格（Ctrl+Z 可撤销）",
+        "btn": true,
+        "btnLabel": "撤销",
+        "cardCount": 1
+      }
+    },
+    {
+      "name": "S5 撤销按钮一步还原整表（逐字节）",
+      "ok": true,
+      "detail": {
+        "undoRes": "clicked",
+        "restored": true
+      }
+    },
+    {
+      "name": "S5 撤销后回执换「已撤销」",
+      "ok": true,
+      "detail": {
+        "host": true,
+        "card": true,
+        "msg": "已撤销",
+        "btn": false,
+        "btnLabel": null,
+        "cardCount": 1
+      }
+    },
+    {
+      "name": "S6 删行全程无确认框",
+      "ok": true,
+      "detail": {
+        "rowOp": "ok",
+        "open": false
+      }
+    },
+    {
+      "name": "S6 删行回执行 + 撤销按钮",
+      "ok": true,
+      "detail": "已删除第 3 行（Ctrl+Z 可撤销）"
+    },
+    {
+      "name": "S6 删行生效（文档变化）",
+      "ok": true,
+      "detail": true
+    },
+    {
+      "name": "S6 删列全程无确认框",
+      "ok": true,
+      "detail": {
+        "colOp": "ok",
+        "open": false
+      }
+    },
+    {
+      "name": "S6 删列回执行 + 撤销按钮",
+      "ok": true,
+      "detail": "已删除第 3 列（Ctrl+Z 可撤销）"
+    },
+    {
+      "name": "S6 删列生效（冒号行同步、文档变化）",
+      "ok": true,
+      "detail": true
+    },
+    {
+      "name": "S7 菜单「删除表格」弹同一确认框（冻结文案）",
+      "ok": true,
+      "detail": {
+        "menuOpen": true,
+        "itemRes": "clicked",
+        "open": true,
+        "message": "删除后可用一步撤销还原，确认删除该表格"
+      }
+    },
+    {
+      "name": "S7 菜单路径 Esc 关框零副作用（文档未删）",
+      "ok": true,
+      "detail": {
+        "dlgEnd": false
+      }
+    }
+  ],
+  "passed": true
+}

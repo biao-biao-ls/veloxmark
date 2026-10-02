@@ -1,0 +1,37 @@
+{
+  "samples": [
+    {
+      "before": 30,
+      "rows": 31,
+      "ms": 94.1
+    },
+    {
+      "before": 31,
+      "rows": 32,
+      "ms": 84
+    },
+    {
+      "before": 32,
+      "rows": 33,
+      "ms": 80
+    },
+    {
+      "before": 33,
+      "rows": 34,
+      "ms": 78.9
+    },
+    {
+      "before": 34,
+      "rows": 35,
+      "ms": 82.7
+    },
+    {
+      "before": 35,
+      "rows": 36,
+      "ms": 77.3
+    }
+  ],
+  "okCount": 6,
+  "growing": 6,
+  "median": 82.7
+}

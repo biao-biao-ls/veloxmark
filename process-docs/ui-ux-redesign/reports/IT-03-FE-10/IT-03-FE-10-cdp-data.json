@@ -1,0 +1,1692 @@
+{
+  "meta": {
+    "port": 9478,
+    "startedAt": "2026-09-30T06:35:02.400Z",
+    "fixturePath": "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it03-fe10-audit-selftest.md",
+    "seamKeysBaseline": [
+      "__veloxCtxDebug",
+      "__veloxEditor",
+      "__veloxExport",
+      "__veloxExtended",
+      "__veloxP04",
+      "__veloxP12",
+      "__veloxP13",
+      "__veloxP14",
+      "__veloxP15",
+      "__veloxP16",
+      "__veloxP17",
+      "__veloxP18",
+      "__veloxP19",
+      "__veloxP20",
+      "__veloxP21",
+      "__veloxP22",
+      "__veloxP23",
+      "__veloxP24",
+      "__veloxP25",
+      "__veloxP26",
+      "__veloxP28",
+      "__veloxP29",
+      "__veloxPrefs",
+      "__veloxTable"
+    ],
+    "finishedAt": "2026-09-30T06:35:28.717Z",
+    "summary": {
+      "total": 98,
+      "passed": 98,
+      "failed": 0
+    }
+  },
+  "scenarios": {
+    "s1": {
+      "pane": {
+        "srcLines": 3,
+        "first": 1,
+        "last": 1,
+        "preview": 1,
+        "previewKatex": 1,
+        "chip": 1,
+        "chipText": "公式 ✓",
+        "sel": {
+          "from": 26,
+          "to": 26
+        }
+      },
+      "editRes": {
+        "ok": true,
+        "from": 29,
+        "to": 37,
+        "usedFallback": false,
+        "hasSearch": false
+      },
+      "afterEdit": {
+        "doc": "# FE-10 观感审计自测夹具\n\n## 公式区\n\n$$\nF = ma\n$$\n\n行内公式 $a^2 + b^2 = c^2$ 在段落中。\n\n## 代码区\n\n```js\nfunction add(a, b) {\n  return a + b\n}\n```\n\n## Mermaid 区\n\n```mermaid\ngraph TD\n  A[Start] --> B[End]\n```\n\n## 任务列表\n\n- [x] 已完成任务\n- [ ] 未完成任务\n\n## 有序列表\n\n1. 有序第一项\n2. 有序第二项\n\n## 链接与图片\n\n[设计规范文档](https://example.com/design-spec)\n\n![居中图](it03-fe10-fixture.png =200x100){align=center}\n\n## 表格\n\n| 列A | 列B |\n| --- | --- |\n| cell one | cell two |\n",
+        "previewKatex": 1,
+        "previewText": "F=maF = maF=ma"
+      },
+      "afterExit": {
+        "srcLines": 0,
+        "preview": 0,
+        "chip": 0,
+        "rendered": 1,
+        "renderedText": "F=maF = maF=ma复制公式 </>",
+        "errorBar": 0
+      },
+      "autosave": 1790750107634,
+      "onDiskHas": true
+    },
+    "s2": {
+      "editErr": {
+        "doc": "# FE-10 观感审计自测夹具\n\n## 公式区\n\n$$\n\\frac{1}{\n$$\n\n行内公式 $a^2 + b^2 = c^2$ 在段落中。\n\n## 代码区\n\n```js\nfunction add(a, b) {\n  return a + b\n}\n```\n\n## Mermaid 区\n\n```mermaid\ngraph TD\n  A[Start] --> B[End]\n```\n\n## 任务列表\n\n- [x] 已完成任务\n- [ ] 未完成任务\n\n## 有序列表\n\n1. 有序第一项\n2. 有序第二项\n\n## 链接与图片\n\n[设计规范文档](https://example.com/design-spec)\n\n![居中图](it03-fe10-fixture.png =200x100){align=center}\n\n## 表格\n\n| 列A | 列B |\n| --- | --- |\n| cell one | cell two |\n",
+        "previewHtml": "<span class=\"katex-error\" title=\"ParseError: KaTeX parse error: Unexpected end of input in a macro argument, expected '}' at end of input: \\frac{1}{\" style=\"color:#cc0000\">\\frac{1}{</span>",
+        "previewText": "\\frac{1}{",
+        "katexError": 1
+      },
+      "errBar": {
+        "errorBar": 1,
+        "errorText": "公式渲染失败",
+        "jump": 1,
+        "jumpText": "跳到源码"
+      },
+      "afterJump": {
+        "doc": "# FE-10 观感审计自测夹具\n\n## 公式区\n\n$$\n\\frac{1}{\n$$\n\n行内公式 $a^2 + b^2 = c^2$ 在段落中。\n\n## 代码区\n\n```js\nfunction add(a, b) {\n  return a + b\n}\n```\n\n## Mermaid 区\n\n```mermaid\ngraph TD\n  A[Start] --> B[End]\n```\n\n## 任务列表\n\n- [x] 已完成任务\n- [ ] 未完成任务\n\n## 有序列表\n\n1. 有序第一项\n2. 有序第二项\n\n## 链接与图片\n\n[设计规范文档](https://example.com/design-spec)\n\n![居中图](it03-fe10-fixture.png =200x100){align=center}\n\n## 表格\n\n| 列A | 列B |\n| --- | --- |\n| cell one | cell two |\n",
+        "sel": {
+          "from": 26,
+          "to": 26
+        },
+        "blockFrom": 26,
+        "srcPanel": 3
+      },
+      "fixed": {
+        "errorBar": 0,
+        "rendered": 1,
+        "text": "E=mc2E = mc^2E=mc2复制公式 </>"
+      }
+    },
+    "s3": {
+      "goodSvg": {
+        "svg": 1,
+        "text": "#mmd-2{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:16px;fill:#000000;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#mmd-2 .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#mmd-2 .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#mmd-2 .error-icon{fill:#552222;}#mmd-2 .error-text{fill:#552222;stroke:#552222;}#mmd-2 .edge-thickness-normal{stroke-width:1px;}#mmd-2 .edge-thickness-thick{stroke-width:3.5px;}#mmd-2 .edge-pattern-solid{stroke-dasharray:0;}#mmd-2 .edge-thickness-invisible{stroke-width:0;fill:none;}#mmd-2 .edge-pattern-dashed{stroke-dasharray:3;}#mmd-2 .edge-pattern-dotted{stroke-dasharray:2;}#mmd-2 .marker{fill:#666;stroke:#666;}#mmd-2 .marker.cross{stroke:#666;}#mmd-2 svg{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:16px;}#mmd-2 p{margin:0;}#mmd-2 .label{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;color:#000000;}#mmd-2 .cluster-label text{fill:#333;}#mmd-2 .cluster-label span{color:#333;}#mmd-2 .cluster-label span p{background-color:transparent;}#mmd-2 .label text,#mmd-2 span{fill:#000000;color:#000000;}#mmd-2 .node rect,#mmd-2 .node circle,#mmd-2 .node ellipse,#mmd-2 .node polygon,#mmd-2 .node path{fill:#eee;stroke:#999;stroke-width:1px;}#mmd-2 .rough-node .label text,#mmd-2 .node .label text,#mmd-2 .image-shape .label,#mmd-2 .icon-shape .label{text-anchor:middle;}#mmd-2 .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#mmd-2 .rough-node .label,#mmd-2 .node .label,#mmd-2 .image-shape .label,#mmd-2 .icon-shape .label{text-align:center;}#mmd-2 .node.clickable{cursor:pointer;}#mmd-2 .root .anchor path{fill:#666!important;stroke-width:0;stroke:#666;}#mmd-2 .arrowheadPath{fill:#333333;}#mmd-2 .edgePaths .path{stroke:#666;stroke-width:1px;}#mmd-2 .flowchart-link{stroke:#666;fill:none;}#mmd-2 .edgeLabel{background-color:white;text-align:center;}#mmd-2 .edgeLabel p{background-color:white;}#mmd-2 .edgeLabel rect{opacity:0.5;background-color:white;fill:white;}#mmd-2 .labelBkg{background-color:rgba(255, 255, 255, 0.5);}#mmd-2 .cluster rect{fill:hsl(0, 0%, 98.9215686275%);stroke:#707070;stroke-width:1px;}#mmd-2 .cluster text{fill:#333;}#mmd-2 .cluster span{color:#333;}#mmd-2 .node .collapsed-indicator{fill:#707070;stroke:none;opacity:0.6;}#mmd-2 .node .collapsed-separator{stroke:#707070;stroke-width:0.75px;}#mmd-2 div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:12px;background:hsl(-160, 0%, 93.3333333333%);border:1px solid #707070;border-radius:2px;pointer-events:none;z-index:100;}#mmd-2 .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#000000;}#mmd-2 rect.text{fill:none;stroke-width:0;}#mmd-2 .icon-shape,#mmd-2 .image-shape{background-color:white;text-align:center;}#mmd-2 .icon-shape p,#mmd-2 .image-shape p{background-color:white;padding:2px;}#mmd-2 .icon-shape .label rect,#mmd-2 .image-shape .label rect{opacity:0.5;background-color:white;fill:white;}#mmd-2 .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#mmd-2 .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#mmd-2 .node .neo-node{stroke:#999;}#mmd-2 [data-look=\"neo\"].node rect,#mmd-2 [data-look=\"neo\"].cluster rect,#mmd-2 [data-look=\"neo\"].node polygon{stroke:url(#mmd-2-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-2 [data-look=\"neo\"].swimlane.cluster rect{filter:none;}#mmd-2 [data-look=\"neo\"].node path{stroke:url(#mmd-2-gradient);stroke-width:1px;}#mmd-2 [data-look=\"neo\"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-2 [data-look=\"neo\"].node .neo-line path{stroke:#999;filter:none;}#mmd-2 [data-look=\"neo\"].node circle{stroke:url(#mmd-2-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-2 [data-look=\"neo\"].node circle .state-start{fill:#000000;}#mmd-2 [data-look=\"neo\"].icon-shape .icon{fill:url(#mmd-2-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-2 [data-look=\"neo\"].icon-shape .icon-neo path{stroke:url(#mmd-2-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-2 :root{--mermaid-font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;}StartEnd"
+      },
+      "pane": {
+        "srcLines": 4,
+        "preview": 1,
+        "previewSvg": 1,
+        "lightbox": 0
+      },
+      "broken": {
+        "doc": "# FE-10 观感审计自测夹具\n\n## 公式区\n\n$$\nE = mc^2\n$$\n\n行内公式 $a^2 + b^2 = c^2$ 在段落中。\n\n## 代码区\n\n```js\nfunction add(a, b) {\n  return a + b\n}\n```\n\n## Mermaid 区\n\n```mermaid\ngraph TD\n  A[Start --> B[End]\n```\n\n## 任务列表\n\n- [x] 已完成任务\n- [ ] 未完成任务\n\n## 有序列表\n\n1. 有序第一项\n2. 有序第二项\n\n## 链接与图片\n\n[设计规范文档](https://example.com/design-spec)\n\n![居中图](it03-fe10-fixture.png =200x100){align=center}\n\n## 表格\n\n| 列A | 列B |\n| --- | --- |\n| cell one | cell two |\n",
+        "svgCount": 1,
+        "isDim": 1,
+        "errorBar": 1,
+        "errorHidden": false,
+        "errorText": "Mermaid 错误: Parse error on line 2:\n...h TD  A[Start --> B[End]\n----------------------^\nExpecting 'SQE', 'DOUBLECIRCLEEND', 'PE', '-)', 'STADIUMEND', 'SUBROUTINEEND', 'PIPE', 'CYLINDEREND', 'DIAMOND_STOP', 'TAGEND', 'TRAPEND', 'INVTRAPEND', 'UNICODE_TEXT', 'TEXT', 'TAGSTART', got 'SQS'跳到源码",
+        "jump": 1
+      },
+      "afterJump": {
+        "from": 163,
+        "fence": 154,
+        "inFence": true
+      },
+      "fixed": {
+        "previewError": 0,
+        "previewSvg": 1,
+        "previewText": "#mmd-5{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:16px;fill:#000000;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#mmd-5 .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#mmd-5 .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#mmd-5 .error-icon{fill:#552222;}#mmd-5 .error-text{fill:#552222;stroke:#552222;}#mmd-5 .edge-thickness-normal{stroke-width:1px;}#mmd-5 .edge-thickness-thick{stroke-width:3.5px;}#mmd-5 .edge-pattern-solid{stroke-dasharray:0;}#mmd-5 .edge-thickness-invisible{stroke-width:0;fill:none;}#mmd-5 .edge-pattern-dashed{stroke-dasharray:3;}#mmd-5 .edge-pattern-dotted{stroke-dasharray:2;}#mmd-5 .marker{fill:#666;stroke:#666;}#mmd-5 .marker.cross{stroke:#666;}#mmd-5 svg{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:16px;}#mmd-5 p{margin:0;}#mmd-5 .label{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;color:#000000;}#mmd-5 .cluster-label text{fill:#333;}#mmd-5 .cluster-label span{color:#333;}#mmd-5 .cluster-label span p{background-color:transparent;}#mmd-5 .label text,#mmd-5 span{fill:#000000;color:#000000;}#mmd-5 .node rect,#mmd-5 .node circle,#mmd-5 .node ellipse,#mmd-5 .node polygon,#mmd-5 .node path{fill:#eee;stroke:#999;stroke-width:1px;}#mmd-5 .rough-node .label text,#mmd-5 .node .label text,#mmd-5 .image-shape .label,#mmd-5 .icon-shape .label{text-anchor:middle;}#mmd-5 .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#mmd-5 .rough-node .label,#mmd-5 .node .label,#mmd-5 .image-shape .label,#mmd-5 .icon-shape .label{text-align:center;}#mmd-5 .node.clickable{cursor:pointer;}#mmd-5 .root .anchor path{fill:#666!important;stroke-width:0;stroke:#666;}#mmd-5 .arrowheadPath{fill:#333333;}#mmd-5 .edgePaths .path{stroke:#666;stroke-width:1px;}#mmd-5 .flowchart-link{stroke:#666;fill:none;}#mmd-5 .edgeLabel{background-color:white;text-align:center;}#mmd-5 .edgeLabel p{background-color:white;}#mmd-5 .edgeLabel rect{opacity:0.5;background-color:white;fill:white;}#mmd-5 .labelBkg{background-color:rgba(255, 255, 255, 0.5);}#mmd-5 .cluster rect{fill:hsl(0, 0%, 98.9215686275%);stroke:#707070;stroke-width:1px;}#mmd-5 .cluster text{fill:#333;}#mmd-5 .cluster span{color:#333;}#mmd-5 .node .collapsed-indicator{fill:#707070;stroke:none;opacity:0.6;}#mmd-5 .node .collapsed-separator{stroke:#707070;stroke-width:0.75px;}#mmd-5 div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:12px;background:hsl(-160, 0%, 93.3333333333%);border:1px solid #707070;border-radius:2px;pointer-events:none;z-index:100;}#mmd-5 .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#000000;}#mmd-5 rect.text{fill:none;stroke-width:0;}#mmd-5 .icon-shape,#mmd-5 .image-shape{background-color:white;text-align:center;}#mmd-5 .icon-shape p,#mmd-5 .image-shape p{background-color:white;padding:2px;}#mmd-5 .icon-shape .label rect,#mmd-5 .image-shape .label rect{opacity:0.5;background-color:white;fill:white;}#mmd-5 .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#mmd-5 .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#mmd-5 .node .neo-node{stroke:#999;}#mmd-5 [data-look=\"neo\"].node rect,#mmd-5 [data-look=\"neo\"].cluster rect,#mmd-5 [data-look=\"neo\"].node polygon{stroke:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].swimlane.cluster rect{filter:none;}#mmd-5 [data-look=\"neo\"].node path{stroke:url(#mmd-5-gradient);stroke-width:1px;}#mmd-5 [data-look=\"neo\"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].node .neo-line path{stroke:#999;filter:none;}#mmd-5 [data-look=\"neo\"].node circle{stroke:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].node circle .state-start{fill:#000000;}#mmd-5 [data-look=\"neo\"].icon-shape .icon{fill:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].icon-shape .icon-neo path{stroke:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 :root{--mermaid-font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;}Start2End",
+        "isDim": 0
+      },
+      "rendered": {
+        "preview": 0,
+        "svg": 1,
+        "text": "#mmd-5{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:16px;fill:#000000;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#mmd-5 .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#mmd-5 .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#mmd-5 .error-icon{fill:#552222;}#mmd-5 .error-text{fill:#552222;stroke:#552222;}#mmd-5 .edge-thickness-normal{stroke-width:1px;}#mmd-5 .edge-thickness-thick{stroke-width:3.5px;}#mmd-5 .edge-pattern-solid{stroke-dasharray:0;}#mmd-5 .edge-thickness-invisible{stroke-width:0;fill:none;}#mmd-5 .edge-pattern-dashed{stroke-dasharray:3;}#mmd-5 .edge-pattern-dotted{stroke-dasharray:2;}#mmd-5 .marker{fill:#666;stroke:#666;}#mmd-5 .marker.cross{stroke:#666;}#mmd-5 svg{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:16px;}#mmd-5 p{margin:0;}#mmd-5 .label{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;color:#000000;}#mmd-5 .cluster-label text{fill:#333;}#mmd-5 .cluster-label span{color:#333;}#mmd-5 .cluster-label span p{background-color:transparent;}#mmd-5 .label text,#mmd-5 span{fill:#000000;color:#000000;}#mmd-5 .node rect,#mmd-5 .node circle,#mmd-5 .node ellipse,#mmd-5 .node polygon,#mmd-5 .node path{fill:#eee;stroke:#999;stroke-width:1px;}#mmd-5 .rough-node .label text,#mmd-5 .node .label text,#mmd-5 .image-shape .label,#mmd-5 .icon-shape .label{text-anchor:middle;}#mmd-5 .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#mmd-5 .rough-node .label,#mmd-5 .node .label,#mmd-5 .image-shape .label,#mmd-5 .icon-shape .label{text-align:center;}#mmd-5 .node.clickable{cursor:pointer;}#mmd-5 .root .anchor path{fill:#666!important;stroke-width:0;stroke:#666;}#mmd-5 .arrowheadPath{fill:#333333;}#mmd-5 .edgePaths .path{stroke:#666;stroke-width:1px;}#mmd-5 .flowchart-link{stroke:#666;fill:none;}#mmd-5 .edgeLabel{background-color:white;text-align:center;}#mmd-5 .edgeLabel p{background-color:white;}#mmd-5 .edgeLabel rect{opacity:0.5;background-color:white;fill:white;}#mmd-5 .labelBkg{background-color:rgba(255, 255, 255, 0.5);}#mmd-5 .cluster rect{fill:hsl(0, 0%, 98.9215686275%);stroke:#707070;stroke-width:1px;}#mmd-5 .cluster text{fill:#333;}#mmd-5 .cluster span{color:#333;}#mmd-5 .node .collapsed-indicator{fill:#707070;stroke:none;opacity:0.6;}#mmd-5 .node .collapsed-separator{stroke:#707070;stroke-width:0.75px;}#mmd-5 div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:12px;background:hsl(-160, 0%, 93.3333333333%);border:1px solid #707070;border-radius:2px;pointer-events:none;z-index:100;}#mmd-5 .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#000000;}#mmd-5 rect.text{fill:none;stroke-width:0;}#mmd-5 .icon-shape,#mmd-5 .image-shape{background-color:white;text-align:center;}#mmd-5 .icon-shape p,#mmd-5 .image-shape p{background-color:white;padding:2px;}#mmd-5 .icon-shape .label rect,#mmd-5 .image-shape .label rect{opacity:0.5;background-color:white;fill:white;}#mmd-5 .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#mmd-5 .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#mmd-5 .node .neo-node{stroke:#999;}#mmd-5 [data-look=\"neo\"].node rect,#mmd-5 [data-look=\"neo\"].cluster rect,#mmd-5 [data-look=\"neo\"].node polygon{stroke:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].swimlane.cluster rect{filter:none;}#mmd-5 [data-look=\"neo\"].node path{stroke:url(#mmd-5-gradient);stroke-width:1px;}#mmd-5 [data-look=\"neo\"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].node .neo-line path{stroke:#999;filter:none;}#mmd-5 [data-look=\"neo\"].node circle{stroke:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].node circle .state-start{fill:#000000;}#mmd-5 [data-look=\"neo\"].icon-shape .icon{fill:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].icon-shape .icon-neo path{stroke:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 :root{--mermaid-font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;}Start2End"
+      }
+    },
+    "s4": {
+      "light": {
+        "theme": "light",
+        "tokens": {
+          "errbarFg": "rgb(180, 83, 9)",
+          "errbarBg": "rgba(245, 158, 11, 0.14)",
+          "errbarBorder": "rgb(245, 158, 11)",
+          "fgDim": "rgb(107, 107, 107)",
+          "themeHost": "app theme-light"
+        },
+        "contrast": {
+          "mathErr": {
+            "sel": ".cm-md-math-error",
+            "color": "rgb(180, 83, 9)",
+            "bg": "rgb(254,241,221)",
+            "ratio": 4.513
+          },
+          "mermaidErr": {
+            "sel": ".cm-md-mermaid-error",
+            "color": "rgb(180, 83, 9)",
+            "bg": "rgb(254,241,221)",
+            "ratio": 4.513
+          },
+          "codeChip": {
+            "sel": ".cm-md-code-idle-chip",
+            "color": "rgb(107, 107, 107)",
+            "bg": "rgb(250,250,250)",
+            "ratio": 5.106
+          },
+          "mermaidBadge": {
+            "sel": ".cm-md-mermaid-badge",
+            "color": "rgb(107, 107, 107)",
+            "bg": "rgb(255,255,255)",
+            "ratio": 5.329
+          },
+          "expander": {
+            "sel": ".cm-md-code-expander",
+            "color": "rgb(107, 107, 107)",
+            "bg": "rgb(250,250,250)",
+            "ratio": 5.106
+          },
+          "tokenErrbar": {
+            "fgVar": "--errbar-fg",
+            "bgVar": "--bg",
+            "overlayVar": "--errbar-bg",
+            "fg": "#b45309",
+            "bg": "rgb(254,241,221)",
+            "ratio": 4.513
+          },
+          "tokenFgDim": {
+            "fgVar": "--fg-dim",
+            "bgVar": "--bg",
+            "fg": "#6b6b6b",
+            "bg": "rgb(255,255,255)",
+            "ratio": 5.329
+          },
+          "tokenFgDimWidget": {
+            "fgVar": "--fg-dim",
+            "bgVar": "--widget-surface",
+            "fg": "#6b6b6b",
+            "bg": "rgb(250,250,250)",
+            "ratio": 5.106
+          }
+        },
+        "noLightBlocks": [
+          {
+            "s": ".cm-md-code-block",
+            "bg": "rgb(250, 250, 250)",
+            "lum": 0.956
+          },
+          {
+            "s": ".cm-md-mermaid-badge",
+            "bg": "rgb(255, 255, 255)",
+            "lum": 1
+          }
+        ]
+      },
+      "dark": {
+        "theme": "dark",
+        "tokens": {
+          "errbarFg": "rgb(252, 211, 77)",
+          "errbarBg": "rgba(245, 158, 11, 0.18)",
+          "errbarBorder": "rgb(217, 119, 6)",
+          "fgDim": "rgb(154, 154, 154)",
+          "themeHost": "app theme-dark"
+        },
+        "contrast": {
+          "mathErr": {
+            "sel": ".cm-md-math-error",
+            "color": "rgb(252, 211, 77)",
+            "bg": "rgb(69,53,27)",
+            "ratio": 8.199
+          },
+          "mermaidErr": {
+            "sel": ".cm-md-mermaid-error",
+            "color": "rgb(252, 211, 77)",
+            "bg": "rgb(69,53,27)",
+            "ratio": 8.199
+          },
+          "codeChip": {
+            "sel": ".cm-md-code-idle-chip",
+            "color": "rgb(154, 154, 154)",
+            "bg": "rgb(37,37,38)",
+            "ratio": 5.442
+          },
+          "mermaidBadge": {
+            "sel": ".cm-md-mermaid-badge",
+            "color": "rgb(154, 154, 154)",
+            "bg": "rgb(30,30,30)",
+            "ratio": 5.925
+          },
+          "expander": {
+            "sel": ".cm-md-code-expander",
+            "color": "rgb(154, 154, 154)",
+            "bg": "rgb(37,37,38)",
+            "ratio": 5.442
+          },
+          "tokenErrbar": {
+            "fgVar": "--errbar-fg",
+            "bgVar": "--bg",
+            "overlayVar": "--errbar-bg",
+            "fg": "#fcd34d",
+            "bg": "rgb(69,53,27)",
+            "ratio": 8.199
+          },
+          "tokenFgDim": {
+            "fgVar": "--fg-dim",
+            "bgVar": "--bg",
+            "fg": "#9a9a9a",
+            "bg": "rgb(30,30,30)",
+            "ratio": 5.925
+          },
+          "tokenFgDimWidget": {
+            "fgVar": "--fg-dim",
+            "bgVar": "--widget-surface",
+            "fg": "#9a9a9a",
+            "bg": "rgb(37,37,38)",
+            "ratio": 5.442
+          }
+        },
+        "noLightBlocks": []
+      }
+    },
+    "s5": {
+      "checked": 2,
+      "colWidths": {
+        "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it03-fe10-audit-selftest.md": {
+          "416": [
+            431,
+            336
+          ]
+        }
+      },
+      "mdHrefs": [
+        "https://example.com/design-spec"
+      ],
+      "html": {
+        "hrefs": [
+          "https://example.com/design-spec"
+        ],
+        "checkboxes": [
+          true,
+          true
+        ],
+        "imgs": [
+          {
+            "width": "200",
+            "height": "100",
+            "style": "display:block;margin-left:auto;margin-right:auto",
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSU"
+          }
+        ],
+        "lis": [
+          "已完成任务",
+          "未完成任务",
+          "有序第一项",
+          "有序第二项"
+        ],
+        "katexBlocks": 2,
+        "codeBlocks": 1,
+        "hljsSpans": 4,
+        "mermaidSvg": 1,
+        "tables": [
+          {
+            "widthAttrs": [],
+            "styleWidths": 0,
+            "colgroups": 0,
+            "cellTexts": [
+              "列A",
+              "列B",
+              "cell one",
+              "cell two"
+            ]
+          }
+        ]
+      },
+      "pdf": {
+        "hrefs": [
+          "https://example.com/design-spec"
+        ],
+        "checkboxes": [
+          true,
+          true
+        ],
+        "imgs": [
+          {
+            "width": "200",
+            "height": "100",
+            "style": "display:block;margin-left:auto;margin-right:auto",
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSU"
+          }
+        ],
+        "lis": [
+          "已完成任务",
+          "未完成任务",
+          "有序第一项",
+          "有序第二项"
+        ],
+        "katexBlocks": 2,
+        "codeBlocks": 1,
+        "hljsSpans": 4,
+        "mermaidSvg": 1,
+        "tables": [
+          {
+            "widthAttrs": [],
+            "styleWidths": 0,
+            "colgroups": 0,
+            "cellTexts": [
+              "列A",
+              "列B",
+              "cell one",
+              "cell two"
+            ]
+          }
+        ]
+      },
+      "rich": {
+        "hrefs": [
+          "https://example.com/design-spec"
+        ],
+        "checkboxes": [
+          true,
+          true
+        ],
+        "imgs": [
+          {
+            "width": "200",
+            "height": "100",
+            "style": "display:block;margin-left:auto;margin-right:auto",
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSU"
+          }
+        ],
+        "lis": [
+          "已完成任务",
+          "未完成任务",
+          "有序第一项",
+          "有序第二项"
+        ],
+        "katexBlocks": 2,
+        "codeBlocks": 1,
+        "hljsSpans": 4,
+        "mermaidSvg": 1,
+        "tables": [
+          {
+            "widthAttrs": [],
+            "styleWidths": 0,
+            "colgroups": 0,
+            "cellTexts": [
+              "列A",
+              "列B",
+              "cell one",
+              "cell two"
+            ]
+          }
+        ]
+      }
+    },
+    "s6": {
+      "clsScan": {
+        "present": {
+          "cm-md-math-block": 1,
+          "cm-md-math-preview": 0,
+          "cm-md-math-src": 0,
+          "cm-md-math-src-first": 0,
+          "cm-md-math-src-last": 0,
+          "cm-md-math-edit-chip": 0,
+          "cm-md-math-hover-chip": 1,
+          "cm-md-math-error": 0,
+          "cm-md-math-jump": 0,
+          "cm-md-code-block": 1,
+          "cm-md-code-src": 0,
+          "cm-md-code-src-first": 0,
+          "cm-md-code-src-last": 0,
+          "cm-md-code-src-chip": 0,
+          "cm-md-code-idle-chip": 1,
+          "cm-md-code-expander": 1,
+          "cm-md-mermaid": 1,
+          "cm-md-mermaid-svg": 1,
+          "cm-md-mermaid-preview": 0,
+          "cm-md-mermaid-error": 1,
+          "cm-md-mermaid-jump": 0,
+          "cm-md-mermaid-badge": 1
+        },
+        "editorDisplay": "flex"
+      },
+      "cssContract": {
+        "cm-md-code-src": 7,
+        "cm-md-math-error": 1,
+        "cm-md-mermaid-error": 1,
+        "cm-md-math-jump": 2,
+        "cm-md-mermaid-jump": 2,
+        "cm-md-mermaid-preview": 1,
+        "cm-md-math-src": 3,
+        "cm-md-math-edit-chip": 1,
+        "cm-md-code-expander": 2,
+        "cm-md-code-idle-chip": 5
+      },
+      "finalKeys": [
+        "__veloxCtxDebug",
+        "__veloxEditor",
+        "__veloxExport",
+        "__veloxExtended",
+        "__veloxP04",
+        "__veloxP12",
+        "__veloxP13",
+        "__veloxP14",
+        "__veloxP15",
+        "__veloxP16",
+        "__veloxP17",
+        "__veloxP18",
+        "__veloxP19",
+        "__veloxP20",
+        "__veloxP21",
+        "__veloxP22",
+        "__veloxP23",
+        "__veloxP24",
+        "__veloxP25",
+        "__veloxP26",
+        "__veloxP28",
+        "__veloxP29",
+        "__veloxPrefs",
+        "__veloxTable",
+        "__veloxTableCellView"
+      ],
+      "dataOps": [
+        "TBL-MOR-OPN",
+        "alignCenter",
+        "alignLeft",
+        "alignRight",
+        "deleteTable",
+        "resizeTable"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "name": "S0 e2e 缝全就绪（Editor/P04/P12/P13/P18/P20/P21/P24/P25/P28/Prefs/Export）",
+      "ok": true,
+      "detail": {
+        "editor": true,
+        "p12": true,
+        "p13": true,
+        "p18": true,
+        "p20": true,
+        "p21": true,
+        "p24": true,
+        "p25": true,
+        "p28": true,
+        "p04": true,
+        "prefs": true,
+        "export": true
+      }
+    },
+    {
+      "name": "S0 isWritable IPC 可达（非 stale 构建）",
+      "ok": true
+    },
+    {
+      "name": "S0 夹具载入（含公式/代码/mermaid/任务/列表/链接/图/表）",
+      "ok": true
+    },
+    {
+      "name": "S1 公式块定位",
+      "ok": true,
+      "detail": {
+        "x": 712.5,
+        "y": 307.66,
+        "left": 328.5,
+        "top": 287.55,
+        "right": 1096.5,
+        "bottom": 327.77,
+        "w": 768,
+        "h": 40.22
+      }
+    },
+    {
+      "name": "S1 点击公式 → 双区面板（源码区+预览区）浮现（AC-FN-20 判据1）",
+      "ok": true,
+      "detail": {
+        "srcLines": 3,
+        "first": 1,
+        "last": 1,
+        "preview": 1,
+        "previewKatex": 1,
+        "chip": 1,
+        "chipText": "公式 ✓",
+        "sel": {
+          "from": 26,
+          "to": 26
+        }
+      }
+    },
+    {
+      "name": "S1 预览区即时渲染 KaTeX",
+      "ok": true,
+      "detail": {
+        "srcLines": 3,
+        "first": 1,
+        "last": 1,
+        "preview": 1,
+        "previewKatex": 1,
+        "chip": 1,
+        "chipText": "公式 ✓",
+        "sel": {
+          "from": 26,
+          "to": 26
+        }
+      }
+    },
+    {
+      "name": "S1 退出 chip 在位（「公式 ✓」UI-IXD-15 控件）",
+      "ok": true,
+      "detail": {
+        "srcLines": 3,
+        "first": 1,
+        "last": 1,
+        "preview": 1,
+        "previewKatex": 1,
+        "chip": 1,
+        "chipText": "公式 ✓",
+        "sel": {
+          "from": 26,
+          "to": 26
+        }
+      }
+    },
+    {
+      "name": "S1 源码区替换输入生效",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "from": 29,
+        "to": 37,
+        "usedFallback": false,
+        "hasSearch": false
+      }
+    },
+    {
+      "name": "S1 合法源码输入后预览区即时渲染（AC-OP-20 判据1）",
+      "ok": true,
+      "detail": {
+        "doc": "# FE-10 观感审计自测夹具\n\n## 公式区\n\n$$\nF = ma\n$$\n\n行内公式 $a^2 + b^2 = c^2$ 在段落中。\n\n## 代码区\n\n```js\nfunction add(a, b) {\n  return a + b\n}\n```\n\n## Mermaid 区\n\n```mermaid\ngraph TD\n  A[Start] --> B[End]\n```\n\n## 任务列表\n\n- [x] 已完成任务\n- [ ] 未完成任务\n\n## 有序列表\n\n1. 有序第一项\n2. 有序第二项\n\n## 链接与图片\n\n[设计规范文档](https://example.com/design-spec)\n\n![居中图](it03-fe10-fixture.png =200x100){align=center}\n\n## 表格\n\n| 列A | 列B |\n| --- | --- |\n| cell one | cell two |\n",
+        "previewKatex": 1,
+        "previewText": "F=maF = maF=ma"
+      }
+    },
+    {
+      "name": "S1 .md 源码同步更新（AC-OP-20 判据3 前半）",
+      "ok": true,
+      "detail": {
+        "has": true
+      }
+    },
+    {
+      "name": "S1 ✓ chip 可点击",
+      "ok": true,
+      "detail": {
+        "x": 1071.11,
+        "y": 291.34,
+        "left": 1054.72,
+        "top": 282.55,
+        "right": 1087.5,
+        "bottom": 300.14,
+        "w": 32.78,
+        "h": 17.59
+      }
+    },
+    {
+      "name": "S1 退出回渲染态、渲染内容为编辑后内容（AC-OP-20 判据2 / AC-FN-20 判据4）",
+      "ok": true,
+      "detail": {
+        "srcLines": 0,
+        "preview": 0,
+        "chip": 0,
+        "rendered": 1,
+        "renderedText": "F=maF = maF=ma复制公式 </>",
+        "errorBar": 0
+      }
+    },
+    {
+      "name": "S1 双区面板消失无残留（UI-IXD-15）",
+      "ok": true,
+      "detail": {
+        "srcLines": 0,
+        "preview": 0,
+        "chip": 0,
+        "rendered": 1,
+        "renderedText": "F=maF = maF=ma复制公式 </>",
+        "errorBar": 0
+      }
+    },
+    {
+      "name": "S1 autosave 落盘（AC-OP-20 判据3）",
+      "ok": true,
+      "detail": {
+        "lastAutoSaveAt": 1790750107634,
+        "diskHas": true
+      }
+    },
+    {
+      "name": "S1 一次 Ctrl+Z 还原编辑前内容（AC-OP-20 判据3）",
+      "ok": true,
+      "detail": {
+        "hasOrig": true,
+        "hasNew": false
+      }
+    },
+    {
+      "name": "S2 公式渲染块定位（前置）",
+      "ok": true,
+      "detail": {
+        "x": 712.5,
+        "y": 307.66,
+        "left": 328.5,
+        "top": 287.55,
+        "right": 1096.5,
+        "bottom": 327.77,
+        "w": 768,
+        "h": 40.22
+      }
+    },
+    {
+      "name": "S2 非法 TeX 输入生效",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "from": 29,
+        "to": 37,
+        "usedFallback": false,
+        "hasSearch": false
+      }
+    },
+    {
+      "name": "S2 非法 TeX：预览区显示错误标识（KaTeX error span，非乱码）（AC-ERR-10 判据1）",
+      "ok": true,
+      "detail": {
+        "doc": "# FE-10 观感审计自测夹具\n\n## 公式区\n\n$$\n\\frac{1}{\n$$\n\n行内公式 $a^2 + b^2 = c^2$ 在段落中。\n\n## 代码区\n\n```js\nfunction add(a, b) {\n  return a + b\n}\n```\n\n## Mermaid 区\n\n```mermaid\ngraph TD\n  A[Start] --> B[End]\n```\n\n## 任务列表\n\n- [x] 已完成任务\n- [ ] 未完成任务\n\n## 有序列表\n\n1. 有序第一项\n2. 有序第二项\n\n## 链接与图片\n\n[设计规范文档](https://example.com/design-spec)\n\n![居中图](it03-fe10-fixture.png =200x100){align=center}\n\n## 表格\n\n| 列A | 列B |\n| --- | --- |\n| cell one | cell two |\n",
+        "previewHtml": "<span class=\"katex-error\" title=\"ParseError: KaTeX parse error: Unexpected end of input in a macro argument, expected '}' at end of input: \\frac{1}{\" style=\"color:#cc0000\">\\frac{1}{</span>",
+        "previewText": "\\frac{1}{",
+        "katexError": 1
+      }
+    },
+    {
+      "name": "S2 源码区保留用户输入（编辑态）（AC-ERR-10 判据3）",
+      "ok": true,
+      "detail": {
+        "has": true
+      }
+    },
+    {
+      "name": "截图落盘 IT-03-FE-10-impl-dualpane-math-error.png",
+      "ok": true,
+      "detail": {
+        "bytes": 10523,
+        "clip": {
+          "x": 0,
+          "y": 271.921875,
+          "width": 1200,
+          "height": 281.59375
+        }
+      }
+    },
+    {
+      "name": "S2 退出后错误条浮现（AC-ERR-10 判据1 / AC-FN-20 判据2）",
+      "ok": true,
+      "detail": {
+        "errorBar": 1,
+        "errorText": "公式渲染失败",
+        "jump": 1,
+        "jumpText": "跳到源码"
+      }
+    },
+    {
+      "name": "截图落盘 IT-03-FE-10-impl-math-error.png",
+      "ok": true,
+      "detail": {
+        "bytes": 20655,
+        "clip": {
+          "x": 0,
+          "y": 147.546875,
+          "width": 1200,
+          "height": 341.59375
+        }
+      }
+    },
+    {
+      "name": "S2 跳源码入口可点击",
+      "ok": true,
+      "detail": {
+        "x": 1055.5,
+        "y": 345.14,
+        "left": 1024.5,
+        "top": 335.14,
+        "right": 1086.5,
+        "bottom": 355.14,
+        "w": 62,
+        "h": 20
+      }
+    },
+    {
+      "name": "S2 跳源码点击后光标定位源码区（AC-ERR-10 判据2）",
+      "ok": true,
+      "detail": {
+        "doc": "# FE-10 观感审计自测夹具\n\n## 公式区\n\n$$\n\\frac{1}{\n$$\n\n行内公式 $a^2 + b^2 = c^2$ 在段落中。\n\n## 代码区\n\n```js\nfunction add(a, b) {\n  return a + b\n}\n```\n\n## Mermaid 区\n\n```mermaid\ngraph TD\n  A[Start] --> B[End]\n```\n\n## 任务列表\n\n- [x] 已完成任务\n- [ ] 未完成任务\n\n## 有序列表\n\n1. 有序第一项\n2. 有序第二项\n\n## 链接与图片\n\n[设计规范文档](https://example.com/design-spec)\n\n![居中图](it03-fe10-fixture.png =200x100){align=center}\n\n## 表格\n\n| 列A | 列B |\n| --- | --- |\n| cell one | cell two |\n",
+        "sel": {
+          "from": 26,
+          "to": 26
+        },
+        "blockFrom": 26,
+        "srcPanel": 3
+      }
+    },
+    {
+      "name": "S2 源码区保留用户输入、不被清空（AC-ERR-10 判据3）",
+      "ok": true,
+      "detail": {
+        "has": true
+      }
+    },
+    {
+      "name": "S2 修复输入生效",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "from": 29,
+        "to": 38,
+        "usedFallback": false,
+        "hasSearch": false
+      }
+    },
+    {
+      "name": "S2 修复后错误条消失、回到正常渲染态",
+      "ok": true,
+      "detail": {
+        "errorBar": 0,
+        "rendered": 1,
+        "text": "E=mc2E = mc^2E=mc2复制公式 </>"
+      }
+    },
+    {
+      "name": "S3 mermaid 渲染块定位",
+      "ok": true,
+      "detail": {
+        "x": 712.5,
+        "y": 424.84,
+        "left": 328.5,
+        "top": 307.55,
+        "right": 1096.5,
+        "bottom": 542.14,
+        "w": 768,
+        "h": 234.59
+      }
+    },
+    {
+      "name": "S3 合法 mermaid 渲染为 SVG",
+      "ok": true,
+      "detail": {
+        "svg": 1,
+        "text": "#mmd-2{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:16px;fill:#000000;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#mmd-2 .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#mmd-2 .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#mmd-2 .error-icon{fill:#552222;}#mmd-2 .error-text{fill:#552222;stroke:#552222;}#mmd-2 .edge-thickness-normal{stroke-width:1px;}#mmd-2 .edge-thickness-thick{stroke-width:3.5px;}#mmd-2 .edge-pattern-solid{stroke-dasharray:0;}#mmd-2 .edge-thickness-invisible{stroke-width:0;fill:none;}#mmd-2 .edge-pattern-dashed{stroke-dasharray:3;}#mmd-2 .edge-pattern-dotted{stroke-dasharray:2;}#mmd-2 .marker{fill:#666;stroke:#666;}#mmd-2 .marker.cross{stroke:#666;}#mmd-2 svg{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:16px;}#mmd-2 p{margin:0;}#mmd-2 .label{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;color:#000000;}#mmd-2 .cluster-label text{fill:#333;}#mmd-2 .cluster-label span{color:#333;}#mmd-2 .cluster-label span p{background-color:transparent;}#mmd-2 .label text,#mmd-2 span{fill:#000000;color:#000000;}#mmd-2 .node rect,#mmd-2 .node circle,#mmd-2 .node ellipse,#mmd-2 .node polygon,#mmd-2 .node path{fill:#eee;stroke:#999;stroke-width:1px;}#mmd-2 .rough-node .label text,#mmd-2 .node .label text,#mmd-2 .image-shape .label,#mmd-2 .icon-shape .label{text-anchor:middle;}#mmd-2 .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#mmd-2 .rough-node .label,#mmd-2 .node .label,#mmd-2 .image-shape .label,#mmd-2 .icon-shape .label{text-align:center;}#mmd-2 .node.clickable{cursor:pointer;}#mmd-2 .root .anchor path{fill:#666!important;stroke-width:0;stroke:#666;}#mmd-2 .arrowheadPath{fill:#333333;}#mmd-2 .edgePaths .path{stroke:#666;stroke-width:1px;}#mmd-2 .flowchart-link{stroke:#666;fill:none;}#mmd-2 .edgeLabel{background-color:white;text-align:center;}#mmd-2 .edgeLabel p{background-color:white;}#mmd-2 .edgeLabel rect{opacity:0.5;background-color:white;fill:white;}#mmd-2 .labelBkg{background-color:rgba(255, 255, 255, 0.5);}#mmd-2 .cluster rect{fill:hsl(0, 0%, 98.9215686275%);stroke:#707070;stroke-width:1px;}#mmd-2 .cluster text{fill:#333;}#mmd-2 .cluster span{color:#333;}#mmd-2 .node .collapsed-indicator{fill:#707070;stroke:none;opacity:0.6;}#mmd-2 .node .collapsed-separator{stroke:#707070;stroke-width:0.75px;}#mmd-2 div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:12px;background:hsl(-160, 0%, 93.3333333333%);border:1px solid #707070;border-radius:2px;pointer-events:none;z-index:100;}#mmd-2 .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#000000;}#mmd-2 rect.text{fill:none;stroke-width:0;}#mmd-2 .icon-shape,#mmd-2 .image-shape{background-color:white;text-align:center;}#mmd-2 .icon-shape p,#mmd-2 .image-shape p{background-color:white;padding:2px;}#mmd-2 .icon-shape .label rect,#mmd-2 .image-shape .label rect{opacity:0.5;background-color:white;fill:white;}#mmd-2 .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#mmd-2 .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#mmd-2 .node .neo-node{stroke:#999;}#mmd-2 [data-look=\"neo\"].node rect,#mmd-2 [data-look=\"neo\"].cluster rect,#mmd-2 [data-look=\"neo\"].node polygon{stroke:url(#mmd-2-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-2 [data-look=\"neo\"].swimlane.cluster rect{filter:none;}#mmd-2 [data-look=\"neo\"].node path{stroke:url(#mmd-2-gradient);stroke-width:1px;}#mmd-2 [data-look=\"neo\"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-2 [data-look=\"neo\"].node .neo-line path{stroke:#999;filter:none;}#mmd-2 [data-look=\"neo\"].node circle{stroke:url(#mmd-2-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-2 [data-look=\"neo\"].node circle .state-start{fill:#000000;}#mmd-2 [data-look=\"neo\"].icon-shape .icon{fill:url(#mmd-2-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-2 [data-look=\"neo\"].icon-shape .icon-neo path{stroke:url(#mmd-2-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-2 :root{--mermaid-font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;}StartEnd"
+      }
+    },
+    {
+      "name": "S3 mermaid 包裹 padding 命中点（非 svg → 不触发 lightbox）",
+      "ok": true,
+      "detail": {
+        "x": 330.5,
+        "y": 310.55,
+        "via": "padding",
+        "hit": "cm-md-mermaid"
+      }
+    },
+    {
+      "name": "S3 点击 mermaid → 双区（源码面板 + 预览区）",
+      "ok": true,
+      "detail": {
+        "srcLines": 4,
+        "preview": 1,
+        "previewSvg": 1,
+        "lightbox": 0
+      }
+    },
+    {
+      "name": "S3 破坏语法输入生效",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "from": 165,
+        "to": 173,
+        "usedFallback": false,
+        "hasSearch": false
+      }
+    },
+    {
+      "name": "S3 非法 mermaid：last-good 图保留（不白屏）（AC-ERR-11 判据1）",
+      "ok": true,
+      "detail": {
+        "doc": "# FE-10 观感审计自测夹具\n\n## 公式区\n\n$$\nE = mc^2\n$$\n\n行内公式 $a^2 + b^2 = c^2$ 在段落中。\n\n## 代码区\n\n```js\nfunction add(a, b) {\n  return a + b\n}\n```\n\n## Mermaid 区\n\n```mermaid\ngraph TD\n  A[Start --> B[End]\n```\n\n## 任务列表\n\n- [x] 已完成任务\n- [ ] 未完成任务\n\n## 有序列表\n\n1. 有序第一项\n2. 有序第二项\n\n## 链接与图片\n\n[设计规范文档](https://example.com/design-spec)\n\n![居中图](it03-fe10-fixture.png =200x100){align=center}\n\n## 表格\n\n| 列A | 列B |\n| --- | --- |\n| cell one | cell two |\n",
+        "svgCount": 1,
+        "isDim": 1,
+        "errorBar": 1,
+        "errorHidden": false,
+        "errorText": "Mermaid 错误: Parse error on line 2:\n...h TD  A[Start --> B[End]\n----------------------^\nExpecting 'SQE', 'DOUBLECIRCLEEND', 'PE', '-)', 'STADIUMEND', 'SUBROUTINEEND', 'PIPE', 'CYLINDEREND', 'DIAMOND_STOP', 'TAGEND', 'TRAPEND', 'INVTRAPEND', 'UNICODE_TEXT', 'TEXT', 'TAGSTART', got 'SQS'跳到源码",
+        "jump": 1
+      }
+    },
+    {
+      "name": "S3 last-good 处于 dim 态（更新中/失效标识）",
+      "ok": true,
+      "detail": {
+        "doc": "# FE-10 观感审计自测夹具\n\n## 公式区\n\n$$\nE = mc^2\n$$\n\n行内公式 $a^2 + b^2 = c^2$ 在段落中。\n\n## 代码区\n\n```js\nfunction add(a, b) {\n  return a + b\n}\n```\n\n## Mermaid 区\n\n```mermaid\ngraph TD\n  A[Start --> B[End]\n```\n\n## 任务列表\n\n- [x] 已完成任务\n- [ ] 未完成任务\n\n## 有序列表\n\n1. 有序第一项\n2. 有序第二项\n\n## 链接与图片\n\n[设计规范文档](https://example.com/design-spec)\n\n![居中图](it03-fe10-fixture.png =200x100){align=center}\n\n## 表格\n\n| 列A | 列B |\n| --- | --- |\n| cell one | cell two |\n",
+        "svgCount": 1,
+        "isDim": 1,
+        "errorBar": 1,
+        "errorHidden": false,
+        "errorText": "Mermaid 错误: Parse error on line 2:\n...h TD  A[Start --> B[End]\n----------------------^\nExpecting 'SQE', 'DOUBLECIRCLEEND', 'PE', '-)', 'STADIUMEND', 'SUBROUTINEEND', 'PIPE', 'CYLINDEREND', 'DIAMOND_STOP', 'TAGEND', 'TRAPEND', 'INVTRAPEND', 'UNICODE_TEXT', 'TEXT', 'TAGSTART', got 'SQS'跳到源码",
+        "jump": 1
+      }
+    },
+    {
+      "name": "S3 错误条浮现且提供跳源码入口（AC-ERR-11 判据2）",
+      "ok": true,
+      "detail": {
+        "doc": "# FE-10 观感审计自测夹具\n\n## 公式区\n\n$$\nE = mc^2\n$$\n\n行内公式 $a^2 + b^2 = c^2$ 在段落中。\n\n## 代码区\n\n```js\nfunction add(a, b) {\n  return a + b\n}\n```\n\n## Mermaid 区\n\n```mermaid\ngraph TD\n  A[Start --> B[End]\n```\n\n## 任务列表\n\n- [x] 已完成任务\n- [ ] 未完成任务\n\n## 有序列表\n\n1. 有序第一项\n2. 有序第二项\n\n## 链接与图片\n\n[设计规范文档](https://example.com/design-spec)\n\n![居中图](it03-fe10-fixture.png =200x100){align=center}\n\n## 表格\n\n| 列A | 列B |\n| --- | --- |\n| cell one | cell two |\n",
+        "svgCount": 1,
+        "isDim": 1,
+        "errorBar": 1,
+        "errorHidden": false,
+        "errorText": "Mermaid 错误: Parse error on line 2:\n...h TD  A[Start --> B[End]\n----------------------^\nExpecting 'SQE', 'DOUBLECIRCLEEND', 'PE', '-)', 'STADIUMEND', 'SUBROUTINEEND', 'PIPE', 'CYLINDEREND', 'DIAMOND_STOP', 'TAGEND', 'TRAPEND', 'INVTRAPEND', 'UNICODE_TEXT', 'TEXT', 'TAGSTART', got 'SQS'跳到源码",
+        "jump": 1
+      }
+    },
+    {
+      "name": "截图落盘 IT-03-FE-10-impl-mermaid-lastgood.png",
+      "ok": true,
+      "detail": {
+        "bytes": 22287,
+        "clip": {
+          "x": 0,
+          "y": 345.515625,
+          "width": 1200,
+          "height": 521.546875
+        }
+      }
+    },
+    {
+      "name": "S3 错误条跳源码定位 fence 内",
+      "ok": true,
+      "detail": {
+        "from": 163,
+        "fence": 154,
+        "inFence": true
+      }
+    },
+    {
+      "name": "S3 修复输入生效（新图源）",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "from": 165,
+        "to": 172,
+        "usedFallback": false,
+        "hasSearch": true
+      }
+    },
+    {
+      "name": "S3 修复后重渲染为新图（AC-ERR-11 判据3）",
+      "ok": true,
+      "detail": {
+        "previewError": 0,
+        "previewSvg": 1,
+        "previewText": "#mmd-5{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:16px;fill:#000000;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#mmd-5 .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#mmd-5 .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#mmd-5 .error-icon{fill:#552222;}#mmd-5 .error-text{fill:#552222;stroke:#552222;}#mmd-5 .edge-thickness-normal{stroke-width:1px;}#mmd-5 .edge-thickness-thick{stroke-width:3.5px;}#mmd-5 .edge-pattern-solid{stroke-dasharray:0;}#mmd-5 .edge-thickness-invisible{stroke-width:0;fill:none;}#mmd-5 .edge-pattern-dashed{stroke-dasharray:3;}#mmd-5 .edge-pattern-dotted{stroke-dasharray:2;}#mmd-5 .marker{fill:#666;stroke:#666;}#mmd-5 .marker.cross{stroke:#666;}#mmd-5 svg{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:16px;}#mmd-5 p{margin:0;}#mmd-5 .label{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;color:#000000;}#mmd-5 .cluster-label text{fill:#333;}#mmd-5 .cluster-label span{color:#333;}#mmd-5 .cluster-label span p{background-color:transparent;}#mmd-5 .label text,#mmd-5 span{fill:#000000;color:#000000;}#mmd-5 .node rect,#mmd-5 .node circle,#mmd-5 .node ellipse,#mmd-5 .node polygon,#mmd-5 .node path{fill:#eee;stroke:#999;stroke-width:1px;}#mmd-5 .rough-node .label text,#mmd-5 .node .label text,#mmd-5 .image-shape .label,#mmd-5 .icon-shape .label{text-anchor:middle;}#mmd-5 .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#mmd-5 .rough-node .label,#mmd-5 .node .label,#mmd-5 .image-shape .label,#mmd-5 .icon-shape .label{text-align:center;}#mmd-5 .node.clickable{cursor:pointer;}#mmd-5 .root .anchor path{fill:#666!important;stroke-width:0;stroke:#666;}#mmd-5 .arrowheadPath{fill:#333333;}#mmd-5 .edgePaths .path{stroke:#666;stroke-width:1px;}#mmd-5 .flowchart-link{stroke:#666;fill:none;}#mmd-5 .edgeLabel{background-color:white;text-align:center;}#mmd-5 .edgeLabel p{background-color:white;}#mmd-5 .edgeLabel rect{opacity:0.5;background-color:white;fill:white;}#mmd-5 .labelBkg{background-color:rgba(255, 255, 255, 0.5);}#mmd-5 .cluster rect{fill:hsl(0, 0%, 98.9215686275%);stroke:#707070;stroke-width:1px;}#mmd-5 .cluster text{fill:#333;}#mmd-5 .cluster span{color:#333;}#mmd-5 .node .collapsed-indicator{fill:#707070;stroke:none;opacity:0.6;}#mmd-5 .node .collapsed-separator{stroke:#707070;stroke-width:0.75px;}#mmd-5 div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:12px;background:hsl(-160, 0%, 93.3333333333%);border:1px solid #707070;border-radius:2px;pointer-events:none;z-index:100;}#mmd-5 .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#000000;}#mmd-5 rect.text{fill:none;stroke-width:0;}#mmd-5 .icon-shape,#mmd-5 .image-shape{background-color:white;text-align:center;}#mmd-5 .icon-shape p,#mmd-5 .image-shape p{background-color:white;padding:2px;}#mmd-5 .icon-shape .label rect,#mmd-5 .image-shape .label rect{opacity:0.5;background-color:white;fill:white;}#mmd-5 .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#mmd-5 .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#mmd-5 .node .neo-node{stroke:#999;}#mmd-5 [data-look=\"neo\"].node rect,#mmd-5 [data-look=\"neo\"].cluster rect,#mmd-5 [data-look=\"neo\"].node polygon{stroke:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].swimlane.cluster rect{filter:none;}#mmd-5 [data-look=\"neo\"].node path{stroke:url(#mmd-5-gradient);stroke-width:1px;}#mmd-5 [data-look=\"neo\"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].node .neo-line path{stroke:#999;filter:none;}#mmd-5 [data-look=\"neo\"].node circle{stroke:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].node circle .state-start{fill:#000000;}#mmd-5 [data-look=\"neo\"].icon-shape .icon{fill:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].icon-shape .icon-neo path{stroke:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 :root{--mermaid-font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;}Start2End",
+        "isDim": 0
+      }
+    },
+    {
+      "name": "S3 退出编辑后渲染态为新图、预览面板无残留",
+      "ok": true,
+      "detail": {
+        "preview": 0,
+        "svg": 1,
+        "text": "#mmd-5{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:16px;fill:#000000;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#mmd-5 .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#mmd-5 .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#mmd-5 .error-icon{fill:#552222;}#mmd-5 .error-text{fill:#552222;stroke:#552222;}#mmd-5 .edge-thickness-normal{stroke-width:1px;}#mmd-5 .edge-thickness-thick{stroke-width:3.5px;}#mmd-5 .edge-pattern-solid{stroke-dasharray:0;}#mmd-5 .edge-thickness-invisible{stroke-width:0;fill:none;}#mmd-5 .edge-pattern-dashed{stroke-dasharray:3;}#mmd-5 .edge-pattern-dotted{stroke-dasharray:2;}#mmd-5 .marker{fill:#666;stroke:#666;}#mmd-5 .marker.cross{stroke:#666;}#mmd-5 svg{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:16px;}#mmd-5 p{margin:0;}#mmd-5 .label{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;color:#000000;}#mmd-5 .cluster-label text{fill:#333;}#mmd-5 .cluster-label span{color:#333;}#mmd-5 .cluster-label span p{background-color:transparent;}#mmd-5 .label text,#mmd-5 span{fill:#000000;color:#000000;}#mmd-5 .node rect,#mmd-5 .node circle,#mmd-5 .node ellipse,#mmd-5 .node polygon,#mmd-5 .node path{fill:#eee;stroke:#999;stroke-width:1px;}#mmd-5 .rough-node .label text,#mmd-5 .node .label text,#mmd-5 .image-shape .label,#mmd-5 .icon-shape .label{text-anchor:middle;}#mmd-5 .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#mmd-5 .rough-node .label,#mmd-5 .node .label,#mmd-5 .image-shape .label,#mmd-5 .icon-shape .label{text-align:center;}#mmd-5 .node.clickable{cursor:pointer;}#mmd-5 .root .anchor path{fill:#666!important;stroke-width:0;stroke:#666;}#mmd-5 .arrowheadPath{fill:#333333;}#mmd-5 .edgePaths .path{stroke:#666;stroke-width:1px;}#mmd-5 .flowchart-link{stroke:#666;fill:none;}#mmd-5 .edgeLabel{background-color:white;text-align:center;}#mmd-5 .edgeLabel p{background-color:white;}#mmd-5 .edgeLabel rect{opacity:0.5;background-color:white;fill:white;}#mmd-5 .labelBkg{background-color:rgba(255, 255, 255, 0.5);}#mmd-5 .cluster rect{fill:hsl(0, 0%, 98.9215686275%);stroke:#707070;stroke-width:1px;}#mmd-5 .cluster text{fill:#333;}#mmd-5 .cluster span{color:#333;}#mmd-5 .node .collapsed-indicator{fill:#707070;stroke:none;opacity:0.6;}#mmd-5 .node .collapsed-separator{stroke:#707070;stroke-width:0.75px;}#mmd-5 div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;font-size:12px;background:hsl(-160, 0%, 93.3333333333%);border:1px solid #707070;border-radius:2px;pointer-events:none;z-index:100;}#mmd-5 .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#000000;}#mmd-5 rect.text{fill:none;stroke-width:0;}#mmd-5 .icon-shape,#mmd-5 .image-shape{background-color:white;text-align:center;}#mmd-5 .icon-shape p,#mmd-5 .image-shape p{background-color:white;padding:2px;}#mmd-5 .icon-shape .label rect,#mmd-5 .image-shape .label rect{opacity:0.5;background-color:white;fill:white;}#mmd-5 .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#mmd-5 .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#mmd-5 .node .neo-node{stroke:#999;}#mmd-5 [data-look=\"neo\"].node rect,#mmd-5 [data-look=\"neo\"].cluster rect,#mmd-5 [data-look=\"neo\"].node polygon{stroke:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].swimlane.cluster rect{filter:none;}#mmd-5 [data-look=\"neo\"].node path{stroke:url(#mmd-5-gradient);stroke-width:1px;}#mmd-5 [data-look=\"neo\"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].node .neo-line path{stroke:#999;filter:none;}#mmd-5 [data-look=\"neo\"].node circle{stroke:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].node circle .state-start{fill:#000000;}#mmd-5 [data-look=\"neo\"].icon-shape .icon{fill:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 [data-look=\"neo\"].icon-shape .icon-neo path{stroke:url(#mmd-5-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#mmd-5 :root{--mermaid-font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',-apple-system,sans-serif;}Start2End"
+      }
+    },
+    {
+      "name": "S4 浅主题 mathErr 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "sel": ".cm-md-math-error",
+        "color": "rgb(180, 83, 9)",
+        "bg": "rgb(254,241,221)",
+        "ratio": 4.513
+      }
+    },
+    {
+      "name": "S4 浅主题 mermaidErr 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "sel": ".cm-md-mermaid-error",
+        "color": "rgb(180, 83, 9)",
+        "bg": "rgb(254,241,221)",
+        "ratio": 4.513
+      }
+    },
+    {
+      "name": "S4 浅主题 tokenErrbar 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "fgVar": "--errbar-fg",
+        "bgVar": "--bg",
+        "overlayVar": "--errbar-bg",
+        "fg": "#b45309",
+        "bg": "rgb(254,241,221)",
+        "ratio": 4.513
+      }
+    },
+    {
+      "name": "S4 浅主题 tokenFgDim 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "fgVar": "--fg-dim",
+        "bgVar": "--bg",
+        "fg": "#6b6b6b",
+        "bg": "rgb(255,255,255)",
+        "ratio": 5.329
+      }
+    },
+    {
+      "name": "S4 浅主题 tokenFgDimWidget 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "fgVar": "--fg-dim",
+        "bgVar": "--widget-surface",
+        "fg": "#6b6b6b",
+        "bg": "rgb(250,250,250)",
+        "ratio": 5.106
+      }
+    },
+    {
+      "name": "S4 浅主题 codeChip 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "sel": ".cm-md-code-idle-chip",
+        "color": "rgb(107, 107, 107)",
+        "bg": "rgb(250,250,250)",
+        "ratio": 5.106
+      }
+    },
+    {
+      "name": "S4 浅主题 mermaidBadge 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "sel": ".cm-md-mermaid-badge",
+        "color": "rgb(107, 107, 107)",
+        "bg": "rgb(255,255,255)",
+        "ratio": 5.329
+      }
+    },
+    {
+      "name": "S4 浅主题 expander 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "sel": ".cm-md-code-expander",
+        "color": "rgb(107, 107, 107)",
+        "bg": "rgb(250,250,250)",
+        "ratio": 5.106
+      }
+    },
+    {
+      "name": "S4 深主题 mathErr 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "sel": ".cm-md-math-error",
+        "color": "rgb(252, 211, 77)",
+        "bg": "rgb(69,53,27)",
+        "ratio": 8.199
+      }
+    },
+    {
+      "name": "S4 深主题 mermaidErr 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "sel": ".cm-md-mermaid-error",
+        "color": "rgb(252, 211, 77)",
+        "bg": "rgb(69,53,27)",
+        "ratio": 8.199
+      }
+    },
+    {
+      "name": "S4 深主题 tokenErrbar 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "fgVar": "--errbar-fg",
+        "bgVar": "--bg",
+        "overlayVar": "--errbar-bg",
+        "fg": "#fcd34d",
+        "bg": "rgb(69,53,27)",
+        "ratio": 8.199
+      }
+    },
+    {
+      "name": "S4 深主题 tokenFgDim 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "fgVar": "--fg-dim",
+        "bgVar": "--bg",
+        "fg": "#9a9a9a",
+        "bg": "rgb(30,30,30)",
+        "ratio": 5.925
+      }
+    },
+    {
+      "name": "S4 深主题 tokenFgDimWidget 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "fgVar": "--fg-dim",
+        "bgVar": "--widget-surface",
+        "fg": "#9a9a9a",
+        "bg": "rgb(37,37,38)",
+        "ratio": 5.442
+      }
+    },
+    {
+      "name": "S4 深主题 codeChip 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "sel": ".cm-md-code-idle-chip",
+        "color": "rgb(154, 154, 154)",
+        "bg": "rgb(37,37,38)",
+        "ratio": 5.442
+      }
+    },
+    {
+      "name": "S4 深主题 mermaidBadge 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "sel": ".cm-md-mermaid-badge",
+        "color": "rgb(154, 154, 154)",
+        "bg": "rgb(30,30,30)",
+        "ratio": 5.925
+      }
+    },
+    {
+      "name": "S4 深主题 expander 对比度 ≥4.5:1",
+      "ok": true,
+      "detail": {
+        "sel": ".cm-md-code-expander",
+        "color": "rgb(154, 154, 154)",
+        "bg": "rgb(37,37,38)",
+        "ratio": 5.442
+      }
+    },
+    {
+      "name": "S4 深主题 块级 chrome 无硬编码浅色块",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "S4 --errbar-* token 随主题翻转（无 .theme-dark 补丁亦生效）",
+      "ok": true,
+      "detail": {
+        "light": "rgb(180, 83, 9)",
+        "dark": "rgb(252, 211, 77)",
+        "isAmberLight": true,
+        "isAmberDark": true,
+        "differs": true
+      }
+    },
+    {
+      "name": "S4 主题 host 类名翻转（.theme-light/.theme-dark）",
+      "ok": true,
+      "detail": {
+        "light": "app theme-light",
+        "dark": "app theme-dark"
+      }
+    },
+    {
+      "name": "S5 任务勾选编辑完成（AC-OP-18 前置）",
+      "ok": true,
+      "detail": {
+        "taskWidgets": 2,
+        "checked": 2
+      }
+    },
+    {
+      "name": "S5 表格编辑态 col-grip 可定位（FE-03 删4留1 契约）",
+      "ok": true,
+      "detail": {
+        "cell": {
+          "x": 521.19,
+          "y": 424.61
+        },
+        "grip": {
+          "x": 716.23,
+          "y": 425.3
+        }
+      }
+    },
+    {
+      "name": "S5 列宽显示态已写 session（tableColWidths）",
+      "ok": true,
+      "detail": {
+        "grip": {
+          "x": 716.23,
+          "y": 425.3
+        },
+        "colWidths": {
+          "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it03-fe10-audit-selftest.md": {
+            "416": [
+              431,
+              336
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "S5 HTML 通道导出完成并生成导出物（AC-OP-18 判据1）",
+      "ok": true,
+      "detail": {
+        "bytes": 394627
+      }
+    },
+    {
+      "name": "S5 PDF 通道导出流程完成（html→打印渲染源捕获）（AC-OP-18 判据1）",
+      "ok": true,
+      "detail": {
+        "bytes": 394627,
+        "pdfOpts": {
+          "pageSize": "A4",
+          "margins": "normal",
+          "headerFooter": true,
+          "title": "it03-fe10-audit-selftest"
+        }
+      }
+    },
+    {
+      "name": "S5 富文本通道复制完成（AC-OP-18 判据1）",
+      "ok": true,
+      "detail": {
+        "bytes": 20432
+      }
+    },
+    {
+      "name": "S5 HTML：公式渲染（KaTeX）与编辑视图一致（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "katexBlocks": 2
+      }
+    },
+    {
+      "name": "S5 HTML：任务勾选态一致（1 勾 + N 勾状态写入）（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "checkboxes": [
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "S5 HTML：图片尺寸与对齐写入（200x100 + center）（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "imgs": [
+          {
+            "width": "200",
+            "height": "100",
+            "style": "display:block;margin-left:auto;margin-right:auto",
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSU"
+          }
+        ]
+      }
+    },
+    {
+      "name": "S5 HTML：链接 URL 与 .md 一致（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "mdHrefs": [
+          "https://example.com/design-spec"
+        ],
+        "hrefs": [
+          "https://example.com/design-spec"
+        ]
+      }
+    },
+    {
+      "name": "S5 HTML：列表顺序一致（有序项在序）（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "lis": [
+          "已完成任务",
+          "未完成任务",
+          "有序第一项",
+          "有序第二项"
+        ]
+      }
+    },
+    {
+      "name": "S5 HTML：代码渲染（pre/code + 高亮）（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "codeBlocks": 1,
+        "hljsSpans": 4
+      }
+    },
+    {
+      "name": "S5 HTML：mermaid 渲染为 SVG（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "mermaidSvg": 1
+      }
+    },
+    {
+      "name": "S5 HTML：表格列宽显示态不写入导出物（AC-OP-18 判据3）",
+      "ok": true,
+      "detail": {
+        "tables": [
+          {
+            "widthAttrs": [],
+            "styleWidths": 0,
+            "colgroups": 0,
+            "cellTexts": [
+              "列A",
+              "列B",
+              "cell one",
+              "cell two"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "S5 HTML：表格单元格内容一致",
+      "ok": true,
+      "detail": {
+        "tables": [
+          {
+            "widthAttrs": [],
+            "styleWidths": 0,
+            "colgroups": 0,
+            "cellTexts": [
+              "列A",
+              "列B",
+              "cell one",
+              "cell two"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "S5 PDF：公式渲染（KaTeX）与编辑视图一致（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "katexBlocks": 2
+      }
+    },
+    {
+      "name": "S5 PDF：任务勾选态一致（1 勾 + N 勾状态写入）（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "checkboxes": [
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "S5 PDF：图片尺寸与对齐写入（200x100 + center）（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "imgs": [
+          {
+            "width": "200",
+            "height": "100",
+            "style": "display:block;margin-left:auto;margin-right:auto",
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSU"
+          }
+        ]
+      }
+    },
+    {
+      "name": "S5 PDF：链接 URL 与 .md 一致（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "mdHrefs": [
+          "https://example.com/design-spec"
+        ],
+        "hrefs": [
+          "https://example.com/design-spec"
+        ]
+      }
+    },
+    {
+      "name": "S5 PDF：列表顺序一致（有序项在序）（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "lis": [
+          "已完成任务",
+          "未完成任务",
+          "有序第一项",
+          "有序第二项"
+        ]
+      }
+    },
+    {
+      "name": "S5 PDF：代码渲染（pre/code + 高亮）（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "codeBlocks": 1,
+        "hljsSpans": 4
+      }
+    },
+    {
+      "name": "S5 PDF：mermaid 渲染为 SVG（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "mermaidSvg": 1
+      }
+    },
+    {
+      "name": "S5 PDF：表格列宽显示态不写入导出物（AC-OP-18 判据3）",
+      "ok": true,
+      "detail": {
+        "tables": [
+          {
+            "widthAttrs": [],
+            "styleWidths": 0,
+            "colgroups": 0,
+            "cellTexts": [
+              "列A",
+              "列B",
+              "cell one",
+              "cell two"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "S5 PDF：表格单元格内容一致",
+      "ok": true,
+      "detail": {
+        "tables": [
+          {
+            "widthAttrs": [],
+            "styleWidths": 0,
+            "colgroups": 0,
+            "cellTexts": [
+              "列A",
+              "列B",
+              "cell one",
+              "cell two"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "S5 富文本：公式渲染（KaTeX）与编辑视图一致（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "katexBlocks": 2
+      }
+    },
+    {
+      "name": "S5 富文本：任务勾选态一致（1 勾 + N 勾状态写入）（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "checkboxes": [
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "S5 富文本：图片尺寸与对齐写入（200x100 + center）（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "imgs": [
+          {
+            "width": "200",
+            "height": "100",
+            "style": "display:block;margin-left:auto;margin-right:auto",
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSU"
+          }
+        ]
+      }
+    },
+    {
+      "name": "S5 富文本：链接 URL 与 .md 一致（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "mdHrefs": [
+          "https://example.com/design-spec"
+        ],
+        "hrefs": [
+          "https://example.com/design-spec"
+        ]
+      }
+    },
+    {
+      "name": "S5 富文本：列表顺序一致（有序项在序）（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "lis": [
+          "已完成任务",
+          "未完成任务",
+          "有序第一项",
+          "有序第二项"
+        ]
+      }
+    },
+    {
+      "name": "S5 富文本：代码渲染（pre/code + 高亮）（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "codeBlocks": 1,
+        "hljsSpans": 4
+      }
+    },
+    {
+      "name": "S5 富文本：mermaid 渲染为 SVG（AC-OP-18 判据2）",
+      "ok": true,
+      "detail": {
+        "mermaidSvg": 1
+      }
+    },
+    {
+      "name": "S5 富文本：表格列宽显示态不写入导出物（AC-OP-18 判据3）",
+      "ok": true,
+      "detail": {
+        "tables": [
+          {
+            "widthAttrs": [],
+            "styleWidths": 0,
+            "colgroups": 0,
+            "cellTexts": [
+              "列A",
+              "列B",
+              "cell one",
+              "cell two"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "S5 富文本：表格单元格内容一致",
+      "ok": true,
+      "detail": {
+        "tables": [
+          {
+            "widthAttrs": [],
+            "styleWidths": 0,
+            "colgroups": 0,
+            "cellTexts": [
+              "列A",
+              "列B",
+              "cell one",
+              "cell two"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "S5 链接段三通道一致性复验（FE-05 委托）：HTML/PDF/富文本 href 集合一致且源自 .md",
+      "ok": true,
+      "detail": {
+        "mdHrefs": [
+          "https://example.com/design-spec"
+        ],
+        "hrefSets": [
+          [
+            "HTML",
+            [
+              "https://example.com/design-spec"
+            ]
+          ],
+          [
+            "PDF",
+            [
+              "https://example.com/design-spec"
+            ]
+          ],
+          [
+            "富文本",
+            [
+              "https://example.com/design-spec"
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "name": "S6 双区/块级 chrome DOM 契约静态类可达（AC-FN-20 判据1）",
+      "ok": true,
+      "detail": {
+        "present": {
+          "cm-md-math-block": 1,
+          "cm-md-math-preview": 0,
+          "cm-md-math-src": 0,
+          "cm-md-math-src-first": 0,
+          "cm-md-math-src-last": 0,
+          "cm-md-math-edit-chip": 0,
+          "cm-md-math-hover-chip": 1,
+          "cm-md-math-error": 0,
+          "cm-md-math-jump": 0,
+          "cm-md-code-block": 1,
+          "cm-md-code-src": 0,
+          "cm-md-code-src-first": 0,
+          "cm-md-code-src-last": 0,
+          "cm-md-code-src-chip": 0,
+          "cm-md-code-idle-chip": 1,
+          "cm-md-code-expander": 1,
+          "cm-md-mermaid": 1,
+          "cm-md-mermaid-svg": 1,
+          "cm-md-mermaid-preview": 0,
+          "cm-md-mermaid-error": 1,
+          "cm-md-mermaid-jump": 0,
+          "cm-md-mermaid-badge": 1
+        },
+        "editorDisplay": "flex"
+      }
+    },
+    {
+      "name": "S6 双区/错误态 CSS 契约规则全在（AC-FN-20 判据1）",
+      "ok": true,
+      "detail": {
+        "cm-md-code-src": 7,
+        "cm-md-math-error": 1,
+        "cm-md-mermaid-error": 1,
+        "cm-md-math-jump": 2,
+        "cm-md-mermaid-jump": 2,
+        "cm-md-mermaid-preview": 1,
+        "cm-md-math-src": 3,
+        "cm-md-math-edit-chip": 1,
+        "cm-md-code-expander": 2,
+        "cm-md-code-idle-chip": 5
+      }
+    },
+    {
+      "name": "S6 window.__velox* 缝 key 集不变（AC-RULE-17 切片；懒装缝白名单）",
+      "ok": true,
+      "detail": {
+        "baseline": [
+          "__veloxCtxDebug",
+          "__veloxEditor",
+          "__veloxExport",
+          "__veloxExtended",
+          "__veloxP04",
+          "__veloxP12",
+          "__veloxP13",
+          "__veloxP14",
+          "__veloxP15",
+          "__veloxP16",
+          "__veloxP17",
+          "__veloxP18",
+          "__veloxP19",
+          "__veloxP20",
+          "__veloxP21",
+          "__veloxP22",
+          "__veloxP23",
+          "__veloxP24",
+          "__veloxP25",
+          "__veloxP26",
+          "__veloxP28",
+          "__veloxP29",
+          "__veloxPrefs",
+          "__veloxTable"
+        ],
+        "final": [
+          "__veloxCtxDebug",
+          "__veloxEditor",
+          "__veloxExport",
+          "__veloxExtended",
+          "__veloxP04",
+          "__veloxP12",
+          "__veloxP13",
+          "__veloxP14",
+          "__veloxP15",
+          "__veloxP16",
+          "__veloxP17",
+          "__veloxP18",
+          "__veloxP19",
+          "__veloxP20",
+          "__veloxP21",
+          "__veloxP22",
+          "__veloxP23",
+          "__veloxP24",
+          "__veloxP25",
+          "__veloxP26",
+          "__veloxP28",
+          "__veloxP29",
+          "__veloxPrefs",
+          "__veloxTable",
+          "__veloxTableCellView"
+        ],
+        "disappeared": [],
+        "unexpected": [],
+        "knownLazySeen": [
+          "__veloxTableCellView"
+        ]
+      }
+    },
+    {
+      "name": "S6 data-op 契约可扫描（集合记录）",
+      "ok": true,
+      "detail": {
+        "count": 6,
+        "ops": [
+          "TBL-MOR-OPN",
+          "alignCenter",
+          "alignLeft",
+          "alignRight",
+          "deleteTable",
+          "resizeTable"
+        ]
+      }
+    },
+    {
+      "name": "截图落盘 IT-03-FE-10-impl.png",
+      "ok": true,
+      "detail": {
+        "bytes": 51955,
+        "clip": "viewport"
+      }
+    }
+  ]
+}

@@ -75,7 +75,7 @@ function panel(theme) {
     </div>
     <div class="swatch menu-sim">
       <div class="menu-item">上移该行</div>
-      <div class="menu-item is-disabled">上移该行（禁用灰显）</div>
+      <div class="menu-item is-disabled">上移该行（表头保护）</div>
       <div class="menu-item is-danger">${zh['ctx.deleteTable']}</div>
     </div>
     <div class="swatch grid-sim">
@@ -86,6 +86,7 @@ function panel(theme) {
       <div class="grid-label">3 × 2 · 缩放整表</div>
     </div>
     <div class="swatch confirm-sim">
+      <h3 class="confirm-title">${zh['ctx.deleteTable']}</h3>
       <p class="confirm-text">${zh['ctx.deleteTableConfirm']}</p>
       <div class="confirm-actions">
         <button class="btn btn-secondary" type="button">${zh['dialog.cancel']}</button>
@@ -97,7 +98,6 @@ function panel(theme) {
       <li>--toast-fg = <code class="tv" data-tok="--toast-fg"></code></li>
       <li>--toast-border = <code class="tv" data-tok="--toast-border"></code></li>
       <li>--accent-soft-strong = <code class="tv" data-tok="--accent-soft-strong"></code></li>
-      <li>--shadow-menu = <code class="tv" data-tok="--shadow-menu"></code></li>
       <li>--danger-soft = <code class="tv" data-tok="--danger-soft"></code></li>
       <li>--grid-cell-size = <code class="tv" data-tok="--grid-cell-size"></code></li>
       <li>--grid-cell-gap = <code class="tv" data-tok="--grid-cell-gap"></code></li>
@@ -126,8 +126,8 @@ const html = `<!DOCTYPE html>
   .swatches { display: flex; flex-wrap: wrap; gap: 12px; }
   .swatch { border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3); background: var(--bg); }
   .toast-sim { display: flex; align-items: center; gap: var(--space-3); background: var(--toast-bg); color: var(--toast-fg); border: 1px solid var(--toast-border); border-radius: var(--radius-sm); box-shadow: var(--shadow-pop); font-size: 13px; }
-  .undo-btn { color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-sm); background: transparent; padding: 2px var(--space-2); font-size: 13px; font-weight: 600; }
-  .menu-sim { width: 200px; background: var(--bg); box-shadow: var(--shadow-menu); padding: var(--space-1) 0; }
+  .undo-btn { color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-sm); background: transparent; padding: var(--space-half) var(--space-2); font-size: 13px; font-weight: 600; }
+  .menu-sim { width: 200px; background: var(--bg); box-shadow: var(--shadow-pop); padding: var(--space-1) 0; }
   .menu-item { height: 30px; display: flex; align-items: center; padding: 0 var(--space-3); font-size: 13px; color: var(--fg); }
   .menu-item.is-disabled { color: var(--fg-disabled); }
   .menu-item.is-danger { color: var(--danger); font-weight: 500; background: var(--danger-soft); }
@@ -135,7 +135,8 @@ const html = `<!DOCTYPE html>
   .gcell { width: var(--grid-cell-size); height: var(--grid-cell-size); background: var(--bg); border: 1px solid var(--bg-inset); border-radius: var(--radius-sm); }
   .gcell.sel { background: var(--accent-soft-strong); border-color: var(--accent); }
   .grid-label { margin-top: var(--space-2); text-align: center; font-size: 12px; color: var(--fg-dim); }
-  .confirm-sim { width: 300px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-modal); padding: var(--space-5); }
+  .confirm-sim { width: 320px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-modal); padding: var(--space-5); }
+  .confirm-title { font-size: 16px; font-weight: 700; line-height: 1.4; margin: 0 0 var(--space-3); }
   .confirm-text { font-size: 13px; line-height: 1.6; color: var(--fg-dim); margin: 0 0 var(--space-5); }
   .confirm-actions { display: flex; justify-content: flex-end; gap: var(--space-2); }
   .btn { display: inline-flex; align-items: center; height: 30px; padding: 0 var(--space-4); border-radius: var(--radius-sm); font-size: 13px; border: 1px solid var(--border); background: var(--bg); color: var(--fg); }

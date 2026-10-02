@@ -1,0 +1,561 @@
+{
+  "meta": {
+    "port": 9534,
+    "startedAt": "2026-10-01T09:16:10.702Z"
+  },
+  "checks": [
+    {
+      "name": "R0 夹具装载 2 表",
+      "ok": true,
+      "detail": {
+        "fp": "D:/code/typora/temp/fe01-r2-fixture.md",
+        "tables": 2
+      }
+    },
+    {
+      "name": "R0 ⋮ 钮（TBL-MOR-OPN）在位",
+      "ok": true,
+      "detail": {
+        "x": 1042.14,
+        "y": 220.79
+      }
+    },
+    {
+      "name": "R1 ⋮ 恰 19 项可点钮",
+      "ok": true,
+      "detail": {
+        "present": true,
+        "n": 19
+      }
+    },
+    {
+      "name": "R1 ⋮ id 序 = ui_03 冻结矩阵",
+      "ok": true,
+      "detail": [
+        "insertRowAbove",
+        "insertRowBelow",
+        "moveRowUp",
+        "moveRowDown",
+        "deleteRow",
+        "insertColLeft",
+        "insertColRight",
+        "moveColLeft",
+        "moveColRight",
+        "deleteCol",
+        "alignLeft",
+        "alignCenter",
+        "alignRight",
+        "cutCell",
+        "copyCell",
+        "pasteCell",
+        "copyTable",
+        "formatTableSource",
+        "deleteTable"
+      ]
+    },
+    {
+      "name": "R1 ⋮ 文案逐字 = ui_03 .label",
+      "ok": true,
+      "detail": [
+        "在上方插入行",
+        "在下方插入行",
+        "上移该行",
+        "下移该行",
+        "删除行",
+        "在左侧插入列",
+        "在右侧插入列",
+        "左移该列",
+        "右移该列",
+        "删除列",
+        "左对齐",
+        "居中对齐",
+        "右对齐",
+        "剪切单元格",
+        "拷贝单元格",
+        "粘贴单元格",
+        "拷贝表格",
+        "格式化表格源码",
+        "删除表格"
+      ]
+    },
+    {
+      "name": "R1 ⋮ kbd 逐字 = ui_03 .kbd（8 键项 + 11 留白）",
+      "ok": true,
+      "detail": [
+        "Ctrl+Shift+Enter",
+        "Ctrl+Enter",
+        "Alt+↑",
+        "Alt+↓",
+        "",
+        "Ctrl+Shift+←",
+        "Ctrl+Shift+→",
+        "Alt+←",
+        "Alt+→",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    {
+      "name": "R1 ⋮ 零通用编辑项混入（U3 裁剪）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "R1 ⋮ 零子菜单残留",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "R1 ⋮ 五组标题逐字且有序",
+      "ok": true,
+      "detail": [
+        "行操作",
+        "列操作",
+        "对齐",
+        "单元格",
+        "结构删除"
+      ]
+    },
+    {
+      "name": "R1 ⋮ danger 仅删除表格 + 危险组徽标",
+      "ok": true,
+      "detail": {
+        "dangerIds": [
+          "deleteTable"
+        ],
+        "badges": [
+          {
+            "text": "行操作",
+            "badge": null
+          },
+          {
+            "text": "列操作",
+            "badge": null
+          },
+          {
+            "text": "对齐",
+            "badge": null
+          },
+          {
+            "text": "单元格",
+            "badge": null
+          },
+          {
+            "text": "结构删除",
+            "badge": "危险组"
+          }
+        ]
+      }
+    },
+    {
+      "name": "R1 ⋮ 批 A 面保留：min-width 248 + 5px 滚动条",
+      "ok": true,
+      "detail": {
+        "w": 248,
+        "min": "248px",
+        "sb": "5px"
+      }
+    },
+    {
+      "name": "R5 体行命中：无禁用项（上移/左移应可点）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "R5 对齐 ✓ 回显当前列（=:---: center）",
+      "ok": true,
+      "detail": [
+        "alignCenter"
+      ]
+    },
+    {
+      "name": "R1 全矩阵单帧可见（19 钮在视口内）",
+      "ok": true,
+      "detail": {
+        "n": 19
+      }
+    },
+    {
+      "name": "R1 单元格右键 恰 19 项可点钮",
+      "ok": true,
+      "detail": {
+        "present": true,
+        "n": 19
+      }
+    },
+    {
+      "name": "R1 单元格右键 id 序 = ui_03 冻结矩阵",
+      "ok": true,
+      "detail": [
+        "insertRowAbove",
+        "insertRowBelow",
+        "moveRowUp",
+        "moveRowDown",
+        "deleteRow",
+        "insertColLeft",
+        "insertColRight",
+        "moveColLeft",
+        "moveColRight",
+        "deleteCol",
+        "alignLeft",
+        "alignCenter",
+        "alignRight",
+        "cutCell",
+        "copyCell",
+        "pasteCell",
+        "copyTable",
+        "formatTableSource",
+        "deleteTable"
+      ]
+    },
+    {
+      "name": "R1 单元格右键 文案逐字 = ui_03 .label",
+      "ok": true,
+      "detail": [
+        "在上方插入行",
+        "在下方插入行",
+        "上移该行",
+        "下移该行",
+        "删除行",
+        "在左侧插入列",
+        "在右侧插入列",
+        "左移该列",
+        "右移该列",
+        "删除列",
+        "左对齐",
+        "居中对齐",
+        "右对齐",
+        "剪切单元格",
+        "拷贝单元格",
+        "粘贴单元格",
+        "拷贝表格",
+        "格式化表格源码",
+        "删除表格"
+      ]
+    },
+    {
+      "name": "R1 单元格右键 kbd 逐字 = ui_03 .kbd（8 键项 + 11 留白）",
+      "ok": true,
+      "detail": [
+        "Ctrl+Shift+Enter",
+        "Ctrl+Enter",
+        "Alt+↑",
+        "Alt+↓",
+        "",
+        "Ctrl+Shift+←",
+        "Ctrl+Shift+→",
+        "Alt+←",
+        "Alt+→",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    {
+      "name": "R1 单元格右键 零通用编辑项混入（U3 裁剪）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "R1 单元格右键 零子菜单残留",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "R1 单元格右键 五组标题逐字且有序",
+      "ok": true,
+      "detail": [
+        "行操作",
+        "列操作",
+        "对齐",
+        "单元格",
+        "结构删除"
+      ]
+    },
+    {
+      "name": "R1 单元格右键 danger 仅删除表格 + 危险组徽标",
+      "ok": true,
+      "detail": {
+        "dangerIds": [
+          "deleteTable"
+        ],
+        "badges": [
+          {
+            "text": "行操作",
+            "badge": null
+          },
+          {
+            "text": "列操作",
+            "badge": null
+          },
+          {
+            "text": "对齐",
+            "badge": null
+          },
+          {
+            "text": "单元格",
+            "badge": null
+          },
+          {
+            "text": "结构删除",
+            "badge": "危险组"
+          }
+        ]
+      }
+    },
+    {
+      "name": "R1 单元格右键 批 A 面保留：min-width 248 + 5px 滚动条",
+      "ok": true,
+      "detail": {
+        "w": 248,
+        "min": "248px",
+        "sb": "5px"
+      }
+    },
+    {
+      "name": "R1b 右键面与 ⋮ 面同源（id 序一致）",
+      "ok": true,
+      "detail": [
+        "insertRowAbove",
+        "insertRowBelow",
+        "moveRowUp",
+        "moveRowDown",
+        "deleteRow",
+        "insertColLeft",
+        "insertColRight",
+        "moveColLeft",
+        "moveColRight",
+        "deleteCol",
+        "alignLeft",
+        "alignCenter",
+        "alignRight",
+        "cutCell",
+        "copyCell",
+        "pasteCell",
+        "copyTable",
+        "formatTableSource",
+        "deleteTable"
+      ]
+    },
+    {
+      "name": "R5 表头末行 恰 19 项可点钮",
+      "ok": true,
+      "detail": {
+        "present": true,
+        "n": 19
+      }
+    },
+    {
+      "name": "R5 表头末行 id 序 = ui_03 冻结矩阵",
+      "ok": true,
+      "detail": [
+        "insertRowAbove",
+        "insertRowBelow",
+        "moveRowUp",
+        "moveRowDown",
+        "deleteRow",
+        "insertColLeft",
+        "insertColRight",
+        "moveColLeft",
+        "moveColRight",
+        "deleteCol",
+        "alignLeft",
+        "alignCenter",
+        "alignRight",
+        "cutCell",
+        "copyCell",
+        "pasteCell",
+        "copyTable",
+        "formatTableSource",
+        "deleteTable"
+      ]
+    },
+    {
+      "name": "R5 表头末行 文案逐字 = ui_03 .label",
+      "ok": true,
+      "detail": [
+        "在上方插入行",
+        "在下方插入行",
+        "上移该行",
+        "下移该行",
+        "删除行",
+        "在左侧插入列",
+        "在右侧插入列",
+        "左移该列",
+        "右移该列",
+        "删除列",
+        "左对齐",
+        "居中对齐",
+        "右对齐",
+        "剪切单元格",
+        "拷贝单元格",
+        "粘贴单元格",
+        "拷贝表格",
+        "格式化表格源码",
+        "删除表格"
+      ]
+    },
+    {
+      "name": "R5 表头末行 kbd 逐字 = ui_03 .kbd（8 键项 + 11 留白）",
+      "ok": true,
+      "detail": [
+        "Ctrl+Shift+Enter",
+        "Ctrl+Enter",
+        "Alt+↑",
+        "Alt+↓",
+        "",
+        "Ctrl+Shift+←",
+        "Ctrl+Shift+→",
+        "Alt+←",
+        "Alt+→",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    {
+      "name": "R5 表头末行 零通用编辑项混入（U3 裁剪）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "R5 表头末行 零子菜单残留",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "R5 表头末行 五组标题逐字且有序",
+      "ok": true,
+      "detail": [
+        "行操作",
+        "列操作",
+        "对齐",
+        "单元格",
+        "结构删除"
+      ]
+    },
+    {
+      "name": "R5 表头末行 danger 仅删除表格 + 危险组徽标",
+      "ok": true,
+      "detail": {
+        "dangerIds": [
+          "deleteTable"
+        ],
+        "badges": [
+          {
+            "text": "行操作",
+            "badge": null
+          },
+          {
+            "text": "列操作",
+            "badge": null
+          },
+          {
+            "text": "对齐",
+            "badge": null
+          },
+          {
+            "text": "单元格",
+            "badge": null
+          },
+          {
+            "text": "结构删除",
+            "badge": "危险组"
+          }
+        ]
+      }
+    },
+    {
+      "name": "R5 表头末行 批 A 面保留：min-width 248 + 5px 滚动条",
+      "ok": true,
+      "detail": {
+        "w": 248,
+        "min": "248px",
+        "sb": "5px"
+      }
+    },
+    {
+      "name": "R5 表头末行：删除行禁用、删除列可点",
+      "ok": true,
+      "detail": [
+        "moveRowUp",
+        "moveRowDown",
+        "deleteRow",
+        "moveColRight"
+      ]
+    },
+    {
+      "name": "R5 禁用色 = --fg-disabled（浅 #b0b0b0，批 A 不回退）",
+      "ok": true,
+      "detail": {
+        "color": "rgb(176, 176, 176)",
+        "opacity": "1"
+      }
+    },
+    {
+      "name": "R0 段落行定位",
+      "ok": true,
+      "detail": {
+        "paraPt": true,
+        "paraXY": {
+          "x": 392.71,
+          "y": 407.55
+        }
+      }
+    },
+    {
+      "name": "R7 通用右键面保留共享骨架（剪切/复制/粘贴+复制为/段落/格式/插入）",
+      "ok": true,
+      "detail": {
+        "present": true,
+        "presentGeneric": [
+          "cut",
+          "copy",
+          "paste",
+          "copyAs",
+          "paragraph",
+          "format",
+          "insert"
+        ],
+        "ids": [
+          "cut",
+          "copy",
+          "paste",
+          "copyAs",
+          "paragraph",
+          "format",
+          "insert"
+        ]
+      }
+    },
+    {
+      "name": "R7 表 19 项不泄漏进通用面",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "pass": 38,
+  "fail": 0
+}

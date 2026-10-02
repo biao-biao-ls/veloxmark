@@ -1,0 +1,278 @@
+{
+  "meta": {
+    "port": 9473,
+    "phase": "2",
+    "startedAt": "2026-09-30T08:21:11.563Z",
+    "fixturePath": "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md",
+    "startupDialog": null,
+    "fixtureHashBefore": "c7f6e99340a94ca9b0764720e3cad36cd40068190ea66c104ad70b6c8f900751",
+    "fixtureMatchesDriverText": true,
+    "seams": {
+      "p12": true,
+      "p13": true,
+      "p18": true,
+      "p18session": true,
+      "p26": true,
+      "prefs": true
+    },
+    "bootRawSession": {
+      "sidebarVisible": true,
+      "sidebarMode": "outline",
+      "sidebarWidth": 240,
+      "lastFilePath": "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md",
+      "lastFolderPath": null,
+      "recentFiles": [
+        "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md"
+      ],
+      "lastCursor": 0,
+      "mermaidPreviewPin": false,
+      "openTabs": [
+        "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md"
+      ],
+      "activePath": "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md",
+      "headingFolds": {
+        "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md": [
+          "2:Alpha 章节",
+          "2:Beta 章节"
+        ]
+      },
+      "quoteFolds": {},
+      "tableColWidths": {
+        "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md": {}
+      }
+    },
+    "bootGetSession": {
+      "headingFolds": {
+        "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md": [
+          "2:Alpha 章节",
+          "2:Beta 章节"
+        ]
+      },
+      "keys": [
+        "activePath",
+        "headingFolds",
+        "lastCursor",
+        "lastFilePath",
+        "lastFolderPath",
+        "mermaidPreviewPin",
+        "openTabs",
+        "quoteFolds",
+        "recentFiles",
+        "sidebarMode",
+        "sidebarVisible",
+        "sidebarWidth",
+        "tableColWidths"
+      ]
+    },
+    "bootFilePathWaitedMs": 2,
+    "summary": {
+      "pass": 22,
+      "total": 22
+    },
+    "fixtureHashFinal": "c7f6e99340a94ca9b0764720e3cad36cd40068190ea66c104ad70b6c8f900751"
+  },
+  "scenarios": {
+    "s5": {
+      "fp": "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md",
+      "folded": [
+        "2:Alpha 章节",
+        "2:Beta 章节"
+      ],
+      "summaries": [
+        "2:Alpha 章节",
+        "2:Beta 章节"
+      ],
+      "docEq": true
+    },
+    "s6": {
+      "state": {
+        "folded": [
+          "2:Beta 章节"
+        ],
+        "summaries": [
+          "2:Beta 章节"
+        ],
+        "docEq": true
+      },
+      "entry": [
+        "2:Beta 章节"
+      ]
+    },
+    "s7b": {
+      "entry": [
+        "2:尾部章节"
+      ],
+      "docEq": true
+    },
+    "s7c": {
+      "entry": [
+        "2:尾部章节"
+      ]
+    },
+    "s7d": {
+      "entry": [],
+      "docEq": true,
+      "curBeforeDel": 145,
+      "delPos": 145
+    }
+  },
+  "checks": [
+    {
+      "name": "S0 e2e 缝可达（P12/P13/P18/P26/__veloxPrefs）",
+      "ok": true,
+      "detail": {
+        "p12": true,
+        "p13": true,
+        "p18": true,
+        "p18session": true,
+        "p26": true,
+        "prefs": true
+      }
+    },
+    {
+      "name": "S5 重启后自动恢复上次文件",
+      "ok": true,
+      "detail": "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md"
+    },
+    {
+      "name": "S5 重启后折叠保持（AC-FN-25-1）",
+      "ok": true,
+      "detail": {
+        "folded": [
+          "2:Alpha 章节",
+          "2:Beta 章节"
+        ],
+        "summaries": [
+          "2:Alpha 章节",
+          "2:Beta 章节"
+        ]
+      }
+    },
+    {
+      "name": "S5 重启后 getDoc 与原文逐字节一致（AC-FN-25-2）",
+      "ok": true
+    },
+    {
+      "name": "S5 磁盘 .md hash 恒等（不写正文）",
+      "ok": true,
+      "detail": "c7f6e99340a94ca9b0764720e3cad36cd40068190ea66c104ad70b6c8f900751"
+    },
+    {
+      "name": "S6 跳转进入折叠区自动展开（FE-07 联调）",
+      "ok": true,
+      "detail": {
+        "folded": [
+          "2:Beta 章节"
+        ],
+        "summaries": [
+          "2:Beta 章节"
+        ]
+      }
+    },
+    {
+      "name": "S6 自动展开写回移除 foldKey、不写正文",
+      "ok": true,
+      "detail": {
+        "entry": [
+          "2:Beta 章节"
+        ]
+      }
+    },
+    {
+      "name": "S6 其余折叠不变",
+      "ok": true,
+      "detail": [
+        "2:Beta 章节"
+      ]
+    },
+    {
+      "name": "S7 改名前折叠键就位",
+      "ok": true,
+      "detail": [
+        "2:Beta 章节",
+        "2:尾部章节"
+      ]
+    },
+    {
+      "name": "S7 改名后旧 foldKey 被清洗",
+      "ok": true,
+      "detail": [
+        "2:尾部章节"
+      ]
+    },
+    {
+      "name": "S7 其余折叠不变（尾部章节保留）",
+      "ok": true,
+      "detail": [
+        "2:尾部章节"
+      ]
+    },
+    {
+      "name": "S7 改名 getDoc == 原文+用户编辑（折叠簿记零附加写入）",
+      "ok": true,
+      "detail": {
+        "equal": true
+      }
+    },
+    {
+      "name": "S7 改名后磁盘 hash 恒等（折叠不写正文）",
+      "ok": true,
+      "detail": "c7f6e99340a94ca9b0764720e3cad36cd40068190ea66c104ad70b6c8f900751"
+    },
+    {
+      "name": "S7 空章节折叠点击不产生幽灵 key（FE-07 移交清理）",
+      "ok": true,
+      "detail": [
+        "2:尾部章节"
+      ]
+    },
+    {
+      "name": "S7 幽灵键操作后其余折叠不变",
+      "ok": true,
+      "detail": [
+        "2:尾部章节"
+      ]
+    },
+    {
+      "name": "S7 点击已折叠标题行（尾部章节）",
+      "ok": true
+    },
+    {
+      "name": "S7 删除目标行可定位",
+      "ok": true,
+      "detail": 145
+    },
+    {
+      "name": "S7 删除前光标就位于标题行末",
+      "ok": true,
+      "detail": {
+        "curBeforeDel": 145,
+        "delPos": 145
+      }
+    },
+    {
+      "name": "S7 删除已折叠标题后 foldKey 被清洗",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "S7 清洗后存储无脏 key 残留",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "S7 删除 getDoc == 原文+用户编辑",
+      "ok": true,
+      "detail": {
+        "equal": true,
+        "gotHead": "# 折叠记忆口径自测\n\n## Alpha 章节\n\nalpha 正文第一行\nalpha 正文第二行\n\n### Alpha ",
+        "gotTail": "一行\nbeta 正文第二行\n\n## 空章节\n\n\n尾部正文第一行\n尾部正文第二行\n"
+      }
+    },
+    {
+      "name": "S7 删除后磁盘 hash 恒等",
+      "ok": true,
+      "detail": "c7f6e99340a94ca9b0764720e3cad36cd40068190ea66c104ad70b6c8f900751"
+    }
+  ]
+}
