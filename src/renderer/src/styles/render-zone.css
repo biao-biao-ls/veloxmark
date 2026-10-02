@@ -1,0 +1,530 @@
+/* ---- render-zone floats / fold chrome (IT-03 FE-01) --------------------------
+   Shared base for the render-zone micro-interactions (REN-render-zone):
+   image edit float, link hover float, list drag handle + drop indicator,
+   fold caret, quote-fold summary. Consumed by FE-03~FE-10.
+
+   Discipline (FE-01 AC): every value is a token reference — no bare colors,
+   no bare pixel numbers. Theme differences flip token values in themes.css
+   only (no per-theme selector patches in this file). Motion rides
+   --chrome-duration (fold-caret transition + hover debounce animation base).
+
+   Class family extends the cm-md-* widget vocabulary (cf. .cm-md-table-*):
+   .cm-md-float            shared float shell (surface/border/shadow/slot)
+   .cm-md-float-btn(.is-on) float icon button + active flip (align trio)
+   .cm-md-float-select     width select in image toolbar
+   .cm-md-float-primary    done/primary action button
+   .cm-md-float-input      URL edit input (link float)
+   .cm-md-img-resize       image resize corner handle
+   .cm-md-drag-handle      list row drag handle (accent block)
+   .cm-md-drop-indicator   drag insert line
+   .cm-md-fold-caret       fold triangle (transition on color/bg/transform)
+   .cm-md-fold-summary     heading-fold collapsed summary (gray)
+   .cm-md-quote-fold       long-quote folded summary row
+   .cm-md-quote-lines      summary tail line-count「N 行」
+   .cm-md-quote-restore    "展开还原" restore entry
+   -------------------------------------------------------------------------- */
+
+/* shared float shell — image edit float / link hover float */
+.cm-md-float {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--float-bg);
+  border: var(--border-width) solid var(--float-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
+  z-index: var(--z-float);
+}
+
+/* float icon button (align trio etc.); .is-on flips style only — label copy
+   never changes across states. Explicit UA-box reset: `<button>` arrives with
+   a native border + gray fill that the design's flat buttons never have
+   (batch-J FE-04#2 / FE-05#1). */
+.cm-md-float-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  color: var(--fg-dim);
+  font-size: var(--text-ui);
+  line-height: 1.2;
+  white-space: nowrap;
+  transition:
+    color var(--chrome-duration) ease,
+    background-color var(--chrome-duration) ease;
+}
+
+.cm-md-float-btn:hover {
+  background: var(--bg-inset);
+  color: var(--fg);
+}
+
+.cm-md-float-btn.is-on {
+  background: var(--bg-inset);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 var(--border-width) var(--accent);
+}
+
+/* width select (image toolbar「宽度」) */
+.cm-md-float-select {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--float-border);
+  border-radius: var(--radius-sm);
+  background: var(--float-bg);
+  color: var(--fg);
+  font-size: var(--text-ui);
+}
+
+/* native <select> inside the styled box — strip UA chrome so the control
+   reads as one flat button (ui_06 .tb-select) */
+.cm-md-float-select select {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* trailing caret glyph (ui_06 .tb-select .caret) */
+.cm-md-float-caret {
+  color: var(--fg-dim);
+  font-size: var(--text-ui);
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* done / primary action button (borderless — UA chrome would ghost a gray
+   rim around the accent fill, batch-J FE-04#1) */
+.cm-md-float-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--text-ui);
+  font-weight: 600;
+  transition: filter var(--chrome-duration) ease;
+}
+
+.cm-md-float-primary:hover {
+  filter: brightness(1.06);
+}
+
+/* URL display / edit input (link float「编辑 URL」态) */
+.cm-md-float-input {
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--float-border);
+  border-radius: var(--radius-sm);
+  background: var(--widget-surface);
+  color: var(--fg);
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  font-size: var(--text-ui);
+}
+
+.cm-md-float-input::placeholder {
+  color: var(--fg-dim);
+}
+
+/* vertical separator inside the image float toolbar (ui_06 .tb-sep) —
+   18px short tick centered in the 26px control row, not a full-height bar.
+   Literal 18px: no token matches and the value is the product chrome
+   constant spelled out in ui_06 (`.tb-sep { height: 18px }`). */
+.cm-md-float-sep {
+  align-self: center;
+  width: var(--border-width);
+  height: 18px;
+  margin: 0 var(--space-1);
+  background: var(--float-border);
+}
+
+/* image edit toolbar (ui_06 block A .img-toolbar) — float-only geometry over
+   the shared shell: 4px shell gap (design --space-1, not the link-pop 8px) and
+   fixed 26×26 borderless icon keys at the 14px glyph scale. Scoped class so
+   the link float keeps the shared metrics (batch-J FE-04#2, float side only). */
+.cm-md-img-toolbar {
+  gap: var(--img-tb-gap);
+  padding: var(--space-1);
+}
+
+.cm-md-img-toolbar .cm-md-float-btn {
+  width: var(--img-tb-btn-size);
+  height: var(--img-tb-btn-size);
+  padding: 0;
+  font-size: var(--text-icon);
+}
+
+/* ── link hover float (ui_06 block B .link-pop) ─────────────────────
+   Row: .cm-md-link-url box + three column-layout action buttons.
+   Geometry rides the --link-pop-* tokens in tokens.css (no bare px). */
+.cm-md-link-pop {
+  white-space: nowrap;
+}
+
+.cm-md-link-url {
+  width: var(--link-pop-url-width);
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--float-border);
+  border-radius: var(--radius-sm);
+  background: var(--widget-surface);
+  color: var(--fg);
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  font-size: var(--link-pop-url-size);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* column-layout button replica (.pop-btn) — icon over 10px label */
+.cm-md-link-pop .cm-md-float-btn {
+  flex-direction: column;
+  gap: var(--link-pop-btn-gap);
+  width: var(--link-pop-btn-width);
+  padding: var(--space-1) 0;
+  font-size: var(--link-pop-label-size);
+}
+
+.cm-md-link-pop .cm-md-pop-ico {
+  font-size: var(--link-pop-icon-size);
+  line-height: 1;
+}
+
+/* primary hover accent (ui_06 .pop-btn.is-primary:hover) */
+.cm-md-link-pop .cm-md-float-btn.is-primary:hover {
+  color: var(--accent);
+}
+
+/* empty-URL state: 外开/复制 greyed out, layout stays put */
+.cm-md-link-pop .cm-md-float-btn:disabled {
+  color: var(--fg-dim);
+  opacity: 0.45;
+  background: transparent;
+  cursor: default;
+}
+
+/* image resize corner handle (ui_06 block A .img-resize-handle — 14×14 grip
+   box hung 5px past the image's bottom-right corner, two diagonal grip marks).
+   Geometry rides the --img-resize-* tokens declared in tokens.css; at rest the
+   float host unmounts the handle entirely (zero DOM residue). */
+.cm-md-img-resize {
+  position: absolute;
+  right: calc(-1 * var(--img-resize-hang));
+  bottom: calc(-1 * var(--img-resize-hang));
+  width: var(--img-resize-size);
+  height: var(--img-resize-size);
+  border: var(--border-width) solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--float-bg);
+  cursor: nwse-resize;
+}
+
+.cm-md-img-resize::before,
+.cm-md-img-resize::after {
+  content: '';
+  position: absolute;
+  height: var(--border-width);
+  background: var(--accent);
+  transform: rotate(-45deg);
+}
+
+.cm-md-img-resize::before {
+  top: calc((var(--img-resize-size) - var(--img-resize-grip)) / 2);
+  left: calc((var(--img-resize-size) - var(--img-resize-grip)) / 2);
+  width: var(--img-resize-grip);
+}
+
+.cm-md-img-resize::after {
+  top: calc(var(--img-resize-size) / 2);
+  left: calc(var(--img-resize-size) / 2);
+  width: var(--img-resize-grip-short);
+}
+
+/* image edit-state outline (ui_06 block A .img-outline — 1.5px accent ring at
+   inset -1px, radius 3px). Shows while the float is live: the resize grip is
+   portaled into the wrap for exactly that window. Distinct from the P05 zoom
+   selection outline on .cm-md-image-selected (different state, kept as-is). */
+.cm-md-image-wrap:has(> .cm-md-img-resize)::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: var(--border-thick) solid var(--accent);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+}
+
+/* list row drag handle (hover-surfaced accent block; is-idle quieting owned by
+   FE-03 show/hide discipline). Geometry from ui_06 block C (18×22 accent
+   block) — --handle-* tokens from tokens.css (batch-J 收口), no bare px. */
+.cm-md-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--handle-width);
+  height: var(--handle-height);
+  border-radius: var(--radius-sm);
+  background: var(--handle-accent);
+  color: var(--on-accent);
+  font-size: var(--text-caption);
+  line-height: 1;
+  letter-spacing: var(--handle-tracking);
+  user-select: none;
+  cursor: grab;
+  transition:
+    color var(--chrome-duration) ease,
+    background-color var(--chrome-duration) ease,
+    opacity var(--chrome-duration) ease;
+}
+
+/* single-line list (FE-06 空态): visible but gray and inert */
+.cm-md-drag-handle.is-disabled {
+  background: transparent;
+  color: var(--fg-disabled);
+  cursor: default;
+}
+
+/* drag insert position indicator line (fixed overlay, 2px accent hairline) */
+.cm-md-drop-indicator {
+  position: fixed;
+  height: var(--space-half);
+  background: var(--drop-indicator);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  z-index: var(--z-float);
+}
+
+/* dragged-item ghost riding the pointer during the session */
+.cm-md-drag-ghost {
+  position: fixed;
+  max-width: var(--link-pop-url-width);
+  padding: var(--space-half) var(--space-2);
+  background: var(--float-bg);
+  border: var(--border-width) solid var(--float-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-pop);
+  color: var(--fg);
+  font-size: var(--text-ui);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  z-index: var(--z-float);
+}
+
+/* completed task item (ui_06 block C): dim + strike the line text */
+.cm-md-task-done {
+  color: var(--fg-dim);
+  text-decoration: line-through;
+  text-decoration-color: var(--fg-disabled);
+}
+
+/* fold triangle (heading fold / quote fold) */
+.cm-md-fold-caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--fg-dim);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    color var(--chrome-duration) ease,
+    background-color var(--chrome-duration) ease,
+    transform var(--chrome-duration) ease;
+}
+
+.cm-md-fold-caret:hover {
+  background: var(--bg-inset);
+  color: var(--fg);
+}
+
+/* expanded long-quote fold caret: pinned at the quote block's top-right
+   (element-table freeze「引用块右上」— NOT at the end of the first line).
+   Absolute inside the quote line (position:relative on .cm-md-quote) so it
+   leaves the text flow — zero heightmap impact, no line-end coupling.
+   收口批 #2 (FE-08 caret 横向余量): right is aligned to the gutter edge (0)
+   so the ▾ box (~9px) sits fully inside the 16px --editor-gutter band right
+   of the text column. right: var(--space-2) pushed the box left edge to
+   ~17px — 1px past the text column end (16px) — leaving a long first line's
+   tail 0~2px of clearance. Zero wrap-width change (no first-line inset). */
+.cm-md-quote-caret {
+  position: absolute;
+  top: var(--space-1);
+  right: 0;
+}
+
+/* heading fold-caret (ui_06 block D): geometry by heading level — h1/h2
+   18px/11px, h3–h6 14px/9px. Sits at the heading text left. */
+.cm-md-heading-fold-caret {
+  margin-right: var(--space-2);
+  font-size: 11px;
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.cm-md-h3 .cm-md-heading-fold-caret,
+.cm-md-h4 .cm-md-heading-fold-caret,
+.cm-md-h5 .cm-md-heading-fold-caret,
+.cm-md-h6 .cm-md-heading-fold-caret {
+  font-size: 9px;
+  width: 14px;
+  height: 14px;
+}
+
+/* empty-section placeholder: same caret box + gap, invisible and inert —
+   keeps every heading's text left edge on one column (no 18px+8px drift) */
+.cm-md-heading-fold-caret-phantom {
+  visibility: hidden;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* heading-fold collapsed summary (ui_06 fold-collapsed-line: gray single line
+   under the folded heading —「（N 行内容已折叠 · 与大纲双向同步）」) */
+.cm-md-fold-summary {
+  display: inline-block;
+  width: 100%;
+  padding-left: var(--space-5);
+  color: var(--summary-fg);
+  font-size: var(--text-ui);
+  line-height: 1.6;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cm-md-fold-summary:hover {
+  color: var(--accent);
+}
+
+/* long-quote folded summary row (first-line excerpt + line-count tail).
+   No border-left/padding-left of its own: the host line still carries the
+   .cm-md-quote 3px bar + line padding (design .quote-folded geometry), and a
+   second border here was the measured 1px gray line residue (FE-08#4).
+   font-style: normal — the row must read upright (正体), not inherit quote
+   slant.
+   inline-flex (NOT flex) + width:100%: a block-level widget splits the host
+   .cm-line's inline flow into anonymous block boxes — CM6's widget buffer and
+   trailing <br> each materialize as an empty 25.6px line box around it
+   (r3 N1: 28.8 + 2×25.6 = 80px bar). inline-flex keeps one line box and
+   width:100% preserves the full-width row (same proven pattern as
+   .cm-md-fold-summary). vertical-align:top pins the row so the line height
+   is the row's own 28.8px (4 + 20.8 + 4) instead of a baseline-synthesized
+   taller box. */
+.cm-md-quote-fold {
+  display: inline-flex;
+  width: 100%;
+  vertical-align: top;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  color: var(--summary-fg);
+  font-size: var(--text-ui);
+  line-height: 1.6;
+  font-style: normal;
+}
+
+/* summary excerpt (ellipsis truncation) */
+.cm-md-quote-summary {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--fg);
+}
+
+/*「N 行」line-count tail */
+.cm-md-quote-lines {
+  flex: none;
+  color: var(--summary-fg);
+}
+
+/*「展开还原」restore entry */
+.cm-md-quote-restore {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  cursor: pointer;
+  transition:
+    color var(--chrome-duration) ease,
+    background-color var(--chrome-duration) ease;
+}
+
+.cm-md-quote-restore:hover {
+  background: var(--accent-soft);
+}
+
+/* ---- hover discipline overlays (IT-03 FE-03) ----------------------------
+   Shared show/hide base for render-zone hover chrome. The shell is fixed /
+   out of document flow so show and hide never displace body content
+   (AC-NF-05 zero layout shift). Motion rides --chrome-duration (emergence
+   transition). At rest the host unmounts the overlay entirely — zero DOM
+   residue; .is-idle is the invisible variant for handles that stay mounted
+   (decoration-carried path), paired with aria-hidden in markup. */
+
+.render-float {
+  position: fixed;
+  z-index: var(--z-float);
+  animation: render-float-in var(--chrome-duration) ease;
+}
+
+@keyframes render-float-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* idle quieting for a handle that remains in the DOM (see header note) */
+.cm-md-drag-handle.is-idle {
+  opacity: 0;
+  pointer-events: none;
+  background: transparent;
+  color: var(--fg-disabled);
+}
+
+/* list row hover hint — debounced by the same state machine as the handle.
+   The band is an overlay (::after, negative z under the line text): row box
+   grows to the design ~34px (line + --space-1 top/bottom) with the 3px radius
+   and the inset 2px accent left bar, without touching global li spacing or
+   displacing body lines (batch-J FE-06#1-2 overlay geometry). Bleeding
+   --space-2 left of the line box puts the band's left edge under the
+   handle's right 4px — the design `margin-left:-22px` overlap semantics. */
+.cm-md-list.cm-md-list-hover::after {
+  content: '';
+  position: absolute;
+  top: calc(-1 * var(--space-1));
+  bottom: calc(-1 * var(--space-1));
+  left: calc(-1 * var(--space-2));
+  right: calc(-1 * var(--space-2));
+  background: var(--bg-inset);
+  border-radius: var(--radius-sm);
+  box-shadow: inset var(--handle-hover-bar) 0 0 var(--accent);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* placeholder content shown until FE-04/FE-05 register real channel UI */
+.cm-md-float-slot {
+  padding: 0 var(--space-1);
+  color: var(--fg-dim);
+  font-size: var(--text-ui);
+  user-select: none;
+}

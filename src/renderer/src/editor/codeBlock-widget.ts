@@ -165,7 +165,7 @@ export class CodeBlockWidget extends BlockWidget {
       })
       wrap.appendChild(btn)
     }
-    return this.wrapWithGap(wrap, view)
+    return this.wrapWithGap(wrap, view, 'code')
   }
 }
 

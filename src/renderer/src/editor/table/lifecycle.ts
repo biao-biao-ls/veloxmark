@@ -14,7 +14,7 @@
 import type { EditorState, Transaction } from '@codemirror/state'
 import { Prec } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
-import { getTableEdit, setActiveCell } from './state'
+import { enterEditMode, getTableEdit, setActiveCell, setColWidth } from './state'
 import { activeNestedView, resolveWithFallback, exitTableEdit } from './widget'
 
 // ---- Pure helpers (exported for unit tests) ---------------------------------
@@ -57,18 +57,18 @@ export function resolveExitAnchor(
 }
 
 /**
- * Does any transaction in the update carry a setActiveCell or setColWidth
- * effect? These are "own ops" — widget-internal dispatches that should not
- * trigger the auto-exit listener.
+ * Does any transaction in the update carry a setActiveCell / setColWidth /
+ * enterEditMode effect? These are "own ops" — widget-internal dispatches that
+ * should not trigger the auto-exit listener (enterEditMode = the AC-FN-29
+ * gap-click step-back itself must not bounce straight to quiet).
  */
 export function ownOp(transactions: readonly Transaction[]): boolean {
   return transactions.some((tr) =>
-    tr.effects.some((e) => e.is(setActiveCell) || e.is(setColWidth))
+    tr.effects.some(
+      (e) => e.is(setActiveCell) || e.is(setColWidth) || e.is(enterEditMode)
+    )
   )
 }
-
-// We need setColWidth for the ownOp guard — import it.
-import { setColWidth } from './state'
 
 // ---- Extension --------------------------------------------------------------
 
@@ -77,15 +77,15 @@ import { setColWidth } from './state'
  * and a Prec.high Escape keymap for stale-chrome keyboard exit.
  *
  * The listener fires ONLY when:
- * 1. There IS an active table cell (getTableEdit.state.active != null).
- * 2. The update is NOT an own-op (no setActiveCell/setColWidth effects).
+ * 1. A table edit session is on (active cell OR the AC-FN-29 step-back form).
+ * 2. The update is NOT an own-op (no setActiveCell/setColWidth/enterEditMode).
  * 3. At least one transaction carries a selection change (tr.selection != null).
  * 4. All selection ranges are strictly outside [tableFrom, tableTo], OR the
  *    table has been deleted (docChanged + model unresolvable).
  *
- * The Escape keymap fires when the main editor has focus and a table cell
- * is active — it commits pending, places cursor adjacent to the table, and
- * clears active state.
+ * The Escape keymap fires when the main editor has focus and a table edit
+ * session is on — it commits pending, places cursor adjacent to the table,
+ * and clears active state (one-shot quiet, AC-FN-21).
  */
 export const tableEditLifecycle = [
   // --- Listener: self-heal cell focus (diag-P28 / F1 backstop) ---
@@ -107,26 +107,25 @@ export const tableEditLifecycle = [
   // --- Listener: auto-exit on selection-leave ---
   EditorView.updateListener.of((update) => {
     const edit = getTableEdit(update.state)
-    if (!edit.active) return
+    // Session = cell-active OR the AC-FN-29 step-back edit form. Both leave
+    // the table only via the quiet path when the selection moves out.
+    const sessionFrom = edit.active?.tableFrom ?? edit.editFrom
+    if (sessionFrom == null) return
 
     // Guard: own ops (widget dispatches) must not trigger auto-exit.
     if (ownOp(update.transactions)) return
 
     // Guard: only react when at least one transaction changed selection.
-    // This excludes pure docChanged transactions (e.g. commitActiveOnly
-    // in clearTableEditAndFocusSource before the merge) that don't move
-    // the cursor — those should not trigger exit.
+    // This excludes pure docChanged transactions (e.g. the pending-commit
+    // half of enterTableEdit) that don't move the cursor — those should
+    // not trigger exit.
     const hasSelectionChange = update.transactions.some(
       (tr) => tr.selection != null
     )
     if (!hasSelectionChange) return
 
     // Resolve the table range.
-    const resolved = resolveWithFallback(
-      update.view,
-      edit.active.tableFrom,
-      edit.active.tableFrom
-    )
+    const resolved = resolveWithFallback(update.view, sessionFrom, sessionFrom)
 
     // Table gone (docChanged deleted it) → exit.
     if (!resolved) {
@@ -153,7 +152,9 @@ export const tableEditLifecycle = [
         key: 'Escape',
         run: (view): boolean => {
           const edit = getTableEdit(view.state)
-          if (!edit.active) return false
+          // Fires for the cell-active form AND the AC-FN-29 step-back form —
+          // Esc is a one-shot quiet path from either (AC-FN-21).
+          if (edit.active == null && edit.editFrom == null) return false
           // exitTableEdit handles commit + clear + cursor placement in one path.
           exitTableEdit(view, { select: 'after' })
           return true

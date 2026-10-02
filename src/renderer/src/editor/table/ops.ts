@@ -45,14 +45,18 @@ export function gridWithCellText(model: TableModel, row: number, col: number, te
   return grid
 }
 
-/** Insert an empty row after `afterUiRow` (-1 = above header / at top). */
+/**
+ * Insert an empty row after `afterUiRow` (-1 = above header / at top).
+ *
+ * Q5 header identity migration: inserting above the header (at index 0) makes
+ * the new empty row the header and demotes the old header to the first body
+ * row — one shared splice path for i=1 and i>1 (identity is a data migration
+ * result of the grid layout, not a branch). The delimiter stays at source
+ * line 2 by construction of formatTable.
+ */
 export function insertRowOp(model: TableModel, afterUiRow: number): TableOp {
   const grid = modelToGrid(model)
-  const at = Math.max(0, Math.min(afterUiRow + 1, grid.length))
-  // Never insert between header and delimiter semantics: body rows only,
-  // i.e. at index >= 1. Inserting "above header" prepends a body row after
-  // the header would be wrong — put it at index 1 when at === 0.
-  const idx = at === 0 ? 1 : at
+  const idx = Math.max(0, Math.min(afterUiRow + 1, grid.length))
   grid.splice(idx, 0, new Array(model.colCount).fill(''))
   return opFrom(model, grid, { row: idx, col: 0 })
 }
@@ -65,24 +69,51 @@ export function appendRowOp(model: TableModel): TableOp {
 }
 
 /**
- * Delete UI row `row`. Deleting the header promotes the first body row
- * (GFM requires a header). Returns null when deletion is not allowed.
+ * AC-ERR-02 / PEND-12 disable predicate for 「删除行」 (single data source for
+ * menu + op). Disabled at minimal structure: 行数=1 or 表头为末行 (no body row
+ * to take over header identity).
+ */
+export function canDeleteRow(model: TableModel): boolean {
+  return model.cells.length > 1
+}
+
+/**
+ * AC-ERR-02 disable predicate for 「删除列」 (single data source for menu + op).
+ * Disabled at minimal structure: 列数=1.
+ */
+export function canDeleteCol(model: TableModel): boolean {
+  return model.colCount > 1
+}
+
+/**
+ * Delete UI row `row` (0 = header). PEND-12: deleting the first row migrates
+ * header identity down to the first body row — a plain splice, since
+ * formatTable always writes grid[0] as the header with the delimiter at
+ * source line 2. Returns null at minimal structure (canDeleteRow).
  */
 export function deleteRowOp(model: TableModel, row: number): TableOp | null {
+  if (!canDeleteRow(model)) return null
   const grid = modelToGrid(model)
-  if (grid.length <= 1) return null
   if (row < 0 || row >= grid.length) return null
   grid.splice(row, 1)
   return opFrom(model, grid, { row: Math.min(row, grid.length - 1), col: 0 })
 }
 
-/** Insert an empty column at `at` (0..colCount). */
+/**
+ * Insert an empty column at `at` (0..colCount).
+ *
+ * The NEW column's delimiter is written as the explicit left-align `:---`
+ * (AC-OP-03 判据2 / AC-OP-08 词表 — same literal the menu's setAlignOp('left')
+ * writes). Untouched columns keep their source form verbatim: a user's `---`
+ * stays `---` (zero-drift red line — formatTable's ''→`---` fallback is
+ * deliberately NOT changed).
+ */
 export function insertColOp(model: TableModel, at: number): TableOp {
   const grid = modelToGrid(model)
   const idx = Math.max(0, Math.min(at, model.colCount))
   for (const row of grid) row.splice(idx, 0, '')
   const aligns = [...model.aligns]
-  aligns.splice(idx, 0, '')
+  aligns.splice(idx, 0, 'left')
   const insert = formatTable(aligns, grid)
   return {
     from: model.tableFrom,
@@ -92,9 +123,9 @@ export function insertColOp(model: TableModel, at: number): TableOp {
   }
 }
 
-/** Delete column `at`. Returns null for the last remaining column. */
+/** Delete column `at`. Returns null at minimal structure (canDeleteCol). */
 export function deleteColOp(model: TableModel, at: number): TableOp | null {
-  if (model.colCount <= 1) return null
+  if (!canDeleteCol(model)) return null
   if (at < 0 || at >= model.colCount) return null
   const grid = modelToGrid(model)
   for (const row of grid) row.splice(at, 1)
@@ -106,6 +137,32 @@ export function deleteColOp(model: TableModel, at: number): TableOp | null {
     insert,
     nextActive: { row: 0, col: Math.min(at, aligns.length - 1) }
   }
+}
+
+// ---- UI-anchored insert adapters (op id contract face) ----------------------
+// Single source for the op id → op-param mapping (0-based UI coordinates:
+// row 0 = header, col 0 = first column). Menu and keyboard paths must both
+// come through here so "above/left" anchoring cannot drift between entry
+// points (AC-RULE-09 四面同源).
+
+/** `insertRowAbove`: empty row above UI row `row` (row 0 = Q5 header migration). */
+export function insertRowAboveOp(model: TableModel, row: number): TableOp {
+  return insertRowOp(model, row - 1)
+}
+
+/** `insertRowBelow`: empty row below UI row `row`. */
+export function insertRowBelowOp(model: TableModel, row: number): TableOp {
+  return insertRowOp(model, row)
+}
+
+/** `insertColLeft`: empty column left of column `col`. */
+export function insertColLeftOp(model: TableModel, col: number): TableOp {
+  return insertColOp(model, col)
+}
+
+/** `insertColRight`: empty column right of column `col`. */
+export function insertColRightOp(model: TableModel, col: number): TableOp {
+  return insertColOp(model, col + 1)
 }
 
 /**

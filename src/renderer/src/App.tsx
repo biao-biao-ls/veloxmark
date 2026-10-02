@@ -4,13 +4,7 @@ import { EditorState } from '@codemirror/state'
 import { ensureSyntaxTree } from '@codemirror/language'
 import { markdown } from '@codemirror/lang-markdown'
 import { getLivePreviewConfig } from './editor/livePreview/config'
-import {
-  expandFolds,
-  foldKey,
-  getFoldedKeys,
-  headingAtLine,
-  toggleFold
-} from './editor/livePreview/fold'
+import { collectFoldSections, toggleFold } from './editor/livePreview/fold'
 import {
   collectLinkHrefs,
   invalidateLinkTipCache,
@@ -45,11 +39,20 @@ import { MermaidPreviewPanel } from './components/MermaidPreviewPanel'
 import { TabsBar } from './components/TabsBar'
 import MermaidLightbox from './components/MermaidLightbox'
 import { DialogHost, dialog } from './components/Dialog'
+import { ToastHost } from './components/ToastHost'
+import { toast as showToast } from './hooks/useToast'
 import { EditorContextMenuHost } from './components/EditorContextMenu'
+import { RenderFloatHost } from './components/RenderFloat'
+// FE-04: side-effect registration of the image edit float content (registerHoverContent).
+import './components/ImageEditFloat'
+import './components/LinkHoverFloat'
+// FE-06: list drag-handle channel content (registerHoverContent).
+import './components/ListDragHandle'
 import SidebarOpsPanel from './components/SidebarOpsPanel'
 import { openSidebarOps } from './components/sidebarOpsBus'
 import { ListIcon, MoreVerticalIcon, SearchIcon, TreeIcon } from './components/Icons'
 import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch, bumpLinkEpoch, bumpI18nEpoch, updateLivePreviewConfig } from './editor/setup'
+import { syncPureSelectionChrome } from './editor/clickSemantics'
 import { invalidateImageCache } from './editor/image-widget'
 import { readEditingAssistsConfig, setHtmlPasteFallbackNotice } from './editor/assists'
 import { formatMarkdown, type FormatWarning } from './editor/format'
@@ -67,6 +70,9 @@ import { useAppTheme } from './hooks/useAppTheme'
 import { useExport } from './hooks/useExport'
 import { useMenus } from './hooks/useMenus'
 import { useFoldSync } from './hooks/useFoldSync'
+import { useQuoteFold } from './hooks/useQuoteFold'
+import { useOutlineNav } from './hooks/useOutlineNav'
+import { useHushLayer } from './hooks/useHushLayer'
 import { useTableWidthSync } from './hooks/useTableWidthSync'
 import { useSessionPersist } from './hooks/useSessionPersist'
 import { usePreferences, useSession } from './preferences/useStore'
@@ -102,22 +108,13 @@ export default function App(): React.JSX.Element {
   // P14: subscribes App (and therefore all t() descendants) to language flips.
   const { lang } = useTranslation()
   const [stats, setStats] = useState<DocStats>(EMPTY_STATS)
-  // P20 transient command feedback chip in the status bar.
-  const [toast, setToast] = useState<string | null>(null)
-  const toastRef = useRef<string | null>(null)
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const showToast = useCallback((message: string) => {
-    toastRef.current = message
-    setToast(message)
-    clearTimeout(toastTimerRef.current)
-    toastTimerRef.current = setTimeout(() => {
-      toastRef.current = null
-      setToast(null)
-    }, 2500)
-  }, [])
+  // FE-07: toast state + 5s dwell live in the useToast bus (glb-toast:*);
+  // `showToast` is the bus entry so every legacy string call site is unchanged.
   const session = useSession()
   const [outline, setOutline] = useState<OutlineItem[]>([])
-  const [activePos, setActivePos] = useState<number | null>(null)
+  // FE-08#4/FE-09#2: foldable section keys (collectFoldSections) — the outline
+  // renders ▾/▸ only where folding does real work; empty sections = leaf "·".
+  const [foldableKeys, setFoldableKeys] = useState<ReadonlySet<string>>(() => new Set())
   // P03: sidebar visibility/mode/width come from session memory; with no
   // memory yet, visibility falls back to the "sidebar open by default" pref.
   const [showOutline, setShowOutline] = useState(
@@ -138,20 +135,13 @@ export default function App(): React.JSX.Element {
     const view = viewRef.current
     if (!view) return
     setOutline(extractOutline(view.state))
+    setFoldableKeys(new Set(collectFoldSections(view.state).map((r) => r.key)))
   }, [])
 
-  const updateActiveHeading = useCallback(() => {
-    const view = viewRef.current
-    if (!view) return
-    const head = view.state.selection.main.head
-    const line = view.state.doc.lineAt(head).from
-    let active: number | null = null
-    for (const item of extractOutline(view.state)) {
-      if (item.pos <= line) active = item.pos
-      else break
-    }
-    setActivePos(active)
-  }, [])
+  // FE-07: outline jump + active follow live in useOutlineNav (App wires only).
+  const { activePos, jumpToHeading, updateActiveHeading } = useOutlineNav({ viewRef })
+  // FE-09: Esc/blank one-shot hush (glb-hush:*) — layered bus lives in the hook.
+  useHushLayer()
 
   const fileOps = useFileOps({
     viewRef,
@@ -172,6 +162,14 @@ export default function App(): React.JSX.Element {
 
   // ---- 7F: table column widths (useTableWidthSync — useFoldSync mirror) --------
   const { syncColWidthsRef } = useTableWidthSync({
+    viewRef,
+    filePathRef,
+    suppressDirtyRef: fileOps.suppressDirtyRef,
+    filePath
+  })
+
+  // ---- FE-08: long-quote folds (useQuoteFold — useFoldSync mirror) ------------
+  const { syncQuoteFoldsRef } = useQuoteFold({
     viewRef,
     filePathRef,
     suppressDirtyRef: fileOps.suppressDirtyRef,
@@ -535,6 +533,8 @@ export default function App(): React.JSX.Element {
               mpProbeRef.current(view.state)
             },
             onSelectionChanged: () => {
+              // FE-09: 纯选中保护接线（判定在 editor/clickSemantics，零逻辑堆入）。
+              syncPureSelectionChrome(view)
               updateActiveHeading()
               updateCursorStatsRef.current()
               // P18: auto-expand folds live in foldField.update — mirror on selection.
@@ -554,6 +554,10 @@ export default function App(): React.JSX.Element {
             },
             onFoldChanged: () => {
               syncFoldedKeysRef.current()
+            },
+            // FE-08: quote fold toggles/auto-expand — persist ids (no toast).
+            onQuoteFoldChanged: () => {
+              syncQuoteFoldsRef.current()
             },
             // 7F: col-grip widths / session restore / mapPos offset drift.
             onColWidthsChanged: () => {
@@ -627,30 +631,8 @@ export default function App(): React.JSX.Element {
   }, [refreshImages])
 
   // ---- outline navigation ---------------------------------------------------
-  const goToHeading = useCallback((pos: number) => {
-    const view = viewRef.current
-    if (!view) return
-    // P18: jumping to a folded heading unfolds it first; a heading hidden
-    // inside a folded parent auto-expands via foldField's selection rule.
-    const item = headingAtLine(view.state, pos)
-    const effects: Parameters<typeof view.dispatch>[0] extends { effects?: infer E }
-      ? E extends readonly (infer U)[]
-        ? U[]
-        : never
-      : never = [EditorView.scrollIntoView(pos, { y: 'center' })]
-    if (item) {
-      const key = foldKey(item.level, item.text)
-      if (getFoldedKeys(view.state).has(key)) {
-        effects.unshift(expandFolds.of([key]))
-      }
-    }
-    view.dispatch({
-      selection: { anchor: pos },
-      effects,
-      scrollIntoView: true
-    })
-    view.focus()
-  }, [])
+  // FE-07: one-line forward into useOutlineNav — zero jump logic in App.tsx.
+  const goToHeading = jumpToHeading
 
   const toggleOutline = useCallback(() => setShowOutline((v) => !v), [])
 
@@ -1260,8 +1242,6 @@ export default function App(): React.JSX.Element {
     openExternalImplRef,
     // P18
     restoreFoldsForRef,
-    // P20
-    toastRef,
     // P21
     insertCalloutTemplate,
     setShowCalloutInsert,
@@ -1277,7 +1257,6 @@ export default function App(): React.JSX.Element {
     showFormatWarnings,
     lastFormatRef,
     formatWarningsRef,
-    toast,
     // P25
     mpProbeRef,
     // shared (P13/P18/P19/P24–P26)
@@ -1380,7 +1359,7 @@ export default function App(): React.JSX.Element {
     return () => setCtxRuntime(null)
   }, [showToast, resolveAndNavigate])
 
-  const { menus, formatShortcut } = useMenus({
+  const { menus } = useMenus({
     isMac,
     recentItems,
     ...commandOps
@@ -1417,7 +1396,6 @@ export default function App(): React.JSX.Element {
         theme={theme}
         toggleOutline={toggleOutline}
         toggleTheme={toggleTheme}
-        formatShortcut={formatShortcut}
         autoSaveAt={autoSave.lastAutoSaveAt}
         autoSaveError={autoSave.lastAutoSaveError}
         hideSavedAt={dirty && prefs.autoSaveMode === 'off'}
@@ -1605,6 +1583,7 @@ export default function App(): React.JSX.Element {
                     activePos={activePos}
                     onSelect={goToHeading}
                     foldedKeys={foldedKeys}
+                    foldableKeys={foldableKeys}
                     onToggleFold={(_pos, key) => {
                       viewRef.current?.dispatch({ effects: toggleFold.of(key) })
                     }}
@@ -1672,7 +1651,6 @@ export default function App(): React.JSX.Element {
           autoSaveAt={autoSave.lastAutoSaveAt}
           autoSaveError={autoSave.lastAutoSaveError}
           exporting={exportOps.exporting}
-          toast={toast}
           hideSavedAt={dirty && prefs.autoSaveMode === 'off'}
           formatWarnings={formatWarnings}
           onShowFormatWarnings={showFormatWarnings}
@@ -1716,8 +1694,10 @@ export default function App(): React.JSX.Element {
         onConfirm={confirmTableDialog}
       />
       <MermaidLightbox />
+      <ToastHost />
       <DialogHost />
       <EditorContextMenuHost />
+      <RenderFloatHost />
     </div>
   )
 }

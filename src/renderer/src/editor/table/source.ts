@@ -7,7 +7,7 @@ import type { EditorView } from '@codemirror/view'
 import { formatMarkdown } from '../format'
 import { formatTable, parseTableModel, type TableModel } from './parse'
 import { modelToGrid } from './ops'
-import { setActiveCell } from './state'
+import { getTableEdit, setActiveCell, setColWidth } from './state'
 
 export function tableModelOf(view: EditorView, from: number, to: number): TableModel | null {
   try {
@@ -45,10 +45,21 @@ export function deleteTableRange(view: EditorView, from: number, to: number): vo
   // dangling active pointing at a nonexistent table (lifecycle is a safety net
   // but explicit clear is cleaner and avoids one update where enterTable sees
   // a bogus isActive).
+  // FE-08 扩展-1 (AC-OP-09/12 含列宽): ride the table's widths as a setColWidth
+  // at the same tableFrom key so invertColWidths (already registered with
+  // history) restores them at that key on undo. mapPos alone can't: the key
+  // lands inside the deleted span and undo's assoc=1 pushes it to the END of
+  // the reinserted segment, while the restored table's tableFrom is the
+  // segment start — colWidths.get(tableFrom) then misses and the table loses
+  // its widths. A copied snapshot at the literal key is position-invariant.
+  const widths = getTableEdit(view.state).colWidths.get(from)
   view.dispatch({
     changes: { from: start, to: end, insert: '' },
     selection: { anchor: start },
-    effects: setActiveCell.of(null),
+    effects: [
+      setActiveCell.of(null),
+      ...(widths?.length ? [setColWidth.of({ tableFrom: from, widths: [...widths] })] : [])
+    ],
     userEvent: 'input.contextMenu.deleteTable'
   })
 }

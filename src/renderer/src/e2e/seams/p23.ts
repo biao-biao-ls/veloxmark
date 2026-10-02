@@ -9,6 +9,7 @@
 import { useEffect } from 'react'
 import { undo } from '@codemirror/commands'
 import { faultNextFormatOnce } from '../../editor/format'
+import { getToastMessage } from '../../hooks/useToast'
 import { getPreferences, setPreferences } from '../../preferences/store'
 import type { FileOps, FormatWarningsRef, LastFormatRef, ViewRef } from './types'
 
@@ -20,11 +21,10 @@ export interface P23Deps {
   lastFormatRef: LastFormatRef
   formatWarningsRef: FormatWarningsRef
   showFormatWarnings: () => void
-  toast: string | null
 }
 
 export function useP23Seam(deps: P23Deps): void {
-  const { viewRef, fileOps, formatDocument, showFormatWarnings, lastFormatRef, formatWarningsRef, toast } = deps
+  const { viewRef, fileOps, formatDocument, showFormatWarnings, lastFormatRef, formatWarningsRef } = deps
   // P23 e2e handle
   useEffect(() => {
     window.__veloxP23 = {
@@ -46,7 +46,7 @@ export function useP23Seam(deps: P23Deps): void {
         const view = viewRef.current
         return view ? undo(view) : false
       },
-      getToast: () => toast,
+      getToast: () => getToastMessage(),
       setFormatOnSave: (v) => setPreferences({ formatOnSave: v }),
       getFormatOnSave: () => getPreferences().formatOnSave,
       saveFile: () => fileOps.saveFile(),
@@ -56,5 +56,5 @@ export function useP23Seam(deps: P23Deps): void {
       faultNextFormat: () => faultNextFormatOnce()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formatDocument, fileOps, toast, showFormatWarnings])
+  }, [formatDocument, fileOps, showFormatWarnings])
 }

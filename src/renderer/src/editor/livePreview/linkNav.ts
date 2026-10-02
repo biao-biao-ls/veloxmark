@@ -2,6 +2,7 @@ import { syntaxTree } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
+import { HOVER_CHANNELS, hoverDiscipline } from '../../hooks/useHoverDiscipline'
 import { t } from '../../i18n'
 import { getLivePreviewConfig } from './config'
 
@@ -120,8 +121,39 @@ let tooltipEl: HTMLDivElement | null = null
 let lastTipHref: string | null = null
 const tipTextCache = new Map<string, string>()
 
+/**
+ * IT-03 N1: cross-component mutual exclusion with the FE-05 url-box float.
+ * While the link float owns the stage (hoverDiscipline active channel) this
+ * tooltip stands down — it is the occluding layer, so it disappears rather
+ * than being pushed under the float. Standalone behavior (no float up) is
+ * untouched: normal-link hover still shows the URL + Ctrl hint.
+ */
+export function tooltipSuppressedBy(activeChannel: string | null | undefined): boolean {
+  return activeChannel === HOVER_CHANNELS.linkFloat
+}
+
+function linkFloatActive(): boolean {
+  return tooltipSuppressedBy(hoverDiscipline.getSnapshot().active?.id)
+}
+
+/**
+ * Hide the moment the float activates — the pointer often rests on the link
+ * with no further mousemove once the ≥150ms dwell lands, so a mousemove-only
+ * guard would leave the stale tooltip stacked over the float. Armed lazily on
+ * first tooltip use (idempotent).
+ */
+let floatWatchArmed = false
+function armFloatWatch(): void {
+  if (floatWatchArmed) return
+  floatWatchArmed = true
+  hoverDiscipline.subscribe(() => {
+    if (linkFloatActive()) hideTooltip()
+  })
+}
+
 function ensureTooltip(): HTMLDivElement | null {
   if (typeof document === 'undefined') return null
+  armFloatWatch()
   if (tooltipEl && tooltipEl.isConnected) return tooltipEl
   tooltipEl = document.createElement('div')
   tooltipEl.className = 'vm-link-tooltip'
@@ -216,6 +248,12 @@ export const linkNavExtension = EditorView.domEventHandlers({
     return true
   },
   mousemove(event, view) {
+    // N1 mutual exclusion: the url-box float owns the stage — never re-show
+    // (and actively clear) the tooltip while it is up.
+    if (linkFloatActive()) {
+      hideTooltip()
+      return false
+    }
     const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
     if (pos == null) {
       hideTooltip()

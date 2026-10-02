@@ -195,6 +195,7 @@ export const IpcChannels = {
   fileDelete: 'file:delete',
   fileRename: 'file:rename',
   filePathExists: 'file:pathExists',
+  fileIsWritable: 'file:isWritable',
   fileRead: 'file:read',
   fileWrite: 'file:write',
   fileWriteBase64: 'file:writeBase64',
@@ -286,6 +287,8 @@ export interface RendererApi {
   /** P07: move a file/dir into destDir; resolves with the new full path. */
   movePath(srcPath: string, destDir: string): Promise<string>
   pathExists(filePath: string): Promise<boolean>
+  /** AC-ERR-08: write pre-check (fs.access W_OK) for the read-only gate. */
+  isWritable(filePath: string): Promise<boolean>
   onFolderTree(callback: (tree: DirNode[]) => void): () => void
   /** P17: classify a markdown link target against a document baseDir. */
   resolveLink(baseDir: string, href: string): Promise<LinkResolveResult>

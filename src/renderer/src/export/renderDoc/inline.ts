@@ -92,7 +92,14 @@ async function renderInline(node: SyntaxNode, ctx: RenderCtx): Promise<string> {
           ? ` width="${parsed.width}" height="${parsed.height}"`
           : ''
       // P05: flip is a VeloxMark extension — export it as a CSS transform.
-      const style = parsed.flip ? ` style="transform:${flipTransform(parsed.flip)}"` : ''
+      // FE-04: {align=…} mirrors the editor's fit-content block placement so
+      // export三通道 stays visually identical (AC-OP-18 图片段).
+      const styleParts: string[] = []
+      if (parsed.flip) styleParts.push(`transform:${flipTransform(parsed.flip)}`)
+      if (parsed.align === 'center') styleParts.push('display:block;margin-left:auto;margin-right:auto')
+      else if (parsed.align === 'right') styleParts.push('display:block;margin-left:auto;margin-right:0')
+      else if (parsed.align === 'left') styleParts.push('display:block;margin-left:0;margin-right:auto')
+      const style = styleParts.length > 0 ? ` style="${styleParts.join(';')}"` : ''
       return `<img alt="${escapeHtml(parsed.alt)}" src="${escapeHtml(src)}"${size}${style}>`
     }
     case 'HardBreak':

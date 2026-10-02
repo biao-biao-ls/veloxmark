@@ -11,7 +11,7 @@
 .cm-md-code-line-no {
   flex: none;
   width: 3.2em;
-  padding-right: 12px;
+  padding-right: var(--space-3);
   text-align: right;
   color: var(--fg-dim);
   user-select: none;
@@ -30,9 +30,10 @@
   display: block;
   width: 100%;
   border: none;
-  border-top: 1px solid var(--border);
-  padding: 6px 12px;
-  font-size: 12px;
+  border-top: var(--border-width) solid var(--border);
+  /* 6px pad-y = --space-2 − --space-half (off-scale chrome step, no bare px) */
+  padding: calc(var(--space-2) - var(--space-half)) var(--space-3);
+  font-size: var(--text-meta);
   color: var(--fg-dim);
   background: linear-gradient(to bottom, transparent, var(--widget-surface) 40%);
   cursor: pointer;
@@ -59,17 +60,17 @@
      code text starts on the same x (chip keeps the lang label's 12px). */
   padding-left: var(--space-4);
   background: var(--widget-surface);
-  border-left: 1px solid var(--border);
-  border-right: 1px solid var(--border);
+  border-left: var(--border-width) solid var(--border);
+  border-right: var(--border-width) solid var(--border);
   font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
 }
 .cm-editor .cm-line.cm-md-code-src-first {
-  border-top: 1px solid var(--border);
+  border-top: var(--border-width) solid var(--border);
   border-radius: var(--cb-radius) var(--cb-radius) 0 0;
   padding-top: var(--space-1);
 }
 .cm-editor .cm-line.cm-md-code-src-last {
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-width) solid var(--border);
   border-radius: 0 0 var(--cb-radius) var(--cb-radius);
   padding-bottom: var(--space-1);
   /* 9A: chip anchor (8B dualPane chip convention — line class relative). */
@@ -92,9 +93,9 @@
   right: var(--space-2);
   bottom: var(--space-1);
   font-family: Consolas, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--fg-dim);
-  padding: 2px 12px;
+  padding: var(--space-half) var(--space-3);
   user-select: none;
   background: none;
   border: none;
@@ -106,13 +107,26 @@
 }
 
 /* 9B idle badge: hover-revealed (8A math-hover-chip reveal pattern); hidden
-   while collapsed — the expander owns the full-width bottom row. */
+   while collapsed — the expander owns the full-width bottom row.
+   FE-10 AC-NF-04: debounced reveal — snap after a ≥150ms dwell both ways
+   (0s duration + --chrome-duration delay), rest is non-hit-testable. */
 .cm-md-code-idle-chip {
   opacity: 0;
+  pointer-events: none;
+  transition: opacity 0s var(--chrome-duration);
 }
 
 .cm-md-code-block:hover .cm-md-code-idle-chip {
   opacity: 1;
+  pointer-events: auto;
+}
+
+/* FE-09 AC-FN-18: pure-selection gestures surface no tool chrome — the idle
+   badge stays down while .cm-md-selecting (see markdown.css block-toolbar
+   guard; same App selection seam). */
+.cm-editor.cm-md-selecting .cm-md-code-idle-chip {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .cm-md-code-block-collapsed .cm-md-code-idle-chip {

@@ -2,7 +2,7 @@ import type { Text } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { t } from '../../i18n'
 import type { ThemeName } from '../theme'
-import { getMermaidLastGood, rememberMermaidGood } from './errMemory'
+import { getMermaidLastGood, mermaidDocIdOf, rememberMermaidGood } from './errMemory'
 import { renderMermaid } from './render'
 
 /**
@@ -42,12 +42,19 @@ export interface MountMermaidRenderOpts {
  * last-good restore, placeholder/rendering states, the error jump button and
  * the full renderMermaid then/catch flow. Both MermaidWidget (rendered state)
  * and MermaidPreviewWidget (focused edit dual pane) mount through this —
- * same-shell contract, and errMemory keyed by `sourceFrom` keeps last-good
- * continuity across the edit/render states of one fence. Callers own their
+ * same-shell contract, and errMemory keyed by `(docId, sourceFrom)` keeps
+ * last-good continuity across the edit/render states of one fence (keys
+ * mapPos-remap on doc edits — errMemory.mermaidLastGoodRemap — so edits before
+ * the fence do not orphan the entry). Callers own their
  * chrome around `wrap` (BlockWidget toolbar / lightbox listeners).
  */
 export function mountMermaidRender(opts: MountMermaidRenderOpts): MermaidRenderHost {
   const { wrap, code, sourceFrom, theme, view } = opts
+  // Owner document identity captured at REQUEST time: rememberMermaidGood runs
+  // in the async renderMermaid callback below, where the shared EditorView may
+  // already show another DocTab (view.setState) — re-reading view.state there
+  // would write the entry into the wrong document's namespace.
+  const docId = mermaidDocIdOf(view.state)
   const svgHost = document.createElement('div')
   svgHost.className = 'cm-md-mermaid-svg'
   const badge = document.createElement('div')
@@ -62,7 +69,7 @@ export function mountMermaidRender(opts: MountMermaidRenderOpts): MermaidRenderH
 
   // Restore the last good render for this fence (if any) so a broken edit
   // dims the previous SVG instead of blanking the block.
-  const prev = getMermaidLastGood(sourceFrom)
+  const prev = getMermaidLastGood(docId, sourceFrom)
   const showPlaceholder = (): void => {
     svgHost.textContent = ''
     const ph = document.createElement('div')
@@ -105,7 +112,7 @@ export function mountMermaidRender(opts: MountMermaidRenderOpts): MermaidRenderH
 
   void renderMermaid(code, theme)
     .then((svg) => {
-      rememberMermaidGood(sourceFrom, { svg, code, theme })
+      rememberMermaidGood(docId, sourceFrom, { svg, code, theme })
       svgHost.classList.remove('is-dim')
       svgHost.innerHTML = svg
       badge.hidden = true

@@ -6,6 +6,7 @@ import {
   paletteToCssVars
 } from './palette'
 import { classStyles, tagStyles } from './inlineStyles'
+import { EXPORT_DOC_CSS } from './exportCss'
 
 describe('export palette (P20)', () => {
   it('exposes distinct light/dark tokens', () => {
@@ -63,6 +64,38 @@ describe('inline style maps (P20)', () => {
     const cls = classStyles(LIGHT_PALETTE)
     for (const name of ['export-code', 'export-mermaid-error', 'export-mark', 'export-footnotes']) {
       expect(cls[name], name).toBeTruthy()
+    }
+  })
+})
+
+// Batch K (WYSIWYG sync): heading/blockquote typography must stay in lockstep
+// with styles/markdown.css — h1 1.75em (28px), h2 1.3125em (21px), no heading
+// border-bottom; blockquote 3px/--fg/upright. Changing one side without the
+// other breaks export↔editor parity and fails here.
+describe('export typography ↔ markdown.css parity (batch K)', () => {
+  it('EXPORT_DOC_CSS headings: no border-bottom, h1 1.75em / h2 1.3125em', () => {
+    expect(EXPORT_DOC_CSS).toContain('font-size: 1.75em;')
+    expect(EXPORT_DOC_CSS).toContain('font-size: 1.3125em;')
+    expect(EXPORT_DOC_CSS).not.toMatch(/\.export-doc h1[^{]*\{[^}]*border-bottom/)
+    expect(EXPORT_DOC_CSS).not.toMatch(/\.export-doc h2[^{]*\{[^}]*border-bottom/)
+  })
+
+  it('EXPORT_DOC_CSS blockquote: 3px rule, --fg text, upright', () => {
+    expect(EXPORT_DOC_CSS).toContain('border-left: 3px solid var(--quote-border);')
+    expect(EXPORT_DOC_CSS).toMatch(/\.export-doc blockquote \{[^}]*color: var\(--fg\);/)
+    expect(EXPORT_DOC_CSS).toMatch(/\.export-doc blockquote \{[^}]*font-style: normal;/)
+    expect(EXPORT_DOC_CSS).not.toMatch(/\.export-doc blockquote \{[^}]*font-style: italic;/)
+  })
+
+  it('tagStyles mirrors the same heading/blockquote values per palette', () => {
+    for (const p of [LIGHT_PALETTE, DARK_PALETTE] as const) {
+      const tags = tagStyles(p)
+      expect(tags.h1, 'h1').toContain('font-size:1.75em')
+      expect(tags.h2, 'h2').toContain('font-size:1.3125em')
+      expect(tags.blockquote, 'blockquote').toContain('border-left:3px solid')
+      expect(tags.blockquote, 'blockquote').toContain(`color:${p.fg};`)
+      expect(tags.blockquote, 'blockquote').toContain('font-style:normal')
+      expect(classStyles(p)['export-fm-title'], 'fm-title').toContain('font-size:1.75em')
     }
   })
 })

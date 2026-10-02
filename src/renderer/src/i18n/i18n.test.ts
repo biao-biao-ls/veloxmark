@@ -164,3 +164,122 @@ describe('native menu strings (third dictionary, 3.17)', () => {
     expect(mismatches, `placeholder drift: ${mismatches.join('; ')}`).toEqual([])
   })
 })
+
+// ---- IT-03 FE-01: render.* namespace (REN-render-zone copy contract) ---------
+// Undo-receipt toasts compose the「（Ctrl+Z 可撤销）」suffix from a single
+// per-language constant (en: " (Ctrl+Z to undo)" — leading space is the
+// separator, matching the IT-01 frozen en family "Row inserted above
+// (Ctrl+Z to undo)"). The four receipt sentences are frozen as full literals
+// below (frozenCopy.test.ts pattern) so a suffix-constant drift — like the
+// missing separator space this guard previously let through — cannot hide
+// behind a loose endsWith check. PEND-15: task-item checkbox toggles and fold
+// switches are lightweight ops with NO toast — the toast key set is locked to
+// exactly the four receipt keys below.
+
+describe('render.* key family (IT-03 FE-01)', () => {
+  const RENDER_TOAST_KEYS = [
+    'render.toast.imageSize',
+    'render.toast.imageAlign',
+    'render.toast.linkUpdated',
+    'render.toast.listMoved'
+  ] as const
+  const RENDER_STATIC_KEYS = [
+    ...RENDER_TOAST_KEYS,
+    'render.image.alignLeft',
+    'render.image.alignCenter',
+    'render.image.alignRight',
+    'render.image.width',
+    'render.image.done',
+    'render.image.alignLeftTitle',
+    'render.image.alignCenterTitle',
+    'render.image.alignRightTitle',
+    'render.image.widthTitle',
+    'render.image.doneTitle',
+    'render.image.resizeTitle',
+    'render.image.broken',
+    'render.image.retry',
+    'render.image.retryTitle',
+    'render.image.editUrl',
+    'render.image.editUrlTitle',
+    'render.image.urlPlaceholder',
+    'render.link.editUrl',
+    'render.link.open',
+    'render.link.copy',
+    'render.link.editUrlTitle',
+    'render.link.openTitle',
+    'render.link.copyTitle',
+    'render.link.urlPlaceholder',
+    'render.link.confirm',
+    'render.link.cancel',
+    'render.fold.collapse',
+    'render.fold.expand',
+    'render.fold.restore',
+    'render.fold.lines',
+    // FE-06 (shared with FE-03's audit — registered once, don't double-log)
+    'render.list.dragHandle'
+  ] as const
+  const ZH_UNDO_SUFFIX = '（Ctrl+Z 可撤销）'
+  // Leading space is the en sentence separator (composed by UNDO_SUFFIX in
+  // en.ts) — keep this constant in lockstep with that value.
+  const EN_UNDO_SUFFIX = ' (Ctrl+Z to undo)'
+
+  // Frozen full sentences (frozenCopy.test.ts pattern): independent literals,
+  // not derived from the *UNDO_SUFFIX constants, so the composed values cannot
+  // drift (missing separator space, hardcoded suffix, …) without failing here.
+  const FROZEN_TOAST_EN: Record<string, string> = {
+    'render.toast.imageSize': 'Image size adjusted (Ctrl+Z to undo)',
+    'render.toast.imageAlign': 'Image alignment set (Ctrl+Z to undo)',
+    'render.toast.linkUpdated': 'Link URL updated (Ctrl+Z to undo)',
+    'render.toast.listMoved': 'List item moved (Ctrl+Z to undo)'
+  }
+  const FROZEN_TOAST_ZH: Record<string, string> = {
+    'render.toast.imageSize': '已调整图片尺寸（Ctrl+Z 可撤销）',
+    'render.toast.imageAlign': '已设置图片对齐（Ctrl+Z 可撤销）',
+    'render.toast.linkUpdated': '已更新链接地址（Ctrl+Z 可撤销）',
+    'render.toast.listMoved': '已移动列表项（Ctrl+Z 可撤销）'
+  }
+
+  it('render.* key set is symmetric between EN and ZH', () => {
+    const enRender = Object.keys(EN).filter((k) => k.startsWith('render.'))
+    const zhRender = Object.keys(ZH).filter((k) => k.startsWith('render.'))
+    const missingInZh = enRender.filter((k) => !(k in ZH))
+    const missingInEn = zhRender.filter((k) => !(k in EN))
+    expect(missingInZh, `missing in zh.ts: ${missingInZh.join(', ')}`).toEqual([])
+    expect(missingInEn, `missing in en.ts: ${missingInEn.join(', ')}`).toEqual([])
+  })
+
+  it('every registered render.* key is non-empty in both languages', () => {
+    const empty: string[] = []
+    for (const key of RENDER_STATIC_KEYS) {
+      if (!(EN[key] ?? '').trim()) empty.push(`${key} (en)`)
+      if (!(ZH[key] ?? '').trim()) empty.push(`${key} (zh)`)
+    }
+    expect(empty, `empty render.* values: ${empty.join(', ')}`).toEqual([])
+  })
+
+  it('render.toast.* is exactly the four receipt keys (PEND-15: no task-check / fold toasts)', () => {
+    const enToast = Object.keys(EN)
+      .filter((k) => k.startsWith('render.toast.'))
+      .sort()
+    expect(enToast).toEqual([...RENDER_TOAST_KEYS].sort())
+  })
+
+  it('receipt toasts are frozen full sentences in both languages (composed suffix included)', () => {
+    for (const key of RENDER_TOAST_KEYS) {
+      expect(EN[key], `${key} en frozen full value`).toBe(FROZEN_TOAST_EN[key])
+      expect(ZH[key], `${key} zh frozen full value`).toBe(FROZEN_TOAST_ZH[key])
+    }
+  })
+
+  it('frozen receipt sentences end with the shared undo suffix constants', () => {
+    for (const key of RENDER_TOAST_KEYS) {
+      expect(FROZEN_TOAST_EN[key].endsWith(EN_UNDO_SUFFIX), `${key} en ends with「${EN_UNDO_SUFFIX}」`).toBe(true)
+      expect(FROZEN_TOAST_ZH[key].endsWith(ZH_UNDO_SUFFIX), `${key} zh ends with「${ZH_UNDO_SUFFIX}」`).toBe(true)
+    }
+  })
+
+  it('render.fold.lines keeps the {n} line-count placeholder in both languages', () => {
+    expect(placeholders(EN['render.fold.lines'])).toBe('n')
+    expect(placeholders(ZH['render.fold.lines'])).toBe('n')
+  })
+})

@@ -25,8 +25,8 @@ const SANS = `'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-syste
 /** Tag-level styles for one palette (pure; node-testable). */
 export function tagStyles(p: Palette): Record<string, string> {
   return {
-    h1: `font-size:2em;font-weight:650;margin:0.67em 0;color:${p.fg};font-family:${SANS}`,
-    h2: `font-size:1.5em;font-weight:650;margin:0.83em 0;color:${p.fg};font-family:${SANS}`,
+    h1: `font-size:1.75em;font-weight:650;margin:0.67em 0;color:${p.fg};font-family:${SANS}`,
+    h2: `font-size:1.3125em;font-weight:650;margin:0.83em 0;color:${p.fg};font-family:${SANS}`,
     h3: `font-size:1.25em;font-weight:650;margin:1em 0;color:${p.fg};font-family:${SANS}`,
     h4: `font-size:1.05em;font-weight:650;margin:1.33em 0;color:${p.fg};font-family:${SANS}`,
     h5: `font-size:1em;font-weight:650;margin:1.5em 0;color:${p.fg};font-family:${SANS}`,
@@ -40,7 +40,7 @@ export function tagStyles(p: Palette): Record<string, string> {
     s: `text-decoration:line-through;color:${p.fgDim}`,
     code: `font-family:${MONO};font-size:0.9em;background:${p.codeBg};padding:0.15em 0.35em;border-radius:4px`,
     pre: `background:${p.bgAlt};border:1px solid ${p.border};border-radius:8px;padding:12px 14px;overflow:auto;margin:0.75em 0;font-family:${MONO};font-size:0.9em;line-height:1.5`,
-    blockquote: `margin:0.75em 0;padding:0.25em 0 0.25em 14px;border-left:4px solid ${p.quoteBorder};color:${p.fgDim}`,
+    blockquote: `margin:0.75em 0;padding:0.25em 0 0.25em 14px;border-left:3px solid ${p.quoteBorder};color:${p.fg};font-style:normal`,
     a: `color:${p.accent};text-decoration:underline`,
     hr: `border:none;border-top:1px solid ${p.hrColor};margin:1.2em 0`,
     ul: `margin:0.75em 0;padding-left:1.6em;color:${p.fg};font-family:${SANS}`,
@@ -75,7 +75,7 @@ export function classStyles(p: Palette): Record<string, string> {
     'export-footnotes-sep': `border:none;border-top:1px solid ${p.hrColor};margin:1.2em 0`,
     'export-footnotes': `color:${p.fgDim};font-size:0.9em;padding-left:1.4em`,
     'export-dl': `margin:0.75em 0;color:${p.fg}`,
-    'export-fm-title': `font-size:2em;font-weight:650;margin:0.67em 0;color:${p.fg}`,
+    'export-fm-title': `font-size:1.75em;font-weight:650;margin:0.67em 0;color:${p.fg}`,
     'export-callout': `margin:0.75em 0;padding:10px 14px;border-left:4px solid ${co.note[0]};background:${co.note[1]};border-radius:0 6px 6px 0;color:${p.fg};font-style:normal;font-family:${SANS}`,
     'export-callout-head': `font-weight:600;margin:0 0 0.35em;color:${p.fg}`,
     'export-callout-body': `margin:0;color:${p.fg}`,

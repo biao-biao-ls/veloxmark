@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { t, useTranslation } from '../i18n'
+import { hushLayers, setModalProbe } from '../hooks/useHushLayer'
 
 /**
  * In-app modal dialogs replacing the native alert/confirm/prompt.
@@ -33,6 +34,13 @@ export interface ConfirmOptions extends DialogKeyedCopy {
   title?: string
   confirmLabel?: string
   cancelLabel?: string
+  /**
+   * FE-11 P2-2: button-label keys — resolved at RENDER when the matching
+   * string field is empty (DialogKeyedCopy live-relabel contract). Call sites
+   * that want live-relabel pass keys ONLY (no pre-baked strings).
+   */
+  confirmLabelKey?: string
+  cancelLabelKey?: string
   /** Destructive action — confirm button uses the danger color. */
   danger?: boolean
 }
@@ -227,9 +235,11 @@ export const dialog = {
         messageParams: opts.messageParams,
         defaultValue: '',
         confirmLabel: opts.confirmLabel ?? '',
-        confirmLabelKey: 'dialog.ok',
+        // FE-11 P2-2: caller label keys win over the generic defaults so a
+        // key-only call site live-relabels at render (DialogKeyedCopy contract).
+        confirmLabelKey: opts.confirmLabelKey ?? 'dialog.ok',
         cancelLabel: opts.cancelLabel ?? '',
-        cancelLabelKey: 'dialog.cancel',
+        cancelLabelKey: opts.cancelLabelKey ?? 'dialog.cancel',
         discardLabel: '',
         danger: opts.danger ?? false,
         resolve: (v) => resolve(v as boolean)
@@ -320,8 +330,42 @@ export const dialog = {
         : null,
       queued: queue.length
     }
+  },
+
+  /**
+   * PEND-04 分层挂点（FE-09 useHushLayer 消费面）：模态在场即为最上层——
+   * Esc/点空白由对话框自身消费（只关最上层确认框），全局一键回安静须让行。
+   * 本模块不自建全局 Esc 路由；分层收拢编排归 useHushLayer（FE-09）。
+   */
+  isModalOpen(): boolean {
+    return current !== null
   }
 }
+
+/**
+ * FE-09 layering close entry — settles the topmost request exactly like the
+ * dialog's own Esc/overlay cancel (zero side effects). This is the modal
+ * layer's `close()` in useHushLayer; it is NOT an Esc router (FE-08 contract:
+ * routing/layering orchestration lives in useHushLayer).
+ */
+export function cancelActiveDialog(): void {
+  const req = current
+  if (!req) return
+  settle(req.kind === 'prompt' ? null : req.kind === 'choose' ? 'cancel' : false)
+}
+
+/**
+ * FE-09 (PEND-04 / UI-IXD-12): the modal overlay OWNS gestures landing on it —
+ * overlay-blank is this dialog's cancel, and lower layers (MenuBar / ⋮ 菜单 /
+ * grid picker outside-close paths) must yield instead of tearing themselves
+ * down in the same gesture. Keeps blank == Esc in the stacking case.
+ */
+export function isDialogOverlayTarget(target: unknown): boolean {
+  return target instanceof Element && target.closest('[data-testid="dialog-overlay"]') != null
+}
+
+// FE-09 skip-guard hook point (one-way import Dialog → useHushLayer).
+setModalProbe(() => dialog.isModalOpen())
 
 // Handle for CDP smoke tests (scripts/cdp-*.mjs) — no other runtime consumers.
 declare global {
@@ -338,6 +382,20 @@ if (typeof window !== 'undefined') window.dialog = dialog
 /** Mount once inside the themed App root. Renders nothing when idle. */
 export function DialogHost(): React.JSX.Element | null {
   const req = useSyncExternalStore(subscribe, getSnapshot)
+  // FE-09 (PEND-04 / glb-modal:stacking): the open confirm is the topmost
+  // hush layer — Esc/blank via the bus closes only it. Dialog's own Esc/
+  // overlay handlers still self-close with stopPropagation; this registration
+  // covers the focus-outside edge and the layered-consumption order.
+  const reqId = req?.id
+  useEffect(() => {
+    if (reqId == null) return
+    return hushLayers.register({
+      id: 'dialog-modal',
+      tier: 'modal',
+      close: () => cancelActiveDialog(),
+      owns: isDialogOverlayTarget
+    })
+  }, [reqId])
   if (!req) return null
   return <Dialog key={req.id} req={req} />
 }
@@ -404,6 +462,9 @@ function Dialog({ req }: Props): React.JSX.Element {
 
   const onKeyDown = (e: React.KeyboardEvent): void => {
     // Keep the editor and window-level shortcuts from seeing dialog keys.
+    // PEND-04: Esc cancels THIS (topmost) dialog only — zero side effects —
+    // and never falls through to the one-shot hush; a second Esc after close
+    // reaches the FE-09 layer (isModalOpen() is its skip-guard hook point).
     e.stopPropagation()
     if (e.key === 'Escape') {
       e.preventDefault()
@@ -432,10 +493,11 @@ function Dialog({ req }: Props): React.JSX.Element {
     }
   }
 
-  // macOS puts the confirming action rightmost; Windows/Linux put it first.
+  // UI-IXD-05 / ui_07 场景 C：确认主按钮恒居右（danger），取消次按钮居其左。
   const confirmBtn = (
     <button
       ref={defaultBtnRef}
+      data-testid="dialog-confirm-btn"
       className={`dialog-btn dialog-btn-primary${req.danger ? ' dialog-btn-danger' : ''}`}
       onClick={confirm}
     >
@@ -443,21 +505,35 @@ function Dialog({ req }: Props): React.JSX.Element {
     </button>
   )
   const cancelBtn = (
-    <button className="dialog-btn" onClick={cancel}>
+    <button className="dialog-btn" data-testid="dialog-cancel-btn" onClick={cancel}>
       {cancelLabel}
     </button>
   )
   const discardBtn = (
     <button
       className={`dialog-btn${req.danger ? ' dialog-btn-danger' : ''}`}
+      data-testid="dialog-discard-btn"
       onClick={discard}
     >
       {discardLabel}
     </button>
   )
 
+  // PEND-04: clicking the blank backdrop (outside the card) is the same
+  // zero-side-effect close as Esc — topmost dialog only, document untouched.
+  // The overlay is hit-tested on top of the editor, so the click cannot fall
+  // through to the FE-09 blank-area hush in the same gesture.
+  const onOverlayClick = (e: React.MouseEvent): void => {
+    if (e.target === e.currentTarget) cancel()
+  }
+
   return (
-    <div className="dialog-overlay" onKeyDown={onKeyDown}>
+    <div
+      className="dialog-overlay"
+      data-testid="dialog-overlay"
+      onKeyDown={onKeyDown}
+      onClick={onOverlayClick}
+    >
       <div
         ref={dialogRef}
         className="dialog"
@@ -493,15 +569,12 @@ function Dialog({ req }: Props): React.JSX.Element {
                 {cancelBtn}
               </>
             )
-          ) : isMac ? (
-            <>
-              {cancelBtn}
-              {confirmBtn}
-            </>
           ) : (
+            // UI-IXD-05/ui_07 场景 C 复刻：两按钮布局不分平台恒为
+            // 「取消」左 + 「确认删除」右（confirm 主按钮居右）。
             <>
-              {confirmBtn}
               {cancelBtn}
+              {confirmBtn}
             </>
           )}
         </div>

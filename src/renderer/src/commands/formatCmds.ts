@@ -29,8 +29,10 @@ export function buildFormatCmds(ops: FormatCmdOps): Command[] {
     // ---- Inline format + P27 context-menu command surface -------------------
     // Probe/rubric contract ids: bold/italic/strikethrough/inlineCode/code/
     // highlight/openLink/copyLinkAddress/clearFormat/lift/headingN/paragraph.
-    // Keybindings stay with the CM6 assists keymap (Prec.highest in
-    // editor/assists); no bindGlobal. The Format submenu and the P27
+    // Keybindings stay with the CM6 format keymap (Prec.highest in
+    // editor/assists/keymap) — always mounted, NOT gated by typingAssistsEnabled
+    // (fix-biz IT-02/PATH-01: menu echo Ctrl+B/I/E keeps its keyboard channel);
+    // no bindGlobal. The Format submenu and the P27
     // context-menu registry share these ids.
     {
       id: 'bold',

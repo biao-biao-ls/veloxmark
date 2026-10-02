@@ -1,14 +1,28 @@
-import { syntaxTree } from '@codemirror/language'
 import { EditorView, WidgetType } from '@codemirror/view'
-import type { SyntaxNode } from '@lezer/common'
+import { hoverDiscipline, HOVER_CHANNELS } from '../hooks/useHoverDiscipline'
 import { t } from '../i18n'
+import { judgeClickSemantics } from './clickSemantics'
 import { attachWidgetContextMenu } from './contextMenu/widgetEntry'
-import { flipTransform, IMAGE_MARKDOWN_RE, type ParsedImage } from './image-parse'
+import {
+  applyImageEdit,
+  applyImageEditAtAnchor,
+  imageSrcAtAnchor,
+  isValidImageSrc
+} from './imageEdit'
+import {
+  deriveWidthPct,
+  flipTransform,
+  type ImageAlign,
+  type ImageFlip,
+  type ParsedImage
+} from './image-parse'
+import { assertWritable } from './readOnlyGuard'
 
-// ---- images (P05) ------------------------------------------------------------
-// (2.4: resolution cache, rewriteImageNode and ImageWidget moved verbatim from
-// editor/widgets.ts.) ParsedImage / parseImageMarkdown / flipTransform moved to
-// image-parse.ts (2.2) — imported above.
+// ---- images (P05 + IT-03 FE-04) ----------------------------------------------
+// (2.4: resolution cache and ImageWidget moved verbatim from editor/widgets.ts.)
+// ParsedImage / parseImageMarkdown / flipTransform live in image-parse.ts.
+// Write-backs (size/align/flip) all go through imageEdit.applyImageEdit — the
+// single read-only gate + single-dispatch path (AC-ERR-08 / AC-OP-13 undo).
 
 interface CachedImage {
   src: string
@@ -40,33 +54,18 @@ export function invalidateImageCache(): void {
 }
 
 /**
- * Rewrite the image node containing `sourceFrom` with new size/flip
- * attributes (null clears them). Re-resolves the node through the syntax
- * tree so the write-back survives intermediate edits.
+ * Reflect `{align=…}` on the image wrapper so CSS can place it. Called from
+ * toDOM (spec) and live from the edit float (after a commit) — the DOM is the
+ * single visual source once rendered (same stale-widget discipline as
+ * `derivePct` in the zoom toolbar).
  */
-function rewriteImageNode(
-  view: EditorView,
-  sourceFrom: number,
-  next: { width?: number | null; height?: number | null; flip?: string | null }
-): void {
-  const state = view.state
-  let node: SyntaxNode | null = syntaxTree(state).resolveInner(sourceFrom, 1)
-  while (node && node.name !== 'Image') node = node.parent
-  if (!node) return
-  const m = IMAGE_MARKDOWN_RE.exec(state.sliceDoc(node.from, node.to))
-  if (!m) return
-  const [, alt, src, title] = m
-  const width = next.width !== undefined ? next.width : m[4] ? Number(m[4]) : null
-  const height = next.height !== undefined ? next.height : m[5] ? Number(m[5]) : null
-  const flip = next.flip !== undefined ? next.flip || null : m[6] || null
-  const titlePart = title != null ? ` "${title}"` : ''
-  const sizePart = width != null && height != null ? ` =${width}x${height}` : ''
-  const flipPart = flip ? `{flip=${flip}}` : ''
-  const insert = `![${alt}](${src}${titlePart}${sizePart})${flipPart}`
-  view.dispatch({
-    changes: { from: node.from, to: node.to, insert },
-    userEvent: 'input.image.resize'
-  })
+export function applyImageAlignDom(wrap: HTMLElement, align: ImageAlign | undefined): void {
+  wrap.classList.remove(
+    'cm-md-image-align-left',
+    'cm-md-image-align-center',
+    'cm-md-image-align-right'
+  )
+  if (align) wrap.classList.add(`cm-md-image-align-${align}`)
 }
 
 export class ImageWidget extends WidgetType {
@@ -121,17 +120,20 @@ export class ImageWidget extends WidgetType {
       img.style.maxWidth = 'none'
     }
     if (this.spec.flip) img.style.transform = flipTransform(this.spec.flip)
+    applyImageAlignDom(wrap, this.spec.align)
     wrap.appendChild(img)
 
-    // Broken/missing image: placeholder with the alt text, never a blank hole.
+    // Broken/missing image: placeholder with the alt text + repair bar with
+    // 「重试」/「编辑地址」(ui_06 错误可修复 rule card) — never a silent hole.
+    // The img element stays in the DOM (hidden via .cm-md-image-broken) so a
+    // retry can re-fire its load listeners without rebuilding the widget.
     img.addEventListener('error', () => {
       if (!img.getAttribute('src') || wrap.classList.contains('cm-md-image-broken')) return
       wrap.classList.add('cm-md-image-broken')
       const ph = document.createElement('span')
       ph.className = 'cm-md-image-placeholder'
       ph.textContent = this.spec.alt || t('image.notFound')
-      wrap.appendChild(ph)
-      img.remove()
+      wrap.append(ph, this.buildErrorBar(wrap, img, ph))
     })
 
     this.mountResolvedSrc(img)
@@ -159,6 +161,132 @@ export class ImageWidget extends WidgetType {
     })
   }
 
+  /**
+   * Broken-state repair bar (FE-04 失败态可修复入口): 「重试」re-resolves and
+   * re-loads; 「编辑地址」enters a src edit session that writes the markdown
+   * destination back through applyImageEditAtAnchor (read-only gate + single
+   * dispatch). Keyboard reachability is the natural tab order of real buttons.
+   */
+  private buildErrorBar(wrap: HTMLElement, img: HTMLImageElement, ph: HTMLElement): HTMLElement {
+    const bar = document.createElement('div')
+    bar.className = 'cm-md-image-error-bar'
+    // Keep events from reaching CM (cursor move / source reveal) but never
+    // preventDefault on form controls — same discipline as the zoom toolbar.
+    bar.addEventListener('mousedown', (e) => {
+      e.stopPropagation()
+      const target = e.target
+      if (!(target instanceof Element && target.closest('input, button'))) e.preventDefault()
+    })
+    bar.addEventListener('click', (e) => e.stopPropagation())
+
+    const clearBroken = (): void => {
+      wrap.classList.remove('cm-md-image-broken')
+      ph.remove()
+      bar.remove()
+    }
+
+    const retry = (): void => {
+      // Drop this src's resolution (next resolve re-stats → fresh `v=` cache
+      // bust) and reset the attribute so Chromium re-requests even when the
+      // resolved URL is byte-identical. Side-effect-free → no read-only gate.
+      clearBroken()
+      imageCache.delete(this.cacheKey())
+      img.removeAttribute('src')
+      this.mountResolvedSrc(img)
+    }
+
+    const makeBtn = (
+      testId: string,
+      label: string,
+      title: string,
+      onClick: () => void
+    ): HTMLButtonElement => {
+      const btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'cm-md-image-toolbar-btn'
+      btn.setAttribute('data-testid', testId)
+      btn.textContent = label
+      btn.title = title
+      btn.addEventListener('click', (e) => {
+        e.preventDefault()
+        onClick()
+      })
+      return btn
+    }
+
+    const showActions = (): void => {
+      const msg = document.createElement('span')
+      msg.className = 'cm-md-image-error-msg'
+      msg.textContent = t('render.image.broken')
+      bar.replaceChildren(
+        msg,
+        makeBtn('image-retry-btn', t('render.image.retry'), t('render.image.retryTitle'), retry),
+        makeBtn(
+          'image-edit-src-btn',
+          t('render.image.editUrl'),
+          t('render.image.editUrlTitle'),
+          enterEdit
+        )
+      )
+    }
+
+    const enterEdit = (): void => {
+      // AC-ERR-08 pre-check — assertWritable fires the frozen err.readonly
+      // toast on refusal. Retry stays ungated (side-effect-free).
+      void assertWritable().then((ok) => {
+        if (!ok) return
+        const input = document.createElement('input')
+        input.className = 'cm-md-float-input'
+        input.setAttribute('data-testid', 'image-src-input')
+        input.placeholder = t('render.image.urlPlaceholder')
+        input.setAttribute('aria-label', t('render.image.editUrlTitle'))
+        // Live src from the syntax tree (stale-widget discipline); spec is fallback.
+        input.value = imageSrcAtAnchor(wrap) ?? this.spec.src
+
+        const confirmEdit = (): void => {
+          const next = input.value.trim()
+          // Silent refusal — stay in edit mode (linkEdit.isValidLinkHref face).
+          if (!isValidImageSrc(next)) return
+          const current = imageSrcAtAnchor(wrap) ?? this.spec.src
+          if (next === current) {
+            showActions()
+            return
+          }
+          void applyImageEditAtAnchor(wrap, { src: next }, 'src').then((ok) => {
+            // Refused (read-only gate / unresolvable node) — stay in edit mode.
+            // Success: eq() sees a new src and rebuilds this DOM with a fresh
+            // resolve, so nothing to tear down here.
+            if (!ok) return
+          })
+        }
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            e.stopPropagation()
+            confirmEdit()
+          } else if (e.key === 'Escape') {
+            // Local cancel only — don't let Esc reach the hush layer mid-edit.
+            e.preventDefault()
+            e.stopPropagation()
+            showActions()
+          }
+        })
+
+        bar.replaceChildren(
+          input,
+          makeBtn('image-src-confirm-btn', t('render.link.confirm'), t('render.link.confirm'), confirmEdit),
+          makeBtn('image-src-cancel-btn', t('render.link.cancel'), t('render.link.cancel'), showActions)
+        )
+        input.focus()
+        input.select()
+      })
+    }
+
+    showActions()
+    return bar
+  }
+
   /** Click-to-select: open the zoom toolbar without collapsing to source. */
   private mountSelection(wrap: HTMLElement, img: HTMLImageElement, view: EditorView): void {
     img.addEventListener('mousedown', (e) => {
@@ -169,6 +297,19 @@ export class ImageWidget extends WidgetType {
     img.addEventListener('click', (e) => {
       e.preventDefault()
       e.stopPropagation()
+      // FE-09 AC-RULE-13 unified decision (ren-click:semantics). Widget
+      // content cannot host a text selection (mousedown preventDefault above),
+      // so a press-release on the image is a click gesture — writer path
+      // first even if a stale selection exists. `kind === 'select'` is kept as
+      // the safe no-op face of the route table for selection-capable callers.
+      const verdict = judgeClickSemantics({ hitTarget: 'image', selectionEmpty: true })
+      if (verdict.kind !== 'edit') return
+      // AC-FN-17「图=编辑浮层」: click deterministically enters the FE-04
+      // edit form (hover dwell alone is not a click route). Broken images
+      // have no parse result → float stays disabled (REN disable rule).
+      if (!wrap.classList.contains('cm-md-image-broken')) {
+        hoverDiscipline.show(HOVER_CHANNELS.imageFloat, wrap)
+      }
       if (wrap.classList.contains('cm-md-image-selected')) return
       closeAllImageSelections()
       wrap.classList.add('cm-md-image-selected')
@@ -207,31 +348,24 @@ export class ImageWidget extends WidgetType {
         Math.max(0, Math.round((100 * Math.log(pct / PCT_MIN)) / Math.log(RATIO)))
       )
 
-    const pctOf = (w?: number): number =>
-      img.naturalWidth && w ? Math.round((w / img.naturalWidth) * 100) : 100
     // The toolbar may be built from a STALE widget instance: eq() reuses this
     // DOM (and its listeners) across size/flip commits, so `this.spec` can
     // predate the latest source rewrite. The rendered element always carries
     // the committed state (applyStyle / flip toggles write it live), so derive
     // from it — reading spec here would reset a resized image to 100% on
-    // re-select.
-    const derivePct = (): number => {
-      const nw = img.naturalWidth
-      if (nw && img.style.width) {
-        const w = Number.parseFloat(img.style.width)
-        if (Number.isFinite(w) && w > 0) return Math.round((w / nw) * 100)
-      }
-      return pctOf(this.spec.width)
-    }
-    const deriveFlip = (): string => {
+    // re-select. Formula + fallback 口径 (style.width → spec.width → 100) are
+    // the shared image-parse.deriveWidthPct.
+    const derivePct = (): number =>
+      deriveWidthPct(img.style.width, img.naturalWidth, this.spec.width)
+    const deriveFlip = (): ImageFlip | '' => {
       const t = img.style.transform
       const h = t.includes('scaleX(-1)')
       const v = t.includes('scaleY(-1)')
-      return h || v ? `${h ? 'h' : ''}${v ? 'v' : ''}` : (this.spec.flip ?? '')
+      return h || v ? (`${h ? 'h' : ''}${v ? 'v' : ''}` as ImageFlip) : (this.spec.flip ?? '')
     }
     const clampPct = (p: number): number => Math.min(PCT_MAX, Math.max(PCT_MIN, p))
     let pct = clampPct(derivePct())
-    let flip = deriveFlip()
+    let flip: ImageFlip | '' = deriveFlip()
 
     const label = document.createElement('span')
     label.className = 'cm-md-image-toolbar-pct'
@@ -267,7 +401,7 @@ export class ImageWidget extends WidgetType {
       if (!nw) return
       const w = Math.max(1, Math.round((nw * pct) / 100))
       const h = nh ? Math.max(1, Math.round((nh * pct) / 100)) : null
-      rewriteImageNode(view, this.sourceFrom, { width: w, height: h })
+      void applyImageEdit(view, this.sourceFrom, { width: w, height: h }, 'size')
     })
 
     const flipBtn = (bit: 'h' | 'v', glyph: string, title: string): HTMLButtonElement => {
@@ -278,14 +412,13 @@ export class ImageWidget extends WidgetType {
       if (flip.includes(bit)) btn.classList.add('active')
       btn.addEventListener('click', (e) => {
         e.preventDefault()
-        flip = flip.includes(bit)
-          ? (flip.replace(bit, '') as typeof flip)
-          : ((flip + bit) as typeof flip)
-        // Deterministic order for hv regardless of toggle sequence.
-        if (flip === 'vh') flip = 'hv'
+        // Bit toggle with a deterministic 'hv' order regardless of click sequence.
+        const h = bit === 'h' ? !flip.includes('h') : flip.includes('h')
+        const v = bit === 'v' ? !flip.includes('v') : flip.includes('v')
+        flip = h && v ? 'hv' : h ? 'h' : v ? 'v' : ''
         img.style.transform = flipTransform(flip)
         btn.classList.toggle('active', flip.includes(bit))
-        rewriteImageNode(view, this.sourceFrom, { flip: flip || null })
+        void applyImageEdit(view, this.sourceFrom, { flip: flip === '' ? null : flip }, 'flip')
       })
       return btn
     }
@@ -299,7 +432,7 @@ export class ImageWidget extends WidgetType {
       pct = 100
       slider.value = String(pctToPos(100))
       applyStyle(100)
-      rewriteImageNode(view, this.sourceFrom, { width: null, height: null })
+      void applyImageEdit(view, this.sourceFrom, { width: null, height: null }, 'size')
     })
 
     toolbar.append(

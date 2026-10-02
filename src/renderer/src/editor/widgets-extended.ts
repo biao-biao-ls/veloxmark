@@ -2,6 +2,7 @@ import { EditorView, WidgetType } from '@codemirror/view'
 import type { FrontMatterSummary } from './livePreview/extendedSyntax'
 import { t } from '../i18n'
 import { attachWidgetContextMenu } from './contextMenu/widgetEntry'
+import { assertWritable } from './readOnlyGuard'
 
 // ---- P11 extended syntax widgets + GFM task checkbox ------------------------
 // (2.6: FrontMatterWidget, FootnoteRefWidget, FootnoteDefBackWidget and
@@ -192,6 +193,24 @@ export class FootnoteDefBackWidget extends WidgetType {
   }
 }
 
+/**
+ * Task checkbox write-back (ren-task:check). Light toggle per PEND-15: the
+ * `[ ]`/`[x]` swap is the whole operation — no toast (difference declaration
+ * lives on the `render.toast.*` i18n block), one dispatch = one Ctrl+Z.
+ * Read-only refusal writes nothing and shows the frozen gate toast (AC-ERR-08).
+ */
+async function toggleTaskAt(view: EditorView, sourceFrom: number, next: boolean): Promise<void> {
+  try {
+    if (!(await assertWritable())) return
+    view.dispatch({
+      changes: { from: sourceFrom + 1, to: sourceFrom + 2, insert: next ? 'x' : ' ' },
+      userEvent: 'input.task.toggle'
+    })
+  } catch {
+    // Never throw back into a DOM event — a refused toggle is a no-op.
+  }
+}
+
 /** Interactive task-list checkbox; toggles the source `[x]` marker in place. */
 export class TaskWidget extends WidgetType {
   constructor(
@@ -210,15 +229,15 @@ export class TaskWidget extends WidgetType {
     input.type = 'checkbox'
     input.className = 'cm-md-task'
     input.checked = this.checked
+    input.setAttribute('data-testid', 'task-checkbox')
     input.addEventListener('mousedown', (e) => e.stopPropagation())
-    input.addEventListener('change', () => {
-      view.dispatch({
-        changes: {
-          from: this.sourceFrom + 1,
-          to: this.sourceFrom + 2,
-          insert: input.checked ? 'x' : ' '
-        }
-      })
+    // Click owns the toggle: preventDefault rolls the native checkbox back so
+    // a refused write leaves zero transient state — the shown state only ever
+    // comes from the source via the decoration rebuild (AC-RULE-04).
+    input.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      void toggleTaskAt(view, this.sourceFrom, !this.checked)
     })
     return input
   }

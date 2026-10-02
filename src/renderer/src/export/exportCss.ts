@@ -54,17 +54,15 @@ export const EXPORT_DOC_CSS = `
   margin-bottom: 0.5em;
 }
 
+/* Batch K (WYSIWYG sync): heading rules mirror styles/markdown.css —
+   no border-bottom (ui_01 doc-h1/h2 are borderless), h1 = 1.75em = 28px and
+   h2 = 1.3125em = 21px @ 16px base (ui_01 .doc-h1/.doc-h2). */
 .export-doc h1 {
-  font-size: 2em;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.2em;
+  font-size: 1.75em;
 }
 
 .export-doc h2 {
-  font-size: 1.5em;
-  /* 5C/D1 parallel: h2 rule matches h1. */
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.2em;
+  font-size: 1.3125em;
 }
 .export-doc h3 { font-size: 1.25em; }
 .export-doc h4 { font-size: 1.1em; }
@@ -119,10 +117,11 @@ export const EXPORT_DOC_CSS = `
   background: transparent;
 }
 
+/* Batch K (WYSIWYG sync): ui_06 .md-quote — 3px rule, --fg body text, upright. */
 .export-doc blockquote {
-  border-left: 4px solid var(--quote-border);
-  color: var(--fg-dim);
-  font-style: italic;
+  border-left: 3px solid var(--quote-border);
+  color: var(--fg);
+  font-style: normal;
   margin: 0.5em 0;
   padding-left: 1em;
 }

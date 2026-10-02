@@ -1,5 +1,6 @@
 import { EditorView, WidgetType } from '@codemirror/view'
 import { t } from '../i18n'
+import { judgeClickSemantics, type HitTarget } from './clickSemantics'
 import { getCtxRuntime } from './contextMenu/registry'
 import { attachWidgetContextMenu } from './contextMenu/widgetEntry'
 
@@ -37,11 +38,17 @@ export abstract class BlockWidget extends WidgetType {
    * back into the doc and collapses the block — probed and confirmed), so a
    * content-hit exception would only create dead clicks. The toolbar is the
    * one exemption: its buttons stopPropagation themselves.
+   *
+   * FE-09 AC-RULE-13: routed through the unified click decision — the block
+   * press-release is a click gesture (unselectable content), so the verdict is
+   * the edit form for `hitTarget` (math/code/mermaid dual-zone / source path).
    */
-  protected mountClickToSource(el: HTMLElement, view: EditorView): void {
+  protected mountClickToSource(el: HTMLElement, view: EditorView, hitTarget: HitTarget): void {
     el.addEventListener('mousedown', (e) => {
       if (e.target instanceof Element && e.target.closest('.cm-md-block-toolbar')) return
       e.preventDefault()
+      const verdict = judgeClickSemantics({ hitTarget, selectionEmpty: true })
+      if (verdict.kind !== 'edit') return
       view.dispatch({ selection: { anchor: this.sourceFrom }, scrollIntoView: true })
     })
   }
@@ -54,11 +61,11 @@ export abstract class BlockWidget extends WidgetType {
    * Click-to-source lives on the outer element: mousedowns on the inner box
    * bubble up, and toolbar buttons stopPropagation before they get here.
    */
-  protected wrapWithGap(el: HTMLElement, view: EditorView): HTMLElement {
+  protected wrapWithGap(el: HTMLElement, view: EditorView, hitTarget: HitTarget): HTMLElement {
     const outer = document.createElement('div')
     outer.className = 'cm-md-block-gap'
     outer.appendChild(el)
-    this.mountClickToSource(outer, view)
+    this.mountClickToSource(outer, view, hitTarget)
     // ignoreEvent=true keeps CM6 out of the widget — the P27 menu needs its
     // own listener here (code-block / mermaid / math-block all land in wrapWithGap).
     attachWidgetContextMenu(outer, view, this.sourceFrom)

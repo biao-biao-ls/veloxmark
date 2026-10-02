@@ -1,0 +1,59 @@
+/* FE-07 toast surface (ui_07 「操作 toast 两态」) — token-only (FE-11 base).
+   Deep receipt surface in both themes (--toast-* family); geometry tokens
+   only, zero new .theme-* selector patches. */
+
+.toast-host {
+  position: fixed;
+  right: var(--space-3);
+  /* Reserve the status-bar band (--statusbar-height) before the ui_07
+     window-edge --space-3 inset, so the receipt never covers the metrics
+     strip (replica-review batch D: toast 底部避让状态栏). */
+  bottom: calc(var(--statusbar-height) + var(--space-3));
+  z-index: var(--z-float);
+  /* Host is inert — only the card (pointer-events: auto) is clickable. */
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--toast-bg);
+  color: var(--toast-fg);
+  border: 1px solid var(--toast-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-pop);
+  font-size: 13px;
+  pointer-events: auto;
+  animation: toast-in 120ms ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ui_07 .undo-btn — ghost form: transparent bg + accent text + 1px accent
+   outline (NOT a filled / heavy-frame button). Padding is the design's
+   2px × 8px chip (2px = --space-half sub-scale, ui_07 `padding:2px var(--space-2)`).
+   batch10 #5 (AC-NF-09): fg/outline ride --toast-accent, not --accent — the
+   receipt surface is theme-invariant deep #1f2328, and the light chrome
+   accent on it was 3.04:1 (AA fail). Ghost form unchanged. */
+.toast-undo-btn {
+  flex: none;
+  padding: var(--space-half) var(--space-2);
+  color: var(--toast-accent);
+  background: transparent;
+  border: 1px solid var(--toast-accent);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}

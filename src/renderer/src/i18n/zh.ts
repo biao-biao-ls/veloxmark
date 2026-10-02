@@ -1,4 +1,9 @@
 /** Chinese (Simplified) dictionary. Keys must mirror en.ts exactly. */
+
+/** Undo-hint suffix for render-zone receipt toasts (IT-03 FE-01) — composed
+ *  once here instead of hardcoding into every toast value. */
+const UNDO_SUFFIX = '（Ctrl+Z 可撤销）'
+
 export const ZH: Record<string, string> = {
   // ---- command registry ------------------------------------------------------
   'cmd.newFile': '新建',
@@ -83,7 +88,9 @@ export const ZH: Record<string, string> = {
   'ctx.copyTable': '拷贝表格',
   'ctx.formatTableSource': '格式化表格源码',
   'ctx.deleteTable': '删除表格',
-  'ctx.deleteTableConfirm': '确定删除该表格？此操作无法撤销。',
+  // FE-11 冻结文案（AC-RULE-15 / AC-OP-09）——勿改写措辞；确认删除=danger 主按钮。
+  'ctx.deleteTableConfirm': '删除后可用一步撤销还原，确认删除该表格',
+  'ctx.deleteTableConfirmOk': '确认删除',
   'menu.file': '文件',
   'menu.edit': '编辑',
   'menu.view': '视图',
@@ -94,6 +101,31 @@ export const ZH: Record<string, string> = {
   'menu.format': '格式',
   'menu.noRecent': '暂无最近文件',
   'menu.clearMenu': '清空列表',
+  // FE-01 menu:ia-reorder 语义分组名（menu-tree §3）
+  'menu.grp.newOpen': '新建与打开',
+  'menu.grp.save': '保存',
+  'menu.grp.tabs': '标签页',
+  'menu.grp.export': '导出',
+  'menu.grp.settings': '设置',
+  'menu.grp.history': '历史',
+  'menu.grp.clipboard': '剪贴板',
+  'menu.grp.findOrganize': '查找与整理',
+  'menu.grp.format': '格式',
+  'menu.grp.selectionExport': '选区导出',
+  'menu.grp.sidebarSearch': '侧栏与搜索',
+  'menu.grp.fold': '折叠',
+  'menu.grp.mode': '模式',
+  'menu.grp.inputAssist': '输入辅助',
+  'menu.grp.zoom': '缩放',
+  'menu.grp.devTheme': '开发与主题',
+  'menu.grp.table': '表格',
+  'menu.grp.chartContainer': '图表与容器',
+  'menu.grp.rowOps': '行操作',
+  'menu.grp.colOps': '列操作',
+  'menu.grp.align': '对齐',
+  'menu.grp.cell': '单元格',
+  'menu.grp.structDelete': '结构删除',
+  'menu.grp.dangerBadge': '危险组',
 
   // ---- dialogs ---------------------------------------------------------------
   'dialog.ok': '确定',
@@ -240,13 +272,33 @@ export const ZH: Record<string, string> = {
   'toast.copiedCode': '代码已复制',
   'toast.copiedTex': 'TeX 已复制',
   'toast.copiedImage': '图表图片已复制',
-  'toast.rowDeleted': '行已删除',
-  'toast.colDeleted': '列已删除',
-  'toast.tableDeleted': '表格已删除',
+  // IT-01 FE-11 冻结回执族（ac.md AC-OP-01~10 / TBL §3.1）——字面量逐字冻结，
+  // 含「（Ctrl+Z 可撤销）」后缀与 {i}/{j}/{R}/{C} 插值位，勿用常量拼接改写
+  // （阶段 1 grep 逐字断言依赖源文件字面量）。消费方：FE-02/04/05/07/08。
+  'toast.rowInsertedAbove': '已在上方插入行（Ctrl+Z 可撤销）',
+  'toast.rowInsertedBelow': '已在下方插入行（Ctrl+Z 可撤销）',
+  'toast.rowDeleted': '已删除第 {i} 行（Ctrl+Z 可撤销）',
+  'toast.colInsertedLeft': '已在左侧插入列（Ctrl+Z 可撤销）',
+  'toast.colInsertedRight': '已在右侧插入列（Ctrl+Z 可撤销）',
+  'toast.colDeleted': '已删除第 {j} 列（Ctrl+Z 可撤销）',
+  'toast.rowMovedUp': '已上移该行（Ctrl+Z 可撤销）',
+  'toast.rowMovedDown': '已下移该行（Ctrl+Z 可撤销）',
+  'toast.colMovedLeft': '已左移该列（Ctrl+Z 可撤销）',
+  'toast.colMovedRight': '已右移该列（Ctrl+Z 可撤销）',
+  'toast.colAlignLeft': '第 {j} 列对齐：左对齐（Ctrl+Z 可撤销）',
+  'toast.colAlignCenter': '第 {j} 列对齐：居中（Ctrl+Z 可撤销）',
+  'toast.colAlignRight': '第 {j} 列对齐：右对齐（Ctrl+Z 可撤销）',
+  'toast.tableResized': '表格缩放为 {R}×{C}（Ctrl+Z 可撤销）',
+  'toast.tableDeleted': '已删除表格（Ctrl+Z 可撤销）',
+  'toast.undone': '已撤销',
+  'toast.undoBtn': '撤销',
   'toast.copiedTable': '表格已复制',
   'toast.copyFailed': '复制失败',
   'toast.tableFormatted': '表格源码已格式化',
   'toast.tableUnchanged': '表格无需格式化',
+  // IT-01 FE-11 冻结异常族（AC-RULE-16 / AC-ERR-08 / AC-ERR-15）——消费方 FE-07/08。
+  'err.readonly': '文件为只读，无法修改，可另存后编辑',
+  'err.autosaveFailed': '自动保存失败，文档可另存副本',
   'cmd.insertCallout': '插入 Callout…',
   'callout.insertTitle': '插入 Callout',
   'callout.foldPlaceholder': '⋯ {n} 行',
@@ -379,7 +431,7 @@ export const ZH: Record<string, string> = {
 
   // ---- titlebar --------------------------------------------------------------
   'tb.outline': '切换大纲',
-  'tb.theme': '切换主题（Ctrl+Shift+T）',
+  'tb.theme': '切换主题',
   'tb.minimize': '最小化',
   'tb.maximize': '最大化 / 还原',
   'tb.close': '关闭',
@@ -428,6 +480,8 @@ export const ZH: Record<string, string> = {
   // ---- P18 heading fold ------------------------------------------------------
   'fold.placeholder': '⋯ {n} 行',
   'fold.toggle': '折叠 / 展开章节',
+  // FE-07 ui_06 fold-collapsed-line：折叠标题下灰字占位行（标题行保留）。
+  'fold.collapsedLine': '（{n} 行内容已折叠 · 与大纲双向同步）',
 
   'cmd.foldAll': '折叠全部',
   'cmd.unfoldAll': '展开全部',
@@ -485,5 +539,56 @@ export const ZH: Record<string, string> = {
   'tableHandle.colGrip': '拖动调整列宽（仅本次会话）',
   'table.copyTitle': '以 Markdown 复制表格',
   'table.gridPickerTitle': '调整行列数',
-  'table.moreTitle': '更多操作'
+  'table.gridScaleFull': '缩放整表',
+  'table.gridPreset1x1': '1×1',
+  'table.gridPreset2x2': '2×2',
+  'table.gridPreset3x3': '3×3',
+  'table.gridPresetAutoFit': '自动适应窗口',
+  'table.moreTitle': '更多操作',
+
+  // ---- IT-03 FE-01 render zone copy (REN-render-zone) --------------------------
+  // 回执 toast 统一带 UNDO_SUFFIX（AC-OP-13/14/16 统一格式）。
+  // 差异声明（PEND-15 显式豁免）：任务项勾选、标题/长引用折叠为轻量操作，不回 toast，
+  // 故无 render.toast.taskChecked / render.toast.fold* 键——勿补。
+  'render.toast.imageSize': `已调整图片尺寸${UNDO_SUFFIX}`,
+  'render.toast.imageAlign': `已设置图片对齐${UNDO_SUFFIX}`,
+  'render.toast.linkUpdated': `已更新链接地址${UNDO_SUFFIX}`,
+  'render.toast.listMoved': `已移动列表项${UNDO_SUFFIX}`,
+  // 图片编辑浮层（ui_06 区块 A）：对齐三键 + 宽度 + 完成
+  'render.image.alignLeft': '左对齐',
+  'render.image.alignCenter': '居中',
+  'render.image.alignRight': '右对齐',
+  'render.image.width': '宽度',
+  'render.image.done': '完成',
+  'render.image.alignLeftTitle': '左对齐',
+  'render.image.alignCenterTitle': '居中',
+  'render.image.alignRightTitle': '右对齐',
+  'render.image.widthTitle': '显示宽度',
+  'render.image.doneTitle': '完成',
+  // FE-04 尺寸角柄（ui_06 .img-resize-handle title）
+  'render.image.resizeTitle': '拖拽调整尺寸',
+  // FE-04 失败态可修复入口（ui_06 错误可修复规则卡）：错误条 + 重试/编辑地址
+  'render.image.broken': '图片加载失败',
+  'render.image.retry': '重试',
+  'render.image.retryTitle': '重新加载图片',
+  'render.image.editUrl': '编辑地址',
+  'render.image.editUrlTitle': '编辑图片地址',
+  'render.image.urlPlaceholder': '请输入图片地址',
+  // 链接 hover 浮层（ui_06 区块 B）：三入口 + 编辑态输入框
+  'render.link.editUrl': '编辑 URL',
+  'render.link.open': '外开',
+  'render.link.copy': '复制',
+  'render.link.editUrlTitle': '编辑 URL',
+  'render.link.openTitle': '在系统默认浏览器打开',
+  'render.link.copyTitle': '复制完整 URL',
+  'render.link.urlPlaceholder': '请输入链接地址',
+  'render.link.confirm': '确认',
+  'render.link.cancel': '取消',
+  // 列表行首拖拽把手（ui_06 区块 C）：浮现态 title/aria-label
+  'render.list.dragHandle': '拖拽排序',
+  // 标题折叠（区块 D）/ 长引用折叠（区块 E）：三角提示 + 摘要行尾标
+  'render.fold.collapse': '折叠本节',
+  'render.fold.expand': '展开本节',
+  'render.fold.restore': '展开还原',
+  'render.fold.lines': '{n} 行'
 }
