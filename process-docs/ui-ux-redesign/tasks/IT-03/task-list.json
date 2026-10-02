@@ -312,7 +312,7 @@
       "assignee": "",
       "phase": {
         "dev": "done",
-        "selfTest": "-"
+        "selfTest": "done"
       },
       "artifact": "",
       "detailFile": "FE-01.md"
@@ -326,7 +326,7 @@
       "assignee": "",
       "phase": {
         "dev": "done",
-        "selfTest": "-"
+        "selfTest": "done"
       },
       "artifact": "",
       "detailFile": "FE-02.md"
@@ -342,7 +342,7 @@
       "assignee": "",
       "phase": {
         "dev": "done",
-        "selfTest": "-"
+        "selfTest": "done"
       },
       "artifact": "",
       "detailFile": "FE-03.md"
@@ -359,7 +359,7 @@
       "assignee": "",
       "phase": {
         "dev": "done",
-        "selfTest": "-"
+        "selfTest": "done"
       },
       "artifact": "",
       "detailFile": "FE-04.md"
@@ -376,7 +376,7 @@
       "assignee": "",
       "phase": {
         "dev": "done",
-        "selfTest": "-"
+        "selfTest": "done"
       },
       "artifact": "",
       "detailFile": "FE-05.md"
@@ -393,7 +393,7 @@
       "assignee": "",
       "phase": {
         "dev": "done",
-        "selfTest": "-"
+        "selfTest": "done"
       },
       "artifact": "",
       "detailFile": "FE-06.md"
@@ -409,7 +409,7 @@
       "assignee": "",
       "phase": {
         "dev": "done",
-        "selfTest": "-"
+        "selfTest": "done"
       },
       "artifact": "",
       "detailFile": "FE-07.md"
@@ -426,7 +426,7 @@
       "assignee": "",
       "phase": {
         "dev": "done",
-        "selfTest": "-"
+        "selfTest": "done"
       },
       "artifact": "",
       "detailFile": "FE-08.md"
@@ -445,7 +445,7 @@
       "assignee": "",
       "phase": {
         "dev": "done",
-        "selfTest": "-"
+        "selfTest": "done"
       },
       "artifact": "",
       "detailFile": "FE-09.md"
@@ -464,7 +464,7 @@
       "assignee": "",
       "phase": {
         "dev": "done",
-        "selfTest": "-"
+        "selfTest": "done"
       },
       "artifact": "",
       "detailFile": "FE-10.md"

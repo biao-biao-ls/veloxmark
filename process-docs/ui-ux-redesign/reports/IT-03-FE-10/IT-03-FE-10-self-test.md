@@ -30,7 +30,7 @@
 | 文件 | 改动 | 说明 |
 |---|---|---|
 | `src/renderer/src/styles/themes.css` | 新增 `--errbar-fg/--errbar-bg/--errbar-border`（light/dark 各一套） | 公式/mermaid 错误条琥珀色族 theme-split（F08：主题差异只翻 token 值）；色值与改前硬编码**逐字节一致**（light `#b45309`/`rgba(245,158,11,.14)`/`#f59e0b`，dark `#fcd34d`/`rgba(245,158,11,.18)`/`#d97706`）——零视觉变化，未触发 4 处主题色副本同步纪律（未改色） |
-| `src/renderer/src/styles/markdown.css` | `.cm-md-mermaid-error,.cm-md-math-error` 改吃 `var(--errbar-*)`；**删除** `.theme-dark .cm-md-mermaid-error/.cm-md-math-error` 补丁 | 改前是全仓唯一选择器级 `.theme-dark` 补丁（宪法明令禁止项），本次收口为 token 翻转 |
+| `src/renderer/src/styles/markdown.css` | `.cm-md-mermaid-error,.cm-md-math-error` 改吃 `var(--errbar-*)`；**删除** `.theme-dark .cm-md-mermaid-error/.cm-md-math-error` 补丁 | 改前是错误条专属的选择器级 `.theme-dark` 补丁（宪法明令禁止项），本次收口为 token 翻转（收口批勘误：旧「全仓唯一」表述不成立——callout×8/.katex/buttons.css/overlays.css 存量白名单补丁仍在且不动） |
 | `src/renderer/src/styles/code-chrome.css` | 裸 px → token：`padding-right: var(--space-3)`、`calc(var(--space-2) - var(--space-half)) var(--space-3)`（6px pad-y 用注释标定）、`font-size: var(--text-meta)/var(--text-caption)`、`border: var(--border-width) solid var(--border)` | 数值等价；mask-image 的 `#000` 为蒙版亮度值非主题色，保留 |
 | `src/renderer/src/styles/render-zone.css` | 零改动（FE-01 已全 token 化，审计通过） | — |
 | `src/renderer/src/editor/livePreview/dualPane.ts` | **零 diff** | 逻辑不动（AC：逻辑 diff 为空） |

@@ -13,7 +13,7 @@
 
 | # | 条目 | AC | 判据（ac.md v1.4） | 执行方式 | 结果 | 去向 |
 |---|---|---|---|---|---|---|
-| 1.1 | 30 行 × 12 列表格执行任一结构操作（insertRowBelow），「执行触发 → 视觉更新完成」耗时 | AC-NF-01 | ≤ 100ms | CDP：载入 30×12 表 → 点入单元格 → 键盘 Ctrl+Enter；in-page `performance.now()` 计时至 DOM 双 rAF 稳定；另附 `__veloxP15.bench` 装饰重建耗时 | **通过**（首测 103.3ms 属冷启动噪声；热身复测 6/6 全过 77.3–94.1ms，中位 82.7ms；`__veloxP15.bench(2000,20,3)` avg 29.8ms / p95 51ms） | 无 |
+| 1.1 | 30 行 × 12 列表格执行任一结构操作（insertRowBelow），「执行触发 → 视觉更新完成」耗时 | AC-NF-01 | ≤ 100ms | CDP：载入 30×12 表 → 点入单元格 → 键盘 Ctrl+Enter；in-page `performance.now()` 计时至 DOM 双 rAF 稳定；另附 `__veloxP15.bench` 装饰重建耗时 | **通过**（首测 103.3ms 属冷启动噪声；热身复测 6/6 全过 77.3–94.1ms，中位 81.4ms（升序 3rd/4th 均值；旧记 82.7ms 系第 4 序位值，收口批中位口径勘误）；`__veloxP15.bench(2000,20,3)` avg 29.8ms / p95 51ms） | 无 |
 | 1.2 | 约 20 页/2000 行文档（含表格/公式/代码块）连续滚动帧率 | AC-NF-03 | ≥ 30fps（装饰重建限定视口） | CDP：载入 2000 行合成夹具 → `.cm-scroller` 连续滚动 3s，rAF 帧计数/秒 | **通过**（2000 行实测 41.9fps ≥30） | 无 |
 | 1.3 | hover 控件出入防抖（回归抽查，IT-01 承载不重复计） | AC-NF-04 | ≥150ms 双向防抖、闪烁 0 次、位移 0px | CDP：鼠标移入/掠过表格 chrome，测 chrome 浮现延迟（登记基线 165ms 级）+ 快速掠过闪烁计数 | **通过**（浮现延迟 164.9ms ≥150，与登记基线 165ms 级一致） | 无 |
 | 1.4 | hover 快速掠过不闪烁（回归抽查） | AC-NF-05 | 快速掠过闪烁 0 次、0px 位移 | 同 1.3 场景快速掠过序列 + 浮现/消失计数 | **通过**（慢速悬停 1 次浮现 + 5 次快速掠过 0 额外闪烁；wrap 落点稳定无位移） | 无 |
@@ -23,7 +23,7 @@
 - **批次号**：① 性能与防抖
 - **条目结果**：4/4 通过（1.1/1.2/1.3/1.4）
 - **证据**：`IT-04-FE-02-cdp-batch1-data.json`、`IT-04-FE-02-cdp-batch1-retry.json`、`IT-04-FE-02-cdp-batch1-run.log`
-- **问题条目去向**：无。1.1 首测 103.3ms >100ms 经热身复测 6/6 通过（中位 82.7ms）判定为冷启动噪声（首帧装饰重建 + React 挂载余波），不构成 AC-NF-01 真实超标，不登记缺陷。
+- **问题条目去向**：无。1.1 首测 103.3ms >100ms 经热身复测 6/6 通过（中位 81.4ms）判定为冷启动噪声（首帧装饰重建 + React 挂载余波），不构成 AC-NF-01 真实超标，不登记缺陷。
 - **执行环境**：Electron/CDP 端口 9501（独立 user-data-dir `it04-fe02-userdata`），Windows 10 10.0.19045
 
 ---
@@ -66,6 +66,7 @@
 - **证据**：batch3 原始证据（`IT-04-FE-02-cdp-batch3-data.json`、`-contrast-retry.json`、`-run.log`）**留档不改**；复测证据见批次 ⑨。守护测试 vitest `src/export/palette.test.ts` + `src/styles/tokens.test.ts` 14/14（未动）
 - **问题条目去向**：batch3 首测 FAIL 为驱动选择器口径错（引用渲染物是 `.cm-md-quote`），非实现缺陷；batch9 复测新发现 2 项 P2（问题条目 #5/#6）+ 旧 3.4 证据链问题（已立案）。
 - **「⊞ 241 vs 240」口径差注记（batch9 数据注记，该项已立案勿另立）**：旧 selector `[class*="grid"] [class*="cell"]` 命中 240 个 `.table-grid-cell` + 1 个容器 `.table-grid-picker-cells`（class 含 "cell"）= **241**；且旧探针 pick 的 `width>4` 过滤器放行容器 → 实测到的是容器 currentColor 幽灵边框（= --fg rgb(51,51,51)/rgb(212,212,212)、border-width 0），非格点边框。真格点 = `[data-testid="grid-cell"]` **240** 个。根因锁定于 `batch3-contrast.mjs:220-237`，属测量证据链问题（产品实现无缺陷），batch9 已重建证据。
+- **对比度引数出处注记（收口批回填，code-review Minor「对比度引数不同源」按此收口）**：3.1/3.2 结果列数值统一以 batch9 复测为准（`IT-04-FE-02-cdp-batch9-*`，22 控件族校准口径）；toast 撤销钮 3.04→6.25:1 为 batch10 修复复测值（`IT-04-FE-02-cdp-batch10-run.log` 10.1）；batch3 首测与 contrast-retry 旧引数不再作判据（仅存档可溯）。
 - **UI-ELEM-06 四副本架构留档**：palette.ts 是色值单一真源；exportCss.ts/inlineStyles.ts 由 paletteToCssVars 生成；themes.css/markdown.css 手工同步 + palette.test.ts 逐值守护；hljsTokens.ts 零色值（hljs 色值在 highlight.js github/github-dark 上游 CSS，编辑 widgets 与导出 buildDocument 同源 scoped）——四处一致由测试保证，导出与编辑无色差（运行时 var 全 match）。
 
 ---
@@ -130,7 +131,7 @@
 - **批次号**：⑥ 数据层声明
 - **条目结果**：3/3 通过（6.1/6.2/6.3，运行时 5 探针全过）
 - **证据**：`IT-04-FE-02-cdp-batch6-data.json`、`IT-04-FE-02-cdp-batch6-run.log`；静态佐证 `design/sql/NO-DB-CHANGE.sql`、`src/preferences/store.ts`（双键 + normalizeSession 白名单）、`src/preferences/store.test.ts`；`export/e2eSaveDialog.ts`（`veloxE2eSaveDialog` 缝键文档）
-- **问题条目去向**：无。首轮 6.2a FAIL 为口径问题（`veloxE2eSaveDialog` 是 e2e 缝状态键而非数据实体，白名单收编）；6.3a FAIL 为驱动夹具问题（3 行引用低于 `QUOTE_FOLD_LINE_THRESHOLD=5` 不出折叠 caret——产品阈值行为非缺陷），夹具改 6 行后通过。
+- **问题条目去向**：无。首轮 6.2a FAIL 为口径问题（`veloxE2eSaveDialog` 是 e2e 缝状态键而非数据实体，白名单收编）；6.3a FAIL 为驱动夹具问题（3 行引用低于 `QUOTE_FOLD_LINE_THRESHOLD=5` 不出折叠 caret——产品阈值行为非缺陷），夹具改 6 行后通过。（**首轮 log 未存档**：首轮输出当时未落盘，FAIL 定性以本行文字为准——收口批注明，code-review Minor「批次⑥首轮」按此收口。）
 - **口径留档**：数据层 = localStorage 双键 JSON（preferences/session），零 DDL 零迁移（NO-DB-CHANGE.sql 显式声明）；quoteFolds 为 SessionState 平铺 `Record<filePath, string[]>` additive 字段，`normalizePerFileIds` 统一清洗（脏数据丢弃不抛错，AC-NF-14）。
 - **执行环境**：Electron/CDP 端口 9501（独立 user-data-dir `it04-fe02-userdata`），Windows 10 10.0.19045
 

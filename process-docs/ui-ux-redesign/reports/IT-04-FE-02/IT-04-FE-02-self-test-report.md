@@ -12,6 +12,8 @@
 
 8 个核验域 + 批次⑨ 证据补测全部留档完毕（清单：`IT-04-FE-02-checklist.md`）；收敛三关全绿。本任务 src 产品增量仅 1 处授权修复（导出空单元格），其余零产品改动（批次⑨ 同样零 src 改动）。
 
+**互链（收口批回填）**：观感/视觉类差异与 Step 3 复刻评审 `IT-04-FE-02/IT-04-FE-02-replica-review.md`（未对齐点分流）同源对账；业务语义类差异归 `reports/business-review.md` IT-04/PATH-02 分流。口径分工：复刻评审只列未对齐点、测量数值以 checklist 批次⑨/⑩ 证据链为准，两口径不互覆（code-review Minor「互链缺失」按此收口）。
+
 | 批次 | 核验域 | 条目 | 结果 |
 |---|---|---|---|
 | ① | 性能与防抖（AC-NF-01/03/04/05） | 4 | 4/4 通过 |
@@ -73,3 +75,13 @@
 - 截图：`shots/IT-04-FE-02-light-full.png`、`shots/IT-04-FE-02-dark-full.png`（批次⑧驱动写入）
 - 代码增量：`frontend/src/renderer/src/export/renderDoc/listTable.ts`（修复）、`listTable.test.ts`（新增）；change-log `CHANGE-12`
 - **批次⑨（fix-biz-IT04PATH02-evidence）产物**：`IT-04-FE-02-cdp-batch9-evidence.mjs`（rev3 主探针）、`IT-04-FE-02-cdp-batch9-data.json`（results.{meta,checks,grid,text,hardcode,rich} 全量实测）、`-run.log`、`-electron.log`、`-grid-light.png`/`-grid-dark.png`（⊞ 弹层实拍）、`-rich-light.html`/`-rich-dark.html`（富文本通道样张，含 1 处 `[elided-for-archive]` 截断注记）；诊断脚本 `IT-04-FE-02-cdp-batch9-diag{,2,3,4,5}.mjs`（⋮/toast 路径、剪贴板 roundtrip、writeProbe、Vite 富文本 import、renderDoc 路径排查）
+
+
+---
+
+## 七、Phase 2 selfTest 复核附注（2026-10-03，主 agent 测试循环）
+
+- **本轮真实执行**：`npx vitest run src/renderer/src/export/renderDoc/listTable.test.ts` → **8/8**（AC-OP-17 空单元格 4 用例 + AC-OP-18 任务勾选 done-mark 4 用例，CHANGE-12 P1 修复钉住面）。
+- **门禁基线更新**：本报告「收敛三关」所记 873/873（阶段当时）与批次⑨ 1066/1066 均为过程计数；**终态基线 = 收口批 2026-10-02 gates.log：typecheck 双 tsconfig 0 Error + test:unit 1094/1094（79 files）**（`IT-04-FE-02-gates.log` 存档），AC-NF-16 判据以终态基线为准，仍为通过。
+- **AC 面结论沿用**：frontmatter 14 条 AC 判据（含各条实测数值）维持不变；AC-NF-10 维持「部分通过」（Win11×深浅跨机复验待办，在案登记，非缺陷）。
+- **桌面适配口径**：全域对照走查本即 CDP 驱动 Electron 实测（无 HTTP/Mock 面），批 ①–⑩ 证据链即测试证据。

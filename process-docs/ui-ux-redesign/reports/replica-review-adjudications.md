@@ -1055,7 +1055,7 @@ r1 六项：#1/#2/#4/#5/#6 收敛、#3 后缀豁免不报。常规 4 类检查�
 - **滚动重评进度**：FE-06-r2 ✅ / FE-07-r2 ✅ / FE-08-r2 在途 / FE-10-r2 在途。r2 侧栏修复批 ✅（FE-06-r3、FE-07-r3 确认轮排队）。
 - **批 F-v1 ✅**：非侧栏 15 张主实现图重截全落（IT-01/FE-03·04·10·11、IT-02/FE-01·02·04·05、IT-03/FE-01·03·04·05·06·08）+ U1/U7 补证（终审见上节）。
 - **滚动重评进度**：IT-02/FE-01·02·06·07·08·10 + IT-01/FE-05 ✅ 通过；IT-01-FE-04 收敛主体（1 Minor 定性中）。IT-02-FE-04-r2 在途。
-- **Step 3 已收口**（全闭 20 任务）。**Step 4 双轨评审进行中**：左轨 code-review 进度 31/34（FE-04/05/06/07 必修均收口✅、FE-08✅96 无必修）；IT-03/FE-09 审查在途；余 FE-09/FE-10/IT-04×2/i18n 专项待派；右轨 PATH-01/02/06 ✅ closed（PATH-06 business-history 已写）；左轨收官（34/34）；IT-01/01-08 全 ✅（08 修落地待 r2）、IT-02 全 6 条 ✅、IT-03/01-05/07 ✅；右轨 26 路径全部闭合 ✅（IT-01×8/IT-02×6/IT-03×8/IT-04×4），合并 r2 产品面零未对齐、4×P2 登记面按先例补完，business-history 共 11 案落账 → 双轨汇总完成，下一步 Step 5 process-docs 提交；PATH-04/05 待 fix-biz-PATH04-05 交接；余路待派；右轨 6/26（PATH-01+02 合并派修/PATH-03✅/PATH-04+05 同批派修/PATH-06→派修；PATH-07·08 待派）；左轨在途 FE-09 评审 + IT-02 起步；右轨 business-review 进度 2/26（PATH-01→软门禁派修；PATH-03 ✅ 无未对齐点静默放行；PATH-02 在途）。共享并行上限 5。
+- **Step 3 已收口**（全闭 20 任务）。**Step 4 双轨评审进行中**：左轨 code-review 进度 31/34（FE-04/05/06/07 必修均收口✅、FE-08✅96 无必修）；IT-03/FE-09 审查在途；余 FE-09/FE-10/IT-04×2/i18n 专项待派；右轨 PATH-01/02/06 ✅ closed（PATH-06 business-history 已写）；左轨收官（34/34）；IT-01/01-08 全 ✅（08 修落地待 r2）、IT-02 全 6 条 ✅、IT-03/01-05/07 ✅；右轨 26 路径全部闭合 ✅（IT-01×8/IT-02×6/IT-03×8/IT-04×4），合并 r2 产品面零未对齐、4×P2 登记面按先例补完，business-history 共 11 案落账 → 双轨汇总完成 → Step 5 process-docs 提交落地（fd6dac7，440 files）→ **收口批收敛 ✅**：四批全部定案（收-A 快捷键/菜单域 13/13：必修-低 BE-01 all-or-none 标记+pending 卫生+死链/注释/加载期校验/菜单键盘域；收-B 表格域 6/6：tsvPaste 只读闸+trimmedCell 倒置规范化+colWidths supersede+gridPicker 死区；收-C 渲染内容域 11/11：quoteFold 单遍/▾ caret 余量/expandQuoteFolds 删/多行删除线/rAF+快照/image-parse 单源/errbar token；收-D 悬浮杂项 4/4：hideNow 快照+toast 真实面断言+dispose 删+顶裁证成豁免）；合并终门禁 typecheck 双 0 + test:unit **1094/1094（79 files）**，基线 1066→1094 只增不减；登记面补完 ✅（FE-02.md AC 翻转/FE-06:150 勾销/FE-10 勘误/ui-redesign-tasks:135/报告回填 ①②④⑤/gates.log 补档/CHANGE-28 落账/登记候选 +9 条含顶裁豁免与 BE-01 合流备忘）→ 下一步 Phase 2 selfTest 循环
 - **FE-04-r2 ✅**：6/8 收敛，#4/#5 源级闭环豁免。**FE-05-r2 ✅**：九项全闭，环色 59%=DPI 伪影源级关闭，kbd 环样例入登记候选。
 - **登记候选追加**：设计级联 vs「H3+ --fg-dim」标题色阶梯（lvl-4/H4 设计 demo 未覆盖，批 H 有档口径，doc-reconcile 校准）
 - F/U1U7 证据齐后：U1/U7 定性（确缺失→并入 r2 修复轮）；随后按 impl 新图滚动重评受影响任务（IT-01/FE-03·04·05·10、IT-02/FE-01·02·04·05·06·07·08·10、IT-01/FE-11、IT-03/FE-01·03·04·05·06·08；IT-02/FE-11 纯文案批以 grep 对照收敛不重评）。FE-01 下轮为 r3（第 2 次重评，达上限 2；再有必修→AskUserQuestion）。FE-05-r2 挂账：U4 数字色确认 / U5 快捷尺寸钮 / U6 网格 20×12 vs 8×8（tech-design 复核）
@@ -1075,3 +1075,12 @@ r1 六项：#1/#2/#4/#5/#6 收敛、#3 后缀豁免不报。常规 4 类检查�
 - 公式双区面板措辞：FE-10 元素表「源码区+预览区并排」vs 实际上下堆叠（PEND-14 豁免+dualPane 零 diff 冻结不改布局，doc-reconcile 校正措辞或确认 11A 口径）
 - 菜单栏中部文档标题+「已自动保存」区：设计稿未定义（IT-04/FE-02#2，与标题栏形态差异相邻，全局壳定夺）
 - 状态栏「已保存」6px accent ok-dot 缺失（IT-04/FE-02#10，随状态栏阶段 5 分流追踪）
+- 问题 5（FE-02 Info / 收口批收-A #6）：`app.searchInFolder` tooltip 内嵌 `(Ctrl+Shift+F)` 键面双源——纯派生需改 i18n key 形态 + en/zh 括号形态差异（zh 全角/en 半角）+ 双消费点拼装（Titlebar.tsx:75、App.tsx:1446），归 i18n 批实施（收口批裁定不落地）
+- FE-03 Info-1（收口批收-A 登记）：任务页元素表 mac 回显形态（⌘+/⌘⌥I）与 FE-02 派生口径（⌘=/F12）不符——doc-reconcile 修订（code-review 已拟文案）
+- FE-02 问题 2（收口批收-A 登记）：toggleDevTools 例外记 `Cmd+Alt+I` vs electron/menu/darwin.ts 硬编码 `Alt+Cmd+I`（功能同弦）——归 BE-01 迁表时统一（shortcutSync 钉住断言自动拦截漂移）
+- README Ctrl+Shift+T=切换主题 陈旧（收口批收-A 登记）：主仓 README 快捷键表未随 Q6 撤键更新——文档批清账
+- IT-01-FE-05 Minor②（收口批收-B #6）：同形拖选 resizeTableOp 返回 null 无回执——登记为可接受行为（同形 no-op 静默零反馈；如需反馈另立「无需缩放」类回执）
+- IT-01-FE-05 Minor③（收口批收-B #6）：gridPicker paint() 每 mouseenter 全量 classList.toggle——登记为可接受性能备忘（当前 ≤25×15 规模 OK；上界扩大再做差集增量重绘）
+- BE-01 合流收尾动作备忘（收口批收-A 登记，非 doc-reconcile）：darwin 表迁入 Q7 四键时 shortcutSync all-or-none 用例自动升格严格断言；合流须同步删 toggleTheme 过渡例外条目、zoomIn/toggleDevTools 翻正为正式例外（pending 卫生用例 post-merge 分支强制，否则红）
+- below-align 上翻顶裁豁免（收口批收-D #2，证成豁免）：renderFloatPos 上翻分支不做 top 0-clamp——几何证明任何生效 clamp 必然使 float 底边越过 anchor.top−clearance（侵占锚点 gap，极端盖锚点，违反 AC-FN-14 不遮挡）；按 FE-03「保不遮挡优先」既有取舍维持现状（极端几何 top<0 裁切出屏换永不遮挡/永不横移）
+- 收口批收-C 坐标勘误备忘：deriveWidthPct 第二份真实位置为 components/ImageEditFloat.tsx:57-66（任务清单所写 editor/imageEdit.ts:57-66 为陈旧坐标，实施已按最小 adapter 触碰 ImageEditFloat）；trivial 残留 1 处——imageEdit.test.ts describe 标签「写回口径单源」措辞未随 #9 注释勘误更新（纯测试标签，无行为/契约影响）

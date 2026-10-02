@@ -84,7 +84,10 @@ for (let i = 0; i < 6; i++) {
 }
 const okCount = samples.filter((s) => s.rows > s.before && s.ms <= 100).length
 const growing = samples.filter((s) => s.rows > s.before)
-const out = { samples, okCount, growing: growing.length, median: growing.map((s) => s.ms).sort((a, b) => a - b)[Math.floor(growing.length / 2)] ?? null }
+const sorted = growing.map((s) => s.ms).sort((a, b) => a - b)
+const mid = sorted.length >> 1
+const median = sorted.length === 0 ? null : sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+const out = { samples, okCount, growing: growing.length, median }
 console.log(JSON.stringify(out, null, 2))
 writeFileSync(`${OUT_DIR}/IT-04-FE-02-cdp-batch1-retry.json`, JSON.stringify(out, null, 2))
 process.exit(0)
