@@ -21,13 +21,13 @@
 | 偏好/存储（preferences/store.ts + useStore.ts） | 已完成 | 双键 localStorage + 白名单 sanitizer + useSyncExternalStore 模式；本需求仅 additive 一字段（§6） |
 | i18n（i18n/en.ts+zh.ts） | 部分完成 | 447 key 双字典对齐；**缺** 新 UI 文案 key、tb.theme 提示改写（Q6） |
 | 样式 token（styles/ 16 css + barrel） | 部分完成 | :root token 唯一声明点 + .theme-light/.theme-dark 翻值；**缺** 新浮层/菜单/网格样式分区（只加 token 不加裸值） |
-| 导出（export/*） | 已完成 | 导出观感一致（GLB-EXP-SYNC）需随表格渲染变化回归验证，无结构性改动 |
+| 导出（export/*） | 已完成 | 导出观感一致（GLB-EXP-SYNC）需随表格渲染变化回归验证，无结构性改动；renderDoc 空单元格按管道结构数槽位保留（rowCellSlots，含空列/全空行/对齐序，CHANGE-12）；任务勾选态判定 `/\[x\]/i` 与编辑侧同源大小写不敏感（CHANGE-26） |
 | 主进程（electron/main.ts、ipc/*） | 部分完成 | backgroundColor 硬编码白等既有债不在本期范围；windowZoom/windowToggleDevTools IPC 已有，本需求复用 |
 | e2e 缝（e2e/seams/*、cdp-*.mjs） | 部分完成 | `window.__velox*`/data-op/命令 id 契约在；**缺** 契约 delta 删4留1 的探针同步（§3、ADR） |
 
 ### 1.2 验收标准（AC）
 
-- 详细验收标准见 [`requirement/ac.md`](../requirement/ac.md)（ac.md v1.3；其中 AC-PEND-01..16 已全部闭合，待按 [`grill-rulings.md`](adr/grill-rulings.md) 修订转正）
+- 详细验收标准见 [`requirement/ac.md`](../requirement/ac.md)（ac.md v1.4；AC-PEND-01..16 已按 [`grill-rulings.md`](adr/grill-rulings.md) 转正，CHANGE-10）
 - GOAL：GOAL-01~06 ｜ AC：AC-RULE-01~18 / AC-FN-* / AC-OP-* / AC-ERR-* / AC-NF-* ｜ UI：UI-IXD-* / UI-ELEM-*
 
 ### 1.3 扩展性评估
@@ -53,11 +53,11 @@ src/renderer（组件/命令/编辑器/存储）
 electron/preload.ts（contextBridge 显式实现）
    │
    ▼
-electron/ipc/*（既有 10 域通道，本需求零新增 IPC）
+electron/ipc/*（既有 10 域通道 + 本需求唯一新增 file:isWritable 可写性探针，CHANGE-8）
 electron/menu/darwin.ts（macOS 原生菜单，加速键走 DARWIN_COMMAND_ACCELERATORS 单源）
 ```
 
-跨进程映射约定：本需求**零新增 IPC channel**；zoom/DevTools 走既有 `windowZoom`/`windowToggleDevTools`。渲染层命令契约（命令 id 字面量）是三消费方（MenuBar/全局快捷键/mac 原生菜单）的唯一真源，见 §5。
+跨进程映射约定：本需求新增唯一 IPC channel `file:isWritable`（isWritable 可写性探针，CHANGE-8，AC-ERR-08 写前拦截真源）；其余零新增，zoom/DevTools 走既有 `windowZoom`/`windowToggleDevTools`。渲染层命令契约（命令 id 字面量）是三消费方（MenuBar/全局快捷键/mac 原生菜单）的唯一真源，见 §5。
 
 ## 3. API 接口设计（命令契约面）
 
@@ -68,7 +68,7 @@ electron/menu/darwin.ts（macOS 原生菜单，加速键走 DARWIN_COMMAND_ACCEL
 | 接口 | 方法 | 路径 | 所属服务 | 接口描述 | 说明 | 接口明细 |
 |---|---|---|---|---|---|---|
 | NAV 左导航契约 | 键盘/鼠标 | `nav-keyboard` / `nav-folds` | renderer | 文件树/大纲键盘导航（新增）+ 折叠记忆 | roving tabindex+方向键+Enter，焦点可见；排序/多选登记不实现（Q9） | [NAV-sidebar.md](api/NAV-sidebar.md) |
-| REN 渲染区契约 | 点击/hover/拖拽 | `ren-float` / `ren-fold` | renderer | 图/链浮层、列表拖拽、任务项、标题/长引用折叠 | quoteFolds 新存储字段；引用 >5 行折叠（PEND-09） | [REN-render-zone.md](api/REN-render-zone.md) |
+| REN 渲染区契约 | 点击/hover/拖拽 | `ren-float` / `ren-fold` | renderer | 图/链浮层、列表拖拽、任务项、标题/长引用折叠 | quoteFolds 新存储字段；引用 >5 行折叠（PEND-09）；链接浮层能力边界：GFM 裸 URL literal 不装饰、不唤浮层（CHANGE-35） | [REN-render-zone.md](api/REN-render-zone.md) |
 
 ### 2. 需要修改的现有API接口
 
@@ -118,6 +118,8 @@ flowchart TD
     J --> K[Ctrl+Z / 编辑菜单 / toast 撤销按钮 三入口等效 → 一步还原含表头身份]
 ```
 
+> 结构事务注记（CHANGE-20/25）：结构 op dispatch（runTableOp / opsTable runOp / handleTsvPaste 整表结构替换）在 `withHandoffSuppressed` 抑制窗内执行——widget destroy 端 pendingHandoff 不再独立事务写回（表头污染/undo 双历史修复），pending 文本经 modelWithPendingText 折叠进结构 op 单事务，一次 Ctrl+Z 一步还原（AC-PEND-11/AC-RULE-08）。
+
 ### 4.2 一键回安静与模态叠加（Mermaid flowchart）
 
 ```mermaid
@@ -130,12 +132,14 @@ flowchart TD
     E --> F[焦点回正文 → 静息零 chrome 0px 抖动]
 ```
 
+> 浮层与焦点注记（CHANGE-17/18/23）：浮层 z 序钉为 dialog-overlay(2000) > popover(1500) > editor-context-menu(1000)（overlayZOrder.test.ts 契约守护；menu-tree §0.1「T区999>D区200」字面废除，D 区确认框恒最上层）；菜单关闭焦点归宿——Esc/超界滚动选择/外点非聚焦面回正文，外点落到可聚焦目标（button/input/textarea/select/a/[contenteditable]/[tabindex]）时焦点归该目标不抢焦点（CHANGE-23）；执行与关闭顺序分菜单口径——MenuBar 叶项 action 先于 close、EditorContextMenu（⋮/右键）叶项 close-first（CHANGE-17）。
+
 ### 4.3 块级 chrome 四态（Mermaid stateDiagram-v2）
 
 ```mermaid
 stateDiagram-v2
     [*] --> 静息
-    静息 --> hover: 指针进入块区（防抖 100ms 级浮现）
+    静息 --> hover: 指针进入块区（防抖 ≥150ms 浮现，AC-NF-04）
     hover --> 静息: 指针离开（防抖延迟，不闪烁）
     hover --> 聚焦编辑: 点击内容（AC-RULE-13 写作者路径）
     聚焦编辑 --> 静息: Esc / 点击空白（一键回安静）
@@ -144,13 +148,17 @@ stateDiagram-v2
     错误 --> 静息: 修复成功
 ```
 
+> chrome 机制注记（doc-reconcile 合并）：hover 防抖取 AC-NF-04 口径 ≥150ms（HOVER_DELAY_MS=150 = --chrome-duration，CHANGE-34 校准，原「100ms 级」措辞废除）；col-grip 列宽抓手常驻 DOM + CSS 零漆（静息零像素面，AC-FN-01 以零漆兜住）、hover ≥150ms 浮现提示线，仅微控件浮现、不弹工具浮层（CHANGE-29）。
+
 ## 5. 领域模型
 
 - **Command（命令）**：`{ id: 命令id 字面量（cdp 硬契约）, label: i18n key, shortcut?: 显示键位, run }`；三消费方（MenuBar/全局快捷键/mac 原生菜单）同源于命令注册表；`shortcut` 与 `DARWIN_COMMAND_ACCELERATORS` 双源由 shortcutSync.test 守护（Q7 后 4 命令纳入）。
-- **TableOp（表格操作）**：opsTable.ts 16 个 op id 为同源语义键（快捷键/工具栏/⋮/右键四面共用）；每 op 声明 `{ 键位?, 禁用规则, toast 文案, undo 事务边界 }`。**禁用规则仅两项**：首行上移、首列左移（AC-RULE-07；删表头行=身份下移+末行禁删为唯一例外禁用，PEND-12）。
+- **TableOp（表格操作）**：opsTable.ts 16 个 op id 为同源语义键（快捷键/工具栏/⋮/右键四面共用）；每 op 声明 `{ 键位?, 禁用规则, toast 文案, undo 事务边界 }`。**禁用规则仅两项**：首行上移、首列左移（AC-RULE-07；删表头行=身份下移+末行禁删为唯一例外禁用，PEND-12；边界位「下移该行/右移该列」不灰显、点击走 op 边界 no-op 静默——CHANGE-19 灰显扩项回退）。
 - **ContractSet（e2e 契约集）**：`data-op` / `data-table-handle` / `window.__velox*` / 命令 id 字面量；演进须登记（本需求登记：`data-table-handle` 删 4 留 1，其余挂 `data-op`，见 ADR；⊞ 工具栏项取 `data-op="resizeTable"`（op id 命名空间），弃原型 `TBL-TOOL-GRID`（menu-tree 节点码），⋮ 保留 `TBL-MOR-OPN`，e2e 探针以 `resizeTable` 为准——CHANGE-3）。
 - **CtxMenuItem（弹层项）**：`{ id(data-op), label, shortcut?, disabled?, checked?, danger?, separator?, submenu? }`；⋮ 与右键同源渲染；新增**键盘遍历语义**（方向键/Enter/Escape，Q8 兜底通道）。
-- **StoredState（存储态）**：Preferences（用户偏好）/ SessionState（高频会话态）双键分居；新态平铺追加 + 白名单 sanitizer（Q10）。
+- **StoredState（存储态）**：Preferences（用户偏好）/ SessionState（高频会话态）双键分居；新态平铺追加 + 白名单 sanitizer（Q10）；headingFolds/quoteFolds 脏条目清洗统一「键非空 string、值 Array、元素仅 string、空条目剪除」（对齐 normalizeColWidths 先例，CHANGE-40）。
+- **Dialog/toast 契约（CHANGE-24）**：confirm options 传 key（`titleKey`/`messageKey`/`confirmLabelKey`/`cancelLabelKey`）渲染侧 t() 即时求值（key-based live-relabel，删表确认框已接）；toast 回执 5s 驻留窗保持渲染时语言（边界取舍，不做 toast store key 化）。
+- **Mermaid last-good 记忆（CHANGE-26）**：位置键随 `ChangeDesc.mapPos` 重映射（assoc=1，被删区间条目丢弃防串图），`mermaidLastGoodRemap` StateField 挂接；缓存按文档身份分命名空间 `WeakMap<MermaidDocId, Map<pos, entry>>`（跨标签键漂移/串图隔离），嵌套单元格编辑器走 unkeyed 兜底命名空间。
 
 ## 6. 数据库设计
 
@@ -185,17 +193,19 @@ stateDiagram-v2
 | 模块 | 动作 | 内容 |
 |---|---|---|
 | editor/table/ops.ts + 新 keymap 扩展 | 改 | 表头迁移、参差补齐、列宽右邻吸收、Shift 升档 3 键 |
-| editor/table/toolbar.ts / opsTable.ts | 改 | 去把手后 data-op 挂载、对齐三键/⊞/⋮/🗑 同源语义 |
+| editor/table/toolbar.ts / opsTable.ts | 改 | 去把手后 data-op 挂载、对齐三键/⊞/⋮/🗑 同源语义；工具栏形态=右上浮动紧凑 pill（CHANGE-13），编辑态整表外框画在 wrap outline 绕开 border-collapse 压盖（CHANGE-15），对齐按下态经 effectiveAlign 归一 ''→left（CHANGE-14），⊞ cells 容器补 max-width+overflow-x 横向可达（CHANGE-32） |
 | editor/table/handles（把手家族） | 删 | G-2 常驻 +/− 把手与左侧留白移除（col-grip 保留） |
-| contextMenu/* | 改 | 键盘遍历（roving 焦点 + Enter/Escape）、限高滚动+边缘翻转 |
+| contextMenu/* | 改 | 键盘遍历（roving 焦点 + Enter/Escape）、限高滚动+边缘翻转；面板自身限高内滚动**不**收拢菜单、仅菜单外滚动收拢，边界继续外滚=超界滚动选择关闭（wheel overscroll 穿界，CHANGE-5/6） |
 | commands/*（menuLayout/viewCmds/tabsCmds） | 改 | 菜单重排、Ctrl+Shift+T 归属清理、zoom×3/DevTools 补 shortcut |
 | electron/shared/commandAccelerators.ts + menu/darwin.ts | 改 | toggleTheme 撤键、手写加速键迁入单源 |
 | components/ 新浮层（图/链/列表把手） | 新增 | 期 4 渲染区浮层，走 token |
 | hooks/ 新增模块群 | 新增 | `useQuoteFold`（长引用折叠 + quoteFolds 读写）、`useHushLayer`（Esc/点击分层 + 一键回安静，照 Dialog/ctxMenu 单例 bus 模式）、`useToast` + `components/ToastHost.tsx`（toast 动作按钮/5s 驻留承载）、`useOutlineNav`（大纲平滑跳转/active 跟随）；**App.tsx 只留一行装配转发，零新逻辑**（CLAUDE.md 2642 行债不加重） |
 | preferences/store.ts | 改 | quoteFolds 字段 + sanitizer 白名单 + store.test 用例 |
 | i18n/en.ts + zh.ts | 改 | 新文案 key 双字典对齐、tb.theme 提示改写 |
-| styles/* | 改 | 新分区 css + token 补充；零 .theme-dark 补丁 |
+| styles/* | 改 | 新分区 css + token 补充；零 .theme-dark 补丁；主题翻值落位 styles/themes.css（tokens.css 仅承载 :root 非主题 token，CHANGE-1）；token 词表 = 6 冻结项 + `--border-width`/`--text-ui`/`--text-body`/`--z-float`/`--on-accent`/`--accent-soft` 6 支持项（CHANGE-2）；`--accent` 在 :root 补声明 + `--focus-ring` 主题块重声明（CSS var 替换时点烘焙修复，CHANGE-16，tokens.test 链路守护） |
 | e2e/seams + scripts/cdp-*.mjs | 改 | 契约 delta 删4留1 探针同步 |
+
+> 收口批注记（CHANGE-28）：防御闸补齐 + 死面清账 + 单点语义修正——shortcutSync all-or-none 合流护栏与 pending 例外卫生、menuLayout 模块加载期校验、handleTsvPaste 只读闸、trimmedCell 倒置区间规范化、colWidths supersede、gridPicker 拖选死区、quoteFold 单遍收集/caret 余量、多行任务删除线、ListDragHandle rAF+快照、deriveWidthPct 单源（editor/image-parse.ts）、错误条间距 token 化与 --errbar-* 守护登记、useHoverDiscipline hideNow 快照、HushLayerStore.dispose 删除——明细见 change-log CHANGE-28（无契约扩张，e2e 缝零变更）。
 
 ### 8.4 差异化策略
 
@@ -203,7 +213,7 @@ stateDiagram-v2
 
 ### 8.5 API 调用模式
 
-- 渲染→主进程：`window.api.*`（contextBridge 显式 API，不暴露裸 ipcRenderer）；本需求零新增通道。
+- 渲染→主进程：`window.api.*`（contextBridge 显式 API，不暴露裸 ipcRenderer）；本需求唯一新增通道 `file:isWritable`（CHANGE-8）。
 - 状态接入：模块级 store + `useSyncExternalStore`（照 preferences/store.ts 抄，宪法）。
 - 命令执行：命令注册表 run 闭包 → ops 纯函数；禁止组件内直调 IPC。
 
@@ -217,15 +227,16 @@ stateDiagram-v2
 | 表头身份迁移/下移的源码级约束：冒号行恒为源码第 2 行；末行禁删 | Q5/PEND-12 |
 | quoteFolds/headingFolds sanitizer：值须 string[]，脏数据丢弃不抛错 | Q10 |
 | 引用折叠判定：渲染行数 >5 | PEND-09 |
+| ⊞ 预设钮组 1×1/2×2/3×3/自动适应窗口；`estimateAutoFitCols(fitWidth,maxCols)=clamp(⌊fitWidth/96⌋,1,maxCols)`（GRID_AUTO_FIT_COL_PX=96，行数保持 R0） | CHANGE-9（扩展 UI） |
 
 ## 10. 异常处理
 
 | 异常场景 | 处理 | 文案（冻结） |
 |---|---|---|
-| 只读文件尝试修改/结构操作 | 拒绝执行 + toast | 「文件为只读，无法修改，可另存后编辑」 |
-| autosave 失败 | 不丢内存态 + toast 提示另存 | 「自动保存失败，文档可另存副本」 |
+| 只读文件尝试修改/结构操作 | 写前拦截（`isWritable` 探针 + `readOnlyGuard.assertWritable()` 单点闸门；结构写点 runTableOp / opsTable runOp / handleTsvPaste / confirmDeleteTable（确认框之前）/ formatTableSource / cutCell 统一收口，copyCell 纯读不设闸）：拒绝 dispatch、文档逐字节不变、不置 dirty、恰一条 toast——CHANGE-8/21/28 | 「文件为只读，无法修改，可另存后编辑」 |
+| autosave 失败 | 不丢内存态 + toast 提示另存（现状运行时 toast「自动保存失败（{reason}）」+状态栏常驻槽；冻结句消费口径二选一 CHANGE-31 待终裁） | 「自动保存失败，文档可另存副本」 |
 | undo 空栈按 Ctrl+Z | 静默不动作（CM6 默认） | 无 |
-| 删表确认框 Esc/点空白 | 只关确认框不删除（模态优先） | 无 |
+| 删表确认框 Esc/点空白 | 只关确认框不删除（模态优先）；确认成功路径以 `resolveTableModel` 重解析表格最新跨度再删（stale-instance 纪律），解析失败静默 no-op——CHANGE-22 | 无 |
 | 键位冲突（选区扩展 vs 插列） | 上下文分流（selection.empty 判定），无错误态 | 无 |
 | 结构操作失败（理论态） | 事务回滚不半提交（AC-RULE-08） | 复用操作回执族 |
 
@@ -239,8 +250,8 @@ stateDiagram-v2
 
 - **操作语义不 hardcode 实体名**：TableOp 注册表以 op id 为键（`insertRowOp` 等纯函数 + 声明式禁用/toast），块族扩展时复用同注册表模式（block-type 参数化）。
 - **弹层能力横向化**：ctxMenu registry（P27）、限高滚动+边缘翻转（AC-RULE-10）、键盘遍历（Q8）均实现于弹层基座，不绑定表格。
-- **chrome 四态 token 化**：显隐/防抖/槽位由 token 与状态机统一辖治（§4.3），新增块族仅声明所属态。
-- **快捷键单源**：commands.ts `shortcut` + DARWIN_COMMAND_ACCELERATORS 单源派生回显（AC-RULE-11 零例外），新增命令即加一行而非双写。
+- **chrome 四态 token 化**：显隐/防抖/槽位由 token 与状态机统一辖治（§4.3），新增块族仅声明所属态；toast 面动作用面内专用 `--toast-accent`（双主题同值，不 alias 全局 `--accent`，CHANGE-27），弹层原生控件（number/range/button）接既有 token 皮肤（`.prefs-input`/`.dialog-btn` 族 + appearance:none range）。
+- **快捷键单源**：commands.ts `shortcut` + DARWIN_COMMAND_ACCELERATORS 单源派生回显（AC-RULE-11；派生例外仅限 MENU-menubar §3.4 登记清单），新增命令即加一行而非双写。已知缺口登记（CHANGE-30 待终裁）：mac 回显 ⌘ vs 实按 Ctrl、`app.searchInFolder` tooltip 键面手工双源。
 
 当前已支持主体清单：表格（本期首实施）；声明的扩展位：代码块/公式块/mermaid/图片/引用块（期 4 部分承接）。
 

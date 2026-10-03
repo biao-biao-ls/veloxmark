@@ -3,7 +3,7 @@
 开发中发现实现偏离基线的登记处。格式见 zcode:frontend-dev「变更纪律」。
 
 ## CHANGE-1: 渲染区主题翻值落位 themes.css（非 tokens.css）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 低
 - 模块: styles/token 体系（渲染区观感契约）
@@ -17,7 +17,7 @@
 - 更新时间: 2026-09-29
 
 ## CHANGE-2: 渲染区 token 补充支持项（超出任务冻结清单 6 项）
-- 状态: pending
+- 状态: merged
 - 类型: Added
 - 风险等级: 低
 - 模块: styles/token 体系（渲染区观感契约）
@@ -61,7 +61,7 @@
 - 更新时间: 2026-09-29
 
 ## CHANGE-5: 右键/⋮ 弹层内滚动不再是关闭信号（原「任何滚动即关」口径变更）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 中（弹层行为口径，AC-FN-05/AC-RULE-10 判据面）
 - 模块: 菜单弹层基座（editor/contextMenu + components/EditorContextMenu）
@@ -76,7 +76,7 @@
 - 更新时间: 2026-09-29
 
 ## CHANGE-6: 「超界滚动选择」关闭路径的操作定义落地（AC-FN-10 第四条）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 低（AC 触发机制落地口径，判据行为「终态必关闭 + 焦点回正文」不变）
 - 模块: 菜单弹层基座（popup.ts detectOverscrollSelection）
@@ -105,7 +105,7 @@
 - 更新时间: 2026-09-29
 
 ## CHANGE-8: 只读前置拦截需新增 isWritable 跨进程探针（AC-ERR-08 判据 1/2）
-- 状态: pending
+- 状态: merged
 - 类型: Added
 - 风险等级: 中（新增 IPC 通道；AC-ERR-08 判据行为依赖此真源）
 - 模块: 跨进程 API（electron/shared/api.ts + preload + ipc/files.ts）/ 渲染区只读闸门
@@ -121,7 +121,7 @@
 - 更新时间: 2026-09-29
 
 ## CHANGE-9: ⊞ 网格选择器预设按钮组与自动适应窗口估算（FE-05 实现口径）
-- 状态: pending
+- 状态: merged
 - 类型: Added
 - 风险等级: 低（任务 AC/交互面扩展 UI；缩放语义/toast/undo 均在既有冻结面内）
 - 模块: 表格编辑（⊞ 网格选择器浮层 gridPicker）
@@ -153,7 +153,7 @@
 - 更新时间: 2026-09-30
 
 ## CHANGE-11: 两按钮对话框布局统一为「取消左 + 确认主按钮右」（ui_07 复刻序）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 低（呈现层按钮次序；确认语义/按钮 label/键盘默认钮不变）
 - 模块: 全局浮层（components/Dialog.tsx 两按钮布局）
@@ -168,7 +168,7 @@
 - 更新时间: 2026-09-30
 
 ## CHANGE-12: 导出表格空单元格保留（listTable 按管道结构数槽位，AC-OP-17 缺陷修复）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 低（导出渲染保真修复，恢复 AC 既定行为；无契约面/接口变更）
 - 模块: 导出渲染（src/renderer/src/export/renderDoc/listTable.ts）
@@ -183,7 +183,7 @@
 - 更新时间: 2026-09-30
 
 ## CHANGE-13: 表格编辑工具栏形态复刻对齐——右上浮动紧凑 pill（批 A 裁定落地）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 中（编辑态 chrome 形态/危险色范围/菜单几何，UI-IXD-04 与 AC-FN-03 关联；无契约面 data-op 变更）
 - 模块: 表格编辑 chrome（editor/table/toolbar.ts + styles/markdown.css + editor/contextMenu/opsTable.ts + styles/context-menu.css）
@@ -199,7 +199,7 @@
 - 更新时间: 2026-10-01
 
 ## CHANGE-14: 对齐三键按下态映射归一——GFM 默认左对齐计入按下回显（UI-IXD-04）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 低（呈现层回显映射；setAlignOp/冒号行写回语义不变）
 - 模块: 表格工具栏/⋮ 菜单对齐回显（editor/table/toolbar.ts + editor/contextMenu/opsTable.ts + editor/table/parse.ts）
@@ -214,7 +214,7 @@
 - 更新时间: 2026-10-01
 
 ## CHANGE-15: 表格编辑态整表外框改画在 wrap——outline 绕开 border-collapse 压盖（CHANGE-13 机制修正）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 低（呈现层绘制机制修正，视觉意图与 CHANGE-13 一致；UX-P28 F3 零位移契约不变）
 - 模块: 表格编辑 chrome（styles/markdown.css 编辑态整表外框）
@@ -229,7 +229,7 @@
 - 更新时间: 2026-10-01
 
 ## CHANGE-16: 焦点环 token 断链修复——:root 补声明 --accent 且 --focus-ring 主题块重声明（CSS 替换时点烘焙问题）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 中（token 分层修复；--focus-ring 全消费方渲染行为从「无环」变「按主题 accent 环」，FE-05 UI-IXD-11 恢复既定行为）
 - 模块: token 词表（styles/tokens.css + styles/themes.css + styles/tokens.test.ts）
@@ -243,7 +243,7 @@
 - 更新时间: 2026-10-01
 
 ## CHANGE-17: 菜单项执行与面板关闭顺序取舍 + 叠加态验证口径（UX-P04 F4b / PATH-06 r2 校正）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 低
 - 模块: 菜单（MenuBar / EditorContextMenu）
@@ -254,7 +254,7 @@
 - 更新时间: 2026-10-02（r2 校正）
 
 ## CHANGE-18: 浮层 z 序分层定标（glb-modal:stacking）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 中
 - 模块: 全局浮层
@@ -266,7 +266,7 @@
 - 更新时间: 2026-10-02（r2 校正）
 
 ## CHANGE-19: 表格菜单边界位灰显回退——「下移该行/右移该列」恢复可点击（AC-RULE-07 仅限两项）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 低（呈现层禁用规则；op 边界 no-op 语义与键盘路径不变）
 - 模块: ⋮/右键表格菜单禁用规则（editor/contextMenu/opsTable.ts isTableOpDisabled）
@@ -281,7 +281,7 @@
 - 更新时间: 2026-10-02
 
 ## CHANGE-20: 结构 op destroy 端 handoff 抑制窗（AC-PEND-11 表头污染/undo 双历史修复）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 高（UX-P28 handoff correctness-critical 跨方法状态；AC 判据面）
 - 模块: 表格编辑（editor/table/nestedSession.ts 抑制标记 + editor/table/commands.ts runTableOp + editor/contextMenu/opsTable.ts runOp dispatch）
@@ -295,7 +295,7 @@
 - 更新时间: 2026-10-02
 
 ## CHANGE-21: 表格结构操作写入口收口只读闸门（AC-ERR-08/AC-RULE-16）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 中（AC 判据面；新增闸门消费点，闸门本体属 IT-03/FE-04）
 - 模块: 表格结构操作写点（editor/table/commands.ts runTableOp + editor/contextMenu/opsTable.ts runStructOp/cutCell/pasteCell/formatTableSource/confirmDeleteTable）
@@ -309,7 +309,7 @@
 - 更新时间: 2026-10-02
 
 ## CHANGE-22: 删表 confirm 异步稳态重解析跨度（FE-08 扩展-1）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 中（破坏性写点的区间真源；全仓唯一删表确认入口）
 - 模块: 删表确认流（editor/contextMenu/opsTable.ts confirmDeleteTable）
@@ -323,7 +323,7 @@
 - 更新时间: 2026-10-02
 
 ## CHANGE-23: MenuBar 外点关闭的焦点归宿取舍（AC-FN-10 判据 2 例外登记）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 低（行为零变更，既有取舍补登记；Esc/超界滚动选择主路径判据不受影响）
 - 模块: 菜单弹层基座（MenuBar.tsx closeIfOutside / popup.ts 焦点纪律）
@@ -337,7 +337,7 @@
 - 更新时间: 2026-10-02
 
 ## CHANGE-24: 语言切换即时性边界定标——toast 驻留保持渲染时语言（边界取舍）+ 删表确认框 key-based live-relabel
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 低（确认框行为向既有 DialogKeyedCopy 契约收敛、冻结字面零改动；toast 为零行为变更登记）
 - 模块: Dialog 契约（components/Dialog.tsx ConfirmOptions + editor/contextMenu/opsTable.ts 删表确认调用点）＋ toast 回执（hooks/useToast 5s 驻留文案面）
@@ -351,7 +351,7 @@
 - 更新时间: 2026-10-02
 
 ## CHANGE-25: 抑制窗覆盖面扩展至 TSV 粘贴整表结构替换 dispatch（handleTsvPaste）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 高（UX-P28 handoff correctness-critical 同族残余；AC 判据面——粘贴值存活/undo 单历史）
 - 模块: 表格编辑（editor/table/commands.ts handleTsvPaste 的 pasteTsvOp 整表结构替换 dispatch）
@@ -365,7 +365,7 @@
 - 更新时间: 2026-10-02
 
 ## CHANGE-26: 导出任务勾选态大小写口径同源 + mermaid last-good 位置键随变更重映射（AC-OP-18 判据 2 / AC-ERR-11 判据 1）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 中（AC 判据面；导出三通道勾选态一致性 + last-good 缓存键位 correctness，无契约/接口变更）
 - 模块: (A) 静态导出列表渲染（export/renderDoc/listTable.ts renderListItem TaskMarker 完成态判定）；(B) mermaid 错误态记忆（editor/mermaid/errMemory.ts 位置键缓存 + editor/setup.ts createExtensions 挂接）
@@ -379,7 +379,7 @@
 - 更新时间: 2026-10-02
 
 ## CHANGE-27: toast 撤销钮 token 调亮 + 弹层族原生控件 token 皮肤 + `.primary` 死类清账（AC-NF-09 / AC-ERR-14 判据 2）
-- 状态: pending
+- 状态: merged
 - 类型: Updated
 - 风险等级: 低-中（AC 判据面视觉合规修复；纯观感/token 面，无契约/接口/行为语义变更）
 - 模块: (A) toast 回执面（styles/themes.css 新 token `--toast-accent` + styles/toast.css `.toast-undo-btn` + styles/tokens.test.ts 守护表）；(B) 弹层族原生控件皮肤（components/TableInsertDialog.tsx number×2/按钮×2 + styles/markdown.css 图片工具栏 range + styles/buttons.css 按钮三态）
@@ -395,7 +395,7 @@
 
 ## CHANGE-28: 收口批——code-review 必修-低/Minor 余债清账（快捷键/表格/渲染/悬浮四域）
 
-- 状态: pending
+- 状态: merged
 - 类型: Updated（防御闸补齐 + 死面清账 + 视觉余量微修 + 少量交互语义缺陷修正；无契约扩张）
 - 风险等级: 低-中（单点语义修正均有红绿钉住；视觉类数值等价或余量增大）
 - 模块: (A) 快捷键/菜单域（shortcutSync.test 合流护栏、menuLayout 模块加载期校验与注释、build.ts 注释、Titlebar formatShortcut 死链、MenuBar Tab 收拢/child onClick 收口、keyboardNav 空子菜单 Enter/Space、keymap 恒挂断言）；(B) 表格域（handleTsvPaste 只读闸、parse.ts trimmedCell 倒置规范化、state.ts colWidths supersede、gridPicker 拖选死区）；(C) 渲染内容域（quoteFold 单遍收集/caret 余量/expandQuoteFolds 删除、多行任务删除线、ListDragHandle rAF+快照、deriveWidthPct 单源、错误条间距 token 化、--errbar-* 守护登记）；(D) 悬浮/杂项（useHoverDiscipline hideNow 快照、useHushLayer toast 断言真实面与 dispose 删除）
@@ -408,3 +408,177 @@
 - 变更原因: Step 4 双轨评审收口后必修-低（BE-01 合流断言标记单点）须于合流前落地；Minor 余债按收口批统一清账防债务滚雪球。语义修正类（只读闸/倒置区间/debris/死区/快照/空子菜单）均为既有缺陷或潜伏面，修法取最小正确解并红绿钉住；死面清账（formatShortcut/expandQuoteFolds/dispose）全仓核实零消费后删除；测试加固（all-or-none 标记、pending 卫生、恒挂断言、交叉断言、真实面断言）补护栏缺口不改行为
 - 验收数字（收口批收敛，2026-10-02）: 合并终门禁 typecheck 双 tsconfig 0 Error + test:unit **1094/1094 全绿（79 files）**（基线 1066→1094 只增不减：收-B +8、收-A +7、收-C +12、收-D +1）；四批各自红绿记录齐（摘修复必红→恢复必绿）；e2e 缝零变更（formatShortcut/expandQuoteFolds/dispose 均非缝面，grep 核实）。登记面同批补完：FE-02.md AC-NF-09/AC-ERR-14 按 batch10 证据翻转通过、FE-06.md:150 台账勾销、FE-10.md 勘误、ui-redesign-tasks.md:135 指针勘误、IT-04/FE-02 报告回填 ①②④⑤+gates.log
 - 更新时间: 2026-10-02
+
+## CHANGE-29: 表格列宽抓手（col-grip）常驻 DOM + hover 浮现（AC-FN-33 判据 1 解读例外登记）
+- 状态: merged
+- 类型: Updated
+- 风险等级: 高（AC 判据面解读/行为口径；FE-10 chrome 状态机「方案 A 主 agent 裁决」未入 change-log）
+- 模块: 表格 chrome（editor/table/widget.ts col-grip 挂载口径 + chromeState hover 浮现面）
+- 来源: 兜底检测(implementation-notes)
+- 关联任务: IT-01/FE-10（裁决与实作）、IT-01/FE-03（删4留1 契约）、IT-03/FE-10（被让位注记）
+- 涉及基线:
+  - AC: requirement/ac.md#AC-FN-33（判据 1「不浮现表格工具栏、把手及任何常驻 chrome」）、#AC-FN-01（静息零常驻控件）、#AC-NF-04
+  - AC: requirement/ac.md#UI-ELEM-05（「把手」列 hover/激活/编辑态渲染）
+- 变更前: IT-03/FE-10 任务口径「col-grip 仅表格编辑态挂载（spec.editing + 表头 cell）」；AC-FN-33 判据 1 字面禁止 hover 态浮现把手
+- 变更后: col-grip 放宽为常驻 DOM + CSS 零漆（opacity:0/pointer-events:none，静息像素面不变→AC-FN-01「零常驻控件」以零漆兜住），慢速 hover ≥150ms 浮现（accent 提示线，AC-NF-04 落窗）；AC-FN-33 解读收窄为「表格编辑工具栏 hover 不渲染」，把手作 hover 微控件允许浮现（与 UI-ELEM-05 对照）；「仅微控件浮现/不弹工具浮层」；IT-03/FE-10「仅编辑态挂载」注记让位（FE-03 idle handleValues 空探针基线改为可命中/不可见）
+- 变更原因: FE-10 方案 A 裁决已落地未登记；AC-FN-33 字面含「把手」与实现 hover 浮现存在判据张力，按 CHANGE-23 体例补解读例外登记，防止被回退或误判未修缺陷
+- 更新时间: 2026-10-03
+
+## CHANGE-30: 快捷键回显平台口径缺口——mac 回显 ⌘ vs 实按 Ctrl 不一致 + searchInFolder 键面双源
+- 状态: merged
+- 类型: Updated
+- 风险等级: 高（AC-RULE-11/AC-FN-07 判据 2「提示文本与实际触发键位逐键一致」面；裁决未定先登记现状）
+- 模块: 快捷键单源（commands.ts shortcut ↔ fmtShortcut 回显 ↔ darwin 加速键）
+- 来源: 兜底检测(复刻评审台账登记候选)
+- 关联任务: IT-01/FE-02、IT-02/FE-02、IT-02/FE-03、IT-01/FE-11
+- 涉及基线:
+  - AC: requirement/ac.md#AC-RULE-11、#AC-FN-07（判据 2）、#AC-NF-06
+  - api: MENU-menubar.md#3.4（DERIVATION_EXCEPTIONS 现仅 zoomIn/toggleDevTools，CHANGE-7）
+- 变更前: 基线要求回显与实触发逐键一致；实现 fmtShortcut 按标准转换口径把注册表 `Ctrl+N` 显示为 `⌘N` 形态，而 mac 实际触发键为 Ctrl（回显 ⌘ 与实按 Ctrl 不一致，Windows/Linux 面正确）；`app.searchInFolder` tooltip 键面手工双源（存量）
+- 变更后: 登记缺口与裁决方向——(a) 键位注册改 Mod- 使 mac 触发=⌘ 与回显一致；或 (b) 回显字面 Ctrl 不做 ⌘ 转换（二选一收口）；searchInFolder 键面改 fmtShortcut 单源派生或登记入 DERIVATION_EXCEPTIONS。落地取舍待产品/主 agent 终裁，本条先钉现状
+- 变更原因: code-review（IT-01/FE-02 Important；FE-03.md:55/FE-11 同族）两轮提出且明确「需单独裁定」，CHANGE-28 只收 shortcutSync 合流护栏未涉本项；不登记则 AC-RULE-11 一致率 100% 指标失守面无痕
+- 更新时间: 2026-10-03
+
+## CHANGE-31: autosave 失败提示文案口径——运行时 toast 文案 ≠ AC-ERR-15 冻结句（冻结句零消费）
+- 状态: merged
+- 类型: Updated
+- 风险等级: 中（AC-ERR-15 判据 2 冻结中文文案面；FE-02 明示「须走 doc-reconcile 裁定」）
+- 模块: i18n/文案面（err.autosaveFailed 冻结句 vs toast.autoSaveFailed{,Path} / status.autoSaveFailed）
+- 来源: 兜底检测(implementation-notes)
+- 关联任务: IT-04/FE-02、IT-01/FE-11（冻结注册表）
+- 涉及基线:
+  - AC: requirement/ac.md#AC-ERR-15（判据 2「提示『自动保存失败，文档可另存副本』」）
+- 变更前: AC-ERR-15 冻结句 = `err.autosaveFailed`「自动保存失败，文档可另存副本」（仅 frozenCopy.test 钉住）；运行时消费方为 `toast.autoSaveFailed`「自动保存失败（{reason}）」、`toast.autoSaveFailedPath`、`status.autoSaveFailed`（.sb-autosave-error 常驻槽）——冻结句无任何运行时调用点
+- 变更后: （二选一裁定）(a) 运行时提示补用/并显冻结句；或 (b) AC-ERR-15 判据 2 改为运行时口径（toast 带 {reason} 信息句 + 常驻槽）并同步冻结注册表；现状如实登记
+- 变更原因: AC 判据字面与用户可见文案不一致且冻结句空转；FE-02「按冻结契约只登记不擅改」明确移交 doc-reconcile
+- 更新时间: 2026-10-03
+
+## CHANGE-32: ⊞ 网格选择器超宽矩阵横向可达——.table-grid-picker-cells 补 max-width+overflow-x（AC-ERR-13）
+- 状态: merged
+- 类型: Updated
+- 风险等级: 中（AC 缺陷修复类，恢复 AC 既定行为——同 CHANGE-12 先例；无契约/接口变更）
+- 模块: 表格编辑（⊞ gridPicker overlays.css .table-grid-picker-cells）
+- 来源: 兜底检测(implementation-notes)
+- 关联任务: IT-01/FE-05（fix-cr-FE05-hscroll）
+- 涉及基线:
+  - AC: requirement/ac.md#AC-ERR-13（判据 1「可选范围逐维 max(20,R0)×max(12,C0)，包含全部既有行×列」全选可达）
+- 变更前: cells 容器仅 max-height/overflow-y（20 行/60vh 限高），C0>12 极形态下横向不可达——25×10 表应可选 25×12，右侧列无法拖到
+- 变更后: 补 `max-width:min(92vw, 12列基准界)+overflow-x:auto`（与纵向限高同口径，纯 CSS 零 JS）；CDP 15/15（reports/IT-01-FE-05/batch-cr-fe05-hscroll-data.json）
+- 变更原因: 必修-低 CR 修复恢复 AC-ERR-13 可达性；CHANGE-9 只登记预设钮/autoFit、CHANGE-28(B) 只收拖选死区，横向滚动修复无条目覆盖
+- 更新时间: 2026-10-03
+
+## CHANGE-33: PRD 术语表「双区编辑并排显示」措辞校准为上下双区（PEND-14 冻结 11A 契约不动布局）
+- 状态: merged
+- 类型: Updated
+- 风险等级: 中（PRD 功能形态措辞；dualPane 实作零 diff、布局改动越界）
+- 模块: PRD 术语表（requirement/prd/PRD.md#术语表「双区编辑」）
+- 来源: 兜底检测(复刻评审台账登记候选)
+- 关联任务: IT-03/FE-10、IT-03/FE-03~FE-09（双区消费方）
+- 涉及基线:
+  - PRD: requirement/prd/PRD.md:23（「双区编辑 | …进入编辑时并排显示源码区与预览区的编辑形态」）
+  - AC: requirement/ac.md#AC-FN-20/#AC-OP-20（「双区编辑面板（源码区+预览区）」未锁左右/上下）
+- 变更前: PRD 术语表「并排显示」；任务元素表同写「源码区+预览区并排」
+- 变更后: 实作与 AC 表述为上下双区（源码区+预览区堆叠；PEND-14 豁免冻结不改布局，11A 已收敛契约）；PRD 术语「并排」校正为「上下双区（源码区上/预览区下）」或按 11A 口径改述，任务元素表措辞同步
+- 变更原因: PRD 字面与实现形态不一致属基线措辞 drift；adjudications 明确「措辞偏差归 doc-reconcile 校正（并排→上下双区或确认 11A 口径），布局改动越界」
+- 更新时间: 2026-10-03
+
+## CHANGE-34: tech-design hover 防抖「100ms 级」措辞与 AC-NF-04「≥150ms」冲突校准
+- 状态: merged
+- 类型: Updated
+- 风险等级: 中（tech-design 状态机数值措辞 vs AC 判据面；实现取 AC 口径）
+- 模块: tech-design §4.3 chrome 四态状态机（防抖数值）
+- 来源: 兜底检测(复刻评审台账登记候选)
+- 关联任务: IT-03/FE-03（HOVER_DELAY_MS=150 单源）、IT-01/FE-10（CHROME_DEBOUNCE_MS=150）
+- 涉及基线:
+  - tech-design: design/tech-design.md:138（「指针进入块区（防抖 100ms 级浮现）」）
+  - AC: requirement/ac.md#AC-NF-04（「出入防抖延迟 ≥ 150ms」）、#AC-FN-14、#AC-RULE-01
+- 变更前: tech-design 状态机写「防抖 100ms 级」；AC-NF-04 要求 ≥150ms；两基线互相冲突
+- 变更后: 实现 HOVER_DELAY_MS=150（= --chrome-duration token，AC 为准）；tech-design:138 措辞校准为「防抖 ≥150ms（AC-NF-04）」，消除双基线数值冲突
+- 变更原因: PATH-08 评审点名「tech-design『防抖 100ms 级』vs AC-NF-04『≥150ms』措辞张力→doc-reconcile 登记候选」；实现侧 FE-10 已按「以任务 AC 为准」取 150ms
+- 更新时间: 2026-10-03
+
+## CHANGE-35: 链接 hover 浮层能力边界——GFM 裸 URL literal 不唤浮层（enterLink 不装饰裸 URL 节点）
+- 状态: merged
+- 类型: Updated
+- 风险等级: 中（AC 能力覆盖面边界；AC 未区分链接语法形态）
+- 模块: 渲染区链接（editor/livePreview enterLink 装饰面 + components/LinkHoverFloat）
+- 来源: 兜底检测(implementation-notes)
+- 关联任务: IT-03/FE-05
+- 涉及基线:
+  - AC: requirement/ac.md#AC-FN-19、#AC-OP-14、#UI-IXD-07（「文档含超链接 → hover 浮层三入口」未区分语法形态）
+- 变更前: AC 文义覆盖「超链接」一般形态；实现仅 `[text](url)` 与 `<url>` Autolink 走 enterLink → cm-md-link 装饰并唤浮层（含 URL 编辑写回 auto 形态）
+- 变更后: 登记能力边界——GFM 裸 URL literal（无尖括号）不装饰、无 hover chrome、不唤链接浮层/编辑入口；如需全覆盖须扩展 enterLink 装饰面（另立任务）
+- 变更原因: FE-05 notes 8 自述边界但未登记；AC-FN-19/AC-OP-14 字面无形态豁免，不登记会被判未覆盖缺陷
+- 更新时间: 2026-10-03
+
+## CHANGE-36: 侧栏新建入口形态与 ui_05 不符——根行多「+」钮、底栏新建仅图标（产品形态待终裁）
+- 状态: merged
+- 类型: Updated
+- 风险等级: 中（PRD 功能形态；移除=功能删减，不在修复批）
+- 模块: 侧栏（components/FileTree 根行 + 底栏新建）
+- 来源: 兜底检测(复刻评审台账登记候选)
+- 关联任务: IT-02/FE-06（页面元素表面）
+- 涉及基线:
+  - UI 设计稿: ui_05_sidebar.html（根行仅文本、新建在底栏且带「新建」文案）
+  - PRD: requirement/prd/PRD.md（既有产品「新建文件」能力，形态未锁）
+- 变更前: 设计稿根行无「+」、底栏新建按钮有「新建」文案
+- 变更后: 维持实作（根行「+」新建钮保留=既有产品入口，底栏新建仅图标）+ 标注设计稿差异；去留/补文案交产品人工终裁
+- 变更原因: adjudications FE-06#8/#9 两轮「分流+登记…交 doc-reconcile/人工定夺」；涉既有产品功能入口，移除即功能删减不得静默
+- 更新时间: 2026-10-03
+
+## CHANGE-37: ui_02 快捷键卡片（key-card）未实现——设计有/任务无，功能缺口候选
+- 状态: merged
+- 类型: Added
+- 风险等级: 中（PRD 功能缺口面；intro 明示「快捷键可发现」）
+- 模块: workspace 主列侧栏卡（ui_02 side-col key-card）
+- 来源: 兜底检测(复刻评审台账登记候选)
+- 关联任务: 无（不在任何 FE 任务元素表；建议挂功能缺口清单/期 5）
+- 涉及基线:
+  - UI 设计稿: ui_02_table_edit.html:709-721（key-card 在 workspace 主列内）
+  - AC: requirement/ac.md#AC-NF-06（快捷键可发现性——键位文案与菜单 kbd 提示已部分满足）
+- 变更前: 设计稿含快捷键卡片；任务列表无对应元素表项，实现缺该面板
+- 变更后: 按「未列名功能入口=分流登记」判例入功能缺口候选（与 AC-FN-13 取舍清单同型处置）；本期不实现，缺口留档
+- 变更原因: U2 裁定「分流登记…入功能缺口候选」；不登记会在终验走查时误判为复刻缺失
+- 更新时间: 2026-10-03
+
+## CHANGE-38: AC 判据口径澄清批（UI-IXD-11 键盘环样例 · callout 嵌套引用折叠口径 · AC-ERR-10 双态适用面）
+- 状态: merged
+- 类型: Updated（纯 AC 口径/样例补全，行为零变更）
+- 风险等级: 低
+- 模块: requirement/ac.md 三条判据口径
+- 来源: 兜底检测(复刻评审台账登记候选)
+- 关联任务: IT-02/FE-05、IT-03/FE-08、IT-03/FE-10
+- 涉及基线:
+  - AC: requirement/ac.md#UI-IXD-11、#AC-FN-16/#AC-RULE-14、#AC-ERR-10
+- 变更前: ① UI-IXD-11 三态矩阵无键盘激活环样例；② callout 与引用折叠关系表述不一（「callout 不参与引用折叠（体内引用跳过）」vs「展开态体内嵌套引用可折」）；③ AC-ERR-10 双态（错误条在渲染态、预览错误标识在双区面板）适用面未言明
+- 变更后（逐项）: ① 补口径注记：键盘激活=hover 同款 --bg-inset 填充 + --accent 内环（三态可辨，UI-IXD-11 补 kbd 环样例口径）；② 钉口径：callout 本体不产引用折叠摘要；展开态体内嵌套的独立引用块按 QUOTE_FOLD_LINE_THRESHOLD 照常可折；③ 判据补适用面一句，防双态互相误判
+- 变更原因: 三处均为评审 Info→doc-reconcile 登记候选；实现面已实证，仅判据文字含混
+- 更新时间: 2026-10-03
+
+## CHANGE-39: 设计稿 drift 备查批（实现=AC/任务契约胜出，设计稿侧随期 1 规范定稿校准）
+- 状态: merged
+- 类型: Updated（备查登记，行为零变更）
+- 风险等级: 低（观感/文案口径；多项为演示几何判例）
+- 模块: ui_02/03/05/06/07 设计稿文案与观感口径
+- 来源: 兜底检测(复刻评审台账登记候选)
+- 关联任务: IT-01/FE-01·05·10、IT-02/FE-06·08、IT-03/FE-07·08·10
+- 涉及基线:
+  - UI 设计稿: ui_02/03/05/06/07（各条锚点见下）
+  - AC: requirement/ac.md#AC-PEND-09、#AC-OP-07、#AC-FN-16（观感豁免口径）
+- 变更后（逐项备查）: ① 引用折叠摘要尾标「N 行」vs ui_06「（共 4 段…）」——AC-PEND-09 明文「首行截断+『N 行』」胜出（同 FE-01#2 先例）；② ⊞ 读数「R × C」vs ui_02「· 缩放整表」后缀——任务页面元素表冻结胜出（AC-OP-07 toast「R×C」同口径）；③ 静息把手 ui_03 is-idle 淡灰 ⠿ 占位 vs 实现不渲染——任务元素表「静息不渲染」胜出；④ 大纲折叠节点隐子行+「（含 N 子节 · 折叠已记忆）」meta vs 实现常显全树——任务契约=headingFolds 正文双向同步，无「大纲子树收起」承载（FE-08#5 豁免）；⑤ caret 条高 21-22px vs mock 18px——原生行盒=产品真形态，mock 为演示几何（232px 判例族）；⑥ toast 撤销钮行盒高 25 vs 设计推算 ~21——Windows UA line-height 度量，CSS 逐值已命中 ui_07；⑦ lvl-4 标题色 --fg-dim vs 设计级联默认 --fg——「H3+ 400 --fg-dim」批 H 口径，设计 demo 未含 H4；⑧ 大纲「·」vs 正文 ▾ caret 幻影观感——ui_05/ui_06 各自规定；⑨ ⋮ 菜单 kbd 11px vs ui_03 12px mono——维持现状（改则两面同步）；⑩ 行号槽两设计稿口径不一——设计稿内部不一致，取实现现状
+- 变更原因: 均为「实现=AC/任务契约、设计稿文案/观感 drift」备查项（台账多轮「豁免+登记/登记候选」）；随期 1《UI/UX 设计规范》定稿一并校准，防终验走查误判
+- 更新时间: 2026-10-03
+
+## CHANGE-40: headingFolds 脏条目清洗收紧——空键/空数组由保留改剪除（STORE §3.2 裁决取剪除）
+- 状态: merged
+- 类型: Updated
+- 风险等级: 低（session 清洗口径；合法折叠语义零变更）
+- 模块: preferences/store.ts normalizePerFileIds（headingFolds/quoteFolds 双族）
+- 来源: 兜底检测(implementation-notes + 复刻评审台账登记候选)
+- 关联任务: IT-03/FE-02（收紧实施）、IT-02/FE-09（同口径消费）
+- 涉及基线:
+  - api: design/api/STORE*.md#3.2（「空条目可保留或剪除」二择裁决）
+- 变更前: STORE §3.2 空条目「可保留或剪除」未定；实现原保留 headingFolds 空键/空数组脏条目
+- 变更后: 裁决取「剪除」——normalizePerFileIds 双族统一「键非空 string、值 Array、元素仅 string、空条目剪除」（对齐 normalizeColWidths 先例）；headingFolds 合法语义不变。登记归属 FE-02（防误判 FE-09 回归）
+- 变更原因: 台账登记候选②明确「change-log 备注 headingFolds 脏条目收紧归 FE-02」；quoteFolds 同批收紧已随 FE-02 交付但双族行为变更未入 change-log
+- 更新时间: 2026-10-03

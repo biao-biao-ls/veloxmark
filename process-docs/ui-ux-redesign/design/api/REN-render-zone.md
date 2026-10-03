@@ -44,7 +44,7 @@
 | 尺寸拖拽 | 按住尺寸控制点拖拽，预览尺寸随鼠标变化；松开后按新尺寸渲染 | 新尺寸写 .md 图片语法（非显示态旁路），autosave 落盘 | toast 回执含「（Ctrl+Z 可撤销）」后缀（AC-OP-13；回执字样按统一格式派生「已调整图片尺寸（Ctrl+Z 可撤销）」，i18n 双字典落盘） |
 | 对齐调整 | 点击对齐按钮，按钮进入激活态；尺寸不变 | 目标对齐写 .md 图片语法 | toast 回执同上格式（回执字样「已设置图片对齐（Ctrl+Z 可撤销）」） |
 
-**禁用规则**：无图片解析结果时浮层不浮现；只读文件编辑被拦截（AC-ERR-08）。
+**禁用规则**：无图片解析结果时浮层不浮现；只读文件编辑被拦截（AC-ERR-08）——写前拦截真源为 `isWritable` 跨进程探针（`RendererApi.isWritable(filePath)`，channel `file:isWritable`，`fs.access(W_OK)` 判定）+ `editor/readOnlyGuard.ts` `assertWritable()` 单点闸门，图片写回统一走该闸门（FE-05/FE-06 复用同一入口，CHANGE-8）。
 
 **undo 事务边界**：每次尺寸/对齐编辑为独立事务，一次 Ctrl+Z 还原编辑前状态（AC-OP-13）；退出浮层后无残留控件。
 
@@ -62,7 +62,7 @@
 | 复制 | 剪贴板得到该链接完整 URL | 既有轻提示沿用（不属本次冻结面） |
 | 编辑 | 浮层内 URL 进入可编辑输入态，原 URL 预填；确认后按新 URL 渲染 | 新 URL 写 .md 链接语法 + autosave；toast 回执含「（Ctrl+Z 可撤销）」后缀（AC-OP-14；回执字样「已更新链接地址（Ctrl+Z 可撤销）」）；一次 Ctrl+Z 还原修改前 URL；「打开」对新 URL 生效 |
 
-**规则**：浮层不遮挡链接文本（UI-IXD-07）；hover 防抖 ≥150ms、移出延迟消失无残留（AC-FN-14）；只读拦截同全局。
+**规则**：浮层不遮挡链接文本（UI-IXD-07）；hover 防抖 ≥150ms、移出延迟消失无残留（AC-FN-14）；只读拦截同全局。**能力边界（CHANGE-35）**：GFM 裸 URL literal（无尖括号）不装饰、无 hover chrome、不唤本浮层/编辑入口——`enterLink` 装饰面仅覆盖 `[text](url)` 与 `<url>` Autolink 两形态；如需全覆盖须扩展 enterLink 装饰面（另立任务）。
 
 **undo 事务边界**：URL 修改为独立事务，一步 undo（AC-OP-14）。
 

@@ -1,5 +1,9 @@
 # 7C 实施方案
 
+> **doc-reconcile 取代注记（2026-10-03，CHANGE-13/14）**：本方案两处决策已被复刻评审裁定取代，正文保留原文供溯源，以注记为准——
+> 1. **布局（取代「左组/右组两端分簇」）**：对照 ui_02/ui_03 改为**表格右上浮动紧凑 pill**（⊞ ◧ ▣ ◨ + .tsep + ⋮ 🗑 单组连续排列，条高 32px/钮 28×28，容器 --widget-surface + --border + --radius-md + --shadow-pop）；🗑 静息 danger 红，danger 范围收敛为「删除表格」一项；⋮ 展开期源钮 .is-is-source accent 实底；菜单宽 min 248px + 5px 定制细滚动条；编辑态整表外框画在 wrap outline（CHANGE-15，绕开 border-collapse 压盖）。
+> 2. **对齐按下态（取代「model.aligns 精确匹配（'' 全不按）」）**：显示层经 `effectiveAlign` 归一（`''` → `'left'`，GFM 默认左对齐计入按下回显），工具栏 is-pressed 与菜单对齐 ✓ 同源消费；按下态样式 accent-soft 半透明底 + accent 图标。alignmentOf/冒号行写回不动（`---` 不改写为 `:---`）。
+
 ## 技术决策与理由
 
 - **浮条挂 outer、绝对定位在 wrap 上缘之上**（spec 布局归属节）：outer（表格自建 `.cm-md-block-gap`）加 `position: relative`（scoped class，不动共享 gap 规则），bar `bottom: calc(100% - var(--space-1))`——**否决 body 浮层**（免 scroll/resize 联动，随 widget 自然滚动）与 wrap 内定位（`overflow-x: auto` 裁剪，diag-P28 注释明言）。**否决扩容顶槽**（改 padding-top = 编辑进/出推挤正文，红线 10 直接违约）。**否决退役 col +/−**（`data-table-handle` 值族探针契约，红线 1）。
