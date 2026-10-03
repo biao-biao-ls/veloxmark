@@ -22,6 +22,14 @@
   /* ---- color: chrome ---------------------------------------------------- */
   /* Theme-split — declared in .theme-light/.theme-dark: --bg, --bg-sidebar,
      --border, --accent, --danger. */
+  /* r2 FE-03/FE-05 (CHANGE-16): --accent also carries a :root base
+     declaration. :root-level tokens reference it (--focus-ring below) and
+     CSS custom-property substitution happens at the declaring element's
+     computed-value time — without a :root declaration every var(--accent)
+     up here is empty at computed-value time. Theme blocks still flip the
+     real value (亮 #0969da / 暗 #58a6ff); the value here is the light-theme
+     base / explicit default. */
+  --accent: #0969da;
 
   /* ---- color: content surface ------------------------------------------- */
   /* Theme-split — declared in .theme-light/.theme-dark: --code-bg,
@@ -72,7 +80,133 @@
      different blur/alpha from --shadow-pop. */
   --shadow-pop: 0 4px 16px rgba(0, 0, 0, 0.18);
   --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.28);
+  /* r2 FE-05 (CHANGE-16): composed ring — var(--accent) is substituted at
+     THIS element's computed-value time and the substituted result is what
+     descendants inherit. Themes must therefore re-declare the whole token
+     (themes.css flips it on both sides) so the ring re-resolves per theme;
+     a :root-only declaration bakes the light accent into the dark ring. */
   --focus-ring: 0 0 0 1px var(--accent);
+  /* FE-06 tree-row keyboard ring geometry (ui_05_sidebar 2px inset outline).
+     Theme-independent; declared here with the rest of the focus vocabulary. */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: -2px;
+
+  /* ---- render-zone chrome motion + hairline (IT-03 FE-01) --------------------
+     --chrome-duration is the fold-caret transition AND the hover-show debounce
+     animation base (>=150ms per AC-FN-14; tech-design 11.2 chrome four-state
+     tokenization). --border-width / --text-* keep render-zone.css free of bare
+     values (FE-01 AC grep). Theme-split float colors live in themes.css with
+     the rest of the vocabulary (--float-bg, --float-border, --handle-accent,
+     --drop-indicator, --summary-fg, --on-accent, --accent-soft). */
+  --chrome-duration: 150ms;
+  --border-width: 1px;
+  /* ui_06 outlines that read thicker than hairline (task-box border 1.5px,
+     .img-outline 1.5px) — geometry only, still theme-independent. */
+  --border-thick: 1.5px;
+  --text-ui: 13px;
+  --text-body: 16px;
+  /* Float stacking slot (tech-design 11.2 "槽位 token"): above inline block
+     chrome, below modal/lightbox layers. */
+  --z-float: 2000;
+
+  /* ---- global overlays: ⊞ grid-picker geometry (IT-01 FE-11) ----------------
+     Cell metrics from ui_02 (below the --space-* scale): named tokens here so
+     the future grid-picker partition css (FE-05) carries no bare px. Toast
+     surface family and accent/danger soft fills are theme-split and live in
+     themes.css (--toast-*, --accent-soft-strong, --danger-soft). */
+  --grid-cell-size: 22px;
+  --grid-cell-gap: 2px;
+
+  /* ---- image resize handle geometry (IT-03 FE-04, ui_06 block A) ------------
+     Off-scale control metrics (14px grip box hung 5px past the image corner,
+     two diagonal grip marks) — named tokens here so render-zone.css stays free
+     of bare px (FE-01 AC). Same rationale as --grid-cell-*. */
+  --img-resize-size: 14px;
+  --img-resize-hang: 5px;
+  --img-resize-grip: 8px;
+  --img-resize-grip-short: 5px;
+
+  /* Link hover float (ui_06 block B) geometry — named tokens to keep
+     render-zone.css free of bare px (same rationale as --img-resize-*). */
+  --link-pop-url-width: 232px;
+  --link-pop-btn-width: 44px;
+  --link-pop-btn-gap: 1px;
+  --link-pop-url-size: 11px;
+  --link-pop-label-size: 10px;
+  --link-pop-icon-size: 14px;
+
+  /* ---- list drag handle / hover band geometry (ui_06 block C, batch-J) ------
+     Handle 18×22 accent block with a 4px handoff gap to the row's left edge
+     (design `margin-left:-22px` semantics: the handle's right 4px sits over
+     the band once the band bleeds --space-2 left of the line box). Hover band
+     is an overlay 34px tall (line box + --space-1 above/below) so the row
+     grows to the design box without displacing body lines (no global li
+     spacing change). */
+  --handle-width: 18px;
+  --handle-height: 22px;
+  --handle-gap: 4px;
+  --handle-hover-bar: 2px;
+  /* Drag-handle glyph tracking (ui_06 ⠿ marks) — keeps render-zone.css free of
+     bare px (FE-01 AC), same rationale as the rest of the --handle-* family. */
+  --handle-tracking: -1px;
+
+  /* ---- task checkbox + image-toolbar geometry (ui_06 block A/C, batch-J) ----
+     `.task-box` 16×16 with the 1.5px dim border; image-toolbar icon keys are
+     fixed 26×26 at the 14px icon glyph scale with the design 4px shell gap. */
+  --task-box-size: 16px;
+  --img-tb-btn-size: 26px;
+  --img-tb-gap: 4px;
+
+  /* ---- sidebar / file-tree metrics (IT-02 FE-10 token audit, batch H) --------
+     Named metrics so the sidebar partitions (chrome.css sidebar/outline
+     rules, filetree.css, .outline-fold) carry zero bare px (AC-FN-12 /
+     UI-ELEM-01 scan). Names follow the ui_05 sidebar vocabulary
+     (--sidebar-width / --tree-row-h / --tree-indent). --tree-row-h is the
+     FileTree ROW_HEIGHT virtualization contract AND the ui_05 row height
+     (28px) — keep in sync with ROW_HEIGHT in components/FileTree.tsx.
+     --tree-indent is the per-depth step (ui_05: 16px/级); tree rows pad
+     `--tree-indent * (depth + 1)`, outline rows pad
+     `--tree-indent * (level - 1)`. --outline-lv-w is the .lv level-badge
+     column; --active-bar-* is the outline active-follow left bar
+     (3px wide, 3px top/bottom inset, 2px right radius — ui_05).
+     --tree-accent-bar stays the 2px sidebar-tab underline (design underline
+     is 2px; do not repurpose for the 3px active bar).
+     --space-half / --space-hairline are the sub-scale chrome micro steps
+     (the 4px grid cannot express row pad-y 2px / rename pad 1px without
+     bare px). --hit-box-* is the 18/20/22/24 control hit-box scale.
+     --text-* extends the render-zone type pair down the sidebar chrome
+     scale (fold triangle glyph through icon buttons). */
+  --sidebar-width: 240px;
+  --tree-row-h: 28px;
+  --tree-indent: 16px;
+  --outline-lv-w: 22px;
+  --active-bar-w: 3px;
+  --active-bar-inset: 3px;
+  --active-bar-radius: 2px;
+  --tree-accent-bar: 2px;
+  --sidebar-back-bleed: 6px;
+  --dot-size: 6px;
+  --ops-menu-min-w: 180px;
+  --ops-menu-max-h: 520px;
+  --tree-menu-min-w: 140px;
+  --tree-menu-item-pad-y: 5px;
+  --tree-menu-item-pad-x: 10px;
+  --hit-box-sm: 18px;
+  --hit-box-md: 20px;
+  --hit-box-lg: 22px;
+  --hit-box-xl: 24px;
+  /* Status-bar band height (toast-host bottom clearance, batch-D face).
+     Mirrors the .status-bar height in statusbar.css — same keep-in-sync
+     pattern as --tree-row-h ↔ FileTree ROW_HEIGHT. Consumers reserve this
+     band so bottom-right floats never cover the metrics strip. */
+  --statusbar-height: 24px;
+  --space-half: 2px;
+  --space-hairline: 1px;
+  --text-glyph: 9px;
+  --text-micro: 10px;
+  --text-caption: 11px;
+  --text-meta: 12px;
+  --text-icon: 14px;
 }
 
 html,

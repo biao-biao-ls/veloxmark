@@ -19,11 +19,19 @@
   -webkit-app-region: no-drag;
 }
 
-.tb-logo {
-  width: 18px;
-  height: 18px;
+/* FE-01#8 / IT-04-FE-02#1: menubar brand text (ui_04 .menubar-brand) replaces
+   the old tb-logo 「#」 glyph — 12px / 600 / --fg-dim / 0.3px letter-spacing. */
+.menubar-brand {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-3) 0 var(--space-2);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-dim);
+  letter-spacing: 0.3px;
   flex-shrink: 0;
   pointer-events: none;
+  user-select: none;
 }
 
 .tb-btn {
@@ -103,9 +111,27 @@
   cursor: pointer;
 }
 
-.menubar-label:hover,
+.menubar-label:hover {
+  background: var(--bg-inset);
+}
+
+/* FE-01#7 / FE-05#5 (ui_04 .menu-root.is-active): grey fill + 600 weight +
+   2px accent underline (inset shadow so the button box never grows). */
 .menubar-label.menubar-open {
-  background: var(--code-bg);
+  background: var(--bg-inset);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* FE-05: keyboard focus ring on root buttons (UI-IXD-11) — focus-visible only
+   so mouse clicks don't show it; distinct from hover's fill (ring vs bg). */
+.menubar-label:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.menubar-label.menubar-open:focus-visible {
+  box-shadow: inset 0 -2px 0 var(--accent), var(--focus-ring);
 }
 
 .menu-dropdown {
@@ -113,41 +139,110 @@
   top: 100%;
   left: 0;
   z-index: 1000;
-  min-width: 220px;
+  /* FE-04#1: ui_04 .menu-panel 260px 口径（min-width 对齐批 A context-menu
+     先例——设计宽作下限，超长文案自然撑开至 cap，不截断）。 */
+  min-width: 260px;
+  max-width: 320px;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
-  padding: 4px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-menu);
+  padding: var(--space-2) var(--space-1);
   margin-top: 4px;
+  /* AC-RULE-10 限高内滚动：max-height 由 popup 基座计算后内联注入；
+     滚动条 token 化（任务页面元素 mini-track/mini-thumb 口径），超高才出现。 */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* FE-01#2: File 面板 is-wide 292px（ui_04 .menu-panel.is-wide）。 */
+.menu-dropdown--wide {
+  min-width: 292px;
+}
+
+/* FE-04#5 (ui_04 mini-track/mini-thumb): 4px track --bg-inset + 4px thumb
+   --fg-disabled, no arrow buttons. Chromium ignores ::-webkit-scrollbar when
+   standard scrollbar-width/color are declared (batch A lesson) — webkit
+   pseudo channel only. */
+.menu-dropdown::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.menu-dropdown::-webkit-scrollbar-track {
+  background: var(--bg-inset);
+  border-radius: 999px;
+}
+
+.menu-dropdown::-webkit-scrollbar-thumb {
+  background: var(--fg-disabled);
+  border-radius: 999px;
+}
+
+.menu-dropdown::-webkit-scrollbar-button:single-button {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+/* AC-RULE-10 贴下缘上翻：根下拉整面板挂到根按钮上方。 */
+.menu-dropdown--up {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: 4px;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
+  height: 30px;
   background: transparent;
   border: none;
   color: var(--fg);
   font-size: 13px;
-  padding: 6px 10px;
-  border-radius: 4px;
+  padding: 0 11px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   text-align: left;
 }
 
-/* P08: toggle checkmark column (empty span keeps labels aligned). */
+/* FE-01#1: check column is per-panel (ui_04 View 面有 mi-check 槽；File/Edit/
+   Insert/Help 无槽，标签与 mgroup-title 同 11px 左缘)。空 span 统一行结构。 */
 .menu-item-check {
   flex: 0 0 12px;
-  font-size: 12px;
+  width: 12px;
+  font-size: 11px;
   line-height: 1;
+  color: var(--accent);
+  text-align: center;
 }
 
+/* FE-01#3 / FE-05#8 (ui_04 .mi-label): single line, ellipsis overflow. */
+.menu-item-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* FE-01#6 / FE-05#1: highlight is --bg-inset grey with --fg text (ui_04
+   .mi.is-hover) — the accent-fill skin is gone (adjudicated: design wins). */
 .menu-item:hover:not(:disabled) {
-  background: var(--accent);
-  color: #ffffff;
+  background: var(--bg-inset);
+  color: var(--fg);
+}
+
+/* FE-05#2 (UI-IXD-11 three states): hover is fill-only; keyboard-active adds
+   an inset --accent ring — visible on the white panel AND on the grey fill
+   (the old --on-accent ring was white-on-white in light theme). */
+.menu-item.menu-item-active:not(:disabled) {
+  background: var(--bg-inset);
+  color: var(--fg);
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 
 .menu-item:disabled {
@@ -156,37 +251,83 @@
   cursor: default;
 }
 
-/* Second-level dropdown (File > Open Recent). */
+/* FE-01#5 / FE-05#3 (ui_04 .mi.is-disabled .mi-key): the shortcut grey-outs
+   with its label — same --fg-disabled, not --fg-dim. */
+.menu-item:disabled .menu-item-shortcut {
+  color: var(--fg-disabled);
+}
+
+/* Second-level dropdown (File > Open Recent / 格式 / 导出).
+   Open-state is JS (AC-RULE-02 submenu state machine); geometry (left/top/
+   max-height) is inlined from the popup base (computeSubPosition + layout) —
+   position:fixed escapes the root panel's overflow clip (limit-height scroll
+   would otherwise clip a left:100% absolute submenu into invisibility, AC-FN-08).
+   `menu-sub--flip` / `menu-dropdown--up` remain as semantic markers only. */
 .menu-sub-host {
   position: relative;
 }
 
 .menu-sub-host .menu-sub {
-  display: none;
-  top: -4px;
-  left: 100%;
-  margin-top: 0;
-  margin-left: -2px;
+  position: fixed;
+  margin: 0;
+  /* FE-04#6: ui_04 .submenu 190px — 不复用根面板宽（min-width 口径同上）。 */
+  min-width: 190px;
+  /* 量测落点由内联注入；此处中和 .menu-dropdown / --up 基类的 top/left/bottom */
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
 }
 
-.menu-sub-host:hover .menu-sub {
-  display: block;
+/* FE-04#8 (ui_04 .submenu .mi): submenu rows are 28px, root rows stay 30px. */
+.menu-sub-host .menu-sub .menu-item {
+  height: 28px;
 }
 
-.menu-item:hover .menu-item-shortcut {
-  color: rgba(255, 255, 255, 0.8);
+/* FE-04#7 (ui_04 .submenu-bridge): 6px hover bridge across the row→submenu
+   gap. The strip is a DOM child of the host and sits under the pointer path,
+   so traveling row → gap → submenu never fires host mouseleave (hover dead
+   zone). The 1px accent line is the design connector at the parent row's
+   mid-height (--bridge-line-y is injected by SubMenuHost measure). */
+.menu-sub-bridge {
+  position: fixed;
+  z-index: 1001;
+  background: transparent;
+}
+
+.menu-sub-bridge::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--bridge-line-y, 14px);
+  width: 7px;
+  height: 1px;
+  background: var(--accent);
 }
 
 .menu-item-shortcut {
   margin-left: auto;
+  flex: none;
   color: var(--fg-dim);
-  font-size: 12px;
+  font-size: 11px;
+  letter-spacing: 0.2px;
 }
 
 .menu-separator {
   height: 1px;
   background: var(--border);
-  margin: 4px 8px;
+  margin: var(--space-1) 10px;
+}
+
+/* FE-01: semantic group title (menu:ia-reorder) — greyed, non-interactive.
+   ui_04 .mgroup-title: 11px sides (aligns with .mi label inset), 0.4px track. */
+.menu-group-title {
+  padding: var(--space-1) 11px;
+  color: var(--fg-dim);
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  cursor: default;
+  user-select: none;
 }
 
 /* ---- window controls -------------------------------------------------------- */
@@ -218,14 +359,10 @@
 }
 
 /* macOS: native traffic lights (titleBarStyle hiddenInset) replace the custom
-   buttons, and the app logo is hidden like other native titlebars. The in-app
-   menubar is hidden too — the system menu bar owns File/Edit/View/Help there.
+   buttons. The in-app menubar (with its VeloxMark brand) is hidden too — the
+   system menu bar owns File/Edit/View/Help there, like other native titlebars.
    Content is padded right of the lights (trafficLightPosition x=14, ~52px). */
 .platform-mac .window-controls {
-  display: none;
-}
-
-.platform-mac .tb-logo {
   display: none;
 }
 
@@ -252,12 +389,12 @@
 
 .sidebar {
   position: relative; /* anchor for filetree virtualization offsetTop */
-  width: 240px;
+  width: var(--sidebar-width);
   flex-shrink: 0;
-  border-right: 1px solid var(--border);
+  border-right: var(--border-width) solid var(--border);
   background: var(--bg-sidebar);
   overflow-y: auto;
-  padding: 8px 0;
+  padding: var(--space-2) 0;
   display: flex;
   flex-direction: column;
 }
@@ -265,12 +402,12 @@
 .sidebar-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 11px;
+  gap: var(--space-2);
+  font-size: var(--text-caption);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--fg-dim);
-  padding: 4px 16px 8px;
+  padding: var(--space-1) var(--space-4) var(--space-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -280,12 +417,14 @@
   background: transparent;
   border: none;
   color: var(--fg-dim);
-  font-size: 11px;
+  font-size: var(--text-caption);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding: 2px 6px;
-  margin-left: -6px;
-  border-radius: 4px;
+  padding: var(--space-half) var(--sidebar-back-bleed);
+  /* bleeds one back-chip step left so the hover hit area reaches the panel
+     edge while the label stays aligned to the header text */
+  margin-left: calc(var(--sidebar-back-bleed) * -1);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -306,11 +445,11 @@
   background: transparent;
   border: none;
   color: var(--fg-dim);
-  font-size: 14px;
+  font-size: var(--text-icon);
   line-height: 1;
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
+  width: var(--hit-box-md);
+  height: var(--hit-box-md);
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
@@ -326,7 +465,7 @@
   align-items: center;
   gap: var(--space-1);
   padding: 0 var(--space-3);
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-width) solid var(--border);
   flex-shrink: 0;
 }
 
@@ -334,26 +473,39 @@
   background: transparent;
   border: none;
   /* transparent bottom border on every tab keeps height stable when the
-     active underline appears; -1px pulls it onto the container border. */
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
+     active underline appears; negative border-width pulls it onto the
+     container border. */
+  border-bottom: var(--tree-accent-bar) solid transparent;
+  margin-bottom: calc(var(--border-width) * -1);
   color: var(--fg-dim);
-  font-size: 13px;
+  font-size: var(--text-ui);
   padding: var(--space-2);
   cursor: pointer;
+  position: relative;
 }
 
 .sidebar-tab:hover {
   color: var(--fg);
 }
 
-/* 6A: active tab — accent underline (seg-current / outline-active accent
-   language). Typora's monochrome underline reads heavier than our UI needs. */
+/* 6A: active tab — text tone --fg + 600 (IT-04/FE-02#5, ui_05 .panel-tab.active).
+   Underline = design .panel-tab.active::after: inset --space-2 both ends
+   (text width, not full button), height --tree-accent-bar over the reserved
+   border strip. Typora's monochrome underline reads heavier than our UI needs. */
 .sidebar-tab.is-active {
-  color: var(--accent);
+  color: var(--fg);
   font-weight: 600;
-  border-bottom-color: var(--accent);
   cursor: default;
+}
+
+.sidebar-tab.is-active::after {
+  content: "";
+  position: absolute;
+  left: var(--space-2);
+  right: var(--space-2);
+  bottom: calc(var(--tree-accent-bar) * -1);
+  height: var(--tree-accent-bar);
+  background: var(--accent);
 }
 
 .sidebar-tabs .sidebar-action {
@@ -368,26 +520,32 @@
   gap: var(--space-2);
   padding: var(--space-5) var(--space-3);
   color: var(--fg-dim);
-  font-size: 13px;
+  font-size: var(--text-ui);
   text-align: center;
 }
 
 .outline-empty {
-  padding: 8px 16px;
-  font-size: 13px;
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-ui);
   color: var(--fg-dim);
 }
 
 .outline-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  position: relative;
   width: 100%;
+  height: var(--tree-row-h);
   text-align: left;
   background: transparent;
   border: none;
   color: var(--fg);
-  font-size: 13px;
+  font-size: var(--text-ui);
   line-height: 1.6;
-  padding: 2px 12px;
+  /* ui_05 .outline-row: right pad only — level indent rules below set
+     padding-left (`--tree-indent * (level - 1)`, lvl-1 flush). */
+  padding: 0 var(--space-2) 0 0;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
@@ -396,52 +554,114 @@
 }
 
 .outline-item:hover {
-  background: var(--code-bg);
+  background: var(--bg-inset);
 }
 
+/* FE-07#1-#2 / FE-08#1-#3 active-follow triad (ui_05 .outline-row.active-follow):
+   row fill --accent-soft, title --fg + 700, 3px left bar with 3px top/bottom
+   inset and a 2px outer right radius. NOT an accent title tint. */
 .outline-item.outline-active {
-  color: var(--accent);
-  font-weight: 600;
-  /* 5D/D2: Typora-style accent bar. inset shadow, not border-left — a border
-     participates in the box model and shifts text on hover/active jitter. */
-  box-shadow: inset 2px 0 0 var(--accent);
+  background: var(--accent-soft);
 }
 
-.outline-l1 {
+.outline-item.outline-active .outline-title {
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.outline-item.outline-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--active-bar-inset);
+  bottom: var(--active-bar-inset);
+  width: var(--active-bar-w);
+  background: var(--accent);
+  border-radius: 0 var(--active-bar-radius) var(--active-bar-radius) 0;
+}
+
+/* FE-08 nav-keyboard:focus-visible — keyboard focus ring (UI-ELEM-01: all
+   values tokenized; ui_05_sidebar .tree-row.kbd-focus idiom). Imperative class
+   + :focus-visible in sync (same as .filetree-kbd-focus): the class covers
+   programmatic .focus() after a nav keydown when the :focus-visible heuristic
+   lags, pointer presses set neither. Placed after .outline-active so the ring
+   rule wins while focus is on — the outline is the unique focus cue across
+   hover (--bg-inset fill) / active (accent-soft fill + fg-bold title + bar). */
+.outline-item[data-nav-focus].outline-kbd-focus,
+.outline-item[data-nav-focus]:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+  background: var(--bg-inset);
+}
+
+/* FE-07#3 .lv level badge (ui_05): Hn chip before the twisty. Row gap
+   supplies the design's margin-right spacing. */
+.outline-lv {
+  flex: none;
+  width: var(--outline-lv-w);
+  text-align: center;
+  color: var(--fg-disabled);
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.outline-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Title weight ladder (ui_05 .outline-row.lvl-* .title); active overrides
+   above win on specificity. */
+.outline-l1 .outline-title {
+  font-weight: 700;
+}
+
+.outline-l2 .outline-title {
   font-weight: 600;
 }
 
-/* 5D/D1: one --space-3 step per heading level below h1. Replaces the old
-   inline bare-px paddingLeft on the button (Outline.tsx) — later rule wins
-   over .outline-item's padding shorthand at equal specificity. */
+.outline-l3 .outline-title,
+.outline-l4 .outline-title,
+.outline-l5 .outline-title,
+.outline-l6 .outline-title {
+  font-weight: 400;
+  color: var(--fg-dim);
+}
+
+/* FE-08#7: one --tree-indent step per heading level below h1 (ui_05 inline
+   padding-left: var(--tree-indent) * (level - 1)). Later rules win over
+   .outline-item's padding shorthand at equal specificity. */
 .outline-l2 {
-  padding-left: calc(var(--space-3) * 2);
+  padding-left: var(--tree-indent);
 }
 
 .outline-l3 {
-  padding-left: calc(var(--space-3) * 3);
+  padding-left: calc(var(--tree-indent) * 2);
 }
 
 .outline-l4 {
-  padding-left: calc(var(--space-3) * 4);
+  padding-left: calc(var(--tree-indent) * 3);
 }
 
 .outline-l5 {
-  padding-left: calc(var(--space-3) * 5);
+  padding-left: calc(var(--tree-indent) * 4);
 }
 
 .outline-l6 {
-  padding-left: calc(var(--space-3) * 6);
+  padding-left: calc(var(--tree-indent) * 5);
 }
 
 /* ---- sidebar resize handle (P03 width persistence) -------------------------- */
 
 .sidebar-resizer {
-  width: 4px;
+  width: var(--space-1);
   flex-shrink: 0;
   cursor: col-resize;
   background: transparent;
-  margin-left: -2px;
+  /* half-step overlap onto the panel border so the hit strip straddles it */
+  margin-left: calc(var(--space-half) * -1);
   z-index: 10;
 }
 

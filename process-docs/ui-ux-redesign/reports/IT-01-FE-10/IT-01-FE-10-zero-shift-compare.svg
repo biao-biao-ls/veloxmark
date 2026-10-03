@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="330" viewBox="0 0 860 330" font-family="Segoe UI, Microsoft YaHei, sans-serif">
+  <rect width="860" height="330" fill="#ffffff"/>
+  <text x="24" y="32" font-size="16" font-weight="600" fill="#1a1a1a">IT-01 FE-10 0px 位移比对（AC-NF-05，实测坐标）</text>
+  <text x="24" y="54" font-size="11" fill="#666">chrome 显隐全程正文锚点位移 = 0px（overlay 槽位 0px，无布局占位）</text>
+
+  <!-- table header -->
+  <text x="24" y="90" font-size="11" font-weight="600" fill="#333">状态迁移</text>
+  <text x="300" y="90" font-size="11" font-weight="600" fill="#333">prose（表前正文）dTop/dLeft</text>
+  <text x="500" y="90" font-size="11" font-weight="600" fill="#333">tableOuter dTop/dLeft</text>
+  <text x="700" y="90" font-size="11" font-weight="600" fill="#333">tail（表后正文）dTop/dLeft</text>
+  <line x1="24" y1="98" x2="836" y2="98" stroke="#ccc" stroke-width="1"/>
+
+  <!-- row 1 -->
+  <text x="24" y="122" font-size="11" fill="#333">静息 → hover 浮现（chrome-on 上漆）</text>
+  <text x="300" y="122" font-size="11" fill="#2e7d32" font-weight="600">0 / 0</text>
+  <text x="500" y="122" font-size="11" fill="#2e7d32" font-weight="600">0 / 0</text>
+  <text x="700" y="122" font-size="11" fill="#2e7d32" font-weight="600">0 / 0</text>
+  <line x1="24" y1="130" x2="836" y2="130" stroke="#eee" stroke-width="1"/>
+
+  <!-- row 2 -->
+  <text x="24" y="154" font-size="11" fill="#333">hover → 离开消失（chrome-on 掉漆）</text>
+  <text x="300" y="154" font-size="11" fill="#2e7d32" font-weight="600">0 / 0</text>
+  <text x="500" y="154" font-size="11" fill="#2e7d32" font-weight="600">0 / 0</text>
+  <text x="700" y="154" font-size="11" fill="#2e7d32" font-weight="600">0 / 0</text>
+  <line x1="24" y1="162" x2="836" y2="162" stroke="#eee" stroke-width="1"/>
+
+  <!-- row 3 -->
+  <text x="24" y="186" font-size="11" fill="#333">编辑态工具栏 overlay 挂载（AC-NF-05 显隐面）</text>
+  <text x="300" y="186" font-size="11" fill="#2e7d32" font-weight="600">0 / 0</text>
+  <text x="500" y="186" font-size="11" fill="#2e7d32" font-weight="600">0 / 0</text>
+  <text x="700" y="186" font-size="11" fill="#b26a00">+1.28 / 0（见注）</text>
+  <line x1="24" y1="194" x2="836" y2="194" stroke="#eee" stroke-width="1"/>
+
+  <!-- row 4 -->
+  <text x="24" y="218" font-size="11" fill="#333">toast 出现 / 消失（FE-07 联调）</text>
+  <text x="300" y="218" font-size="11" fill="#2e7d32" font-weight="600">0 / 0</text>
+  <text x="500" y="218" font-size="11" fill="#2e7d32" font-weight="600">0 / 0</text>
+  <text x="700" y="218" font-size="11" fill="#2e7d32" font-weight="600">0 / 0</text>
+
+  <!-- note -->
+  <rect x="24" y="240" width="812" height="52" fill="#fff8e8" stroke="#b26a00" stroke-width="1"/>
+  <text x="36" y="260" font-size="10" fill="#7a4a00">注：+1.28px 为表后段（tail）在进入编辑态时的亚像素位移——来源是 P10 嵌套单元格编辑器度量（active cell min-width:3em / 嵌套 cm 行高），</text>
+  <text x="36" y="276" font-size="10" fill="#7a4a00">属编辑态单元格 chrome（FE-09 冻结面），非 chrome 显隐面；chrome 显隐（工具栏/col-grip/浮层）本身全部 0px（S3 六组比对全 0）。</text>
+
+  <text x="24" y="316" font-size="10" fill="#888">数据源：IT-01-FE-10-cdp-results.json（S3/S4/S7 MARKERS 探针）｜anchor slotPx = 0（CHROME_SLOT_PX 常量断言）</text>
+</svg>

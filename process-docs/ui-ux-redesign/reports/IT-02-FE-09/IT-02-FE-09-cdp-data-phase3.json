@@ -1,0 +1,145 @@
+{
+  "meta": {
+    "port": 9473,
+    "phase": "3",
+    "startedAt": "2026-09-30T08:22:01.100Z",
+    "fixturePath": "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md",
+    "startupDialog": null,
+    "fixtureHashBefore": "c7f6e99340a94ca9b0764720e3cad36cd40068190ea66c104ad70b6c8f900751",
+    "fixtureMatchesDriverText": true,
+    "seams": {
+      "p12": true,
+      "p13": true,
+      "p18": true,
+      "p18session": true,
+      "p26": true,
+      "prefs": true
+    },
+    "summary": {
+      "pass": 11,
+      "total": 11
+    }
+  },
+  "scenarios": {
+    "s8": {
+      "headingFolds": {
+        "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md": [
+          "2:Alpha 章节"
+        ]
+      },
+      "entry": [
+        "2:Alpha 章节"
+      ],
+      "paths": [
+        "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md"
+      ]
+    },
+    "s8ui": {
+      "fp": "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md",
+      "folded": [
+        "2:Alpha 章节"
+      ],
+      "summaries": [
+        "2:Alpha 章节"
+      ],
+      "docEq": true
+    },
+    "s8writeback": [
+      "2:Alpha 章节",
+      "2:Beta 章节"
+    ],
+    "s10": {
+      "headingFolds": {},
+      "p18": true
+    }
+  },
+  "checks": [
+    {
+      "name": "S0 e2e 缝可达（P12/P13/P18/P26/__veloxPrefs）",
+      "ok": true,
+      "detail": {
+        "p12": true,
+        "p13": true,
+        "p18": true,
+        "p18session": true,
+        "p26": true,
+        "prefs": true
+      }
+    },
+    {
+      "name": "S8 应用不崩溃、缝照常可用（AC-NF-14）",
+      "ok": true,
+      "detail": {
+        "p12": true,
+        "p18": true
+      }
+    },
+    {
+      "name": "S8 非数组条目/空路径/坏形状剔除",
+      "ok": true,
+      "detail": [
+        "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md"
+      ]
+    },
+    {
+      "name": "S8 元素类型清洗（123/null/空串滤除）",
+      "ok": true,
+      "detail": [
+        "2:Alpha 章节"
+      ]
+    },
+    {
+      "name": "S8 合法键存活",
+      "ok": true,
+      "detail": [
+        "2:Alpha 章节"
+      ]
+    },
+    {
+      "name": "S8 合法键恢复折叠 UI",
+      "ok": true,
+      "detail": {
+        "fp": "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it02-fe09-fold-memory-selftest.md",
+        "folded": [
+          "2:Alpha 章节"
+        ],
+        "summaries": [
+          "2:Alpha 章节"
+        ],
+        "docEq": true
+      }
+    },
+    {
+      "name": "S8 陈旧 ghost 键不生效",
+      "ok": true,
+      "detail": [
+        "2:Alpha 章节"
+      ]
+    },
+    {
+      "name": "S8 恢复不改 .md（getDoc 逐字节一致）",
+      "ok": true
+    },
+    {
+      "name": "S8 磁盘 hash 恒等",
+      "ok": true,
+      "detail": "c7f6e99340a94ca9b0764720e3cad36cd40068190ea66c104ad70b6c8f900751"
+    },
+    {
+      "name": "S8 写回漏斗清洗幽灵 key",
+      "ok": true,
+      "detail": [
+        "2:Alpha 章节",
+        "2:Beta 章节"
+      ]
+    },
+    {
+      "name": "S10 headingFolds 键位缺失按默认值降级（{} 不抛错）",
+      "ok": true,
+      "detail": {
+        "headingFolds": {},
+        "p18": true
+      }
+    }
+  ]
+}

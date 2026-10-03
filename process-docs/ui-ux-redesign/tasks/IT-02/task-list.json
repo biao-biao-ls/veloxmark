@@ -1,0 +1,480 @@
+{
+  "iteration": "IT-02",
+  "name": "期3 菜单栏与左导航",
+  "objective": "交付顶部菜单栏信息架构重排与快捷键回显单源、Q6/Q7 键位归属清理与补注册、菜单弹层可达与键盘通道，以及左导航文件树/大纲键盘导航、大纲平滑跳转、折叠记忆跨重启与取舍登记；命令 id / data-op e2e 缝零变更",
+  "techDesignPath": "ui-ux-redesign/design/tech-design.md",
+  "uiDesignPath": "../docs/requirements/ui-ux-redesign/ui",
+  "createdAt": "2026-09-28",
+  "updatedAt": "2026-09-28",
+  "features": [
+    {
+      "name": "重排顶部菜单分组",
+      "techDesignRef": "tech-design.md#3-api-接口设计命令契约面",
+      "prdRef": "PRD.md#62-顶部菜单栏",
+      "acRef": "ac.md#AC-FN-09",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_04_menubar.html",
+      "relatedTasks": [
+        "FE-01",
+        "BE-02"
+      ]
+    },
+    {
+      "name": "菜单快捷键回显单源派生",
+      "techDesignRef": "tech-design.md#5-领域模型",
+      "prdRef": "menu-tree.md#6-顶部菜单栏快捷键回显矩阵目标态",
+      "acRef": "ac.md#AC-FN-07",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_04_menubar.html",
+      "relatedTasks": [
+        "FE-02",
+        "FE-03"
+      ]
+    },
+    {
+      "name": "清理 Ctrl+Shift+T 键位归属",
+      "techDesignRef": "tech-design.md#3-api-接口设计命令契约面",
+      "prdRef": "PRD.md#12-开放问题与风险m16",
+      "acRef": "ac.md#AC-PEND-01",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_04_menubar.html",
+      "relatedTasks": [
+        "FE-03",
+        "BE-01"
+      ]
+    },
+    {
+      "name": "补注册缩放与开发者工具键位",
+      "techDesignRef": "tech-design.md#3-api-接口设计命令契约面",
+      "prdRef": "PRD.md#12-开放问题与风险m16",
+      "acRef": "ac.md#AC-PEND-02",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_04_menubar.html",
+      "relatedTasks": [
+        "FE-03",
+        "BE-01"
+      ]
+    },
+    {
+      "name": "菜单弹层限高滚动与边缘翻转",
+      "techDesignRef": "tech-design.md#112-参数化设计",
+      "prdRef": "PRD.md#62-顶部菜单栏",
+      "acRef": "ac.md#AC-RULE-10",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_04_menubar.html",
+      "relatedTasks": [
+        "FE-04"
+      ]
+    },
+    {
+      "name": "键盘遍历菜单与子菜单",
+      "techDesignRef": "tech-design.md#5-领域模型",
+      "prdRef": "PRD.md#55-状态机",
+      "acRef": "ac.md#AC-RULE-02",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_04_menubar.html",
+      "relatedTasks": [
+        "FE-05"
+      ]
+    },
+    {
+      "name": "键盘导航文件树",
+      "techDesignRef": "tech-design.md#3-api-接口设计命令契约面",
+      "prdRef": "PRD.md#63-左侧导航栏",
+      "acRef": "ac.md#AC-FN-13",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_05_sidebar.html",
+      "relatedTasks": [
+        "FE-06"
+      ]
+    },
+    {
+      "name": "键盘导航大纲",
+      "techDesignRef": "tech-design.md#3-api-接口设计命令契约面",
+      "prdRef": "PRD.md#63-左侧导航栏",
+      "acRef": "ac.md#AC-FN-13",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_05_sidebar.html",
+      "relatedTasks": [
+        "FE-08"
+      ]
+    },
+    {
+      "name": "平滑跳转大纲并跟随 active",
+      "techDesignRef": "tech-design.md#83-组件结构",
+      "prdRef": "PRD.md#63-左侧导航栏",
+      "acRef": "ac.md#AC-FN-11",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_05_sidebar.html",
+      "relatedTasks": [
+        "FE-07",
+        "FE-08"
+      ]
+    },
+    {
+      "name": "记忆章节折叠跨重启",
+      "techDesignRef": "tech-design.md#4-可复用数据源清单",
+      "prdRef": "PRD.md#63-左侧导航栏",
+      "acRef": "ac.md#AC-FN-25",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_05_sidebar.html",
+      "relatedTasks": [
+        "FE-09"
+      ]
+    },
+    {
+      "name": "同步大纲与正文折叠",
+      "techDesignRef": "tech-design.md#83-组件结构",
+      "prdRef": "PRD.md#63-左侧导航栏",
+      "acRef": "ac.md#AC-FN-30",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_05_sidebar.html",
+      "relatedTasks": [
+        "FE-08",
+        "FE-09"
+      ]
+    },
+    {
+      "name": "审计侧栏视觉 token",
+      "techDesignRef": "tech-design.md#84-差异化策略",
+      "prdRef": "PRD.md#63-左侧导航栏",
+      "acRef": "ac.md#AC-FN-12",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_05_sidebar.html",
+      "relatedTasks": [
+        "FE-10"
+      ]
+    },
+    {
+      "name": "登记功能缺口取舍",
+      "techDesignRef": "tech-design.md#71-迭代总览任务按期拆q1",
+      "prdRef": "PRD.md#12-开放问题与风险m16",
+      "acRef": "ac.md#AC-FN-13",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_05_sidebar.html",
+      "relatedTasks": [
+        "FE-11"
+      ]
+    }
+  ],
+  "feature-relations": [
+    {
+      "from": "重排顶部菜单分组",
+      "to": "菜单快捷键回显单源派生",
+      "relation": "联动"
+    },
+    {
+      "from": "菜单快捷键回显单源派生",
+      "to": "清理 Ctrl+Shift+T 键位归属",
+      "relation": "前置"
+    },
+    {
+      "from": "菜单快捷键回显单源派生",
+      "to": "补注册缩放与开发者工具键位",
+      "relation": "前置"
+    },
+    {
+      "from": "菜单弹层限高滚动与边缘翻转",
+      "to": "键盘遍历菜单与子菜单",
+      "relation": "联动"
+    },
+    {
+      "from": "平滑跳转大纲并跟随 active",
+      "to": "键盘导航大纲",
+      "relation": "前置"
+    },
+    {
+      "from": "同步大纲与正文折叠",
+      "to": "记忆章节折叠跨重启",
+      "relation": "联动"
+    },
+    {
+      "from": "登记功能缺口取舍",
+      "to": "键盘导航文件树",
+      "relation": "联动"
+    },
+    {
+      "from": "登记功能缺口取舍",
+      "to": "键盘导航大纲",
+      "relation": "联动"
+    }
+  ],
+  "e2e-paths": [
+    {
+      "id": "PATH-01",
+      "name": "菜单快捷键发现与执行",
+      "type": "happy",
+      "steps": [
+        "展开「视图」菜单核对 6 组语义分组与组内项序（功能点：重排顶部菜单分组，任务 FE-01）",
+        "逐项比对菜单右侧快捷键提示与实际触发键位（功能点：菜单快捷键回显单源派生，任务 FE-02，AC-FN-07）",
+        "按 Ctrl+Shift+T 仅触发 reopenClosedTab 重开标签（功能点：清理 Ctrl+Shift+T 键位归属，任务 FE-03）",
+        "按 Ctrl+=/Ctrl+-/Ctrl+0/F12 验证缩放与 DevTools 动作通道 windowZoom/windowToggleDevTools（功能点：补注册缩放与开发者工具键位，任务 FE-03/BE-01）",
+        "打开「插入」菜单确认「插入表格…」唯一且含「选区转表格…」（功能点：重排顶部菜单分组，任务 FE-01，menu:insert-dedupe）"
+      ]
+    },
+    {
+      "id": "PATH-02",
+      "name": "键盘走菜单与子菜单",
+      "type": "happy",
+      "steps": [
+        "Tab 聚焦菜单栏后 ←/→ 展开「文件」菜单（功能点：键盘遍历菜单与子菜单，任务 FE-05）",
+        "↑/↓ 遍历菜单项并进入「打开最近」子菜单（功能点：键盘遍历菜单与子菜单，任务 FE-05，AC-RULE-02）",
+        "Enter 执行菜单项且行为与点击等效（功能点：键盘遍历菜单与子菜单，任务 FE-05，AC-RULE-09 同源）",
+        "按 Esc 关闭菜单且焦点回正文（功能点：键盘遍历菜单与子菜单，任务 FE-05，AC-FN-10）"
+      ]
+    },
+    {
+      "id": "PATH-03",
+      "name": "左导航键盘阅读链路",
+      "type": "happy",
+      "steps": [
+        "Tab 聚焦文件树，↑/↓ 移动焦点并 Enter 打开文件（功能点：键盘导航文件树，任务 FE-06）",
+        "Tab 聚焦大纲，↑/↓ 移动焦点后 Enter 激活跳转（功能点：键盘导航大纲，任务 FE-08）",
+        "正文平滑滚动定位标题且大纲项保持 active（功能点：平滑跳转大纲并跟随 active，任务 FE-07，AC-FN-11）",
+        "大纲 ←/→ 折叠章节并核对正文同步（功能点：同步大纲与正文折叠，任务 FE-08/FE-09，AC-FN-30）",
+        "折叠后切标签再切回并重启应用，折叠保持且 .md 零字节变化（功能点：记忆章节折叠跨重启，任务 FE-09，AC-FN-25）"
+      ]
+    },
+    {
+      "id": "PATH-04",
+      "name": "空侧栏与误触键位不劫持正文",
+      "type": "error",
+      "steps": [
+        "空工作区聚焦文件树验证无焦点行且键盘事件不劫持正文（功能点：键盘导航文件树，任务 FE-06，filetreeKeys 空树分支）",
+        "焦点在正文时按 ↑/↓/Enter 验证不触发侧栏/大纲动作（功能点：键盘导航大纲，任务 FE-08）",
+        "大纲叶子节点按 ←/→ 验证不动作不报错（功能点：键盘导航大纲，任务 FE-08）",
+        "无可恢复标签时 Ctrl+Shift+T 对应菜单项灰显不执行（功能点：清理 Ctrl+Shift+T 键位归属，任务 FE-03，precondition 灰显）"
+      ]
+    },
+    {
+      "id": "PATH-05",
+      "name": "窗口边缘菜单全项可达",
+      "type": "edge",
+      "steps": [
+        "窗口贴屏幕右下角展开「视图」15 项菜单（功能点：菜单弹层限高滚动与边缘翻转，任务 FE-04）",
+        "验证限高内滚动且全部一级项完整可点（功能点：菜单弹层限高滚动与边缘翻转，任务 FE-04，AC-RULE-10/AC-NF-08）",
+        "hover 子菜单项间移动不闪烁、移回父项收拢（功能点：菜单弹层限高滚动与边缘翻转，任务 FE-04，AC-FN-08）",
+        "窗口缩至 640×400 再展开菜单验证无裁切不可达（功能点：菜单弹层限高滚动与边缘翻转，任务 FE-04，AC-ERR-09）"
+      ]
+    },
+    {
+      "id": "PATH-06",
+      "name": "折叠记忆失效清洗与取舍对账",
+      "type": "edge",
+      "steps": [
+        "折叠某二级章节后删除该标题，验证失效 foldKey 被 useFoldSync 清洗（功能点：记忆章节折叠跨重启，任务 FE-09）",
+        "重启应用验证剩余折叠保持且 .md 逐字节不变（功能点：记忆章节折叠跨重启，任务 FE-09，AC-FN-25）",
+        "深浅主题各一遍核对侧栏焦点环/三态 token（功能点：审计侧栏视觉 token，任务 FE-10，AC-FN-12）",
+        "对照取舍清单核对 NAV-GAPS-SORT/MSLT 标注不实现、KBRD 已落地（功能点：登记功能缺口取舍，任务 FE-11，AC-FN-13）"
+      ]
+    }
+  ],
+  "summary": {
+    "infra": 0,
+    "backend": 2,
+    "frontend": 11,
+    "total": 13
+  },
+  "tasks": [
+    {
+      "seq": 1,
+      "id": "FE-01",
+      "name": "菜单信息架构重排（menuLayout 五根菜单分组/插入域去重/命名统一，命令 id 不变）",
+      "role": "frontend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-01.md"
+    },
+    {
+      "seq": 2,
+      "id": "FE-02",
+      "name": "快捷键回显单源派生与双源守护（fmtShortcut 派生固化 + shortcutSync.test）",
+      "role": "frontend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-02.md"
+    },
+    {
+      "seq": 3,
+      "id": "FE-03",
+      "name": "键位归属清理与补注册（Q6 Ctrl+Shift+T 独占 + Q7 zoom×3/DevTools 注册表侧）",
+      "role": "frontend",
+      "dependencies": [
+        "FE-02"
+      ],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-03.md"
+    },
+    {
+      "seq": 4,
+      "id": "FE-04",
+      "name": "菜单弹层限高滚动与边缘翻转（下拉/子菜单全项可达 + 四条关闭路径）",
+      "role": "frontend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-04.md"
+    },
+    {
+      "seq": 5,
+      "id": "FE-05",
+      "name": "菜单与子菜单键盘遍历（方向键遍历/Enter 执行/Esc 关闭，Q8 菜单键盘化兜底）",
+      "role": "frontend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-05.md"
+    },
+    {
+      "seq": 6,
+      "id": "FE-06",
+      "name": "文件树键盘导航（filetreeKeys 纯逻辑模块 + roving tabindex + 单测）",
+      "role": "frontend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-06.md"
+    },
+    {
+      "seq": 7,
+      "id": "FE-07",
+      "name": "大纲平滑跳转与 active 跟随（useOutlineNav 抽离，App.tsx 一行转发）",
+      "role": "frontend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-07.md"
+    },
+    {
+      "seq": 8,
+      "id": "FE-08",
+      "name": "大纲键盘导航（roving tabindex + ↑/↓/←/→/Enter，折叠写 headingFolds）",
+      "role": "frontend",
+      "dependencies": [
+        "FE-07"
+      ],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-08.md"
+    },
+    {
+      "seq": 9,
+      "id": "FE-09",
+      "name": "折叠记忆口径统一（headingFolds 跨重启持久 + 失效清洗 + 不写正文收口）",
+      "role": "frontend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-09.md"
+    },
+    {
+      "seq": 10,
+      "id": "FE-10",
+      "name": "侧栏视觉 token 化审计（焦点环/三态取 token，深浅主题对照走查）",
+      "role": "frontend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-10.md"
+    },
+    {
+      "seq": 11,
+      "id": "FE-11",
+      "name": "功能缺口取舍清单登记（Q9：大纲排序/节点多选登记不实现，功能树联动标注）",
+      "role": "frontend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-11.md"
+    },
+    {
+      "seq": 12,
+      "id": "BE-01",
+      "name": "加速键单源收敛（Q6 toggleTheme 撤键 + Q7 zoom×3/DevTools 四键迁入 DARWIN_COMMAND_ACCELERATORS）",
+      "role": "backend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "BE-01.md"
+    },
+    {
+      "seq": 13,
+      "id": "BE-02",
+      "name": "macOS 原生菜单分组与文案对齐（menu-tree 附录 A + NATIVE_MENU_STRINGS 新分组名 en/zh）",
+      "role": "backend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "BE-02.md"
+    }
+  ],
+  "phases": [
+    {
+      "phase": 1,
+      "name": "菜单与左导航基础改造",
+      "tasks": [
+        "FE-01",
+        "FE-02",
+        "FE-04",
+        "FE-05",
+        "FE-06",
+        "FE-07",
+        "FE-09",
+        "FE-10",
+        "FE-11",
+        "BE-01",
+        "BE-02"
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "键位收口与大纲键盘导航",
+      "tasks": [
+        "FE-03",
+        "FE-08"
+      ]
+    }
+  ]
+}

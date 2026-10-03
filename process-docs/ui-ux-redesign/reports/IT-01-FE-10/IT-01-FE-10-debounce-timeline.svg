@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="360" viewBox="0 0 860 360" font-family="Segoe UI, Microsoft YaHei, sans-serif">
+  <rect width="860" height="360" fill="#ffffff"/>
+  <text x="24" y="32" font-size="16" font-weight="600" fill="#1a1a1a">IT-01 FE-10 防抖时间轴（AC-NF-04，实测 CDP 数据）</text>
+  <text x="24" y="54" font-size="11" fill="#666">阈值 ≥150ms 双向 | 快速掠过 0 闪烁 | 不半途浮现 | 离开同延迟消失</text>
+
+  <!-- lane 1: rapid pass -->
+  <text x="24" y="92" font-size="12" fill="#333">① 快速掠过（&lt;150ms）</text>
+  <line x1="200" y1="88" x2="820" y2="88" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="200" y="80" width="74" height="16" fill="none" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <text x="278" y="93" font-size="10" fill="#c0392b">enter→leave 73.9ms，计时取消，paint 0 次</text>
+
+  <!-- lane 2: slow hover reveal -->
+  <text x="24" y="150" font-size="12" fill="#333">② 慢速 hover → 浮现</text>
+  <line x1="200" y1="146" x2="820" y2="146" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="200" y="138" width="145" height="16" fill="#f6d9d7" stroke="#c0392b" stroke-width="1"/>
+  <rect x="345" y="138" width="475" height="16" fill="#d7ecd9" stroke="#2e7d32" stroke-width="1"/>
+  <text x="210" y="150" font-size="10" fill="#c0392b">show-pending 165.2ms</text>
+  <text x="355" y="150" font-size="10" fill="#2e7d32">chrome-on 浮现（仅微控件 col-grip；表格工具栏 hover 态不渲染）</text>
+
+  <!-- lane 3: leave hide -->
+  <text x="24" y="208" font-size="12" fill="#333">③ 离开 → 同延迟消失</text>
+  <line x1="200" y1="204" x2="820" y2="204" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="200" y="196" width="430" height="16" fill="#d7ecd9" stroke="#2e7d32" stroke-width="1"/>
+  <rect x="630" y="196" width="140" height="16" fill="#fde8c8" stroke="#b26a00" stroke-width="1"/>
+  <rect x="770" y="196" width="50" height="16" fill="#eeeeee" stroke="#999" stroke-width="1"/>
+  <text x="210" y="208" font-size="10" fill="#2e7d32">visible（离开延迟消失仍绘制）</text>
+  <text x="638" y="208" font-size="10" fill="#b26a00">hide-pending 162.9ms</text>
+  <text x="775" y="208" font-size="10" fill="#555">静息</text>
+
+  <!-- lane 4: hush -->
+  <text x="24" y="266" font-size="12" fill="#333">④ Esc 回安静（FE-09 hush）</text>
+  <line x1="200" y1="262" x2="820" y2="262" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="200" y="254" width="135" height="16" fill="none" stroke="#666" stroke-width="1"/>
+  <rect x="335" y="254" width="133" height="16" fill="#d7ecd9" stroke="#2e7d32" stroke-width="1"/>
+  <rect x="468" y="254" width="352" height="16" fill="#eeeeee" stroke="#c0392b" stroke-width="1.5"/>
+  <text x="210" y="266" font-size="10" fill="#666">enter 后 165.3ms 浮现</text>
+  <text x="345" y="266" font-size="10" fill="#2e7d32">visible</text>
+  <text x="478" y="266" font-size="10" fill="#c0392b">Esc → 即时掉漆（0ms 等待）+ quietLock：驻留指针/合成 enter 不复燃</text>
+
+  <!-- threshold marker -->
+  <line x1="345" y1="120" x2="345" y2="286" stroke="#c0392b" stroke-width="1" stroke-dasharray="2 3"/>
+  <text x="348" y="298" font-size="10" fill="#c0392b">150ms 防抖线（CHROME_DEBOUNCE_MS = HOVER_DELAY_MS = --chrome-duration）</text>
+
+  <text x="24" y="330" font-size="10" fill="#888">数据源：IT-01-FE-10-cdp-results.json（S2a/S2b/S2c/S6a）｜深色主题复测 reveal 156.3ms ｜ typecheck 0 err ｜ unit 869/869</text>
+</svg>

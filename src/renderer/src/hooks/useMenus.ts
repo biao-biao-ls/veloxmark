@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import type { MenuDef } from '../components/MenuBar'
 import {
   buildCommands,
   buildMenus,
-  fmtShortcut,
   matchGlobalShortcut,
   type CommandOps,
   type RecentItem
@@ -21,7 +20,6 @@ interface Args extends CommandOps {
  */
 export function useMenus({ isMac, recentItems, ...ops }: Args): {
   menus: MenuDef[]
-  formatShortcut: (shortcut: string) => string
 } {
   // Rebuilt every render so handlers always close over the latest ops;
   // subscriptions below read through a ref instead of re-binding.
@@ -57,6 +55,5 @@ export function useMenus({ isMac, recentItems, ...ops }: Args): {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  const formatShortcut = useCallback((s: string) => fmtShortcut(s, isMac), [isMac])
-  return { menus, formatShortcut }
+  return { menus }
 }

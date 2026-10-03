@@ -44,6 +44,8 @@ const api: RendererApi = {
     ipcRenderer.invoke(IpcChannels.pathMove, srcPath, destDir),
   pathExists: (filePath: string): Promise<boolean> =>
     ipcRenderer.invoke(IpcChannels.filePathExists, filePath),
+  isWritable: (filePath: string): Promise<boolean> =>
+    ipcRenderer.invoke(IpcChannels.fileIsWritable, filePath),
   resolveLink: (baseDir: string, href: string): Promise<LinkResolveResult> =>
     ipcRenderer.invoke(IpcChannels.linkResolve, baseDir, href),
   openExternal: (url: string): Promise<boolean> =>

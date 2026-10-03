@@ -7,6 +7,11 @@
  * host (components/EditorContextMenu.tsx) renders what the store holds. Zero
  * business logic in the DOM.
  *
+ * FE-01 r2 契约例外：表上下文菜单（⋮ TBL-MOR-OPN / 单元格右键 / Shift+F10，
+ * hit.kind === 'table-cell'）是封闭面 —— 只呈现 table delta 的 5 组 19 项
+ * （ui_03_table_menu.html 矩阵），不拼接通用编辑骨架；编辑器通用右键（非表
+ * 上下文）仍走共享骨架，两面互不影响。
+ *
  * 非平移点（spec 2C）：`const rt = runtime` → `getCtxRuntime()`（runtime 私有
  * 随迁 ctxMenuStore，行为等价）；`sep` 提为导出供 opsTable 共用（单源，不进
  * barrel 公面）。
@@ -202,6 +207,11 @@ export function buildContextMenu(view: EditorView, hit: BlockHit): CtxMenuItem[]
   }
   if (hit.kind === 'link') items.unshift(...linkDelta(hit, rt))
   if (hit.kind === 'image' && hit.href) items.unshift(...linkDelta(hit, rt))
+
+  // FE-01 r2 契约裁剪：表上下文菜单（⋮ / 单元格右键 / Shift+F10 三入口同源）为
+  // 封闭面 —— 5 组 19 项即全部内容，通用编辑项（剪切/复制/粘贴 + 复制为/段落/
+  // 格式/插入子菜单）不进表上下文菜单（ui_03 菜单 DOM 止于「删除表格」）。
+  if (hit.kind === 'table-cell') return items
 
   items.push(
     {

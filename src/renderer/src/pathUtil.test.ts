@@ -1,6 +1,6 @@
 /** pathUtil boundary cases (task 3.2) — win/posix separators, bare names, roots. */
 import { describe, expect, it } from 'vitest'
-import { baseDirOf, baseNameOf } from './pathUtil'
+import { baseDirOf, baseNameOf, pathKey, pathsEqual } from './pathUtil'
 
 describe('baseDirOf', () => {
   it('strips the last segment and separator (posix)', () => {
@@ -29,5 +29,28 @@ describe('baseNameOf', () => {
     expect(baseNameOf('a.md')).toBe('a.md')
     expect(baseNameOf('/')).toBe('')
     expect(baseNameOf('')).toBe('')
+  })
+})
+
+describe('pathKey', () => {
+  it('collapses both separators to `/` (canonical compare key)', () => {
+    expect(pathKey('D:\\w\\docs\\a.md')).toBe('D:/w/docs/a.md')
+    expect(pathKey('D:/w/docs/a.md')).toBe('D:/w/docs/a.md')
+    expect(pathKey('a.md')).toBe('a.md')
+    expect(pathKey('')).toBe('')
+  })
+})
+
+describe('pathsEqual', () => {
+  it('is separator-insensitive (win scan `\` vs open-path `/`)', () => {
+    expect(pathsEqual('D:\\w\\intro.md', 'D:/w/intro.md')).toBe(true)
+    expect(pathsEqual('D:/w/intro.md', 'D:\\w\\intro.md')).toBe(true)
+    expect(pathsEqual('D:\\w\\intro.md', 'D:\\w\\intro.md')).toBe(true)
+  })
+
+  it('still distinguishes different basenames/dirs', () => {
+    expect(pathsEqual('D:\\w\\intro.md', 'D:\\w\\root.md')).toBe(false)
+    expect(pathsEqual('D:\\w\\intro.md', 'D:\\w\\intro.md.bak')).toBe(false)
+    expect(pathsEqual('D:\\w\\intro.md', '')).toBe(false)
   })
 })

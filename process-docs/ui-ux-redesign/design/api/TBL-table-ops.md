@@ -44,7 +44,7 @@
 | `data-table-handle` delta | e2e 契约 | 修改 | 删 4 留 1：删 row-insert / row-delete / col-insert-left / col-delete，留 col-grip；工具栏/⋮ 改挂统一 data-op | PRD 6 导语 | AC-RULE-17（修订后） | Q2（ADR `e2e-contract-delta.md`） |
 | `key:struct-echo` | 菜单回显 | 修改 | ⋮/右键菜单有键项 100% 回显（由 STRUCT_KEYS 单源派生 `fmtShortcut`），无键项右侧留空 | PRD 6.2 | AC-FN-06, AC-FN-07, AC-RULE-11 | — |
 | `key:menu-fallback` | 键盘通道 | 新增 | 删除行/列、对齐、⊞ 缩放、删表不补专键：Shift+F10 / Menu 键唤出 ⋮=右键同源菜单 → 方向键遍历 → Enter 执行，禁用态同步灰显 | PRD 12 #10 | AC-RULE-09 | Q8 |
-| `grid:resize-range` | op 语义 | 修改 | ⊞ 可选范围逐维 max(20,R0)×max(12,C0)，不主动缩减既有结构 | PRD 6.1 | AC-RULE-12, AC-OP-07, AC-ERR-13 | —（AC 冻结） |
+| `grid:resize-range` | op 语义 | 修改 | ⊞ 可选范围逐维 max(20,R0)×max(12,C0)，不主动缩减既有结构；读数下方 4 预设钮 1×1/2×2/3×3/自动适应窗口（`estimateAutoFitCols(fitWidth,maxCols)=clamp(⌊fitWidth/96⌋,1,maxCols)`，GRID_AUTO_FIT_COL_PX=96，行数保持 R0——CHANGE-9）；cells 容器 max-width+overflow-x 横向可达（CHANGE-32） | PRD 6.1 | AC-RULE-12, AC-OP-07, AC-ERR-13 | —（AC 冻结） |
 
 ---
 

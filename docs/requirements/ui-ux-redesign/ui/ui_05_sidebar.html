@@ -345,6 +345,20 @@
   }
   .icon-btn:hover { background: var(--bg-inset); color: var(--fg); }
 
+  /* Q9 差异注记（原型示意标注：batch-bar/checkbox/拖拽排序均「不实现」） */
+  .diff-note {
+    flex: none;
+    margin: var(--space-1) var(--space-2) 0;
+    padding: var(--space-1) var(--space-2);
+    border: 1px dashed var(--danger);
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--danger);
+    background: var(--danger-soft);
+  }
+  .diff-note b { font-weight: 700; }
+
   /* 多选批量操作条 */
   .batch-bar {
     display: flex;
@@ -988,6 +1002,7 @@
     </div>
 
     <!-- 场景横幅（ui_01 共享外壳样式） -->
+    <!-- Q9 差异注记：场景标题「多选 · 拖拽排序」为原型措辞（原型早于 Q9 裁决）——两项均「不实现（Q9）」，功能缺口仅键盘导航落地；详见 Need Gate 取舍清单卡与 prd/gap-tradeoffs.md -->
     <div class="scene-banner">
       <div class="scene-banner-title">
         <span class="scene-index">场景 5/7</span>
@@ -1017,6 +1032,7 @@
           <button class="icon-btn" type="button" title="搜索文件">⌕</button>
         </div>
 
+        <!-- Q9 差异注记：batch-bar 多选批量操作条为原型示意（原型早于 Q9 裁决）——节点多选+批量操作「不实现（Q9）」，替代=单节点操作循环执行；不开发对应交互，示意保留不作需求 -->
         <!-- 多选批量操作条 -->
         <div class="batch-bar">
           <span class="count">已选 2 项</span>
@@ -1027,6 +1043,7 @@
           <span class="sep">/</span>
           <span class="op danger">删除</span>
         </div>
+        <div class="diff-note">差异注记（Q9）：多选 + 批量操作<b>不实现</b>——批量文件安全语义成本过高（误删/误移多文件的确认与恢复语义不成比例），替代=单节点操作循环执行。batch-bar/checkbox 为原型示意（原型早于 Q9 裁决），不作需求。</div>
 
         <div class="tree-wrap">
           <!-- 键盘导航标注 -->
@@ -1049,6 +1066,7 @@
               <span class="icon folder">▤</span>
               <span class="name">docs</span>
             </div>
+            <!-- Q9 差异注记：checkbox/selected 多选行为为原型示意（原型早于 Q9 裁决）——节点多选「不实现（Q9）」，文件树仅单节点操作 -->
             <!-- design.md 多选 1 -->
             <div class="tree-row selected">
               <span class="indent" style="width: calc(var(--tree-indent) * 2)"><i style="left: 8px"></i></span>
@@ -1142,6 +1160,7 @@
               <span class="meta">（含 3 子节 · 折叠已记忆）</span>
             </div>
 
+            <!-- Q9 差异注记：drag-handle/拖拽抬起/drop-line 拖拽排序为原型示意（原型早于 Q9 裁决）——大纲排序「不实现（Q9）」，替代=剪切/粘贴正文段落 -->
             <!-- H2 风险与对策：拖拽抬起中 -->
             <div class="outline-row lvl-2 dragging" style="padding-left: var(--tree-indent)">
               <span class="drag-handle" title="拖拽排序">⠿</span>
@@ -1175,7 +1194,8 @@
           </div>
         </div>
 
-        <!-- 底部注记：折叠持久化 -->
+        <!-- 底部注记：折叠持久化 + Q9 差异注记（拖拽排序） -->
+        <div class="diff-note">差异注记（Q9）：大纲排序<b>不实现</b>——文档结构重写风险大（标题块整段搬运易错位、与折叠态/锚点联动复杂），替代=剪切/粘贴正文段落。drag-handle/放置线为原型示意（原型早于 Q9 裁决），不作需求。</div>
         <div class="outline-note">
           折叠态写入本地偏好键 <code>outline.fold.*</code> · 跨重启持久 · 不写入 .md
         </div>
@@ -1199,7 +1219,7 @@
           <p>技术风险集中在 <span class="inline-code">livePreview/build → handlers → table/widget</span> 的循环依赖链上，拆分需走 SDD 流程；进度风险来自快捷键双源同步与 IPC 裸字面量，计划以编译期常量收口。<span class="cursor-hint"></span></p>
 
           <h2>下周计划</h2>
-          <p>推进左侧导航改造落地：补齐键盘导航、多选批量操作与大纲拖拽排序，折叠记忆接入 <span class="inline-code">preferences/store.ts</span>，并同步更新 e2e 缝契约。</p>
+          <p>推进左侧导航改造落地：补齐键盘导航、多选批量操作与大纲排序，折叠记忆接入 <span class="inline-code">preferences/store.ts</span>，并同步更新 e2e 缝契约。</p>
         </article>
       </section>
     </div>
@@ -1244,35 +1264,35 @@
       </div>
     </div>
 
-    <!-- 功能缺口取舍 -->
+    <!-- 功能缺口取舍（Q9 裁决已锁定 2026-09-28，本卡按 Q9 校正；登记物=prd/gap-tradeoffs.md） -->
     <div class="card">
       <div class="card-title">
         Need Gate 取舍清单
-        <span class="badge">随设计规范定稿</span>
+        <span class="badge">Q9 已裁决 · 清单定稿</span>
       </div>
       <div class="gate-list">
         <div class="gate-item">
-          <span class="st do">做</span>
+          <span class="st do">实现</span>
           <span class="desc">键盘导航</span>
-          <span class="hint">↑↓ 移动焦点 · Enter 打开 · 可见焦点环</span>
+          <span class="hint">FE-06/FE-08 落地 · ↑↓ 移动焦点 · Enter 打开 · 可见焦点环</span>
         </div>
         <div class="gate-item">
-          <span class="st do">做</span>
-          <span class="desc">节点多选 + 批量操作</span>
-          <span class="hint">Ctrl 多选 · 移动 / 重命名 / 删除</span>
+          <span class="st pool">不实现</span>
+          <span class="desc">节点多选 + 批量操作（Q9）</span>
+          <span class="hint">替代=单节点操作循环执行</span>
         </div>
         <div class="gate-item">
-          <span class="st do">做</span>
-          <span class="desc">大纲拖拽排序</span>
-          <span class="hint">文档结构正确更新（标题层级随迁）</span>
+          <span class="st pool">不实现</span>
+          <span class="desc">大纲排序（Q9）</span>
+          <span class="hint">替代=剪切/粘贴正文段落</span>
         </div>
         <div class="gate-item">
           <span class="st pool">迭代池</span>
           <span class="desc">其余候选功能</span>
-          <span class="hint">过滤 / 收藏 / 云同步等不进本轮</span>
+          <span class="hint">非 Q9 附注：其余候选进迭代池另立需求（出处：proposal.md「Iteration Pool」、PRD 5.3 I 步骤「迭代池另立」）</span>
         </div>
       </div>
-      <div class="card-sub">取舍口径：本轮只补齐「树操作三缺口」，其余进入迭代池排队，避免范围蔓延。</div>
+      <div class="card-sub">取舍口径（Q9）：键盘导航=实现（已落地）；节点多选/大纲排序=不实现（理由与替代路径见 prd/gap-tradeoffs.md）。附注（非 Q9 裁决）：其余候选进入迭代池另立需求（出处：proposal.md「Iteration Pool」、PRD 5.3 I 步骤「迭代池另立」）。</div>
     </div>
   </div>
 
@@ -1286,6 +1306,7 @@
       <li class="annotation-item"><span class="annotation-dot"></span><span><strong>焦点可见 · 键鼠双通道</strong>：键盘 2px accent 焦点环，hover 行底 --bg-inset</span></li>
       <li class="annotation-item"><span class="annotation-dot"></span><span><strong>树缩进 16px 级差</strong>：逐级缩进 + 导引线，行高 28px</span></li>
       <li class="annotation-item"><span class="annotation-dot"></span><span><strong>hover 行 --bg-inset</strong>：文件树 / 大纲树统一悬停反馈</span></li>
+      <li class="annotation-item"><span class="annotation-dot"></span><span><strong>Q9 差异注记</strong>：batch-bar / checkbox / 拖拽排序为原型示意（原型早于裁决）——节点多选与大纲排序<b>不实现（Q9）</b>，仅键盘导航落地</span></li>
     </ul>
     <div class="dim-strip">
       <span class="dim-chip">左导航宽 <b>240px</b></span>

@@ -127,6 +127,19 @@ describe('visibleRows reveal chain (6C D2)', () => {
     })
     expect(paths(rows)).toEqual(['C:\\w\\docs', 'C:\\w\\root.md'])
   })
+
+  it('reveal keys match across separators (open-path `/` vs scan `\\`)', () => {
+    // FE-06 r2 #11: filePath may arrive with `/` (seams/session) while tree
+    // rows are win32 `\\` — the ancestor chain must still reveal.
+    const rows = visibleRows(tree, {
+      expanded: {},
+      revealDirs: ancestorDirPaths('C:/w/docs/deep/a.md')
+    })
+    expect(paths(rows)).toContain('C:\\w\\docs\\deep\\a.md')
+    expect(isDirOpen('C:\\w\\docs', { expanded: {}, revealDirs: ancestorDirPaths('C:/w/docs/deep/a.md') })).toBe(true)
+    expect(isDirOpen('C:\\w\\docs', { expanded: {}, revealDirs: new Set(['C:/w/docs']) })).toBe(true)
+    expect(isDirOpen('C:\\w\\docs', { expanded: {}, revealDirs: new Set(['C:\\w\\docs']) })).toBe(true)
+  })
 })
 
 describe('visibleRows rename chain (UX-P07-F4 force-open)', () => {

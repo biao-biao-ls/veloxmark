@@ -79,7 +79,7 @@ export class MathBlockWidget extends BlockWidget {
       }
     ])
     bar.appendChild(chip)
-    return this.wrapWithGap(el, view)
+    return this.wrapWithGap(el, view, 'math')
   }
 }
 

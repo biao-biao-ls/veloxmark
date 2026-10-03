@@ -1,0 +1,176 @@
+{
+  "overSanity": {
+    "composited": "rgb(235,237,239)",
+    "ratioWith333": 10.77
+  },
+  "light": {
+    "label": "light",
+    "clickedIntro": true,
+    "byDepth": {
+      "0": {
+        "padLeft": "12px",
+        "name": "docs"
+      }
+    },
+    "activeRow": {
+      "cls": "filetree-item filetree-active filetree-selected",
+      "style": {
+        "color": "rgb(9, 105, 218)",
+        "backgroundColor": "color(srgb 0.0352941 0.411765 0.854902 / 0.12)",
+        "fontWeight": "600",
+        "fontSize": "13px",
+        "outlineWidth": "0px",
+        "outlineStyle": "none",
+        "outlineColor": "rgb(9, 105, 218)",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "height": "24.7969px",
+        "width": "239px",
+        "paddingLeft": "12px",
+        "borderRadius": "0px"
+      }
+    },
+    "kbdRow": {
+      "cls": "filetree-item filetree-kbd-focus",
+      "hasNavFocus": true,
+      "style": {
+        "color": "rgb(51, 51, 51)",
+        "backgroundColor": "rgb(242, 242, 242)",
+        "fontWeight": "400",
+        "fontSize": "13px",
+        "outlineWidth": "2px",
+        "outlineStyle": "solid",
+        "outlineColor": "rgb(9, 105, 218)",
+        "outlineOffset": "-2px",
+        "boxShadow": "none",
+        "height": "24.7969px",
+        "width": "239px",
+        "paddingLeft": "12px",
+        "borderRadius": "0px"
+      }
+    },
+    "hoverRowStyle": null,
+    "contrast": [
+      {
+        "label": "目录名 fg-dim / bg-sidebar",
+        "fg": "rgb(107, 107, 107)",
+        "bg": "rgb(250, 250, 250)",
+        "ratio": 5.11
+      },
+      {
+        "label": "活动文件 accent / bg-sidebar",
+        "fg": "rgb(9, 105, 218)",
+        "bg": "rgb(250, 250, 250)",
+        "ratio": 4.97
+      },
+      {
+        "label": "焦点行 fg / bg-inset",
+        "fg": "rgb(51, 51, 51)",
+        "bg": "rgb(242, 242, 242)",
+        "ratio": 11.29
+      }
+    ]
+  },
+  "dark": {
+    "label": "dark",
+    "clickedIntro": true,
+    "byDepth": {
+      "0": {
+        "padLeft": "12px",
+        "name": "docs"
+      },
+      "1": {
+        "padLeft": "26px",
+        "name": "deep"
+      },
+      "2": {
+        "padLeft": "40px",
+        "name": "nested.md"
+      }
+    },
+    "activeRow": {
+      "cls": "filetree-item filetree-active filetree-selected",
+      "style": {
+        "color": "rgb(88, 166, 255)",
+        "backgroundColor": "color(srgb 0.345098 0.65098 1 / 0.12)",
+        "fontWeight": "600",
+        "fontSize": "13px",
+        "outlineWidth": "0px",
+        "outlineStyle": "none",
+        "outlineColor": "rgb(88, 166, 255)",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "height": "24.7969px",
+        "width": "239px",
+        "paddingLeft": "12px",
+        "borderRadius": "0px"
+      }
+    },
+    "kbdRow": {
+      "cls": "filetree-item filetree-kbd-focus",
+      "hasNavFocus": true,
+      "style": {
+        "color": "rgb(212, 212, 212)",
+        "backgroundColor": "rgb(42, 42, 43)",
+        "fontWeight": "400",
+        "fontSize": "13px",
+        "outlineWidth": "2px",
+        "outlineStyle": "solid",
+        "outlineColor": "rgb(88, 166, 255)",
+        "outlineOffset": "-2px",
+        "boxShadow": "none",
+        "height": "24.7969px",
+        "width": "239px",
+        "paddingLeft": "12px",
+        "borderRadius": "0px"
+      }
+    },
+    "hoverRowStyle": {
+      "color": "rgb(212, 212, 212)",
+      "backgroundColor": "rgba(110, 118, 129, 0.25)",
+      "fontWeight": "400",
+      "fontSize": "13px",
+      "outlineWidth": "0px",
+      "outlineStyle": "none",
+      "outlineColor": "rgb(212, 212, 212)",
+      "outlineOffset": "0px",
+      "boxShadow": "none",
+      "height": "24.7969px",
+      "width": "239px",
+      "paddingLeft": "40px",
+      "borderRadius": "0px"
+    },
+    "contrast": [
+      {
+        "label": "树行正文 fg / bg-sidebar",
+        "fg": "rgb(212, 212, 212)",
+        "bg": "rgb(37, 37, 38)",
+        "ratio": 10.33
+      },
+      {
+        "label": "树行 hover fg / hover填充(合成)",
+        "fg": "rgb(212, 212, 212)",
+        "bg": "rgb(55,57,61)",
+        "ratio": 7.81
+      },
+      {
+        "label": "目录名 fg-dim / bg-sidebar",
+        "fg": "rgb(154, 154, 154)",
+        "bg": "rgb(37, 37, 38)",
+        "ratio": 5.44
+      },
+      {
+        "label": "活动文件 accent / bg-sidebar",
+        "fg": "rgb(88, 166, 255)",
+        "bg": "rgb(37, 37, 38)",
+        "ratio": 6.06
+      },
+      {
+        "label": "焦点行 fg / bg-inset",
+        "fg": "rgb(212, 212, 212)",
+        "bg": "rgb(42, 42, 43)",
+        "ratio": 9.67
+      }
+    ]
+  }
+}

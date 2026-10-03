@@ -1,0 +1,186 @@
+{
+  "iteration": "IT-04",
+  "name": "文档对齐",
+  "objective": "交付收口：DOCB/DOCF 文档对齐探针 + 验收基线修订（ac.md PEND 转正/附录别名对账/总看板收敛）+ 全域对照走查与 NF/OP/ERR/ELEM/RULE 收尾核验，闭合跨迭代自检的 AC 全覆盖缺口",
+  "techDesignPath": "ui-ux-redesign/design/tech-design.md",
+  "uiDesignPath": "../docs/requirements/ui-ux-redesign/ui/",
+  "createdAt": "2026-09-28",
+  "updatedAt": "2026-09-28",
+  "features": [
+    {
+      "name": "验收基线修订与文档收敛",
+      "techDesignRef": "tech-design.md#12-验收标准ac",
+      "prdRef": "prd.md#56-评审与验收机制",
+      "acRef": "ac.md#AC-FN-34",
+      "uiRef": null,
+      "relatedTasks": [
+        "FE-01"
+      ]
+    },
+    {
+      "name": "全域对照走查与收尾核验",
+      "techDesignRef": "tech-design.md#84-差异化策略",
+      "prdRef": "prd.md#10-非功能需求",
+      "acRef": "ac.md#AC-NF-15",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_07_global.html",
+      "relatedTasks": [
+        "FE-02"
+      ]
+    },
+    {
+      "name": "前后端文档对齐登记",
+      "techDesignRef": "tech-design.md#3-api-接口设计命令契约面",
+      "prdRef": "prd.md#53-交付主流程",
+      "acRef": "ac.md#AC-FN-26",
+      "uiRef": null,
+      "relatedTasks": [
+        "DOCB-01",
+        "DOCF-01"
+      ]
+    }
+  ],
+  "feature-relations": [
+    {
+      "from": "验收基线修订与文档收敛",
+      "to": "全域对照走查与收尾核验",
+      "relation": "前置"
+    },
+    {
+      "from": "前后端文档对齐登记",
+      "to": "全域对照走查与收尾核验",
+      "relation": "联动"
+    }
+  ],
+  "e2e-paths": [
+    {
+      "id": "PATH-01",
+      "name": "验收基线修订闭环",
+      "type": "happy",
+      "steps": [
+        "FE-01：依 design/adr/grill-rulings.md 逐条转正 AC-PEND-01..16，ac.md 中 [PENDING] 标记清零（验收基线修订与文档收敛）",
+        "FE-01：附录 A/B/C 别名 AC-01..22 双向对账无悬空，映射登记于 ac.md",
+        "FE-01：新建 docs/ui-redesign-tasks.md 总看板并收敛 refactor-tasks / markdown-ux-optimization 条目去向（AC-FN-34）"
+      ]
+    },
+    {
+      "id": "PATH-02",
+      "name": "深浅主题全界面对照走查",
+      "type": "happy",
+      "steps": [
+        "FE-02：浅色主题执行全界面对照走查清单，逐页对照 ui_01..ui_07 七页原型（AC-NF-15）",
+        "FE-02：深色主题重走同一清单，两遍通过率均 100%",
+        "FE-02：逐项测量正文/控件对比度 ≥4.5:1（AC-NF-09）并核对主题 token 配色无硬编码浅色块（AC-ERR-14）、主题色四副本一致（UI-ELEM-06）"
+      ]
+    },
+    {
+      "id": "PATH-03",
+      "name": "走查条目未通过回炉",
+      "type": "error",
+      "steps": [
+        "FE-02：任一走查条目未通过 → 登记 change-log pending 并回对应单项任务（IT-01/02/03.FE-*）修复（AC-NF-15 判据）",
+        "FE-02：修复后重走该条目直至通过",
+        "FE-02：回归 converge 三关 typecheck + test:unit + cdp 冒烟且 e2e 缝契约未破坏（AC-NF-16）"
+      ]
+    },
+    {
+      "id": "PATH-04",
+      "name": "平台×主题×分辨率组合冒烟与落盘对账",
+      "type": "edge",
+      "steps": [
+        "FE-02：Win10/Win11 × 系统深/浅四组合走查清单通过率 100%（AC-NF-10）",
+        "FE-02：1280×768 与 4K 两端分辨率执行冒烟操作集无控件裁切（AC-NF-11）",
+        "FE-02：30 行 × 12 列结构操作 ≤100ms（AC-NF-01）、导出三通道逐项一致（AC-OP-17）、autosave 后 .md 对账（AC-OP-19）、数据层零迁移（AC-NF-13）、四类用户旅程无权限差异（AC-RULE-18）"
+      ]
+    }
+  ],
+  "summary": {
+    "infra": 0,
+    "backend": 0,
+    "frontend": 2,
+    "total": 2
+  },
+  "tasks": [
+    {
+      "seq": 1,
+      "id": "DOCB-01",
+      "name": "文档对齐（后端变更）",
+      "role": "backend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "DOCB-01.md"
+    },
+    {
+      "seq": 2,
+      "id": "DOCF-01",
+      "name": "文档对齐（前端变更）",
+      "role": "frontend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "DOCF-01.md"
+    },
+    {
+      "seq": 3,
+      "id": "FE-01",
+      "name": "验收基线修订与文档收敛（ac.md PEND 转正/附录别名对账/总看板收敛）",
+      "role": "frontend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-01.md"
+    },
+    {
+      "seq": 4,
+      "id": "FE-02",
+      "name": "全域对照走查与收尾核验（NF/OP/ERR/ELEM/RULE 专项）",
+      "role": "frontend",
+      "dependencies": [
+        "FE-01"
+      ],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-02.md"
+    }
+  ],
+  "phases": [
+    {
+      "phase": 1,
+      "name": "文档对齐",
+      "tasks": [
+        "DOCB-01",
+        "DOCF-01"
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "验收收口",
+      "tasks": [
+        "FE-01"
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "走查收口",
+      "tasks": [
+        "FE-02"
+      ]
+    }
+  ]
+}

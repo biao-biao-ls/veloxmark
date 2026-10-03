@@ -128,19 +128,43 @@ export function buildViewCmds(ops: ViewCmdOps): Command[] {
       checked: () => getPreferences().pasteHtmlToMd,
       run: () => setPreferences({ pasteHtmlToMd: !getPreferences().pasteHtmlToMd })
     },
-    { id: 'zoomIn', label: 'cmd.zoomIn', run: () => window.api.windowZoom('in') },
-    { id: 'zoomOut', label: 'cmd.zoomOut', run: () => window.api.windowZoom('out') },
-    { id: 'zoomReset', label: 'cmd.zoomReset', run: () => window.api.windowZoom('reset') },
+    // Q7 补注册（MENU-menubar §3.4 键位表）：run 闭包零改动；bindGlobal 是
+    // matchGlobalShortcut 的拾取前提，缺则按键不触发。zoomIn 的 `Ctrl+=` ↔
+    // darwin `Cmd+Plus` 为写法差异永久例外（shortcutSync.test 登记）。
+    {
+      id: 'zoomIn',
+      label: 'cmd.zoomIn',
+      shortcut: 'Ctrl+=',
+      bindGlobal: true,
+      run: () => window.api.windowZoom('in')
+    },
+    {
+      id: 'zoomOut',
+      label: 'cmd.zoomOut',
+      shortcut: 'Ctrl+-',
+      bindGlobal: true,
+      run: () => window.api.windowZoom('out')
+    },
+    {
+      id: 'zoomReset',
+      label: 'cmd.zoomReset',
+      shortcut: 'Ctrl+0',
+      bindGlobal: true,
+      run: () => window.api.windowZoom('reset')
+    },
     {
       id: 'toggleDevTools',
       label: 'cmd.toggleDevTools',
+      shortcut: 'F12',
+      bindGlobal: true,
       run: () => window.api.windowToggleDevTools()
     },
+    // Q6 撤键：Ctrl+Shift+T 唯一归属 reopenClosedTab。id/run 不变（Titlebar 按钮
+    // + 视图菜单入口仍可用），仅去掉键位通道——shortcut 与随之失效的 bindGlobal
+    // 一并移除，回显自动留空（FE-02 单源派生）。
     {
       id: 'toggleTheme',
       label: 'cmd.toggleTheme',
-      shortcut: 'Ctrl+Shift+T',
-      bindGlobal: true,
       run: () => ops.toggleTheme()
     }
   ]

@@ -2,6 +2,7 @@ import type { EditorView } from '@codemirror/view'
 import { t } from '../../i18n'
 import { openMermaidLightbox } from '../../components/mermaidLightboxBus'
 import { BlockWidget } from '../blockWidget'
+import { judgeClickSemantics } from '../clickSemantics'
 import type { ThemeName } from '../theme'
 import { copyPngImage, exportPng, exportSvg } from './exportIo'
 import { mountMermaidRender } from './renderHost'
@@ -83,10 +84,15 @@ export class MermaidWidget extends BlockWidget {
       if (!(e.target instanceof Element)) return
       if (!e.target.closest('svg') || e.target.closest('.cm-md-block-toolbar')) return
       e.stopPropagation()
+      // FE-09 AC-RULE-13: svg body press-release is a click gesture —
+      // edit:mermaid verdict routes to the mermaid preview form (lightbox);
+      // padding/error-bar clicks fall through to wrapWithGap's source path.
+      const verdict = judgeClickSemantics({ hitTarget: 'mermaid', selectionEmpty: true })
+      if (verdict.kind !== 'edit') return
       const svgEl = svgHost.querySelector('svg')
       if (svgEl) openMermaidLightbox(svgEl.outerHTML)
     })
 
-    return this.wrapWithGap(wrap, view)
+    return this.wrapWithGap(wrap, view, 'mermaid')
   }
 }

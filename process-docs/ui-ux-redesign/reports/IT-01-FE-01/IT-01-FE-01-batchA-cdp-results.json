@@ -1,0 +1,471 @@
+{
+  "meta": {
+    "port": 9534,
+    "startedAt": "2026-10-01T04:16:51.169Z"
+  },
+  "checks": [
+    {
+      "name": "S0 缝 key 基线存在 __veloxP12/__veloxTable",
+      "ok": true,
+      "detail": [
+        "__veloxCtxDebug",
+        "__veloxEditor",
+        "__veloxExport",
+        "__veloxExtended",
+        "__veloxP04",
+        "__veloxP12",
+        "__veloxP13",
+        "__veloxP14",
+        "__veloxP15",
+        "__veloxP16",
+        "__veloxP17",
+        "__veloxP18",
+        "__veloxP19",
+        "__veloxP20",
+        "__veloxP21",
+        "__veloxP22",
+        "__veloxP23",
+        "__veloxP24",
+        "__veloxP25",
+        "__veloxP26",
+        "__veloxP28",
+        "__veloxP29",
+        "__veloxPrefs",
+        "__veloxTable"
+      ]
+    },
+    {
+      "name": "S0 夹具装载 3 表",
+      "ok": true,
+      "detail": {
+        "fp": "D:/code/typora/temp/fe01-batcha-fixture.md",
+        "tables": 3
+      }
+    },
+    {
+      "name": "S1 工具栏渲染",
+      "ok": true
+    },
+    {
+      "name": "S1 单组 6 钮 ⊞ ◧ ▣ ◨ ⋮ 🗑",
+      "ok": true,
+      "detail": {
+        "group": 1,
+        "glyphs": [
+          "⊞",
+          "◧",
+          "▣",
+          "◨",
+          "⋮",
+          "🗑"
+        ]
+      }
+    },
+    {
+      "name": "S1 data-op 契约面",
+      "ok": true,
+      "detail": [
+        "resizeTable",
+        "alignLeft",
+        "alignCenter",
+        "alignRight",
+        "TBL-MOR-OPN",
+        "deleteTable"
+      ]
+    },
+    {
+      "name": "S1 data-testid kebab 全挂",
+      "ok": true,
+      "detail": [
+        "table-toolbar-grid-btn",
+        "table-toolbar-align-left-btn",
+        "table-toolbar-align-center-btn",
+        "table-toolbar-align-right-btn",
+        "table-toolbar-more-btn",
+        "table-toolbar-delete-table-btn"
+      ]
+    },
+    {
+      "name": "S1 条高 32px / 钮 28×28",
+      "ok": true,
+      "detail": {
+        "barH": 32,
+        "btns": [
+          {
+            "w": 28,
+            "h": 28,
+            "op": "resizeTable"
+          },
+          {
+            "w": 28,
+            "h": 28,
+            "op": "alignLeft"
+          },
+          {
+            "w": 28,
+            "h": 28,
+            "op": "alignCenter"
+          },
+          {
+            "w": 28,
+            "h": 28,
+            "op": "alignRight"
+          },
+          {
+            "w": 28,
+            "h": 28,
+            "op": "TBL-MOR-OPN"
+          },
+          {
+            "w": 28,
+            "h": 28,
+            "op": "deleteTable"
+          }
+        ]
+      }
+    },
+    {
+      "name": "S1 chrome: surface 背景 + 1px 边 + 8px 圆角 + shadow",
+      "ok": true,
+      "detail": {
+        "bg": "rgb(250, 250, 250)",
+        "border": "1px solid rgb(229, 229, 229)",
+        "radius": "8px",
+        "shadow": true
+      }
+    },
+    {
+      "name": "S1 tsep 竖线 1px×18px 在 ⋮ 前",
+      "ok": true,
+      "detail": {
+        "w": 1,
+        "h": 18,
+        "bg": "rgb(229, 229, 229)",
+        "between": "resizeTable,alignLeft,alignCenter,alignRight,TBL-MOR-OPN,deleteTable"
+      }
+    },
+    {
+      "name": "S1 浮动表块右上（bar 在表上方且右缘对齐）",
+      "ok": true,
+      "detail": {
+        "bar": {
+          "height": 32,
+          "top": 204.75,
+          "right": 1096.5,
+          "bottom": 236.75,
+          "bg": "rgb(250, 250, 250)",
+          "borderTop": "1px solid rgb(229, 229, 229)",
+          "radius": "8px",
+          "shadow": true
+        },
+        "table": {
+          "top": 244.75,
+          "right": 1096.5,
+          "bottom": 370.97
+        }
+      }
+    },
+    {
+      "name": "S1#8 右簇第二钮身份=🗑 删除表格（无复制钮混入）",
+      "ok": true,
+      "detail": {
+        "last": "🗑",
+        "ops": [
+          "resizeTable",
+          "alignLeft",
+          "alignCenter",
+          "alignRight",
+          "TBL-MOR-OPN",
+          "deleteTable"
+        ]
+      }
+    },
+    {
+      "name": "S2 默认 `---` → ◧（CHANGE-14 归一） 仅一键 is-pressed",
+      "ok": true,
+      "detail": [
+        "alignLeft"
+      ]
+    },
+    {
+      "name": "S2 alignLeft accent-soft+accent 回显（非实底蓝）",
+      "ok": true,
+      "detail": {
+        "bg": "rgba(9, 105, 218, 0.12)",
+        "color": "rgb(9, 105, 218)"
+      }
+    },
+    {
+      "name": "S2 :---: → ▣ 仅一键 is-pressed",
+      "ok": true,
+      "detail": [
+        "alignCenter"
+      ]
+    },
+    {
+      "name": "S2 alignCenter accent-soft+accent 回显（非实底蓝）",
+      "ok": true,
+      "detail": {
+        "bg": "rgba(9, 105, 218, 0.12)",
+        "color": "rgb(9, 105, 218)"
+      }
+    },
+    {
+      "name": "S2 ---: → ◨ 仅一键 is-pressed",
+      "ok": true,
+      "detail": [
+        "alignRight"
+      ]
+    },
+    {
+      "name": "S2 alignRight accent-soft+accent 回显（非实底蓝）",
+      "ok": true,
+      "detail": {
+        "bg": "rgba(9, 105, 218, 0.12)",
+        "color": "rgb(9, 105, 218)"
+      }
+    },
+    {
+      "name": "S3 浅色 🗑 = #d1242f",
+      "ok": true,
+      "detail": {
+        "op": "deleteTable",
+        "glyph": "🗑",
+        "color": "rgb(209, 36, 47)"
+      }
+    },
+    {
+      "name": "S3 深色 🗑 = #f85149",
+      "ok": true,
+      "detail": {
+        "op": "deleteTable",
+        "glyph": "🗑",
+        "color": "rgb(248, 81, 73)"
+      }
+    },
+    {
+      "name": "S4 编辑态整表 1px solid accent",
+      "ok": true,
+      "detail": {
+        "editing": true,
+        "borderTopWidth": "1px",
+        "borderTopColor": "rgb(9, 105, 218)",
+        "borderTopStyle": "solid"
+      }
+    },
+    {
+      "name": "S4 退出编辑描边消失",
+      "ok": true,
+      "detail": {
+        "editing": false,
+        "borderTopWidth": "0px",
+        "borderTopColor": "rgb(128, 128, 128)",
+        "borderTopStyle": "none"
+      }
+    },
+    {
+      "name": "S5 ⋮ 展开 → is-source accent-solid",
+      "ok": true,
+      "detail": {
+        "op": "TBL-MOR-OPN",
+        "bg": "rgb(9, 105, 218)",
+        "color": "rgb(255, 255, 255)"
+      }
+    },
+    {
+      "name": "S6 菜单 min-width 248px 且实宽 ≥248",
+      "ok": true,
+      "detail": {
+        "w": 248,
+        "min": "248px"
+      }
+    },
+    {
+      "name": "S6 菜单滚动条 5px 定制细条",
+      "ok": true,
+      "detail": {
+        "webkit": "5px",
+        "gutter": 7
+      }
+    },
+    {
+      "name": "S6 表格矩阵 19 项（五组；面内另有共享骨架钮）",
+      "ok": true,
+      "detail": {
+        "tableOps": 19,
+        "total": 26
+      }
+    },
+    {
+      "name": "S6「删除表格」danger 红 #d1242f",
+      "ok": true,
+      "detail": [
+        "删除表格"
+      ]
+    },
+    {
+      "name": "S6 危险组徽标存在",
+      "ok": true,
+      "detail": [
+        {
+          "text": "危险组",
+          "color": "rgb(209, 36, 47)"
+        }
+      ]
+    },
+    {
+      "name": "S6 删行/列普通前景（danger 仅删表）",
+      "ok": true,
+      "detail": {
+        "dangerIds": [
+          "deleteTable"
+        ],
+        "normal": {
+          "op": "deleteRow",
+          "color": "rgb(51, 51, 51)"
+        }
+      }
+    },
+    {
+      "name": "S6 对齐 ✓ 回显当前列（=:---: center）",
+      "ok": true,
+      "detail": [
+        "alignCenter"
+      ]
+    },
+    {
+      "name": "S5b 菜单开启期间 ⋮ 保持 is-source",
+      "ok": true,
+      "detail": {
+        "op": "TBL-MOR-OPN",
+        "bg": "rgb(9, 105, 218)",
+        "color": "rgb(255, 255, 255)"
+      }
+    },
+    {
+      "name": "S5c 同 DOM 关菜单后 is-source 清除（订阅路径）",
+      "ok": true,
+      "detail": {
+        "menu": false,
+        "toolbar": true,
+        "source": null
+      }
+    },
+    {
+      "name": "S7a 定位到表头末行表（index 1）编辑态",
+      "ok": true,
+      "detail": {
+        "toolbars": 1,
+        "editingIdx": 1,
+        "activeCell": "0,1"
+      }
+    },
+    {
+      "name": "S7 表头末行：删除行禁用",
+      "ok": true,
+      "detail": [
+        "moveRowUp",
+        "moveRowDown",
+        "deleteRow",
+        "moveColRight",
+        "cut",
+        "copy"
+      ]
+    },
+    {
+      "name": "S7 删除列仍可点（2 列）",
+      "ok": true,
+      "detail": [
+        "moveRowUp",
+        "moveRowDown",
+        "deleteRow",
+        "moveColRight",
+        "cut",
+        "copy"
+      ]
+    },
+    {
+      "name": "S7 禁用色 = --fg-disabled（浅 #b0b0b0）",
+      "ok": true,
+      "detail": {
+        "color": "rgb(176, 176, 176)",
+        "opacity": "1"
+      }
+    },
+    {
+      "name": "S7b 定位到 1×1 表（index 2）编辑态",
+      "ok": true,
+      "detail": {
+        "toolbars": 1,
+        "editingIdx": 2,
+        "activeCell": "0,0"
+      }
+    },
+    {
+      "name": "S7 1×1：删除行+删除列均禁用",
+      "ok": true,
+      "detail": [
+        "moveRowUp",
+        "moveRowDown",
+        "deleteRow",
+        "moveColLeft",
+        "moveColRight",
+        "deleteCol",
+        "cut",
+        "copy"
+      ]
+    },
+    {
+      "name": "S8 重回主表编辑态",
+      "ok": true,
+      "detail": {
+        "toolbars": 1,
+        "editingIdx": 0,
+        "activeCell": "1,2"
+      }
+    },
+    {
+      "name": "S8 右键菜单同源 248px/19 项表格矩阵",
+      "ok": true,
+      "detail": {
+        "w": 248,
+        "tableOps": 19,
+        "total": 26
+      }
+    },
+    {
+      "name": "S9 主表编辑态（⊞ 探针前置）",
+      "ok": true,
+      "detail": {
+        "toolbars": 1,
+        "editingIdx": 0,
+        "activeCell": "1,0"
+      }
+    },
+    {
+      "name": "S9 ⊞ 网格弹层收敛表块右上（锚 ⊞ 下、右半区贴顶）",
+      "ok": true,
+      "detail": {
+        "present": true,
+        "cls": "table-grid-picker",
+        "left": 871,
+        "right": 1192,
+        "top": 238.8,
+        "btnLeft": 886.5,
+        "tableRight": 1096.5,
+        "tableLeft": 328.5,
+        "tableTop": 244.8
+      }
+    },
+    {
+      "name": "S9 window.__velox* 缝 key 集不变",
+      "ok": true,
+      "detail": [
+        "__veloxCtxLastHit",
+        "__veloxTableCellView"
+      ]
+    }
+  ],
+  "pass": 42,
+  "fail": 0
+}

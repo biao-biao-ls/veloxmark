@@ -6,6 +6,7 @@ import { GFM } from '@lezer/markdown'
 import { Decoration } from '@codemirror/view'
 import { buildDecorations } from './build'
 import { DEFAULT_LIVE_PREVIEW_CONFIG, type LivePreviewConfig } from './config'
+import { isTaskDoneText } from './handlers-tree'
 
 interface DecoHit {
   from: number
@@ -328,9 +329,40 @@ describe('5A list rendering', () => {
     const doc = '- [x] done\n- [ ] todo\n\nend\n'
     const { hits } = build(doc, doc.indexOf('end'))
     expect(hits.filter((h) => h.widgetName === 'TaskWidget').length).toBe(2)
-    for (const p of lineFroms(doc).slice(0, 2)) {
-      expect(hits.some((h) => h.from === p && h.className === 'cm-md-task-item')).toBe(true)
-    }
+    // FE-06 batch-J: the checked line's strike is a TEXT mark (leading
+    // whitespace unstruck), not a whole-line class.
+    const [doneLine, todoLine] = lineFroms(doc).slice(0, 2)
+    expect(
+      hits.find((h) => h.from === doneLine && h.className?.includes('cm-md-task-item'))?.className
+    ).toBe('cm-md-task-item')
+    expect(
+      hits.some((h) => h.from === todoLine && h.className === 'cm-md-task-item')
+    ).toBe(true)
+    const doneFrom = doc.indexOf('done')
+    expect(
+      hits.some(
+        (h) => h.from === doneFrom && h.to === doneFrom + 4 && h.className === 'cm-md-task-done'
+      )
+    ).toBe(true)
+    // The `[ ]` todo text carries no strike mark.
+    expect(hits.some((h) => h.className === 'cm-md-task-done')).toBe(true)
+    expect(hits.filter((h) => h.className === 'cm-md-task-done').length).toBe(1)
+  })
+
+  it('uppercase [X] counts as done (case-insensitive checkbox, FE-06 fix-cr)', () => {
+    // GFM TaskMarker text is `[X]`; done detection must not require lowercase.
+    const doc = '- [X] done\n- [ ] todo\n\nend\n'
+    const { hits } = build(doc, doc.indexOf('end'))
+    expect(hits.filter((h) => h.widgetName === 'TaskWidget').length).toBe(2)
+    const doneFrom = doc.indexOf('done')
+    expect(
+      hits.some(
+        (h) => h.from === doneFrom && h.to === doneFrom + 4 && h.className === 'cm-md-task-done'
+      )
+    ).toBe(true)
+    expect(hits.filter((h) => h.className === 'cm-md-task-done').length).toBe(1)
+    // Written source still normalizes to lowercase 'x' — `[X]` display-only.
+    expect(doc.includes('[X]')).toBe(true)
   })
 
   it('reveals the source marker when touched and drops the CSS marker (P09)', () => {
@@ -338,6 +370,19 @@ describe('5A list rendering', () => {
     const touched = build(doc, 1)
     expect(hasHiddenRange(touched.hits, 0, 2)).toBe(false)
     expect(listLineAt(touched.hits, 0)!.className).toContain('cm-md-list-open')
+  })
+})
+
+// ---- FE-06 fix-cr: [X] uppercase done-state recognition ---------------------
+// Pure guard behind enterTaskMarker: `[x]`/`[X]` done, `[ ]` not — same
+// case-insensitive口径 as contextMenu/detect.ts (write-back stays 'x').
+describe('isTaskDoneText ([X] 大写完成态识别)', () => {
+  it('accepts [x] and [X], rejects the empty box and unrelated text', () => {
+    expect(isTaskDoneText('[x]')).toBe(true)
+    expect(isTaskDoneText('[X]')).toBe(true)
+    expect(isTaskDoneText('[ ]')).toBe(false)
+    expect(isTaskDoneText('')).toBe(false)
+    expect(isTaskDoneText('plain')).toBe(false)
   })
 })
 

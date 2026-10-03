@@ -1,0 +1,707 @@
+{
+  "meta": {
+    "port": 9444,
+    "startedAt": "2026-09-29T12:42:49.950Z",
+    "draftsDiscarded": [],
+    "isWritableProbe": {
+      "ok": true,
+      "v": true
+    },
+    "clipboardReadAvailable": true,
+    "finishedAt": "2026-09-29T12:43:07.853Z"
+  },
+  "scenarios": {
+    "s1": {
+      "shotPrep": {
+        "float": true,
+        "tooltipVisible": false
+      },
+      "appeared": 166,
+      "float": {
+        "present": true,
+        "hostTestId": "render-float",
+        "testId": "link-hover-float",
+        "urlBox": {
+          "text": "https://example.com/design-spec",
+          "title": "https://example.com/design-spec"
+        },
+        "btns": {
+          "edit": true,
+          "open": true,
+          "copy": true
+        },
+        "editMode": {
+          "input": false,
+          "confirm": false,
+          "cancel": false
+        },
+        "rect": {
+          "left": 378.13,
+          "top": 121,
+          "right": 784.13,
+          "bottom": 178
+        }
+      },
+      "linkRect": {
+        "left": 378.13,
+        "top": 92,
+        "right": 474.13,
+        "bottom": 113
+      },
+      "overlap": false,
+      "before": [
+        [
+          "See 设计规范文档 for details.",
+          330,
+          90,
+          1130,
+          115.59
+        ],
+        [
+          "",
+          330,
+          115.59,
+          1130,
+          141.19
+        ],
+        [
+          "Also visit OpenAI and MD",
+          330,
+          141.19,
+          1130,
+          166.78
+        ],
+        [
+          "",
+          330,
+          166.78,
+          1130,
+          192.38
+        ],
+        [
+          "Try Local file too.",
+          330,
+          192.38,
+          1130,
+          217.97
+        ],
+        [
+          "",
+          330,
+          217.97,
+          1130,
+          243.56
+        ],
+        [
+          "Another line of body tex",
+          330,
+          243.56,
+          1130,
+          269.16
+        ]
+      ],
+      "after": [
+        [
+          "See 设计规范文档 for details.",
+          330,
+          90,
+          1130,
+          115.59
+        ],
+        [
+          "",
+          330,
+          115.59,
+          1130,
+          141.19
+        ],
+        [
+          "Also visit OpenAI and MD",
+          330,
+          141.19,
+          1130,
+          166.78
+        ],
+        [
+          "",
+          330,
+          166.78,
+          1130,
+          192.38
+        ],
+        [
+          "Try Local file too.",
+          330,
+          192.38,
+          1130,
+          217.97
+        ],
+        [
+          "",
+          330,
+          217.97,
+          1130,
+          243.56
+        ],
+        [
+          "Another line of body tex",
+          330,
+          243.56,
+          1130,
+          269.16
+        ]
+      ],
+      "shift": 0,
+      "clip": {
+        "x": 318.13,
+        "y": 32,
+        "width": 526,
+        "height": 206,
+        "scrollX": 0,
+        "scrollY": 0
+      }
+    },
+    "s2": {
+      "toast": "链接地址已复制",
+      "clipboardReadAvailable": true,
+      "clipValue": "https://example.com/design-spec"
+    },
+    "s3": {
+      "captured": "https://example.com/design-spec",
+      "dialogState": {
+        "present": true,
+        "message": "仅支持打开 http(s) 链接",
+        "buttons": [
+          "确定"
+        ]
+      },
+      "dialogAfter": {
+        "present": false
+      }
+    },
+    "s4": {
+      "oldValue": "https://example.com/design-spec",
+      "newUrl": "https://example.com/design-spec-v2",
+      "typed": "https://example.com/design-spec-v2",
+      "toast": "已更新链接地址（Ctrl+Z 可撤销）",
+      "docBefore": "See [设计规范文档](https://example.com/design-spec) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking.",
+      "docAfter": "See [设计规范文档](https://example.com/design-spec-v2) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking.",
+      "docUndone": "See [设计规范文档](https://example.com/design-spec) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking.",
+      "docReapplied": "See [设计规范文档](https://example.com/design-spec-v2) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking.",
+      "openCaptureAfterReapply": "https://example.com/design-spec-v2"
+    },
+    "s5": {
+      "docBefore": "See [设计规范文档](https://example.com/design-spec) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking.",
+      "docAfter": "See [设计规范文档](https://example.com/design-spec) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking.",
+      "toast": "文件为只读，无法修改，可另存后编辑",
+      "writableProbe": {
+        "ok": true,
+        "v": false
+      },
+      "floatAfterRefuse": {
+        "present": true,
+        "hostTestId": "render-float",
+        "testId": "link-hover-float",
+        "urlBox": null,
+        "btns": {
+          "edit": false,
+          "open": false,
+          "copy": false
+        },
+        "editMode": {
+          "input": true,
+          "confirm": true,
+          "cancel": true
+        },
+        "rect": {
+          "left": 378.13,
+          "top": 121,
+          "right": 668.13,
+          "bottom": 164
+        }
+      }
+    },
+    "s6": {
+      "swipeSamples": [
+        {
+          "x": 426.13,
+          "y": 102.5,
+          "present": false
+        },
+        {
+          "x": 447.92,
+          "y": 153.69,
+          "present": false
+        },
+        {
+          "x": 535.82,
+          "y": 153.69,
+          "present": false
+        },
+        {
+          "x": 407.38,
+          "y": 204.88,
+          "present": false
+        },
+        {
+          "x": 338,
+          "y": 102.8,
+          "present": false
+        },
+        {
+          "x": 338,
+          "y": 102.8,
+          "present": false
+        },
+        {
+          "x": 338,
+          "y": 256.36,
+          "present": false
+        }
+      ],
+      "flashes": 0,
+      "appeared": 164,
+      "hideMs": 180,
+      "residue1": {
+        "floats": 0,
+        "linkPops": 0
+      },
+      "residue2": {
+        "floats": 0,
+        "linkPops": 0
+      },
+      "shift": 0,
+      "hideT0": 1790685787175
+    }
+  },
+  "checks": [
+    {
+      "name": "S0 isWritable IPC 可达（非 stale 构建）",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "v": true
+      }
+    },
+    {
+      "name": "S1 浮层随 hover 浮现",
+      "ok": true,
+      "detail": {
+        "waitedMs": 166
+      }
+    },
+    {
+      "name": "S1 浮层根 testid 为 link-hover-float",
+      "ok": true,
+      "detail": "link-hover-float"
+    },
+    {
+      "name": "S1 link-url-box 存在且文本含完整 URL",
+      "ok": true,
+      "detail": {
+        "text": "https://example.com/design-spec",
+        "title": "https://example.com/design-spec"
+      }
+    },
+    {
+      "name": "S1 三入口齐备（编辑 URL / 外开 / 复制）",
+      "ok": true,
+      "detail": {
+        "edit": true,
+        "open": true,
+        "copy": true
+      }
+    },
+    {
+      "name": "S1 三入口 + url-box = 「三入口 + url-box」",
+      "ok": true,
+      "detail": {
+        "urlBox": true,
+        "edit": true,
+        "open": true,
+        "copy": true
+      }
+    },
+    {
+      "name": "S1 浮层不遮挡链接文本 (UI-IXD-07)",
+      "ok": true,
+      "detail": {
+        "float": {
+          "left": 378.13,
+          "top": 121,
+          "right": 784.13,
+          "bottom": 178
+        },
+        "link": {
+          "left": 378.13,
+          "top": 92,
+          "right": 474.13,
+          "bottom": 113
+        },
+        "overlap": false
+      }
+    },
+    {
+      "name": "S1 正文位移 0px (UI-IXD-07)",
+      "ok": true,
+      "detail": {
+        "lines": 7,
+        "shift": 0
+      }
+    },
+    {
+      "name": "S1 截图准备：浮层保持可见（retain）",
+      "ok": true,
+      "detail": {
+        "float": true,
+        "tooltipVisible": false
+      }
+    },
+    {
+      "name": "S1 截图准备：linkNav tooltip 已隐去",
+      "ok": true,
+      "detail": {
+        "float": true,
+        "tooltipVisible": false
+      }
+    },
+    {
+      "name": "S2 toast 含「链接地址已复制」(toast.copiedLink)",
+      "ok": true,
+      "detail": "链接地址已复制"
+    },
+    {
+      "name": "S2 复制确实写入剪贴板（覆盖 sentinel）",
+      "ok": true,
+      "detail": "https://example.com/design-spec"
+    },
+    {
+      "name": "S2 剪贴板 === 完整 URL https://example.com/design-spec",
+      "ok": true,
+      "detail": "https://example.com/design-spec"
+    },
+    {
+      "name": "S3 外开前浮层可见",
+      "ok": true,
+      "detail": {
+        "value": true,
+        "waitedMs": 161
+      }
+    },
+    {
+      "name": "S3 外开捕获 URL === https://example.com/design-spec",
+      "ok": true,
+      "detail": "https://example.com/design-spec"
+    },
+    {
+      "name": "S3 非 http 链接浮层可见",
+      "ok": true,
+      "detail": {
+        "value": true,
+        "waitedMs": 155
+      }
+    },
+    {
+      "name": "S3 非 http(s) 外开弹出 dialog（link.otherProtocol）",
+      "ok": true,
+      "detail": {
+        "present": true,
+        "message": "仅支持打开 http(s) 链接",
+        "buttons": [
+          "确定"
+        ]
+      }
+    },
+    {
+      "name": "S3 非 http(s) 分支未触发外开捕获",
+      "ok": true,
+      "detail": "https://example.com/design-spec"
+    },
+    {
+      "name": "S3 dialog 已关闭",
+      "ok": true,
+      "detail": {
+        "present": false
+      }
+    },
+    {
+      "name": "S4 编辑前浮层可见",
+      "ok": true,
+      "detail": {
+        "value": true,
+        "waitedMs": 168
+      }
+    },
+    {
+      "name": "S4 编辑态 input/确认/取消齐备",
+      "ok": true,
+      "detail": {
+        "input": true,
+        "confirm": true,
+        "cancel": true
+      }
+    },
+    {
+      "name": "S4 link-url-input 可见",
+      "ok": true,
+      "detail": {
+        "x": 471.13,
+        "y": 142.5,
+        "left": 387.13,
+        "top": 130,
+        "right": 555.13,
+        "bottom": 155,
+        "w": 168,
+        "h": 25
+      }
+    },
+    {
+      "name": "S4 input 预填旧 URL https://example.com/design-spec",
+      "ok": true,
+      "detail": "https://example.com/design-spec"
+    },
+    {
+      "name": "S4 输入新 URL 生效",
+      "ok": true,
+      "detail": "https://example.com/design-spec-v2"
+    },
+    {
+      "name": "S4 toast 精确为「已更新链接地址（Ctrl+Z 可撤销）」",
+      "ok": true,
+      "detail": "已更新链接地址（Ctrl+Z 可撤销）"
+    },
+    {
+      "name": "S4 .md href 已落新 URL",
+      "ok": true,
+      "detail": "See [设计规范文档](https://example.com/design-spec-v2) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking."
+    },
+    {
+      "name": "S4 旧 URL 已不在 .md 中（按完整 dest 槽比对）",
+      "ok": true,
+      "detail": "See [设计规范文档](https://example.com/design-spec-v2) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking."
+    },
+    {
+      "name": "S4 锚文本「设计规范文档」不变（仅替换 href）",
+      "ok": true,
+      "detail": {
+        "before": "See [设计规范文档](https://example.com/design-spec) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking.",
+        "after": "See [设计规范文档](https://example.com/design-spec-v2) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking."
+      }
+    },
+    {
+      "name": "S4 一次 Ctrl+Z 还原旧 URL",
+      "ok": true,
+      "detail": "See [设计规范文档](https://example.com/design-spec) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking."
+    },
+    {
+      "name": "S4 undo 后文档逐字节还原编辑前",
+      "ok": true,
+      "detail": {
+        "before": "See [设计规范文档](https://example.com/design-spec) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking.",
+        "after": "See [设计规范文档](https://example.com/design-spec) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking."
+      }
+    },
+    {
+      "name": "S4 再编辑前浮层可见",
+      "ok": true,
+      "detail": {
+        "value": true,
+        "waitedMs": 161
+      }
+    },
+    {
+      "name": "S4 再次编辑后 .md 落新 URL",
+      "ok": true,
+      "detail": "See [设计规范文档](https://example.com/design-spec-v2) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking."
+    },
+    {
+      "name": "S4 外开新 URL 前浮层可见",
+      "ok": true,
+      "detail": {
+        "value": true,
+        "waitedMs": 156
+      }
+    },
+    {
+      "name": "S4 外开捕获 === 新 URL https://example.com/design-spec-v2",
+      "ok": true,
+      "detail": "https://example.com/design-spec-v2"
+    },
+    {
+      "name": "S5 只读探针报告不可写",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "v": false
+      }
+    },
+    {
+      "name": "S5 只读下浮层仍可见",
+      "ok": true,
+      "detail": {
+        "value": true,
+        "waitedMs": 184
+      }
+    },
+    {
+      "name": "S5 只读 toast 精确为「文件为只读，无法修改，可另存后编辑」",
+      "ok": true,
+      "detail": "文件为只读，无法修改，可另存后编辑"
+    },
+    {
+      "name": "S5 只读拦截文档逐字节不变",
+      "ok": true,
+      "detail": {
+        "before": "See [设计规范文档](https://example.com/design-spec) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking.",
+        "after": "See [设计规范文档](https://example.com/design-spec) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking."
+      }
+    },
+    {
+      "name": "S5 只读拒绝后浮层保留编辑态（stay-in-edit 设计意图）",
+      "ok": true,
+      "detail": {
+        "input": true,
+        "confirm": true,
+        "cancel": true
+      }
+    },
+    {
+      "name": "S6 前置：残留浮层已清零",
+      "ok": true,
+      "detail": {
+        "floats": 0,
+        "linkPops": 0
+      }
+    },
+    {
+      "name": "S6 快速掠过目标 ≥3 个块",
+      "ok": true,
+      "detail": 7
+    },
+    {
+      "name": "S6 快速掠过 0 闪现（每点采样 <150ms 驻留）",
+      "ok": true,
+      "detail": {
+        "flashes": 0,
+        "swipeSamples": [
+          {
+            "x": 426.13,
+            "y": 102.5,
+            "present": false
+          },
+          {
+            "x": 447.92,
+            "y": 153.69,
+            "present": false
+          },
+          {
+            "x": 535.82,
+            "y": 153.69,
+            "present": false
+          },
+          {
+            "x": 407.38,
+            "y": 204.88,
+            "present": false
+          },
+          {
+            "x": 338,
+            "y": 102.8,
+            "present": false
+          },
+          {
+            "x": 338,
+            "y": 102.8,
+            "present": false
+          },
+          {
+            "x": 338,
+            "y": 256.36,
+            "present": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "S6 悬停 ≥250ms 浮层出现",
+      "ok": true,
+      "detail": {
+        "value": true,
+        "waitedMs": 164
+      }
+    },
+    {
+      "name": "S6 移出后 ~600ms 内浮层消失",
+      "ok": true,
+      "detail": {
+        "hideMs": 180
+      }
+    },
+    {
+      "name": "S6 移出后无残留（render-float=0 且无 cm-md-link-pop）",
+      "ok": true,
+      "detail": {
+        "floats": 0,
+        "linkPops": 0
+      }
+    },
+    {
+      "name": "S6 点外部前浮层可见",
+      "ok": true,
+      "detail": {
+        "value": true,
+        "waitedMs": 167
+      }
+    },
+    {
+      "name": "S6 点外部即隐且无残留",
+      "ok": true,
+      "detail": {
+        "floats": 0,
+        "linkPops": 0
+      }
+    },
+    {
+      "name": "S6 显隐循环正文位移 0px",
+      "ok": true,
+      "detail": {
+        "lines": 7,
+        "shift": 0
+      }
+    },
+    {
+      "name": "S6 过程中 .md 无改动",
+      "ok": true,
+      "detail": {
+        "before": "See [设计规范文档](https://example.com/design-spec) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking.",
+        "after": "See [设计规范文档](https://example.com/design-spec) for details.\n\nAlso visit [OpenAI](https://openai.com) and [MDN](https://developer.mozilla.org).\n\nTry [Local file](./rel.md) too.\n\nAnother line of body text for neutral clicking."
+      }
+    }
+  ],
+  "geom": {
+    "links": [
+      {
+        "text": "设计规范文档",
+        "w": 96
+      },
+      {
+        "text": "OpenAI",
+        "w": 58.2
+      },
+      {
+        "text": "MDN",
+        "w": 40.8
+      },
+      {
+        "text": "Local file",
+        "w": 67.4
+      }
+    ],
+    "count": 4,
+    "firstLinkText": "设计规范文档"
+  },
+  "neutral": {
+    "x": 268,
+    "y": 76
+  }
+}

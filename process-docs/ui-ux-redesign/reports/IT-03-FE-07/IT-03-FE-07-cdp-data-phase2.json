@@ -1,0 +1,327 @@
+{
+  "meta": {
+    "port": 9470,
+    "phase": "2",
+    "startedAt": "2026-09-30T06:22:04.439Z",
+    "fixturePath": "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it03-fe07-heading-fold-selftest.md",
+    "fixtureHashBefore": "a70954c8d5011dad36df55f6e529724376e40053daaa2a4b6e1180f4b256c0f7",
+    "fixtureMatchesDriverText": true,
+    "seams": {
+      "p12": true,
+      "p13": true,
+      "p18": true,
+      "p18ranges": true,
+      "p18session": true,
+      "p26": true,
+      "p26cursor": true,
+      "prefs": true
+    },
+    "finishedAt": "2026-09-30T06:22:12.419Z",
+    "passed": 25,
+    "total": 25
+  },
+  "scenarios": {
+    "s5": {
+      "folded": [
+        "2:Alpha 章节",
+        "2:Beta 章节",
+        "2:尾部章节"
+      ],
+      "rows": [
+        {
+          "key": "2:Alpha 章节",
+          "text": "（15 行内容已折叠 · 与大纲双向同步）",
+          "cls": "cm-md-fold-summary"
+        },
+        {
+          "key": "2:Beta 章节",
+          "text": "（4 行内容已折叠 · 与大纲双向同步）",
+          "cls": "cm-md-fold-summary"
+        }
+      ],
+      "session": [
+        "2:Alpha 章节",
+        "2:Beta 章节",
+        "2:尾部章节"
+      ],
+      "hash": "a70954c8d5011dad36df55f6e529724376e40053daaa2a4b6e1180f4b256c0f7"
+    },
+    "s6": {
+      "quoteCarets": [
+        "q:1:引用一"
+      ],
+      "qRows": [
+        "q:1:引用一"
+      ],
+      "session": {
+        "headingFolds": [
+          "2:引用章节"
+        ],
+        "quoteFolds": [
+          "q:1:引用一"
+        ],
+        "folded": [
+          "2:引用章节"
+        ]
+      },
+      "qRowsAfter": [
+        "q:1:引用一"
+      ],
+      "qRowsFinal": []
+    },
+    "s7": {
+      "foldedBeforeJump": [
+        "2:Alpha 章节"
+      ],
+      "afterJump": {
+        "folded": [],
+        "cursor": 48,
+        "expected": 48
+      }
+    },
+    "s8": {
+      "ranges": [],
+      "keys": [
+        "1:标题折叠自测",
+        "2:Alpha 章节",
+        "3:Alpha 子节 A",
+        "4:Alpha 孙节",
+        "3:Alpha 子节 B",
+        "2:Beta 章节",
+        "2:引用章节",
+        "2:空章节",
+        "2:仅空行",
+        "2:尾部章节"
+      ],
+      "folded": [],
+      "session": [],
+      "bench": {
+        "ms": 4.599999904632568,
+        "avg": 2.299999952316284
+      }
+    }
+  },
+  "checks": [
+    {
+      "name": "S0 e2e 缝可达（P12/P13/P18/P26/__veloxPrefs）",
+      "ok": true,
+      "detail": {
+        "p12": true,
+        "p13": true,
+        "p18": true,
+        "p18ranges": true,
+        "p18session": true,
+        "p26": true,
+        "p26cursor": true,
+        "prefs": true
+      }
+    },
+    {
+      "name": "S0 fixture 装载后 getDoc() 与原文零字节差",
+      "ok": true,
+      "detail": {
+        "len": 235,
+        "expected": 235,
+        "equal": true
+      }
+    },
+    {
+      "name": "S5 重启后 fixture 路径就位",
+      "ok": true,
+      "detail": "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it03-fe07-heading-fold-selftest.md"
+    },
+    {
+      "name": "S5 重启后折叠自动恢复（AC-RULE-14）",
+      "ok": true,
+      "detail": [
+        "2:Alpha 章节",
+        "2:Beta 章节",
+        "2:尾部章节"
+      ]
+    },
+    {
+      "name": "S5 重启后占位行出现（Alpha + Beta）",
+      "ok": true,
+      "detail": [
+        "2:Alpha 章节",
+        "2:Beta 章节"
+      ]
+    },
+    {
+      "name": "S5 重启后大纲镜像同步（Alpha/Beta ▸）",
+      "ok": true,
+      "detail": {
+        "a5": {
+          "i": 1,
+          "text": "▸Alpha 章节",
+          "foldText": "▸",
+          "foldTitle": "展开本节",
+          "foldCls": "outline-fold is-folded",
+          "hasFold": true
+        },
+        "b5": {
+          "i": 5,
+          "text": "▸Beta 章节",
+          "foldText": "▸",
+          "foldTitle": "展开本节",
+          "foldCls": "outline-fold is-folded",
+          "hasFold": true
+        }
+      }
+    },
+    {
+      "name": "S5 恢复折叠未改 .md（getDoc() === 原文）",
+      "ok": true,
+      "detail": {
+        "equal": true
+      }
+    },
+    {
+      "name": "S5 重启后磁盘 .md hash 不变",
+      "ok": true,
+      "detail": {
+        "before": "a70954c8d5011dad36df55f6e529724376e40053daaa2a4b6e1180f4b256c0f7",
+        "after": "a70954c8d5011dad36df55f6e529724376e40053daaa2a4b6e1180f4b256c0f7"
+      }
+    },
+    {
+      "name": "S5 恢复过程无 toast（PEND-15）",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "S5 session 读回折叠键",
+      "ok": true,
+      "detail": [
+        "2:Alpha 章节",
+        "2:Beta 章节",
+        "2:尾部章节"
+      ]
+    },
+    {
+      "name": "S6 长引用折叠入口存在（FE-08）",
+      "ok": true,
+      "detail": [
+        "q:1:引用一"
+      ]
+    },
+    {
+      "name": "S6 引用折叠生效（摘要行出现）",
+      "ok": true,
+      "detail": [
+        "q:1:引用一"
+      ]
+    },
+    {
+      "name": "S6 标题折叠写 headingFolds（不污染 quoteFolds）",
+      "ok": true,
+      "detail": {
+        "headingFolds": [
+          "2:引用章节"
+        ],
+        "quoteFolds": [
+          "q:1:引用一"
+        ],
+        "folded": [
+          "2:引用章节"
+        ]
+      }
+    },
+    {
+      "name": "S6 引用折叠写 quoteFolds（不污染 headingFolds）",
+      "ok": true,
+      "detail": {
+        "headingFolds": [
+          "2:引用章节"
+        ],
+        "quoteFolds": [
+          "q:1:引用一"
+        ],
+        "folded": [
+          "2:引用章节"
+        ]
+      }
+    },
+    {
+      "name": "S6 标题展开后引用折叠独立存活",
+      "ok": true,
+      "detail": [
+        "q:1:引用一"
+      ]
+    },
+    {
+      "name": "S6 引用展开还原（隔离验证收尾）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "S6 共存验证未改 .md",
+      "ok": true,
+      "detail": {
+        "equal": true
+      }
+    },
+    {
+      "name": "S7 前置：Alpha 已折叠",
+      "ok": true,
+      "detail": [
+        "2:Alpha 章节"
+      ]
+    },
+    {
+      "name": "S7 跳转目标在折叠区 → 自动展开祖先折叠（NAV §3.5）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "S7 跳转后目标标题可见",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "S7 光标落在目标标题（jump 语义）",
+      "ok": true,
+      "detail": {
+        "cursor": 48,
+        "expected": 48
+      }
+    },
+    {
+      "name": "S8 __veloxP18.getRanges 形状未破坏（{key,from,to,lines}）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "S8 getHeadingKeys 返回全部标题 foldKey",
+      "ok": true,
+      "detail": [
+        "1:标题折叠自测",
+        "2:Alpha 章节",
+        "3:Alpha 子节 A",
+        "4:Alpha 孙节",
+        "3:Alpha 子节 B",
+        "2:Beta 章节",
+        "2:引用章节",
+        "2:空章节",
+        "2:仅空行",
+        "2:尾部章节"
+      ]
+    },
+    {
+      "name": "S8 getSessionFolds/benchToggle 可用",
+      "ok": true,
+      "detail": {
+        "session": [],
+        "bench": {
+          "ms": 4.599999904632568,
+          "avg": 2.299999952316284
+        }
+      }
+    },
+    {
+      "name": "S8 收尾无 toast",
+      "ok": true,
+      "detail": null
+    }
+  ]
+}

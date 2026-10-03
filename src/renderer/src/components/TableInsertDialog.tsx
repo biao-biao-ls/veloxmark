@@ -168,6 +168,7 @@ export function TableInsertDialog({ open, form, selectionText, onClose, onFormCh
               <label>
                 {t('tableInsert.rows')}{' '}
                 <input
+                  className="prefs-input"
                   data-testid="table-rows"
                   type="number"
                   min={1}
@@ -179,6 +180,7 @@ export function TableInsertDialog({ open, form, selectionText, onClose, onFormCh
               <label>
                 {t('tableInsert.cols')}{' '}
                 <input
+                  className="prefs-input"
                   data-testid="table-cols"
                   type="number"
                   min={1}
@@ -235,10 +237,15 @@ export function TableInsertDialog({ open, form, selectionText, onClose, onFormCh
         <pre className="table-insert-preview" data-testid="table-preview">{preview}</pre>
 
         <div className="dialog-buttons">
-          <button type="button" onClick={onClose}>
+          <button type="button" className="dialog-btn" data-testid="table-insert-cancel" onClick={onClose}>
             {t('dialog.cancel')}
           </button>
-          <button type="button" className="primary" onClick={onConfirm}>
+          <button
+            type="button"
+            className="dialog-btn dialog-btn-primary"
+            data-testid="table-insert-confirm"
+            onClick={onConfirm}
+          >
             {t('tableInsert.confirm')}
           </button>
         </div>

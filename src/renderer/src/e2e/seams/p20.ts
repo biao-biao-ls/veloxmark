@@ -2,7 +2,8 @@
  * P20 e2e seam — rich-text clipboard handle (task 1A split).
  *
  * Effect body moved verbatim from App.tsx (dep array kept as-is).
- * `toastRef` is business-shared (App's showToast writes it) and stays in App.
+ * FE-07: the toast message lives in the useToast bus now — `getToast` reads it
+ * live (the `getToast(): string | null` handle contract is unchanged).
  * Contract: e2e/handles.d.ts `__veloxP20`.
  */
 import { useEffect } from 'react'
@@ -11,17 +12,16 @@ import {
   copyRichTextToClipboard,
   renderSelectionHtmlDocument
 } from '../../export/copyRichText'
+import { getToastMessage } from '../../hooks/useToast'
 import { setPreferences } from '../../preferences/store'
-import type { ToastRef, ViewRef } from './types'
+import type { ViewRef } from './types'
 
 export interface P20Deps {
   viewRef: ViewRef
-  /** Business-shared — App's showToast writes it. */
-  toastRef: ToastRef
 }
 
 export function useP20Seam(deps: P20Deps): void {
-  const { viewRef, toastRef } = deps
+  const { viewRef } = deps
   // P20 e2e handle: rich-text clipboard.
   useEffect(() => {
     window.__veloxP20 = {
@@ -43,7 +43,7 @@ export function useP20Seam(deps: P20Deps): void {
         html: await window.api.clipboardReadHtml(),
         text: await window.api.clipboardRead()
       }),
-      getToast: () => toastRef.current,
+      getToast: () => getToastMessage(),
       setThemePref: (mode) => setPreferences({ theme: mode })
     }
   }, [viewRef])

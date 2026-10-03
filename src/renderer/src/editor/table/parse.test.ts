@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   alignmentOf,
+  effectiveAlign,
   formatTable,
   parseTableModel,
   renderInlineCell,
@@ -16,6 +17,18 @@ describe('alignmentOf', () => {
     expect(alignmentOf('---:')).toBe('right')
     expect(alignmentOf(':---:')).toBe('center')
     expect(alignmentOf(' :---: ')).toBe('center')
+  })
+})
+
+describe('effectiveAlign — GFM 默认左对齐归一（UI-IXD-04 / CHANGE-14）', () => {
+  it('`---`（解析为 \'\'）渲染即左对齐，回显归一为 left', () => {
+    expect(effectiveAlign('')).toBe('left')
+    expect(effectiveAlign('left')).toBe('left')
+  })
+
+  it('显式标记原样透传，不改写冒号行语义', () => {
+    expect(effectiveAlign('center')).toBe('center')
+    expect(effectiveAlign('right')).toBe('right')
   })
 })
 
@@ -39,6 +52,21 @@ describe('splitRowWithOffsets', () => {
 
   it('handles rows without outer pipes', () => {
     expect(splitRowWithOffsets('a | b', 0).map((c) => c.text)).toEqual(['a', 'b'])
+  })
+
+  it('空白格区间规范化：全空白 raw 不倒置 {from>to}，取 raw 全跨（写回可达）', () => {
+    // line = '| a |   |' at 10：中格 raw='   ' 占 [15,18)
+    const cells = splitRowWithOffsets('| a |   |', 10)
+    expect(cells.map((c) => c.text)).toEqual(['a', ''])
+    const blank = cells[1]
+    expect(blank.from).toBeLessThanOrEqual(blank.to) // 修前 from=18>to=15 倒置
+    expect([blank.from, blank.to]).toEqual([15, 18]) // 规范化为 raw 全跨
+  })
+
+  it('空内容格（||）保持空区间 from===to，插入点合法', () => {
+    const cells = splitRowWithOffsets('| a ||', 0)
+    expect(cells.map((c) => c.text)).toEqual(['a', ''])
+    expect(cells[1].from).toBe(cells[1].to)
   })
 })
 

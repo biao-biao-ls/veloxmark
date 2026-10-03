@@ -1,0 +1,581 @@
+{
+  "meta": {
+    "port": 9279,
+    "startedAt": "2026-09-30T05:19:09.109Z",
+    "finishedAt": "2026-09-30T05:19:18.083Z"
+  },
+  "scenarios": {
+    "s0": {
+      "health": {
+        "editor": true,
+        "table": true,
+        "p20": true,
+        "p26": true,
+        "dialogSeam": true
+      },
+      "docLen": 228
+    },
+    "s1": {
+      "before": {
+        "menuDropdown": false,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": false,
+        "activeTag": "BODY."
+      },
+      "after": {
+        "menuDropdown": false,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": false,
+        "activeTag": "BODY."
+      },
+      "docSame": true
+    },
+    "s2": {
+      "openState": {
+        "menuDropdown": true,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": false,
+        "activeTag": "BUTTON.menubar-label menubar-open"
+      },
+      "closed": {
+        "menuDropdown": false,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": true,
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      }
+    },
+    "s3": {
+      "openState": {
+        "menuDropdown": false,
+        "ctxMenu": true,
+        "gridPicker": false,
+        "tableToolbar": true,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": true,
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      },
+      "closed": {
+        "menuDropdown": false,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": true,
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      },
+      "docSame": true
+    },
+    "s4": {
+      "openState": {
+        "menuDropdown": false,
+        "ctxMenu": true,
+        "gridPicker": false,
+        "tableToolbar": true,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": false,
+        "activeTag": "DIV.editor-context-menu velox-ctx-menu"
+      },
+      "closed": {
+        "menuDropdown": false,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": true,
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      }
+    },
+    "s5": {
+      "stacked": {
+        "menuDropdown": true,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": true,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": false,
+        "activeTag": "BUTTON.dialog-btn dialog-btn-primary dialog-btn"
+      },
+      "dlgStacked": {
+        "open": true,
+        "message": "hush stacking probe",
+        "hasDanger": true,
+        "confirm": "确认删除"
+      },
+      "afterEsc1": {
+        "menuDropdown": true,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": false,
+        "activeTag": "BUTTON.menubar-label menubar-open"
+      },
+      "afterEsc2": {
+        "menuDropdown": false,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": true,
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      }
+    },
+    "s6": {
+      "stacked": {
+        "menuDropdown": true,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": true,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": false,
+        "activeTag": "BUTTON.dialog-btn dialog-btn-primary dialog-btn"
+      },
+      "after": {
+        "menuDropdown": true,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": false,
+        "activeTag": "BUTTON.menubar-label menubar-open"
+      },
+      "toastAfter": null
+    },
+    "s7": {
+      "editing": {
+        "menuDropdown": false,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": true,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": true,
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      },
+      "after": {
+        "menuDropdown": false,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": true,
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      },
+      "blank": true
+    },
+    "s8": {
+      "toastOpen": {
+        "seam": "已删除第 2 行（Ctrl+Z 可撤销）",
+        "dom": true
+      },
+      "toastAfterEsc": {
+        "seam": "已删除第 2 行（Ctrl+Z 可撤销）",
+        "dom": true
+      }
+    },
+    "s9": {
+      "before": {
+        "menuDropdown": false,
+        "ctxMenu": true,
+        "gridPicker": false,
+        "tableToolbar": true,
+        "dialog": false,
+        "toast": true,
+        "float": false,
+        "focusedInEditor": false,
+        "activeTag": "DIV.editor-context-menu velox-ctx-menu"
+      },
+      "after": {
+        "menuDropdown": false,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": true,
+        "float": false,
+        "focusedInEditor": true,
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      }
+    }
+  },
+  "checks": [
+    {
+      "name": "S0 健康检查（e2e 缝在场）",
+      "ok": true,
+      "detail": {
+        "editor": true,
+        "table": true,
+        "p20": true,
+        "p26": true,
+        "dialogSeam": true
+      }
+    },
+    {
+      "name": "S0 fixture 载入",
+      "ok": true,
+      "detail": {
+        "len": 228
+      }
+    },
+    {
+      "name": "S1 空栈 Esc 文档零副作用",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "S1 空栈 Esc 不误触浮层/不吞正文（chrome 快照不变）",
+      "ok": true,
+      "detail": {
+        "before": {
+          "menuDropdown": false,
+          "ctxMenu": false,
+          "gridPicker": false,
+          "tableToolbar": false,
+          "dialog": false,
+          "toast": false,
+          "float": false,
+          "focusedInEditor": false,
+          "activeTag": "BODY."
+        },
+        "after": {
+          "menuDropdown": false,
+          "ctxMenu": false,
+          "gridPicker": false,
+          "tableToolbar": false,
+          "dialog": false,
+          "toast": false,
+          "float": false,
+          "focusedInEditor": false,
+          "activeTag": "BODY."
+        }
+      }
+    },
+    {
+      "name": "S2 MenuBar 下拉展开",
+      "ok": true,
+      "detail": {
+        "menuDropdown": true,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": false,
+        "activeTag": "BUTTON.menubar-label menubar-open"
+      }
+    },
+    {
+      "name": "S2 Esc 一键收拢菜单栏下拉",
+      "ok": true,
+      "detail": {
+        "menuDropdown": false,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": true,
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      }
+    },
+    {
+      "name": "S2 收拢后焦点回正文",
+      "ok": true,
+      "detail": {
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      }
+    },
+    {
+      "name": "S3 ⋮/右键菜单展开",
+      "ok": true,
+      "detail": {
+        "menuDropdown": false,
+        "ctxMenu": true,
+        "gridPicker": false,
+        "tableToolbar": true,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": true,
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      }
+    },
+    {
+      "name": "S3 Esc 一次收拢（含子菜单，非两级）",
+      "ok": true,
+      "detail": {
+        "menuDropdown": false,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": true,
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      }
+    },
+    {
+      "name": "S3 Esc 关菜单零副作用（文档不变）",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "S3 不双重触发（收拢后焦点回正文/编辑器）",
+      "ok": true,
+      "detail": {
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      }
+    },
+    {
+      "name": "S4 多层同开（表格工具栏 + ⋮ 菜单）",
+      "ok": true,
+      "detail": {
+        "withToolbar": {
+          "menuDropdown": false,
+          "ctxMenu": false,
+          "gridPicker": false,
+          "tableToolbar": true,
+          "dialog": false,
+          "toast": false,
+          "float": false,
+          "focusedInEditor": true,
+          "activeTag": "DIV.cm-content cm-lineWrapping"
+        },
+        "multiOpen": true
+      }
+    },
+    {
+      "name": "S4 一次 Esc 全部收拢（非逐个关闭）",
+      "ok": true,
+      "detail": {
+        "menuDropdown": false,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": true,
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      }
+    },
+    {
+      "name": "S4 收拢后焦点回正文",
+      "ok": true,
+      "detail": {
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      }
+    },
+    {
+      "name": "S5 确认框+菜单同开（模态在最上层）",
+      "ok": true,
+      "detail": {
+        "stacked": {
+          "menuDropdown": true,
+          "ctxMenu": false,
+          "gridPicker": false,
+          "tableToolbar": false,
+          "dialog": true,
+          "toast": false,
+          "float": false,
+          "focusedInEditor": false,
+          "activeTag": "BUTTON.dialog-btn dialog-btn-primary dialog-btn"
+        },
+        "dlgStacked": {
+          "open": true,
+          "message": "hush stacking probe",
+          "hasDanger": true,
+          "confirm": "确认删除"
+        }
+      }
+    },
+    {
+      "name": "S5 Esc #1 仅关确认框（菜单保持、零副作用）",
+      "ok": true,
+      "detail": {
+        "menuDropdown": true,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": false,
+        "activeTag": "BUTTON.menubar-label menubar-open"
+      }
+    },
+    {
+      "name": "S5 Esc #2 收拢菜单（终态静息）",
+      "ok": true,
+      "detail": {
+        "menuDropdown": false,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": true,
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      }
+    },
+    {
+      "name": "S6 叠加态就绪",
+      "ok": true,
+      "detail": {
+        "menuDropdown": true,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": true,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": false,
+        "activeTag": "BUTTON.dialog-btn dialog-btn-primary dialog-btn"
+      }
+    },
+    {
+      "name": "S6 点遮罩空白仅关最上层确认框（无穿透、无删除）",
+      "ok": true,
+      "detail": {
+        "after": {
+          "menuDropdown": true,
+          "ctxMenu": false,
+          "gridPicker": false,
+          "tableToolbar": false,
+          "dialog": false,
+          "toast": false,
+          "float": false,
+          "focusedInEditor": false,
+          "activeTag": "BUTTON.menubar-label menubar-open"
+        },
+        "toastAfter": null,
+        "docSame": true
+      }
+    },
+    {
+      "name": "S7 表格编辑态 + 工具栏在场",
+      "ok": true,
+      "detail": {
+        "menuDropdown": false,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": true,
+        "dialog": false,
+        "toast": false,
+        "float": false,
+        "focusedInEditor": true,
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      }
+    },
+    {
+      "name": "S7 点正文空白：表格退出编辑、工具栏消失、焦点在正文（== Esc 语义）",
+      "ok": true,
+      "detail": {
+        "blank": true,
+        "after": {
+          "menuDropdown": false,
+          "ctxMenu": false,
+          "gridPicker": false,
+          "tableToolbar": false,
+          "dialog": false,
+          "toast": false,
+          "float": false,
+          "focusedInEditor": true,
+          "activeTag": "DIV.cm-content cm-lineWrapping"
+        }
+      }
+    },
+    {
+      "name": "S8 操作 toast 在场",
+      "ok": true,
+      "detail": {
+        "seam": "已删除第 2 行（Ctrl+Z 可撤销）",
+        "dom": true
+      }
+    },
+    {
+      "name": "S8 Esc 不收拢 toast（驻留保持）",
+      "ok": true,
+      "detail": {
+        "seam": "已删除第 2 行（Ctrl+Z 可撤销）",
+        "dom": true
+      }
+    },
+    {
+      "name": "S9 收拢前多浮层截图",
+      "ok": true,
+      "detail": {
+        "menuDropdown": false,
+        "ctxMenu": true,
+        "gridPicker": false,
+        "tableToolbar": true,
+        "dialog": false,
+        "toast": true,
+        "float": false,
+        "focusedInEditor": false,
+        "activeTag": "DIV.editor-context-menu velox-ctx-menu"
+      }
+    },
+    {
+      "name": "S9 收拢后静息截图（零 chrome、焦点回正文）",
+      "ok": true,
+      "detail": {
+        "menuDropdown": false,
+        "ctxMenu": false,
+        "gridPicker": false,
+        "tableToolbar": false,
+        "dialog": false,
+        "toast": true,
+        "float": false,
+        "focusedInEditor": true,
+        "activeTag": "DIV.cm-content cm-lineWrapping"
+      }
+    }
+  ],
+  "passed": true
+}

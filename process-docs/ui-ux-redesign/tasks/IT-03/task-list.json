@@ -1,0 +1,509 @@
+{
+  "iteration": "IT-03",
+  "name": "期4 渲染区",
+  "objective": "交付正文渲染区六类交互能力：图片编辑浮层（尺寸/对齐写 .md 语法）、链接 hover 浮层（编辑 URL/外开/复制）、列表行首拖拽排序、任务项勾选轻量口径、标题折叠（含子章节、大纲双向同步、复用 headingFolds）、长引用 >5 行折叠（摘要行 + quoteFolds 持久化），并收口点击语义（AC-RULE-13）与块级观感审计，hover 纪律与 i18n/token/store 基建先行",
+  "techDesignPath": "ui-ux-redesign/design/tech-design.md",
+  "uiDesignPath": "../docs/requirements/ui-ux-redesign/ui",
+  "createdAt": "2026-09-28",
+  "updatedAt": "2026-09-28",
+  "features": [
+    {
+      "name": "编辑图片尺寸",
+      "techDesignRef": "tech-design.md#83-组件结构",
+      "prdRef": "prd.md#64-渲染区markdown-语法预览编辑交互",
+      "acRef": "ac.md#AC-OP-13",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_06_render_zone.html",
+      "relatedTasks": [
+        "FE-04"
+      ]
+    },
+    {
+      "name": "调整图片对齐",
+      "techDesignRef": "tech-design.md#83-组件结构",
+      "prdRef": "prd.md#64-渲染区markdown-语法预览编辑交互",
+      "acRef": "ac.md#AC-OP-13",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_06_render_zone.html",
+      "relatedTasks": [
+        "FE-04"
+      ]
+    },
+    {
+      "name": "浮层外开与复制链接",
+      "techDesignRef": "tech-design.md#83-组件结构",
+      "prdRef": "prd.md#64-渲染区markdown-语法预览编辑交互",
+      "acRef": "ac.md#AC-FN-19",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_06_render_zone.html",
+      "relatedTasks": [
+        "FE-05"
+      ]
+    },
+    {
+      "name": "编辑链接 URL",
+      "techDesignRef": "tech-design.md#83-组件结构",
+      "prdRef": "prd.md#64-渲染区markdown-语法预览编辑交互",
+      "acRef": "ac.md#AC-OP-14",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_06_render_zone.html",
+      "relatedTasks": [
+        "FE-05"
+      ]
+    },
+    {
+      "name": "列表项拖拽排序",
+      "techDesignRef": "tech-design.md#83-组件结构",
+      "prdRef": "prd.md#64-渲染区markdown-语法预览编辑交互",
+      "acRef": "ac.md#AC-OP-16",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_06_render_zone.html",
+      "relatedTasks": [
+        "FE-06"
+      ]
+    },
+    {
+      "name": "任务项勾选",
+      "techDesignRef": "tech-design.md#83-组件结构",
+      "prdRef": "prd.md#64-渲染区markdown-语法预览编辑交互",
+      "acRef": "ac.md#AC-OP-15",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_06_render_zone.html",
+      "relatedTasks": [
+        "FE-06"
+      ]
+    },
+    {
+      "name": "标题折叠与展开",
+      "techDesignRef": "tech-design.md#83-组件结构",
+      "prdRef": "prd.md#64-渲染区markdown-语法预览编辑交互",
+      "acRef": "ac.md#AC-FN-15",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_06_render_zone.html",
+      "relatedTasks": [
+        "FE-07"
+      ]
+    },
+    {
+      "name": "大纲折叠双向同步",
+      "techDesignRef": "tech-design.md#83-组件结构",
+      "prdRef": "prd.md#63-左侧导航栏",
+      "acRef": "ac.md#AC-FN-30",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_06_render_zone.html",
+      "relatedTasks": [
+        "FE-07"
+      ]
+    },
+    {
+      "name": "长引用折叠与展开",
+      "techDesignRef": "tech-design.md#83-组件结构",
+      "prdRef": "prd.md#64-渲染区markdown-语法预览编辑交互",
+      "acRef": "ac.md#AC-FN-16",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_06_render_zone.html",
+      "relatedTasks": [
+        "FE-08"
+      ]
+    },
+    {
+      "name": "quoteFolds 折叠态持久化",
+      "techDesignRef": "tech-design.md#6-数据库设计",
+      "prdRef": "prd.md#7-关联与影响m10",
+      "acRef": "ac.md#AC-RULE-14",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_06_render_zone.html",
+      "relatedTasks": [
+        "FE-02",
+        "FE-08"
+      ]
+    },
+    {
+      "name": "hover 浮层防抖显现与退出",
+      "techDesignRef": "tech-design.md#43-块级-chrome-四态mermaid-state-diagram-v2",
+      "prdRef": "prd.md#64-渲染区markdown-语法预览编辑交互",
+      "acRef": "ac.md#AC-FN-14",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_06_render_zone.html",
+      "relatedTasks": [
+        "FE-03"
+      ]
+    },
+    {
+      "name": "点击进编辑与纯选中保护",
+      "techDesignRef": "tech-design.md#83-组件结构",
+      "prdRef": "prd.md#64-渲染区markdown-语法预览编辑交互",
+      "acRef": "ac.md#AC-RULE-13",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_06_render_zone.html",
+      "relatedTasks": [
+        "FE-09"
+      ]
+    },
+    {
+      "name": "操作回执与浮层文案呈现",
+      "techDesignRef": "tech-design.md#83-组件结构",
+      "prdRef": "prd.md#7-关联与影响m10",
+      "acRef": "ac.md#AC-FN-28",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_06_render_zone.html",
+      "relatedTasks": [
+        "FE-01"
+      ]
+    },
+    {
+      "name": "公式/代码/mermaid 块观感审计",
+      "techDesignRef": "tech-design.md#83-组件结构",
+      "prdRef": "prd.md#64-渲染区markdown-语法预览编辑交互",
+      "acRef": "ac.md#AC-FN-20",
+      "uiRef": "../docs/requirements/ui-ux-redesign/ui/ui_06_render_zone.html",
+      "relatedTasks": [
+        "FE-10"
+      ]
+    }
+  ],
+  "feature-relations": [
+    {
+      "from": "hover 浮层防抖显现与退出",
+      "to": "编辑图片尺寸",
+      "relation": "前置"
+    },
+    {
+      "from": "hover 浮层防抖显现与退出",
+      "to": "浮层外开与复制链接",
+      "relation": "前置"
+    },
+    {
+      "from": "hover 浮层防抖显现与退出",
+      "to": "列表项拖拽排序",
+      "relation": "前置"
+    },
+    {
+      "from": "点击进编辑与纯选中保护",
+      "to": "编辑图片尺寸",
+      "relation": "前置"
+    },
+    {
+      "from": "编辑图片尺寸",
+      "to": "调整图片对齐",
+      "relation": "联动"
+    },
+    {
+      "from": "编辑链接 URL",
+      "to": "操作回执与浮层文案呈现",
+      "relation": "联动"
+    },
+    {
+      "from": "标题折叠与展开",
+      "to": "大纲折叠双向同步",
+      "relation": "联动"
+    },
+    {
+      "from": "长引用折叠与展开",
+      "to": "quoteFolds 折叠态持久化",
+      "relation": "联动"
+    },
+    {
+      "from": "编辑链接 URL",
+      "to": "浮层外开与复制链接",
+      "relation": "联动"
+    },
+    {
+      "from": "列表项拖拽排序",
+      "to": "操作回执与浮层文案呈现",
+      "relation": "联动"
+    }
+  ],
+  "e2e-paths": [
+    {
+      "id": "PATH-01",
+      "name": "图片与链接浮层编辑回路",
+      "type": "happy",
+      "steps": [
+        "hover 浮层防抖显现与退出：hover 图片停留 ≥150ms 浮现编辑浮层（ui_06 区块 A / FE-03）",
+        "编辑图片尺寸：拖拽右下角尺寸控制点松开，.md 图片语法落新尺寸（FE-04 / AC-OP-13）",
+        "调整图片对齐：点击对齐三键「居中」进入激活态，.md 落对齐且尺寸不变（FE-04 / AC-OP-13）",
+        "操作回执与浮层文案呈现：toast 显示「已调整图片尺寸（Ctrl+Z 可撤销）」（FE-01 / AC-FN-28）",
+        "编辑链接 URL：hover 链接浮现三入口浮层，点「编辑 URL」修改 URL 确认写回 .md 链接语法（FE-05 / AC-OP-14）",
+        "浮层外开与复制链接：点「外开」经系统默认浏览器打开、点「复制」剪贴板得完整 URL（FE-05 / AC-FN-19）",
+        "一次 Ctrl+Z 还原 URL 修改前状态，autosave 落盘还原后内容（AC-OP-14 终态断言）"
+      ]
+    },
+    {
+      "id": "PATH-02",
+      "name": "列表拖拽排序与任务勾选微操作",
+      "type": "happy",
+      "steps": [
+        "hover 浮层防抖显现与退出：hover 列表行首浮现拖拽把手 ⠿（FE-03 / UI-IXD-08）",
+        "列表项拖拽排序：按住把手拖到目标位松开，插入指示线落位、缩进层级不变（FE-06 / AC-OP-16）",
+        "操作回执与浮层文案呈现：toast 显示「已移动列表项（Ctrl+Z 可撤销）」（FE-01 / AC-FN-28）",
+        "任务项勾选：点击未勾选任务框，[ ]→[x] 写回 .md 任务语法、同列表其他项不变、不回 toast（FE-06 / AC-OP-15）",
+        "一次 Ctrl+Z 还原勾选为 [ ]，autosave 落盘（AC-OP-15 终态断言）"
+      ]
+    },
+    {
+      "id": "PATH-03",
+      "name": "标题折叠与长引用折叠闭环",
+      "type": "happy",
+      "steps": [
+        "标题折叠与展开：点击标题左侧折叠三角，全部子章节折叠隐藏、标题行保留（FE-07 / AC-FN-15）",
+        "大纲折叠双向同步：大纲对应节点同步折叠，再点大纲侧入口正文同步展开（FE-07 / AC-FN-30）",
+        "长引用折叠与展开：>5 行引用点折叠入口折为摘要行（首行截断 + 「N 行」尾标），点展开还原零字节差异（FE-08 / AC-FN-16）",
+        "quoteFolds 折叠态持久化：折叠后关闭并重启应用，折叠态保持且 .md 零字节变化（FE-02 / AC-RULE-14）"
+      ]
+    },
+    {
+      "id": "PATH-04",
+      "name": "只读拦截与另存恢复",
+      "type": "error",
+      "steps": [
+        "打开只读 .md 文件（AC-ERR-08 前置）",
+        "编辑图片尺寸：拖拽尺寸控制点被拦截、文档逐字节不变、toast「文件为只读，无法修改，可另存后编辑」（FE-04 / AC-ERR-08）",
+        "编辑链接 URL：确认新 URL 被拦截、.md 链接语法不变（FE-05 / AC-ERR-08）",
+        "任务项勾选：点击勾选框被拦截、不产生半提交状态（FE-06 / AC-ERR-08）",
+        "经「另存为」生成可写副本后重复步骤 2，可正常写入并 autosave 落盘（AC-ERR-08 恢复断言）"
+      ]
+    },
+    {
+      "id": "PATH-05",
+      "name": "URL 校验失败与图片失败态可修复",
+      "type": "error",
+      "steps": [
+        "编辑链接 URL：输入空/非法 URL 确认，校验拒绝、浮层保留输入、.md 不变（FE-05）",
+        "图片加载失败（引用不存在的图片路径）：图位置显示失败态与「重试」「编辑地址」入口（FE-04 / ui_06 交互规则卡）",
+        "编辑链接 URL：经「编辑地址」入口修复 URL 后链接按新 URL 正常渲染（FE-05 / AC-OP-14）",
+        "浮层外开与复制链接：外开仅经 shell.openExternal 固定入口、不拼接用户可控串（FE-05 / AC-NF-12）"
+      ]
+    },
+    {
+      "id": "PATH-06",
+      "name": "hover 快速掠过与纯选中边界",
+      "type": "edge",
+      "steps": [
+        "hover 浮层防抖显现与退出：鼠标快速掠过 ≥3 个块级元素，控件 0 闪烁、出入防抖 ≥150ms（FE-03 / AC-NF-04）",
+        "点击进编辑与纯选中保护：拖选一段文本松开复制，仅选区高亮、剪贴板得文本、不弹浮层（FE-09 / AC-FN-18）",
+        "点击进编辑与纯选中保护：点击图/表/代码相邻区，语义一致且不弹与被点击元素无关的浮层（FE-09 / AC-FN-17）",
+        "hover 浮层防抖显现与退出：控件出入正文位移 0px、移出后无残留（FE-03 / AC-NF-05）"
+      ]
+    },
+    {
+      "id": "PATH-07",
+      "name": "长引用阈值边界与折叠持久",
+      "type": "edge",
+      "steps": [
+        "构造恰好 5 行引用块：不出现折叠入口（FE-08 / PEND-09 阈值边界）",
+        "构造 6 行引用块：折叠入口出现（FE-08 / QUOTE_FOLD_LINE_THRESHOLD=5）",
+        "长引用折叠与展开：折叠为摘要行（首行截断 + 「6 行」尾标口径 N=隐藏行数），点击展开还原（FE-08 / AC-FN-16）",
+        "quoteFolds 折叠态持久化：切换标签再切回折叠态保持、veloxmark.session.quoteFolds 条目正确、.md 零字节变化（FE-02 / AC-RULE-14）"
+      ]
+    },
+    {
+      "id": "PATH-08",
+      "name": "块级审计非回归与导出联动",
+      "type": "edge",
+      "steps": [
+        "公式/代码/mermaid 块观感审计：深浅主题各一遍对照走查块级 chrome 观感（FE-10 / AC-FN-20）",
+        "点击公式块进双区编辑，输入非法公式触发预览：错误态标识 + 跳源码定位 + 源码区输入保留（FE-10 / AC-ERR-10）",
+        "mermaid 语法错误：last-good 图保留 + 错误条，修复语法后重渲染为新图（FE-10 / AC-ERR-11）",
+        "经导出入口导出 HTML/PDF/富文本任一通道：图片尺寸与对齐、任务勾选态、链接 URL、列表顺序与编辑视图一致（FE-10 / AC-OP-18）"
+      ]
+    }
+  ],
+  "summary": {
+    "infra": 0,
+    "backend": 0,
+    "frontend": 10,
+    "total": 10
+  },
+  "tasks": [
+    {
+      "seq": 1,
+      "id": "FE-01",
+      "name": "渲染区文案与样式 token 基建（i18n 双字典回执键 + 浮层/折叠样式分区）",
+      "role": "frontend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-01.md"
+    },
+    {
+      "seq": 2,
+      "id": "FE-02",
+      "name": "SessionState.quoteFolds 字段与 sanitizer 白名单扩展（含 store.test 用例）",
+      "role": "frontend",
+      "dependencies": [],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-02.md"
+    },
+    {
+      "seq": 3,
+      "id": "FE-03",
+      "name": "hover 浮层/微操作防抖基座与退出纪律（≥150ms、不遮挡、位移 0px、无残留）",
+      "role": "frontend",
+      "dependencies": [
+        "FE-01"
+      ],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-03.md"
+    },
+    {
+      "seq": 4,
+      "id": "FE-04",
+      "name": "图片编辑浮层（尺寸拖拽/对齐按钮写 .md 图片语法 + undo + 回执）",
+      "role": "frontend",
+      "dependencies": [
+        "FE-01",
+        "FE-03"
+      ],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-04.md"
+    },
+    {
+      "seq": 5,
+      "id": "FE-05",
+      "name": "链接 hover 浮层（编辑 URL 写回 .md / 外开 / 复制完整 URL）",
+      "role": "frontend",
+      "dependencies": [
+        "FE-01",
+        "FE-03"
+      ],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-05.md"
+    },
+    {
+      "seq": 6,
+      "id": "FE-06",
+      "name": "列表行首拖拽排序与任务项勾选（把手按需浮现、层级不变、轻量口径）",
+      "role": "frontend",
+      "dependencies": [
+        "FE-01",
+        "FE-03"
+      ],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-06.md"
+    },
+    {
+      "seq": 7,
+      "id": "FE-07",
+      "name": "标题折叠/展开（含全部子章节 + 大纲双向同步 + 复用 headingFolds）",
+      "role": "frontend",
+      "dependencies": [
+        "FE-01"
+      ],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-07.md"
+    },
+    {
+      "seq": 8,
+      "id": "FE-08",
+      "name": "长引用折叠（useQuoteFold + 摘要行 + quoteFolds 读写，阈值 >5 行）",
+      "role": "frontend",
+      "dependencies": [
+        "FE-01",
+        "FE-02"
+      ],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-08.md"
+    },
+    {
+      "seq": 9,
+      "id": "FE-09",
+      "name": "点击语义固化与纯选中保护（点击进编辑 / 拖选复制不弹 chrome）",
+      "role": "frontend",
+      "dependencies": [
+        "FE-03",
+        "FE-04",
+        "FE-05",
+        "FE-06"
+      ],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-09.md"
+    },
+    {
+      "seq": 10,
+      "id": "FE-10",
+      "name": "公式/代码/mermaid 块观感审计微调与非回归（双区/错误态/last-good 保持 + 导出联动核验）",
+      "role": "frontend",
+      "dependencies": [
+        "FE-04",
+        "FE-05",
+        "FE-06",
+        "FE-08"
+      ],
+      "assignee": "",
+      "phase": {
+        "dev": "done",
+        "selfTest": "done"
+      },
+      "artifact": "",
+      "detailFile": "FE-10.md"
+    }
+  ],
+  "phases": [
+    {
+      "phase": 1,
+      "name": "基建与存储底座",
+      "tasks": [
+        "FE-01",
+        "FE-02"
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "hover 基座与折叠能力",
+      "tasks": [
+        "FE-03",
+        "FE-07",
+        "FE-08"
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "浮层与微操作交互",
+      "tasks": [
+        "FE-04",
+        "FE-05",
+        "FE-06"
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "点击语义与块级审计收敛",
+      "tasks": [
+        "FE-09",
+        "FE-10"
+      ]
+    }
+  ]
+}

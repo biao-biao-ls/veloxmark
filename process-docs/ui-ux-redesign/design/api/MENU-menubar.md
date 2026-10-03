@@ -96,8 +96,8 @@
 | `toggleDevTools` | `F12` | `Cmd+Alt+I` | `window.api.windowToggleDevTools()`（复用） | 开发者工具 ▸ `F12` |
 
 - **单源收敛**：darwin.ts 现手写 accelerator（`Cmd+Plus`/`Cmd+-`/`Cmd+0`/`Alt+Cmd+I`）迁入 `DARWIN_COMMAND_ACCELERATORS`，darwin 菜单构建改读单源映射（Q7：darwin.ts 手写加速键改走单源）；
-- 双源同步规则：注册表 `shortcut` 与加速键映射按 `shortcutSync.test` 派生规则守护（`Ctrl+`→`Cmd+` 惯例），例外登记 `DERIVATION_EXCEPTIONS` 并注明原因（如 zoomIn 的 `Ctrl+=` ↔ `Cmd+Plus` 为惯例写法差异，需登记）；
-- AC-RULE-11 零例外：补注册后菜单回显自动齐（回显派生自注册表）。
+- 双源同步规则：注册表 `shortcut` 与加速键映射按 `shortcutSync.test` 派生规则守护（`Ctrl+`→`Cmd+` 惯例），例外登记 `DERIVATION_EXCEPTIONS` 并注明原因（永久例外两条：zoomIn 的 `Ctrl+=` ↔ `Cmd+Plus` 为惯例写法差异；toggleDevTools 的 `F12` ↔ `Cmd+Alt+I` 为平台原生键差异、派生不可一致——均需登记，CHANGE-7）；
+- 回显与实触发一致率 100%（AC-RULE-11；派生例外仅限本节登记清单）。已知缺口登记（CHANGE-30，方向待终裁）：(1) mac 回显 ⌘（fmtShortcut 标准转换）vs 实按 Ctrl 不一致——收口二选一：(a) 键位注册改 Mod- 使 mac 触发=⌘ 与回显一致，或 (b) 回显字面 Ctrl 不做 ⌘ 转换；(2) `app.searchInFolder` tooltip 键面手工双源（存量）——改 fmtShortcut 单源派生或登记入 DERIVATION_EXCEPTIONS。
 
 ### 3.5 弹层限高滚动 + 边缘翻转可达（AC-RULE-10）
 
@@ -110,7 +110,7 @@
 | 5 | 展开响应 ≤200ms；菜单内滚动不重排父级位置 | 全部下拉 | AC-NF-02 |
 | 6 | 深浅主题下菜单文字/快捷键列对比度 ≥ 4.5:1 | 全部下拉 | AC-ERR-14, AC-NF-09 |
 
-**关闭路径**（AC-FN-10，四条触发每次验证单一路径）：选择菜单项 / Esc / 点击菜单外区域 / 限高滚动下的超界滚动选择 → 均收拢至关闭态（含子菜单）；Esc/外点/超界滚动选择后焦点回正文，后续键盘输入直接进正文。
+**关闭路径**（AC-FN-10，四条触发每次验证单一路径）：选择菜单项 / Esc / 点击菜单外区域 / 限高滚动下的超界滚动选择（操作定义 CHANGE-6：限高滚动面板滚到上/下边界后继续向外滚动 wheel overscroll 穿界即视为该触发；内容未超限的面板不产生该触发；MenuBar 与 contextMenu（⋮/右键）同源，`popup.detectOverscrollSelection` 纯函数钉住） → 均收拢至关闭态（含子菜单）；Esc/外点/超界滚动选择后焦点回正文，后续键盘输入直接进正文（外点例外 CHANGE-23：外点落到可聚焦目标 button/input/textarea/select/a/[contenteditable]/[tabindex] 时菜单关闭但不抢焦点、焦点归该目标）。面板自身限高内滚动**不**收拢菜单，仅菜单外（页面/编辑器）滚动维持收拢（CHANGE-5）。
 
 ### 3.6 macOS 原生菜单对齐（附录 A 口径）
 

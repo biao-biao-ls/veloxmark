@@ -18,7 +18,12 @@ export interface CellInfo {
 export interface TableModel {
   /** Per-column alignment from the delimiter row ('' | left | center | right). */
   aligns: string[]
-  /** Column count taken from the header row (GFM authority). */
+  /**
+   * Rectified column count: max cell count across header and body rows
+   * (header width for well-formed tables). GFM render ignores body cells past
+   * the header width, but the editor keeps them so whole-table rewrites never
+   * drop source content (PEND-07 内容不丢失).
+   */
   colCount: number
   /**
    * UI rows: index 0 = header, 1..n = body. The delimiter row is NOT part of
@@ -44,6 +49,16 @@ export function alignmentOf(delimiter: string): string {
   if (right) return 'right'
   if (left) return 'left'
   return ''
+}
+
+/**
+ * Display-side align view (UI-IXD-04 / CHANGE-14): GFM `---` (no colons) is
+ * left-aligned at render, so the pressed/check echo must read '' as 'left'.
+ * Pure projection — never write it back through `delimiterText` (that would
+ * rewrite `---` to `:---` and break zero-drift source round-trips).
+ */
+export function effectiveAlign(align: string): string {
+  return align === '' ? 'left' : align
 }
 
 /**
@@ -91,9 +106,21 @@ export function splitRowWithOffsets(line: string, lineDocFrom: number): CellInfo
 function trimmedCell(raw: string, from: number, to: number): CellInfo {
   const lead = raw.length - raw.trimStart().length
   const trail = raw.length - raw.trimEnd().length
-  return { text: raw.trim(), from: from + lead, to: to - trail }
+  // 全空白 raw（含 formatTable padEnd 的空白格）：lead+trail > raw.length →
+  // from+lead > to-trail 倒置区间 {from>to}。规范化为 raw 全跨（swap）——
+  // 写回（pendingCommitChanges / commitHandoff / moveCell 的 cellChange）以
+  // 新文本替换填充空白而非抛 CM6 RangeError 被吞，文档级写回可达（PATH04-05
+  // 批内未尽③）。有内容的格子 lead+trail ≤ raw.length，恒不倒置。
+  const lo = Math.min(from + lead, to - trail)
+  const hi = Math.max(from + lead, to - trail)
+  return { text: raw.trim(), from: lo, to: hi }
 }
 
+/**
+ * Pad a row to the rectified width with sentinel cells (空缺补空单元格).
+ * `colCount` is the max row width computed by parseTableModel, so the slice
+ * never drops real cells.
+ */
 function padRow(cells: CellInfo[], colCount: number): CellInfo[] {
   const row = cells.slice(0, colCount)
   while (row.length < colCount) row.push({ text: '', from: SENTINEL, to: SENTINEL })
@@ -137,17 +164,17 @@ export function parseTableModel(source: string, tableFrom: number): TableModel {
   const delimLine = used[1]
   const header = splitRowWithOffsets(headerLine.l, lineStarts[headerLine.i])
   const delim = splitRowWithOffsets(delimLine.l, lineStarts[delimLine.i])
-  const colCount = Math.max(header.length, 1)
+  // used[1] is the delimiter row — alignment metadata only, NOT a UI row.
+  const bodyRows = used.slice(2).map((x) => splitRowWithOffsets(x.l, lineStarts[x.i]))
+  // Rectified width (PEND-07): union of all UI row widths — nothing truncated.
+  let colCount = Math.max(header.length, 1)
+  for (const r of bodyRows) colCount = Math.max(colCount, r.length)
 
   const aligns = Array.from({ length: colCount }, (_, i) =>
     delim[i] ? alignmentOf(delim[i].text) : ''
   )
 
-  const cells: CellInfo[][] = [padRow(header, colCount)]
-  // used[1] is the delimiter row — alignment metadata only, NOT a UI row.
-  for (let r = 2; r < used.length; r++) {
-    cells.push(padRow(splitRowWithOffsets(used[r].l, lineStarts[used[r].i]), colCount))
-  }
+  const cells: CellInfo[][] = [padRow(header, colCount), ...bodyRows.map((r) => padRow(r, colCount))]
 
   const last = used[used.length - 1]
   return {

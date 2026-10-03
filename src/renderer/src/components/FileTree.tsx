@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { DirNode } from '../../../../electron/shared/api'
-import { ChevronDownIcon, ChevronRightIcon, FileMdIcon, FolderIcon, FolderOpenIcon } from './Icons'
+import { FileMdIcon, FolderIcon, FolderOpenIcon } from './Icons'
 import { t } from '../i18n'
 import { ancestorDirPaths, flattenFiles, visibleRows, type FlatRow } from './filetreeRows'
+import { resolveKey, toVisibleRows, type VisibleRow } from './filetreeKeys'
+import { pathsEqual } from '../pathUtil'
 import { sortTreeNodes } from '../filetree/sort'
 import { usePreferences } from '../preferences/useStore'
 
@@ -33,14 +35,38 @@ interface Props {
   onCreateCancel: () => void
 }
 
-// Fixed row height keeps the virtualization math exact; .filetree-item is
-// line-height 1.6 * 13px ≈ 21px plus 2+2px padding → 25px with border-box.
-const ROW_HEIGHT = 25
-/** 6G render-list entry: a data row, or the spliced inline-create input. */
-type ViewRow = (FlatRow & { relDir?: string }) | { create: 'file' | 'dir'; depth: number }
+// Fixed row height keeps the virtualization math exact. UI-IXD row height
+// is 28px (ui_05 / FE-06#1). CSS twin: styles/tokens.css --tree-row-h —
+// keep both in lockstep.
+const ROW_HEIGHT = 28
+
+/** Row indent rides CSS tokens (--tree-indent * (depth + 1), ui_05 16px/级)
+ *  — pass the unitless depth, never a px literal (FE-10 audit). */
+const depthStyle = (depth: number): React.CSSProperties =>
+  ({ '--tree-depth': depth }) as React.CSSProperties
+
+/**
+ * Indent guides (FE-06#4): `depth` hairlines at each step's center
+ * (`--tree-indent * i + --tree-indent / 2`, i in 0..depth-1) — matching the
+ * ui_05 mock (depth-2 rows carry one guide at left 8px). Pure decoration,
+ * absolutely positioned inside the row (row is position: relative).
+ */
+const indentGuides = (depth: number): React.ReactNode[] =>
+  Array.from({ length: depth }, (_, i) => (
+    <i
+      key={`guide-${i}`}
+      className="filetree-guide"
+      style={{ left: `calc(var(--tree-indent) * ${i} + var(--tree-indent) / 2)` }}
+    />
+  ))
+/** 6G render-list entry: a data row (with its keyRows index), or the spliced inline-create input. */
+type ViewRow = (FlatRow & { relDir?: string; keyIndex: number }) | { create: 'file' | 'dir'; depth: number }
 // Above this many visible rows, window the render (spacer divs, no abs pos).
 const VIRTUALIZE_AT = 500
 const OVERSCAN = 10
+// FE-06: the nav-key set (nav-keyboard:file-tree) — consumed when a tree row
+// holds focus so arrows/Home/End never rubber-band the panel scroll.
+const NAV_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'])
 
 /** src of the in-flight drag; dragover can't read dataTransfer, so share it. */
 let dragSrcPath: string | null = null
@@ -84,9 +110,11 @@ function RenameRow({
   return (
     <div
       className={`filetree-item filetree-renaming${virtualize ? ' filetree-item-fixed' : ''}`}
-      style={{ paddingLeft: 12 + depth * 14 }}
+      style={depthStyle(depth)}
       title={node.path}
     >
+      {indentGuides(depth)}
+      <span className="filetree-twisty empty">·</span>
       <input
         ref={inputRef}
         className="filetree-rename-input"
@@ -145,8 +173,10 @@ function CreateRow({
   return (
     <div
       className={`filetree-item filetree-renaming${virtualize ? ' filetree-item-fixed' : ''}`}
-      style={{ paddingLeft: 12 + depth * 14 }}
+      style={depthStyle(depth)}
     >
+      {indentGuides(depth)}
+      <span className="filetree-twisty empty">·</span>
       <input
         ref={inputRef}
         className="filetree-rename-input"
@@ -252,12 +282,112 @@ export default function FileTree({
     return visibleRows(sortedNodes, { expanded, revealDirs, renameDirs })
   }, [fileTreeView, sortedNodes, fileTreeSort, sep, expanded, revealDirs, renameDirs])
 
+  // FE-06 nav-keyboard:file-tree — keyboard model over data rows only (the
+  // spliced create row is an input, not a navigation target). Index space is
+  // `rows`; virtualization stays a render concern (focus scrolls into view).
+  const keyRows = useMemo(() => toVisibleRows(rows), [rows])
+  const [focusIndex, setFocusIndex] = useState(-1)
+  // Keyboard-modality marker for the focus ring (nav-keyboard:focus-visible):
+  // the ring is keyboard-only — nav keys set it, pointer clicks clear it.
+  // Pairs with :focus-visible in CSS (same idiom as .search-match-focus).
+  const [kbdNav, setKbdNav] = useState(false)
+  // FE-06 r2 #11: active follows the open document row — separator-insensitive
+  // (win scan `\` vs open-path `/`) so the highlight never misses or lags.
+  const activeIdx = useMemo(
+    () => keyRows.findIndex((r) => pathsEqual(r.path, activePath ?? '')),
+    [keyRows, activePath]
+  )
+  // Roving tabindex stop: explicit focus wins, else the active file row, else
+  // first row — so Tab can always enter the tree (AC-FN-13 keyboard path).
+  const tabStop =
+    focusIndex >= 0 && focusIndex < keyRows.length
+      ? focusIndex
+      : activeIdx >= 0
+        ? activeIdx
+        : keyRows.length > 0
+          ? 0
+          : -1
+  // Focus target that still needs a DOM .focus() after re-render (virtualized
+  // rows may not exist yet when the key was handled).
+  const pendingFocusRef = useRef<number | null>(null)
+  useEffect(() => {
+    const idx = pendingFocusRef.current
+    if (idx == null) return
+    const el = treeRef.current?.querySelector<HTMLElement>(`[data-nav-index="${idx}"]`)
+    if (!el) return // windowed out; re-runs after the scroll re-render
+    pendingFocusRef.current = null
+    el.focus()
+  })
+
+  // Minimal scroll-into-view for keyboard focus (the active-row reveal above
+  // centers instead — different intent, kept separate on purpose).
+  const scrollRowIntoView = (idx: number): void => {
+    const side = treeRef.current?.closest('.sidebar')
+    if (!side) return
+    const treeTop = treeRef.current?.offsetTop ?? 0
+    const rowTop = treeTop + idx * ROW_HEIGHT
+    const rowBottom = rowTop + ROW_HEIGHT
+    const viewTop = side.scrollTop
+    const viewBottom = viewTop + side.clientHeight
+    let next = viewTop
+    if (rowTop < viewTop) next = rowTop
+    else if (rowBottom > viewBottom) next = rowBottom - side.clientHeight
+    else return
+    const clamped = Math.max(0, next)
+    side.scrollTop = clamped
+    setScrollTop(clamped) // keep the virtual window in sync immediately
+  }
+
+  // FE-06: route nav keys through the pure mapper. Fires only when DOM focus
+  // is on a tree row (the handler lives on the nav) — editor input is never
+  // hijacked. Enter is preventDefault'd so the button's synthesized click
+  // (which would double-open) is suppressed.
+  const onTreeKeyDown = (e: React.KeyboardEvent): void => {
+    const target = (e.target as HTMLElement).closest<HTMLElement>('[data-nav-index]')
+    if (target && NAV_KEYS.has(e.key)) setKbdNav(true)
+    const cur = target ? Number(target.dataset.navIndex) : tabStop
+    const result = resolveKey({ rows: keyRows, focusIndex: cur }, e.key)
+    if (result.action === 'none') {
+      // Consume the nav key set inside a non-empty tree so arrows/Home/End
+      // don't rubber-band the panel; unknown keys pass through untouched.
+      if (keyRows.length > 0 && target && NAV_KEYS.has(e.key)) e.preventDefault()
+      return
+    }
+    e.preventDefault()
+    switch (result.action) {
+      case 'move':
+      case 'first':
+      case 'last': {
+        // Focus movement never opens files (Enter only) and never changes
+        // the new-file target selection.
+        pendingFocusRef.current = result.nextIndex
+        setFocusIndex(result.nextIndex)
+        scrollRowIntoView(result.nextIndex)
+        break
+      }
+      case 'collapse':
+      case 'expand': {
+        const row = keyRows[cur]
+        setExpanded((m) => ({ ...m, [row.path]: result.action === 'expand' }))
+        break
+      }
+      case 'open': {
+        // Enter mirrors the row click: select target, then open.
+        const row = keyRows[cur]
+        onSelect?.(row.path, false)
+        onOpen(row.path)
+        break
+      }
+    }
+  }
+
   // 6G D3: splice the CreateRow into the render list — after the parent dir row
   // in tree mode (parent chain force-open above), index 0 when the parent is
   // the root itself, missing from the rows, or in list view. Part of the same
   // array as data rows so virtualization math stays exact.
+  // keyIndex stays the index into `rows` (keyboard model) regardless of splice.
   const viewRows = useMemo((): ViewRow[] => {
-    const base: ViewRow[] = rows.map((r) => ({ ...r }))
+    const base: ViewRow[] = rows.map((r, i) => ({ ...r, keyIndex: i }))
     if (!pendingCreate) return base
     let at = 0
     let depth = 0
@@ -293,7 +423,9 @@ export default function FileTree({
   // manual expand/collapse elsewhere) never jitters the viewport.
   const lastRevealRef = useRef<{ path: string | null; found: boolean }>({ path: null, found: false })
   useEffect(() => {
-    const idx = viewRows.findIndex((r) => 'node' in r && r.node.path === activePath)
+    const idx = viewRows.findIndex(
+      (r) => 'node' in r && pathsEqual(r.node.path, activePath ?? '')
+    )
     const found = idx >= 0
     const last = lastRevealRef.current
     if (found && last.path === activePath && last.found) return
@@ -368,7 +500,7 @@ export default function FileTree({
         />
       )
     }
-    const pad = { paddingLeft: 12 + depth * 14 }
+    const pad = depthStyle(depth)
     const startDrag = (e: React.DragEvent): void => {
       dragSrcPath = node.path
       e.dataTransfer.setData('text/plain', node.path)
@@ -383,11 +515,19 @@ export default function FileTree({
         <button
           key={node.path}
           className={`filetree-item filetree-dir-label${
-            selectedPath === node.path ? ' filetree-selected' : ''
+            selectedPath && pathsEqual(selectedPath, node.path) ? ' filetree-selected' : ''
           }${dropTarget === node.path ? ' filetree-drop-target' : ''}${
-            virtualize ? ' filetree-item-fixed' : ''
-          }`}
+            item.keyIndex === focusIndex && kbdNav ? ' filetree-kbd-focus' : ''
+          }${virtualize ? ' filetree-item-fixed' : ''}`}
           style={pad}
+          // FE-06 roving tabindex: one tab stop per tree, data-nav-index is the
+          // keyRows index (survives the create-row splice), data-nav-focus marks
+          // the focused row for the focus-ring CSS (keyboard only).
+          tabIndex={item.keyIndex === tabStop ? 0 : -1}
+          data-nav-index={item.keyIndex}
+          data-nav-focus={item.keyIndex === focusIndex ? '' : undefined}
+          onFocus={() => setFocusIndex(item.keyIndex)}
+          onPointerDown={() => setKbdNav(false)}
           draggable
           onDragStart={startDrag}
           onDragEnd={endDrag}
@@ -421,8 +561,9 @@ export default function FileTree({
           }}
           title={node.path}
         >
-          {open ? <ChevronDownIcon size={12} /> : <ChevronRightIcon size={12} />}
-          <span className="filetree-icon">
+          {indentGuides(depth)}
+          <span className="filetree-twisty">{open ? '▾' : '▸'}</span>
+          <span className="filetree-icon is-folder">
             {open ? <FolderOpenIcon size={13} /> : <FolderIcon size={13} />}
           </span>
           <span className="filetree-dir-name">{node.name}</span>
@@ -432,10 +573,19 @@ export default function FileTree({
     return (
       <button
         key={node.path}
-        className={`filetree-item${activePath === node.path ? ' filetree-active' : ''}${
-          selectedPath === node.path ? ' filetree-selected' : ''
-        }${virtualize ? ' filetree-item-fixed' : ''}`}
+        className={`filetree-item${
+          activePath && pathsEqual(activePath, node.path) ? ' filetree-active' : ''
+        }${selectedPath && pathsEqual(selectedPath, node.path) ? ' filetree-selected' : ''}${
+          item.keyIndex === focusIndex && kbdNav ? ' filetree-kbd-focus' : ''
+        }${
+          virtualize ? ' filetree-item-fixed' : ''
+        }`}
         style={pad}
+        tabIndex={item.keyIndex === tabStop ? 0 : -1}
+        data-nav-index={item.keyIndex}
+        data-nav-focus={item.keyIndex === focusIndex ? '' : undefined}
+        onFocus={() => setFocusIndex(item.keyIndex)}
+        onPointerDown={() => setKbdNav(false)}
         draggable
         onDragStart={startDrag}
         onDragEnd={endDrag}
@@ -451,6 +601,8 @@ export default function FileTree({
         }}
         title={node.path}
       >
+        {indentGuides(depth)}
+        <span className="filetree-twisty empty">·</span>
         <span className="filetree-icon">
           <FileMdIcon size={13} />
         </span>
@@ -470,6 +622,15 @@ export default function FileTree({
     <nav
       className="filetree"
       ref={treeRef}
+      onKeyDown={onTreeKeyDown}
+      onBlur={(e) => {
+        // Focus left the tree entirely → drop the DOM-focus mark so the
+        // focus-ring presentation attribute never leaks outside the tree.
+        if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+        setFocusIndex(-1)
+        setKbdNav(false)
+        pendingFocusRef.current = null // no latent .focus() stealing focus back
+      }}
       onContextMenu={(e) => {
         // Rows stopPropagation; anything landing on the nav surface itself is
         // empty-area → workspace-root menu (UX-P07-F0).

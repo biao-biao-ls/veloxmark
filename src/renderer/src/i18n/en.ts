@@ -1,4 +1,11 @@
 /** English dictionary (source of truth for keys). Placeholders: {name}. */
+
+/** Undo-hint suffix for render-zone receipt toasts (IT-03 FE-01) — composed
+ *  once here instead of hardcoding into every toast value. Leading space is
+ *  part of the suffix: composed sentences must read
+ *  "…adjusted (Ctrl+Z to undo)" (IT-01 frozen en family separator). */
+const UNDO_SUFFIX = ' (Ctrl+Z to undo)'
+
 export const EN: Record<string, string> = {
   // ---- command registry (commands.ts labels) ---------------------------------
   'cmd.newFile': 'New',
@@ -83,7 +90,10 @@ export const EN: Record<string, string> = {
   'ctx.copyTable': 'Copy table',
   'ctx.formatTableSource': 'Format table source',
   'ctx.deleteTable': 'Delete table',
-  'ctx.deleteTableConfirm': 'Delete this table? This cannot be undone.',
+  // FE-11 frozen copy (AC-RULE-15 / AC-OP-09) — confirm button is the danger
+  // primary. zh wording is the frozen contract; this side mirrors its slots.
+  'ctx.deleteTableConfirm': 'Deleting can be undone in one step. Confirm deleting this table?',
+  'ctx.deleteTableConfirmOk': 'Confirm Delete',
   'menu.file': 'File',
   'menu.edit': 'Edit',
   'menu.view': 'View',
@@ -94,6 +104,31 @@ export const EN: Record<string, string> = {
   'menu.format': 'Format',
   'menu.noRecent': 'No Recent Files',
   'menu.clearMenu': 'Clear Menu',
+  // FE-01 menu:ia-reorder semantic group titles (menu-tree §3)
+  'menu.grp.newOpen': 'New & Open',
+  'menu.grp.save': 'Save',
+  'menu.grp.tabs': 'Tabs',
+  'menu.grp.export': 'Export',
+  'menu.grp.settings': 'Settings',
+  'menu.grp.history': 'History',
+  'menu.grp.clipboard': 'Clipboard',
+  'menu.grp.findOrganize': 'Find & Organize',
+  'menu.grp.format': 'Format',
+  'menu.grp.selectionExport': 'Selection Export',
+  'menu.grp.sidebarSearch': 'Sidebar & Search',
+  'menu.grp.fold': 'Fold',
+  'menu.grp.mode': 'Modes',
+  'menu.grp.inputAssist': 'Input Assists',
+  'menu.grp.zoom': 'Zoom',
+  'menu.grp.devTheme': 'Developer & Theme',
+  'menu.grp.table': 'Table',
+  'menu.grp.chartContainer': 'Charts & Containers',
+  'menu.grp.rowOps': 'Row',
+  'menu.grp.colOps': 'Column',
+  'menu.grp.align': 'Align',
+  'menu.grp.cell': 'Cell',
+  'menu.grp.structDelete': 'Structure',
+  'menu.grp.dangerBadge': 'DANGER',
 
   // ---- dialogs ---------------------------------------------------------------
   'dialog.ok': 'OK',
@@ -242,13 +277,33 @@ export const EN: Record<string, string> = {
   'toast.copiedCode': 'Code copied',
   'toast.copiedTex': 'TeX copied',
   'toast.copiedImage': 'Diagram image copied',
-  'toast.rowDeleted': 'Row deleted',
-  'toast.colDeleted': 'Column deleted',
-  'toast.tableDeleted': 'Table deleted',
+  // IT-01 FE-11 frozen receipt family (ac.md AC-OP-01~10 / TBL §3.1). zh is the
+  // frozen contract; keep placeholder slots ({i}/{j}/{R}/{C}) and the
+  // "(Ctrl+Z to undo)" suffix in lockstep. Consumed by FE-02/04/05/07/08.
+  'toast.rowInsertedAbove': 'Row inserted above (Ctrl+Z to undo)',
+  'toast.rowInsertedBelow': 'Row inserted below (Ctrl+Z to undo)',
+  'toast.rowDeleted': 'Row {i} deleted (Ctrl+Z to undo)',
+  'toast.colInsertedLeft': 'Column inserted on the left (Ctrl+Z to undo)',
+  'toast.colInsertedRight': 'Column inserted on the right (Ctrl+Z to undo)',
+  'toast.colDeleted': 'Column {j} deleted (Ctrl+Z to undo)',
+  'toast.rowMovedUp': 'Row moved up (Ctrl+Z to undo)',
+  'toast.rowMovedDown': 'Row moved down (Ctrl+Z to undo)',
+  'toast.colMovedLeft': 'Column moved left (Ctrl+Z to undo)',
+  'toast.colMovedRight': 'Column moved right (Ctrl+Z to undo)',
+  'toast.colAlignLeft': 'Column {j} aligned: left (Ctrl+Z to undo)',
+  'toast.colAlignCenter': 'Column {j} aligned: center (Ctrl+Z to undo)',
+  'toast.colAlignRight': 'Column {j} aligned: right (Ctrl+Z to undo)',
+  'toast.tableResized': 'Table resized to {R}×{C} (Ctrl+Z to undo)',
+  'toast.tableDeleted': 'Table deleted (Ctrl+Z to undo)',
+  'toast.undone': 'Undone',
+  'toast.undoBtn': 'Undo',
   'toast.copiedTable': 'Table copied',
   'toast.copyFailed': 'Copy failed',
   'toast.tableFormatted': 'Table source formatted',
   'toast.tableUnchanged': 'Table already formatted',
+  // IT-01 FE-11 frozen error family (AC-RULE-16 / AC-ERR-08 / AC-ERR-15).
+  'err.readonly': 'File is read-only and cannot be modified. Save a copy to edit.',
+  'err.autosaveFailed': 'Auto-save failed. Save a copy of the document.',
   'cmd.insertCallout': 'Insert Callout…',
   'callout.insertTitle': 'Insert callout',
   'callout.foldPlaceholder': '⋯ {n} lines',
@@ -383,7 +438,7 @@ export const EN: Record<string, string> = {
 
   // ---- titlebar --------------------------------------------------------------
   'tb.outline': 'Toggle outline',
-  'tb.theme': 'Toggle theme (Ctrl+Shift+T)',
+  'tb.theme': 'Toggle theme',
   'tb.minimize': 'Minimize',
   'tb.maximize': 'Maximize / Restore',
   'tb.close': 'Close',
@@ -432,6 +487,8 @@ export const EN: Record<string, string> = {
   // ---- P18 heading fold ------------------------------------------------------
   'fold.placeholder': '⋯ {n} lines',
   'fold.toggle': 'Fold / unfold section',
+  // FE-07 ui_06 fold-collapsed-line: gray summary line under a folded heading.
+  'fold.collapsedLine': '({n} lines folded · synced with outline)',
 
   'cmd.foldAll': 'Fold All',
   'cmd.unfoldAll': 'Unfold All',
@@ -489,5 +546,57 @@ export const EN: Record<string, string> = {
   'tableHandle.colGrip': 'Drag to resize column (this session only)',
   'table.copyTitle': 'Copy table as Markdown',
   'table.gridPickerTitle': 'Resize rows × cols',
-  'table.moreTitle': 'More actions'
+  'table.gridScaleFull': 'Scale full table',
+  'table.gridPreset1x1': '1×1',
+  'table.gridPreset2x2': '2×2',
+  'table.gridPreset3x3': '3×3',
+  'table.gridPresetAutoFit': 'Fit to window',
+  'table.moreTitle': 'More actions',
+
+  // ---- IT-03 FE-01 render zone copy (REN-render-zone) --------------------------
+  // Receipt toasts all compose UNDO_SUFFIX (AC-OP-13/14/16 unified format).
+  // Drift declaration (PEND-15 explicit exemption): task-item checkbox toggles
+  // and heading/quote folds are lightweight ops with NO toast — therefore no
+  // render.toast.taskChecked / render.toast.fold* keys exist. Do not add them.
+  'render.toast.imageSize': `Image size adjusted${UNDO_SUFFIX}`,
+  'render.toast.imageAlign': `Image alignment set${UNDO_SUFFIX}`,
+  'render.toast.linkUpdated': `Link URL updated${UNDO_SUFFIX}`,
+  'render.toast.listMoved': `List item moved${UNDO_SUFFIX}`,
+  // Image edit float (ui_06 block A): align trio + width + done
+  'render.image.alignLeft': 'Align left',
+  'render.image.alignCenter': 'Center',
+  'render.image.alignRight': 'Align right',
+  'render.image.width': 'Width',
+  'render.image.done': 'Done',
+  'render.image.alignLeftTitle': 'Align left',
+  'render.image.alignCenterTitle': 'Center',
+  'render.image.alignRightTitle': 'Align right',
+  'render.image.widthTitle': 'Show width',
+  'render.image.doneTitle': 'Done',
+  // FE-04 resize grip (ui_06 .img-resize-handle title)
+  'render.image.resizeTitle': 'Drag to resize',
+  // FE-04 broken-image repair entry (ui_06 error-repair rule card)
+  'render.image.broken': 'Image failed to load',
+  'render.image.retry': 'Retry',
+  'render.image.retryTitle': 'Reload image',
+  'render.image.editUrl': 'Edit URL',
+  'render.image.editUrlTitle': 'Edit image URL',
+  'render.image.urlPlaceholder': 'Enter image URL',
+  // Link hover float (ui_06 block B): three entries + edit-mode input
+  'render.link.editUrl': 'Edit URL',
+  'render.link.open': 'Open',
+  'render.link.copy': 'Copy',
+  'render.link.editUrlTitle': 'Edit URL',
+  'render.link.openTitle': 'Open in default browser',
+  'render.link.copyTitle': 'Copy full URL',
+  'render.link.urlPlaceholder': 'Enter link URL',
+  'render.link.confirm': 'Confirm',
+  'render.link.cancel': 'Cancel',
+  // list row drag handle (ui_06 block C): surfaced state title/aria-label
+  'render.list.dragHandle': 'Drag to reorder',
+  // Heading fold (block D) / long-quote fold (block E): caret hints + summary tail
+  'render.fold.collapse': 'Fold section',
+  'render.fold.expand': 'Unfold section',
+  'render.fold.restore': 'Restore',
+  'render.fold.lines': '{n} lines'
 }

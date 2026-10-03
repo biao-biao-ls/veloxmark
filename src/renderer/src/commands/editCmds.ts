@@ -2,7 +2,7 @@
  * Edit-domain commands（2B 自 commands.ts 平移）+ 复制为…▶ copy-as 组。
  */
 import { openSearchPanel } from '@codemirror/search'
-import { redo, undo } from '@codemirror/commands'
+import { redo } from '@codemirror/commands'
 import type { EditorView } from '@codemirror/view'
 import { runMenuPaste } from '../editor/assists'
 import {
@@ -15,6 +15,7 @@ import {
   exportSelectionHtmlFile
 } from '../export/copyRichText'
 import { livePreviewConfigFacet } from '../editor/livePreview'
+import { undoWithAck } from '../hooks/useToast'
 import { t } from '../i18n'
 import type { Command, EditCmdOps } from './types'
 
@@ -28,7 +29,9 @@ export function buildEditCmds(ops: EditCmdOps): Command[] {
       shortcut: 'Ctrl+Z',
       run: () => {
         const v = view()
-        if (v) undo(v)
+        // glb-undo:triple-entry — menu/Ctrl+Z/toast-button share one CM6 step;
+        // a successful undo posts the frozen「已撤销」receipt (AC-OP-12).
+        if (v) undoWithAck(v)
       }
     },
     {

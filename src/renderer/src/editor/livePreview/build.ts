@@ -2,8 +2,9 @@ import { syntaxTree } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
 import { Decoration, type DecorationSet } from '@codemirror/view'
 import type { LivePreviewConfig } from './config'
-import { FoldPlaceholder, collectFoldRanges, getFoldedKeys } from './fold'
+import { applyHeadingFoldDecos } from './fold'
 import { CalloutFoldPlaceholder } from './calloutFold'
+import { applyQuoteFoldDecos } from './quoteFold'
 import { getLang } from '../../i18n'
 import {
   collectExtendedDecos,
@@ -158,23 +159,18 @@ export function buildDecorations(state: EditorState, config: LivePreviewConfig):
     }
   }
 
-  // P18 heading folds: drop anything inside a collapsed range (CM6 forbids
-  // overlapping replace decorations — image/code widgets inside a folded
-  // section would throw), then push fold replaces + `⋯ N 行` placeholders.
-  // Field read is optional so snapshot states without foldField keep working.
-  const foldRanges = collectFoldRanges(state, getFoldedKeys(state))
-  if (foldRanges.length > 0) {
-    const kept = decos.filter((d) => !foldRanges.some((r) => d.from < r.to && d.to > r.from))
-    decos.length = 0
-    decos.push(...kept)
-    for (const r of foldRanges) {
-      decos.push({
-        from: r.from,
-        to: r.to,
-        value: Decoration.replace({ widget: new FoldPlaceholder(r.key, r.lines, getLang()) })
-      })
-    }
-  }
+  // IT-03 FE-08 quote folds (ren-quote:fold): foldable-block carets + folded
+  // summary replaces. Runs after callout folds (a quote inside a collapsed
+  // callout body is skipped — that replace already covers it) and before
+  // heading folds (a collapsed heading hides nested quote summaries).
+  applyQuoteFoldDecos(decos, state, cfRanges)
+
+  // P18/FE-07 heading folds: foldable-section carets, drop anything inside a
+  // collapsed range (CM6 forbids overlapping replace decorations — image/code
+  // widgets inside a folded section would throw), then push the gray summary
+  // replaces. Field read is optional so snapshot states without foldField keep
+  // working (applyHeadingFoldDecos treats missing foldField as not folded).
+  applyHeadingFoldDecos(decos, state)
 
   return Decoration.set(decos, true)
 }

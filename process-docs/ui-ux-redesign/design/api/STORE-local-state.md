@@ -58,7 +58,7 @@
 | 顶层形状 | 值须为对象（Record），否则按 `{}` 丢弃 |
 | 逐文件过滤 | 条目键须为非空 string；值须为 Array，否则整条丢弃 |
 | 元素过滤 | 数组元素仅保留 string 类型，非 string 元素丢弃（不抛错） |
-| 空条目 | 过滤后为空数组的文件条目可保留或剪除（与 headingFolds 现行口径一致即可，store.test 钉住实际行为） |
+| 空条目 | 过滤后为空数组的文件条目**剪除**（「可保留或剪除」二择裁决取剪除，CHANGE-40；normalizePerFileIds 双族统一「键非空 string、值 Array、元素仅 string、空条目剪除」，对齐 normalizeColWidths 先例，store.test 钉住） |
 | 失败策略 | 任何脏数据降级为缺省/丢弃，**不抛错、不阻塞启动**（AC-NF-14-3） |
 
 **测试**：`preferences/store.test.ts` 追加 quoteFolds sanitizer 用例（沿用 headingFolds 既有用例风格）：合法值透传、非对象/非数组/非 string 元素丢弃、缺键默认 `{}`、脏数据不抛错。

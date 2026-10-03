@@ -1,5 +1,6 @@
 import { dialog, ipcMain } from 'electron'
-import { cp, mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { constants } from 'node:fs'
+import { access, cp, mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, isAbsolute, join, normalize } from 'node:path'
 import { IpcChannels, type FileFilter, type LinkResolveResult } from '../shared/api'
 import type { GetWindow } from './getWindow'
@@ -142,6 +143,18 @@ export function registerFilesIpc(getWindow: GetWindow): void {
   ipcMain.handle(IpcChannels.filePathExists, async (_e, filePath: string) => {
     try {
       await stat(filePath)
+      return true
+    } catch {
+      return false
+    }
+  })
+
+  // AC-ERR-08: write pre-check for the renderer's read-only gate. fs.access(W_OK)
+  // covers the Windows read-only attribute, POSIX modes and ACL denials in one
+  // probe — the renderer is sandboxed and must not infer this itself.
+  ipcMain.handle(IpcChannels.fileIsWritable, async (_e, filePath: string) => {
+    try {
+      await access(filePath, constants.W_OK)
       return true
     } catch {
       return false

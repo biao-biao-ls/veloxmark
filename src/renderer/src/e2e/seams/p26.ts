@@ -6,6 +6,7 @@
  */
 import { useEffect } from 'react'
 import { undo } from '@codemirror/commands'
+import { getToastMessage } from '../../hooks/useToast'
 import { getSession, setPreferences } from '../../preferences/store'
 import type { FileOps, FilePathRef, ViewRef } from './types'
 
@@ -13,11 +14,10 @@ export interface P26Deps {
   viewRef: ViewRef
   fileOps: FileOps
   filePathRef: FilePathRef
-  toast: string | null
 }
 
 export function useP26Seam(deps: P26Deps): void {
-  const { viewRef, fileOps, filePathRef, toast } = deps
+  const { viewRef, fileOps, filePathRef } = deps
   // P26 e2e handle — multi-document tab seams.
   useEffect(() => {
     window.__veloxP26 = {
@@ -63,7 +63,7 @@ export function useP26Seam(deps: P26Deps): void {
         return view ? undo(view) : false
       },
       getBaseDir: () => fileOps.getActiveBaseDir(),
-      getToast: () => toast,
+      getToast: () => getToastMessage(),
       persistTabs: () => fileOps.persistTabsSession(),
       getSessionTabs: () => {
         const sess = getSession()
@@ -87,5 +87,5 @@ export function useP26Seam(deps: P26Deps): void {
       getScrollTop: () => viewRef.current?.scrollDOM.scrollTop ?? -1
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fileOps, toast])
+  }, [fileOps])
 }

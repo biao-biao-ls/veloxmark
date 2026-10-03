@@ -28,8 +28,6 @@ interface Props {
   autoSaveError?: string | null
   /** UX-P04 F2: export run-in-progress lamp (`.sb-exporting`). */
   exporting?: boolean
-  /** P20 transient command feedback ("已复制为富文本"); null hides the chip. */
-  toast: string | null
   /** UX-P12: dirty doc + autosave off — stale "Saved HH:MM" would mislead. */
   hideSavedAt?: boolean
   /** UX-P23 wave⑥-6 F1: last format run's warnings — chip opens detail dialog. */
@@ -43,7 +41,6 @@ export default function StatusBar({
   autoSaveAt,
   autoSaveError,
   exporting,
-  toast,
   hideSavedAt,
   formatWarnings,
   onShowFormatWarnings
@@ -97,7 +94,6 @@ export default function StatusBar({
         {stats.selChars > 0 && (
           <span className="sb-sel">{t('status.selected', { n: stats.selChars })}</span>
         )}
-        {toast != null && <span className="sb-toast">{toast}</span>}
         {(formatWarnings?.length ?? 0) > 0 && (
           <button
             className="sb-stat sb-warn-btn"

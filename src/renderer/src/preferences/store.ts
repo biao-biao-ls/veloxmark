@@ -7,12 +7,19 @@
  * rewrite the settings blob. Both use a small pub/sub so React binds via
  * useSyncExternalStore (see preferences/useStore.ts).
  *
+ * Persistence horizon (IT-02 FE-09 wording fix): both keys are localStorage —
+ * everything here survives app restarts. "Session" names the high-churn
+ * namespace (vs preferences), never an in-memory-only lifetime; fold memories
+ * (headingFolds/quoteFolds) are cross-restart (Q10, AC-FN-25) and must never
+ * be written into the .md body (AC-RULE-14).
+ *
  * Appearance settings are pushed to `:root` as CSS variables; editor/theme.ts
  * consumes them, so every setPreferences() takes effect immediately.
  */
 
 import { DEFAULT_TREE_SORT, type TreeSortOptions } from '../filetree/sort'
 import { visibleRecents, type RecentFolder } from '../filetree/recents'
+import { MIN_COL_WIDTH } from '../editor/table/colWidth'
 
 export const PREFERENCES_VERSION = 1
 
@@ -115,8 +122,16 @@ export interface SessionState {
   recentFiles: string[]
   /** P12: editor cursor offset restored with the last file. */
   lastCursor: number | null
-  /** P18: heading-fold keys (`level:text`) per file path. */
+  /**
+   * P18: heading-fold keys (`level:text`) per file path. Display state only —
+   * never written into the .md body (AC-RULE-14). IT-02 FE-09 wording fix:
+   * "SessionState" names the `veloxmark.session` storage namespace, NOT an
+   * in-memory session — localStorage persists across app restarts, so fold
+   * memory is cross-restart (Q10, AC-FN-25).
+   */
   headingFolds: Record<string, string[]>
+  /** Long-quote fold ids per file path (PEND-09 block ids) — same cross-restart, body-isolated contract as headingFolds. */
+  quoteFolds: Record<string, string[]>
   /** 7F: table column widths (px per tableFrom) per file path. */
   tableColWidths: Record<string, Record<string, number[]>>
   /** P25: mermaid preview panel pinned (session-only). */
@@ -185,6 +200,7 @@ const DEFAULT_SESSION: SessionState = {
   recentFiles: [],
   lastCursor: null,
   headingFolds: {},
+  quoteFolds: {},
   tableColWidths: {},
   mermaidPreviewPin: false,
   openTabs: [],
@@ -353,7 +369,8 @@ let preferences: Preferences = (() => {
  * Width slots are position-preserving: invalid values collapse to 0 (the
  * consumer's "default width" sentinel — widget.ts colgroup skips `w <= 0`)
  * so a bad slot never shifts later columns; valid values clamp to the drag
- * floor (40px, widget.ts col-grip parity). Empty tables/paths drop out.
+ * floor (MIN_COL_WIDTH, colWidth.ts single declaration point — col-grip parity).
+ * Empty tables/paths drop out.
  */
 export function normalizeColWidths(raw: unknown): Record<string, Record<string, number[]>> {
   if (!raw || typeof raw !== 'object') return {}
@@ -364,7 +381,9 @@ export function normalizeColWidths(raw: unknown): Record<string, Record<string, 
     for (const [from, widths] of Object.entries(perTable as Record<string, unknown>)) {
       if (!Array.isArray(widths) || widths.length === 0) continue
       const clean = widths.map((w) =>
-        typeof w === 'number' && Number.isFinite(w) && w > 0 ? Math.max(40, Math.round(w)) : 0
+        typeof w === 'number' && Number.isFinite(w) && w > 0
+          ? Math.max(MIN_COL_WIDTH, Math.round(w))
+          : 0
       )
       if (clean.some((w) => w > 0)) tables[from] = clean
     }
@@ -373,47 +392,62 @@ export function normalizeColWidths(raw: unknown): Record<string, Record<string, 
   return out
 }
 
-let session: SessionState = (() => {
-  const raw = readJson<Partial<SessionState>>(SESSION_KEY)
-  if (!raw) return { ...DEFAULT_SESSION }
+/**
+ * Shared per-file `Record<filePath, string[]>` sanitizer for fold id lists
+ * (heading keys, quote block ids — IT-02 FE-09: one cleaning rule for both
+ * families). Empty-string paths, non-array values, non-string elements and
+ * empty-string ids (never valid in either family) drop out; entries that
+ * filter empty drop with them. Dirty input never throws (AC-NF-14).
+ */
+function normalizePerFileIds(raw: unknown): Record<string, string[]> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const out: Record<string, string[]> = {}
+  for (const [path, ids] of Object.entries(raw as Record<string, unknown>)) {
+    if (!path || !Array.isArray(ids)) continue
+    const clean = ids.filter((x): x is string => typeof x === 'string' && x !== '')
+    if (clean.length > 0) out[path] = clean
+  }
+  return out
+}
+
+/**
+ * Whitelist sanitizer for the `veloxmark.session` blob: every field is rebuilt
+ * explicitly (raw is never spread through), so corrupted storage degrades to
+ * defaults without throwing (AC-NF-14). Pure — covered by store.test.ts.
+ */
+export function normalizeSession(raw: unknown): SessionState {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as Partial<SessionState>
   return {
-    sidebarVisible: typeof raw.sidebarVisible === 'boolean' ? raw.sidebarVisible : null,
+    sidebarVisible: typeof r.sidebarVisible === 'boolean' ? r.sidebarVisible : null,
     sidebarMode:
-      raw.sidebarMode === 'files' || raw.sidebarMode === 'outline' || raw.sidebarMode === 'search'
-        ? raw.sidebarMode
+      r.sidebarMode === 'files' || r.sidebarMode === 'outline' || r.sidebarMode === 'search'
+        ? r.sidebarMode
         : null,
     sidebarWidth:
-      typeof raw.sidebarWidth === 'number' && Number.isFinite(raw.sidebarWidth)
-        ? Math.min(480, Math.max(160, raw.sidebarWidth))
+      typeof r.sidebarWidth === 'number' && Number.isFinite(r.sidebarWidth)
+        ? Math.min(480, Math.max(160, r.sidebarWidth))
         : null,
-    lastFilePath: typeof raw.lastFilePath === 'string' ? raw.lastFilePath : null,
-    lastFolderPath: typeof raw.lastFolderPath === 'string' ? raw.lastFolderPath : null,
-    recentFiles: Array.isArray(raw.recentFiles)
-      ? raw.recentFiles.filter((p): p is string => typeof p === 'string').slice(0, RECENT_FILES_MAX)
+    lastFilePath: typeof r.lastFilePath === 'string' ? r.lastFilePath : null,
+    lastFolderPath: typeof r.lastFolderPath === 'string' ? r.lastFolderPath : null,
+    recentFiles: Array.isArray(r.recentFiles)
+      ? r.recentFiles.filter((p): p is string => typeof p === 'string').slice(0, RECENT_FILES_MAX)
       : [],
     lastCursor:
-      typeof raw.lastCursor === 'number' && Number.isFinite(raw.lastCursor) && raw.lastCursor >= 0
-        ? raw.lastCursor
+      typeof r.lastCursor === 'number' && Number.isFinite(r.lastCursor) && r.lastCursor >= 0
+        ? r.lastCursor
         : null,
-    mermaidPreviewPin: raw.mermaidPreviewPin === true,
-    openTabs: Array.isArray(raw.openTabs)
-      ? raw.openTabs.filter((p): p is string => typeof p === 'string')
+    mermaidPreviewPin: r.mermaidPreviewPin === true,
+    openTabs: Array.isArray(r.openTabs)
+      ? r.openTabs.filter((p): p is string => typeof p === 'string')
       : [],
-    activePath: typeof raw.activePath === 'string' ? raw.activePath : null,
-    headingFolds:
-      raw.headingFolds && typeof raw.headingFolds === 'object'
-        ? Object.fromEntries(
-            Object.entries(raw.headingFolds)
-              .filter(([, v]) => Array.isArray(v))
-              .map(([k, v]) => [
-                k,
-                (v as unknown[]).filter((x): x is string => typeof x === 'string')
-              ])
-          )
-        : {},
-    tableColWidths: normalizeColWidths(raw.tableColWidths)
+    activePath: typeof r.activePath === 'string' ? r.activePath : null,
+    headingFolds: normalizePerFileIds(r.headingFolds),
+    quoteFolds: normalizePerFileIds(r.quoteFolds),
+    tableColWidths: normalizeColWidths(r.tableColWidths)
   }
-})()
+}
+
+let session: SessionState = normalizeSession(readJson(SESSION_KEY))
 
 // ---- CSS variable injection (live appearance preview) -----------------------
 

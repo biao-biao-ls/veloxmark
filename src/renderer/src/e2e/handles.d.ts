@@ -1,6 +1,9 @@
 /**
  * e2e/CDP probe handle types (task 1A split — see docs/specs/1A-split-app).
  *
+ * 本文件仅承载 window.__velox* JS handle 类型；DOM 属性契约（data-table-handle/data-op）
+ * 单源 = editor/table/contract.ts，勿在本文件登记。
+ *
  * The `window.__velox*` shapes below are the probe contract (`scripts/cdp-*.mjs`
  * drivers): they moved verbatim out of `App.tsx`, so handle names and member
  * signatures are compile-locked here. Nothing in the product reads these

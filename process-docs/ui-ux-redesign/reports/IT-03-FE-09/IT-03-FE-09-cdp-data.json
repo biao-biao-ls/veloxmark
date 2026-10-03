@@ -1,0 +1,913 @@
+{
+  "meta": {
+    "port": 9457,
+    "startedAt": "2026-09-30T05:38:39.878Z",
+    "isWritableProbe": {
+      "ok": true,
+      "v": true
+    },
+    "seams": {
+      "p12": true,
+      "p13": true,
+      "p18": true,
+      "p21": true,
+      "table": true,
+      "editor": true
+    },
+    "seamKeysBaseline": [
+      "__veloxCtxDebug",
+      "__veloxEditor",
+      "__veloxExport",
+      "__veloxExtended",
+      "__veloxP04",
+      "__veloxP12",
+      "__veloxP13",
+      "__veloxP14",
+      "__veloxP15",
+      "__veloxP16",
+      "__veloxP17",
+      "__veloxP18",
+      "__veloxP19",
+      "__veloxP20",
+      "__veloxP21",
+      "__veloxP22",
+      "__veloxP23",
+      "__veloxP24",
+      "__veloxP25",
+      "__veloxP26",
+      "__veloxP28",
+      "__veloxP29",
+      "__veloxPrefs",
+      "__veloxTable"
+    ],
+    "finishedAt": "2026-09-30T05:39:10.627Z"
+  },
+  "scenarios": {
+    "s1": {
+      "sel": {
+        "empty": false,
+        "from": 34,
+        "to": 167,
+        "text": "Alpha plain paragraph text for drag-select copy checks here.\n\nBeta adjacent paragraph with [a link](https://example.com/page) inline."
+      },
+      "rest": {
+        "selecting": true,
+        "imageFloat": 0,
+        "linkFloat": 0,
+        "listHandle": 0,
+        "imageToolbar": 0,
+        "imageSelected": 0,
+        "blockToolbarsShown": 0,
+        "idleChipsShown": 0,
+        "tableEditing": 0,
+        "mermaidLightbox": 0,
+        "dragGhost": 0,
+        "dropIndicator": 0
+      },
+      "clipLen": 133,
+      "midChrome": {
+        "selecting": true,
+        "imageFloat": 0,
+        "linkFloat": 0,
+        "listHandle": 0,
+        "imageToolbar": 0,
+        "imageSelected": 0,
+        "blockToolbarsShown": 0,
+        "idleChipsShown": 0,
+        "tableEditing": 0,
+        "mermaidLightbox": 0,
+        "dragGhost": 0,
+        "dropIndicator": 0
+      },
+      "hoverKept": true
+    },
+    "s2": {
+      "img": {
+        "x": 517.5,
+        "y": 425.38,
+        "left": 337.5,
+        "top": 305.38,
+        "right": 697.5,
+        "bottom": 545.38,
+        "w": 360,
+        "h": 240
+      }
+    },
+    "s3": {
+      "mathFrom": 276,
+      "codeFrom": 313
+    },
+    "s4": {
+      "c1": {
+        "i": 1,
+        "ok": true,
+        "imgOk": true,
+        "txtOk": true,
+        "tblOk": true,
+        "chImg": {
+          "selecting": false,
+          "imageFloat": 1,
+          "linkFloat": 0,
+          "listHandle": 0,
+          "imageToolbar": 1,
+          "imageSelected": 1,
+          "blockToolbarsShown": 0,
+          "idleChipsShown": 0,
+          "tableEditing": 0,
+          "mermaidLightbox": 0,
+          "dragGhost": 0,
+          "dropIndicator": 0
+        },
+        "chTxt": {
+          "selecting": false,
+          "imageFloat": 0,
+          "linkFloat": 0,
+          "listHandle": 0,
+          "imageToolbar": 0,
+          "imageSelected": 0,
+          "blockToolbarsShown": 0,
+          "idleChipsShown": 0,
+          "tableEditing": 0,
+          "mermaidLightbox": 0,
+          "dragGhost": 0,
+          "dropIndicator": 0
+        },
+        "selTxtFrom": 349,
+        "active": {
+          "nested": true,
+          "row": "1",
+          "col": "1",
+          "editing": 1,
+          "toolbar": 1
+        }
+      },
+      "c2": {
+        "i": 2,
+        "ok": true,
+        "imgOk": true,
+        "txtOk": true,
+        "tblOk": true,
+        "chImg": {
+          "selecting": false,
+          "imageFloat": 1,
+          "linkFloat": 0,
+          "listHandle": 0,
+          "imageToolbar": 1,
+          "imageSelected": 1,
+          "blockToolbarsShown": 0,
+          "idleChipsShown": 0,
+          "tableEditing": 0,
+          "mermaidLightbox": 0,
+          "dragGhost": 0,
+          "dropIndicator": 0
+        },
+        "chTxt": {
+          "selecting": false,
+          "imageFloat": 0,
+          "linkFloat": 0,
+          "listHandle": 0,
+          "imageToolbar": 0,
+          "imageSelected": 0,
+          "blockToolbarsShown": 0,
+          "idleChipsShown": 0,
+          "tableEditing": 0,
+          "mermaidLightbox": 0,
+          "dragGhost": 0,
+          "dropIndicator": 0
+        },
+        "selTxtFrom": 349,
+        "active": {
+          "nested": true,
+          "row": "1",
+          "col": "1",
+          "editing": 1,
+          "toolbar": 1
+        }
+      }
+    },
+    "s5": {},
+    "s6": {
+      "a": {
+        "nested": true,
+        "row": "1",
+        "col": "0",
+        "editing": 1,
+        "toolbar": 1
+      },
+      "b": {
+        "nested": true,
+        "row": "1",
+        "col": "1",
+        "editing": 1,
+        "toolbar": 1
+      },
+      "gap": {
+        "x": 721.5,
+        "y": 437.17,
+        "gapH": 8
+      }
+    },
+    "s7": {
+      "keysNow": [
+        "__veloxCtxDebug",
+        "__veloxEditor",
+        "__veloxExport",
+        "__veloxExtended",
+        "__veloxP04",
+        "__veloxP12",
+        "__veloxP13",
+        "__veloxP14",
+        "__veloxP15",
+        "__veloxP16",
+        "__veloxP17",
+        "__veloxP18",
+        "__veloxP19",
+        "__veloxP20",
+        "__veloxP21",
+        "__veloxP22",
+        "__veloxP23",
+        "__veloxP24",
+        "__veloxP25",
+        "__veloxP26",
+        "__veloxP28",
+        "__veloxP29",
+        "__veloxPrefs",
+        "__veloxTable",
+        "__veloxTableCellView"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "name": "S0 isWritable IPC 可达（非 stale 构建）",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "v": true
+      }
+    },
+    {
+      "name": "S0 e2e 缝 P12/P13/P18/P21/Table/Editor 就绪",
+      "ok": true,
+      "detail": {
+        "p12": true,
+        "p13": true,
+        "p18": true,
+        "p21": true,
+        "table": true,
+        "editor": true
+      }
+    },
+    {
+      "name": "S1 拖选前静息 0 chrome（基线）",
+      "ok": true,
+      "detail": {
+        "selecting": false,
+        "imageFloat": 0,
+        "linkFloat": 0,
+        "listHandle": 0,
+        "imageToolbar": 0,
+        "imageSelected": 0,
+        "blockToolbarsShown": 0,
+        "idleChipsShown": 0,
+        "tableEditing": 0,
+        "mermaidLightbox": 0,
+        "dragGhost": 0,
+        "dropIndicator": 0
+      }
+    },
+    {
+      "name": "S1 夹具段落定位（Alpha/Beta）",
+      "ok": true,
+      "detail": {
+        "alpha": "Alpha plain paragraph text for drag-select copy checks here.",
+        "beta": "Beta adjacent paragraph with a link inline."
+      }
+    },
+    {
+      "name": "S1 拖动进行中 0 chrome（buttons!=0 hover 守卫）",
+      "ok": true,
+      "detail": {
+        "selecting": true,
+        "imageFloat": 0,
+        "linkFloat": 0,
+        "listHandle": 0,
+        "imageToolbar": 0,
+        "imageSelected": 0,
+        "blockToolbarsShown": 0,
+        "idleChipsShown": 0,
+        "tableEditing": 0,
+        "mermaidLightbox": 0,
+        "dragGhost": 0,
+        "dropIndicator": 0
+      }
+    },
+    {
+      "name": "S1 拖选松开后选区非空且覆盖 Alpha 段（AC-FN-18 判据1 仅选区高亮）",
+      "ok": true,
+      "detail": {
+        "empty": false,
+        "from": 34,
+        "to": 167,
+        "text": "Alpha plain paragraph text for drag-select copy checks here.\n\nBeta adjacent paragraph with [a link](https://example.com/page) inline."
+      }
+    },
+    {
+      "name": "S1 松开后无浮层/把手/chip（AC-FN-18 判据3）",
+      "ok": true,
+      "detail": {
+        "selecting": true,
+        "imageFloat": 0,
+        "linkFloat": 0,
+        "listHandle": 0,
+        "imageToolbar": 0,
+        "imageSelected": 0,
+        "blockToolbarsShown": 0,
+        "idleChipsShown": 0,
+        "tableEditing": 0,
+        "mermaidLightbox": 0,
+        "dragGhost": 0,
+        "dropIndicator": 0
+      }
+    },
+    {
+      "name": "S1 松开后 .cm-md-selecting 守卫在位（CSS chrome 压零开关）",
+      "ok": true,
+      "detail": {
+        "selecting": true
+      }
+    },
+    {
+      "name": "S1 纯选中不进编辑（表格未激活/无 lightbox/无图浮层）",
+      "ok": true,
+      "detail": {
+        "selecting": true,
+        "imageFloat": 0,
+        "linkFloat": 0,
+        "listHandle": 0,
+        "imageToolbar": 0,
+        "imageSelected": 0,
+        "blockToolbarsShown": 0,
+        "idleChipsShown": 0,
+        "tableEditing": 0,
+        "mermaidLightbox": 0,
+        "dragGhost": 0,
+        "dropIndicator": 0
+      }
+    },
+    {
+      "name": "S1 剪贴板得选中文本（AC-FN-18 判据2）",
+      "ok": true,
+      "detail": {
+        "clipLen": 133,
+        "head": "Alpha plain paragraph text for drag-select copy checks here."
+      }
+    },
+    {
+      "name": "S1 impl 截图落盘",
+      "ok": true,
+      "detail": {
+        "bytes": 58060
+      }
+    },
+    {
+      "name": "S1 选区存活时 hover 代码块 chip/toolbar 压零（CSS 守卫）",
+      "ok": true,
+      "detail": {
+        "selecting": true,
+        "imageFloat": 0,
+        "linkFloat": 0,
+        "listHandle": 0,
+        "imageToolbar": 0,
+        "imageSelected": 0,
+        "blockToolbarsShown": 0,
+        "idleChipsShown": 0,
+        "tableEditing": 0,
+        "mermaidLightbox": 0,
+        "dragGhost": 0,
+        "dropIndicator": 0
+      }
+    },
+    {
+      "name": "S2 图片定位",
+      "ok": true,
+      "detail": {
+        "x": 517.5,
+        "y": 425.38,
+        "left": 337.5,
+        "top": 305.38,
+        "right": 697.5,
+        "bottom": 545.38,
+        "w": 360,
+        "h": 240
+      }
+    },
+    {
+      "name": "S2 拖选后直接点图仍进编辑浮层（陈旧选区不锁写路径）",
+      "ok": true,
+      "detail": {
+        "selecting": true,
+        "imageFloat": 1,
+        "linkFloat": 0,
+        "listHandle": 0,
+        "imageToolbar": 1,
+        "imageSelected": 1,
+        "blockToolbarsShown": 0,
+        "idleChipsShown": 0,
+        "tableEditing": 0,
+        "mermaidLightbox": 0,
+        "dragGhost": 0,
+        "dropIndicator": 0
+      }
+    },
+    {
+      "name": "S2 点图不弹无关浮层",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "S3 文本段定位",
+      "ok": true,
+      "detail": "Tail paragraph for neutral clicks."
+    },
+    {
+      "name": "S3 点文本 → 文本编辑态（光标就位、不进其它编辑形态）",
+      "ok": true,
+      "detail": {
+        "sel": {
+          "empty": true,
+          "from": 525,
+          "to": 525,
+          "text": ""
+        },
+        "bad": {}
+      }
+    },
+    {
+      "name": "S3 文本点击无任何浮层（AC-FN-17 判据1 text 路径）",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "S3 表格单元格定位",
+      "ok": true,
+      "detail": {
+        "x": 538.23,
+        "y": 369.42,
+        "text": "cell one"
+      }
+    },
+    {
+      "name": "S3 点表格单元格 → 表格编辑形态（cell 激活 + 编辑态，AC-FN-03 hit 路径）",
+      "ok": true,
+      "detail": {
+        "nested": true,
+        "row": "1",
+        "col": "0",
+        "editing": 1,
+        "toolbar": 1
+      }
+    },
+    {
+      "name": "S3 表格点击无无关浮层（AC-FN-17 判据2）",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "S3 公式块定位",
+      "ok": true,
+      "detail": {
+        "x": 721.5,
+        "y": 424.78,
+        "left": 337.5,
+        "top": 404.67,
+        "right": 1105.5,
+        "bottom": 444.89,
+        "w": 768,
+        "h": 40.22
+      }
+    },
+    {
+      "name": "S3 点公式 → 源码形态（光标进 $$ 源范围、widget 让位）",
+      "ok": true,
+      "detail": {
+        "from": 276,
+        "expect": 276,
+        "widgets": 0
+      }
+    },
+    {
+      "name": "S3 公式点击无浮层（AC-FN-17 判据3 math 路径）",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "S3 代码块定位",
+      "ok": true,
+      "detail": {
+        "x": 721.5,
+        "y": 425.13,
+        "left": 337.5,
+        "top": 401.67,
+        "right": 1105.5,
+        "bottom": 448.59,
+        "w": 768,
+        "h": 46.92
+      }
+    },
+    {
+      "name": "S3 点代码 → 源码形态（光标进 fence 源范围 + 源码行可见）",
+      "ok": true,
+      "detail": {
+        "from": 313,
+        "expect": 313,
+        "widgets": 0,
+        "srcLines": 3
+      }
+    },
+    {
+      "name": "S3 代码点击无浮层（AC-FN-17 判据3 code 路径）",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "S3 点图 → 图编辑浮层（AC-FN-17 判据3 图=编辑浮层）",
+      "ok": true,
+      "detail": {
+        "selecting": false,
+        "imageFloat": 1,
+        "linkFloat": 0,
+        "listHandle": 0,
+        "imageToolbar": 1,
+        "imageSelected": 1,
+        "blockToolbarsShown": 0,
+        "idleChipsShown": 0,
+        "tableEditing": 0,
+        "mermaidLightbox": 0,
+        "dragGhost": 0,
+        "dropIndicator": 0
+      }
+    },
+    {
+      "name": "S3 图点击无无关浮层（AC-FN-17 判据4）",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "S3 mermaid svg 定位",
+      "ok": true,
+      "detail": {
+        "x": 721.49,
+        "y": 424.75,
+        "left": 677.86,
+        "top": 337.75,
+        "right": 765.13,
+        "bottom": 511.75,
+        "w": 87.27,
+        "h": 174
+      }
+    },
+    {
+      "name": "S3 点 mermaid → 预览形态（lightbox，edit:mermaid）",
+      "ok": true,
+      "detail": {
+        "selecting": false,
+        "imageFloat": 0,
+        "linkFloat": 0,
+        "listHandle": 0,
+        "imageToolbar": 0,
+        "imageSelected": 0,
+        "blockToolbarsShown": 0,
+        "idleChipsShown": 0,
+        "tableEditing": 0,
+        "mermaidLightbox": 1,
+        "dragGhost": 0,
+        "dropIndicator": 0
+      }
+    },
+    {
+      "name": "S3 mermaid 点击无无关浮层",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "S3 Esc 关闭 lightbox 后清场",
+      "ok": true,
+      "detail": {
+        "selecting": false,
+        "imageFloat": 0,
+        "linkFloat": 0,
+        "listHandle": 0,
+        "imageToolbar": 0,
+        "imageSelected": 0,
+        "blockToolbarsShown": 1,
+        "idleChipsShown": 0,
+        "tableEditing": 0,
+        "mermaidLightbox": 0,
+        "dragGhost": 0,
+        "dropIndicator": 0
+      }
+    },
+    {
+      "name": "S4 相邻区点击循环 1 语义一致（图→浮层 / 文→文本 / 表→单元格）",
+      "ok": true,
+      "detail": {
+        "i": 1,
+        "ok": true,
+        "imgOk": true,
+        "txtOk": true,
+        "tblOk": true,
+        "chImg": {
+          "selecting": false,
+          "imageFloat": 1,
+          "linkFloat": 0,
+          "listHandle": 0,
+          "imageToolbar": 1,
+          "imageSelected": 1,
+          "blockToolbarsShown": 0,
+          "idleChipsShown": 0,
+          "tableEditing": 0,
+          "mermaidLightbox": 0,
+          "dragGhost": 0,
+          "dropIndicator": 0
+        },
+        "chTxt": {
+          "selecting": false,
+          "imageFloat": 0,
+          "linkFloat": 0,
+          "listHandle": 0,
+          "imageToolbar": 0,
+          "imageSelected": 0,
+          "blockToolbarsShown": 0,
+          "idleChipsShown": 0,
+          "tableEditing": 0,
+          "mermaidLightbox": 0,
+          "dragGhost": 0,
+          "dropIndicator": 0
+        },
+        "selTxtFrom": 349,
+        "active": {
+          "nested": true,
+          "row": "1",
+          "col": "1",
+          "editing": 1,
+          "toolbar": 1
+        }
+      }
+    },
+    {
+      "name": "S4 相邻区点击循环 2 语义一致（重复点击确定性）",
+      "ok": true,
+      "detail": {
+        "i": 2,
+        "ok": true,
+        "imgOk": true,
+        "txtOk": true,
+        "tblOk": true,
+        "chImg": {
+          "selecting": false,
+          "imageFloat": 1,
+          "linkFloat": 0,
+          "listHandle": 0,
+          "imageToolbar": 1,
+          "imageSelected": 1,
+          "blockToolbarsShown": 0,
+          "idleChipsShown": 0,
+          "tableEditing": 0,
+          "mermaidLightbox": 0,
+          "dragGhost": 0,
+          "dropIndicator": 0
+        },
+        "chTxt": {
+          "selecting": false,
+          "imageFloat": 0,
+          "linkFloat": 0,
+          "listHandle": 0,
+          "imageToolbar": 0,
+          "imageSelected": 0,
+          "blockToolbarsShown": 0,
+          "idleChipsShown": 0,
+          "tableEditing": 0,
+          "mermaidLightbox": 0,
+          "dragGhost": 0,
+          "dropIndicator": 0
+        },
+        "selTxtFrom": 349,
+        "active": {
+          "nested": true,
+          "row": "1",
+          "col": "1",
+          "editing": 1,
+          "toolbar": 1
+        }
+      }
+    },
+    {
+      "name": "S5 点图进 FE-04 编辑浮层（对齐/宽度/完成/缩放把手全在）",
+      "ok": true,
+      "detail": {
+        "float": true,
+        "alignLeft": true,
+        "alignCenter": true,
+        "alignRight": true,
+        "widthSelect": true,
+        "done": true,
+        "resize": true
+      }
+    },
+    {
+      "name": "S5 链接定位",
+      "ok": true,
+      "detail": {
+        "x": 587.57,
+        "y": 260.27,
+        "left": 567.23,
+        "top": 249.77,
+        "right": 607.91,
+        "bottom": 270.77,
+        "w": 40.67,
+        "h": 21
+      }
+    },
+    {
+      "name": "S5 拖选含链接文本不弹链接浮层（纯选中保护 + hover 守卫）",
+      "ok": true,
+      "detail": {
+        "selecting": true,
+        "imageFloat": 0,
+        "linkFloat": 0,
+        "listHandle": 0,
+        "imageToolbar": 0,
+        "imageSelected": 0,
+        "blockToolbarsShown": 0,
+        "idleChipsShown": 0,
+        "tableEditing": 0,
+        "mermaidLightbox": 0,
+        "dragGhost": 0,
+        "dropIndicator": 0
+      }
+    },
+    {
+      "name": "S5 hover 链接浮层照常（FE-05 通道不回归）",
+      "ok": true,
+      "detail": {
+        "value": true,
+        "waitedMs": 160
+      }
+    },
+    {
+      "name": "S5 点链接旁文本不弹无关浮层（点击路由不误触）",
+      "ok": true,
+      "detail": {
+        "selecting": false,
+        "imageFloat": 0,
+        "linkFloat": 0,
+        "listHandle": 0,
+        "imageToolbar": 0,
+        "imageSelected": 0,
+        "blockToolbarsShown": 0,
+        "idleChipsShown": 0,
+        "tableEditing": 0,
+        "mermaidLightbox": 0,
+        "dragGhost": 0,
+        "dropIndicator": 0
+      }
+    },
+    {
+      "name": "S5 列表行定位",
+      "ok": true,
+      "detail": {
+        "la": "list alpha row",
+        "lb": "list beta row"
+      }
+    },
+    {
+      "name": "S5 拖选列表文本不触发把手拖拽（无把手/ghost/指示线）",
+      "ok": true,
+      "detail": {
+        "midList": {
+          "selecting": true,
+          "imageFloat": 0,
+          "linkFloat": 0,
+          "listHandle": 0,
+          "imageToolbar": 0,
+          "imageSelected": 0,
+          "blockToolbarsShown": 0,
+          "idleChipsShown": 0,
+          "tableEditing": 0,
+          "mermaidLightbox": 0,
+          "dragGhost": 0,
+          "dropIndicator": 0
+        },
+        "chList": {
+          "selecting": true,
+          "imageFloat": 0,
+          "linkFloat": 0,
+          "listHandle": 0,
+          "imageToolbar": 0,
+          "imageSelected": 0,
+          "blockToolbarsShown": 0,
+          "idleChipsShown": 0,
+          "tableEditing": 0,
+          "mermaidLightbox": 0,
+          "dragGhost": 0,
+          "dropIndicator": 0
+        }
+      }
+    },
+    {
+      "name": "S5 列表拖选得文本选区（纯选中语义）",
+      "ok": true,
+      "detail": {
+        "empty": false,
+        "from": 454,
+        "to": 476,
+        "text": "list alpha row\n- list "
+      }
+    },
+    {
+      "name": "S5 hover 列表行把手照常（FE-06 通道不回归）",
+      "ok": true,
+      "detail": {
+        "value": true,
+        "waitedMs": 167
+      }
+    },
+    {
+      "name": "S6 单元格点击激活 + 编辑工具栏（AC-FN-03 零回归）",
+      "ok": true,
+      "detail": {
+        "nested": true,
+        "row": "1",
+        "col": "0",
+        "editing": 1,
+        "toolbar": 1
+      }
+    },
+    {
+      "name": "S6 A→B 激活转移（AC-FN-32）：B 激活、A 不再持有嵌套编辑器",
+      "ok": true,
+      "detail": {
+        "nested": true,
+        "row": "1",
+        "col": "1",
+        "editing": 1,
+        "toolbar": 1
+      }
+    },
+    {
+      "name": "S6 表格 gap 定位",
+      "ok": true,
+      "detail": {
+        "x": 721.5,
+        "y": 437.17,
+        "gapH": 8
+      }
+    },
+    {
+      "name": "S6 gap 空白点击退出编辑 + 光标回表格源（AC-FN-03/29 现状语义保持）",
+      "ok": true,
+      "detail": {
+        "after": {
+          "nested": false,
+          "row": null,
+          "col": null,
+          "editing": 0,
+          "toolbar": 0
+        },
+        "from": 169,
+        "expect": 169
+      }
+    },
+    {
+      "name": "S7 window.__velox* 缝零丢失（cdp 冒烟硬契约）",
+      "ok": true,
+      "detail": {
+        "removed": []
+      }
+    },
+    {
+      "name": "S7 缝新增仅限已知惰性缝",
+      "ok": true,
+      "detail": {
+        "added": [
+          "__veloxTableCellView"
+        ],
+        "unexpectedAdded": []
+      }
+    },
+    {
+      "name": "S7 纯点击/拖选全程文档零写入",
+      "ok": true,
+      "detail": {
+        "len": 558,
+        "expect": 558,
+        "equal": true
+      }
+    }
+  ],
+  "neutral": {
+    "x": 268,
+    "y": 76
+  }
+}

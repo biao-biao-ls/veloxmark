@@ -8,6 +8,12 @@ import { findMathBlockAt } from './livePreview/mathScan'
  * Escape returns false outside a math block so it falls through to the rest
  * of the keymap (search panel close etc. stay ahead of us in setup order).
  */
+/** Probe: is the caret sitting inside a focused math source panel (FE-09 P1)? */
+export function isMathEditActive(view: EditorView): boolean {
+  const text = view.state.sliceDoc(0, view.state.doc.length)
+  return findMathBlockAt(text, view.state.selection.main.from) != null
+}
+
 export function exitMathEdit(view: EditorView): void {
   const sel = view.state.selection.main
   const text = view.state.sliceDoc(0, view.state.doc.length)

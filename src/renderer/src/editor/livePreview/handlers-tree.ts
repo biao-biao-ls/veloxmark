@@ -1,4 +1,5 @@
 import type { SyntaxNodeRef } from '@lezer/common'
+import type { Text } from '@codemirror/state'
 import { Decoration } from '@codemirror/view'
 import {
   hide,
@@ -308,22 +309,108 @@ export function enterHorizontalRule(node: SyntaxNodeRef, ctx: BuildCtx): boolean
 }
 // ---- task list checkboxes ---------------------------------------------------
 
+/**
+ * TaskMarker node text is exactly `[x]` / `[X]` / `[ ]` (GFM). Done-mark
+ * detection is case-insensitive, matching contextMenu/detect.ts
+ * (`[xX]` → checked); write-back still normalizes to lowercase `'x'`.
+ * Export keeps the same predicate (export/renderDoc/listTable.ts
+ * `TASK_DONE_RE` — local mirror to avoid the widget import graph).
+ */
+export function isTaskDoneText(text: string): boolean {
+  return /\[x\]/i.test(text)
+}
+
+/**
+ * Trimmed text span of [from, to) — empty/whitespace-only runs yield null so
+ * the strike never covers indentation (batch-J FE-06#5 first-line discipline,
+ * now per line).
+ */
+function trimmedTextSpan(
+  line: { from: number; text: string },
+  from: number,
+  to: number
+): { from: number; to: number } | null {
+  const seg = line.text.slice(Math.max(0, from - line.from), Math.max(0, to - line.from))
+  const lead = seg.length - seg.trimStart().length
+  const trail = seg.length - seg.trimEnd().length
+  const textFrom = from + lead
+  const textTo = to - trail
+  return textFrom < textTo ? { from: textFrom, to: textTo } : null
+}
+
+/**
+ * Done-strike spans for a completed task item: the marker line's tail plus
+ * every continuation line of the item's *own* content blocks (trimmed per
+ * line). Nested child list rows are skipped — they carry their own
+ * TaskMarker state (FE-06 review #3: the strike must complete multi-line
+ * items without bleeding into children).
+ */
+export function taskDoneTextSpans(node: SyntaxNodeRef, doc: Text): {
+  from: number
+  to: number
+}[] {
+  const spans: { from: number; to: number }[] = []
+  const first = doc.lineAt(node.from)
+  const push = (line: { from: number; text: string }, from: number, to: number): void => {
+    const span = trimmedTextSpan(line, from, to)
+    if (span) spans.push(span)
+  }
+  // Marker line: text after `[x]` only (the checkbox glyph itself stays unstruck).
+  push(first, node.to, first.to)
+  // Own-content lines: walk the parent ListItem (TaskMarker → Task → ListItem)
+  // and skip any line inside a nested `List` child.
+  const item = node.node.parent?.parent
+  if (!item || item.name !== 'ListItem') return spans
+  const nested: { from: number; to: number }[] = []
+  for (let child = item.firstChild; child; child = child.nextSibling) {
+    // Nested rows ride their own TaskMarker state — lezer names the list
+    // kinds BulletList/OrderedList (no bare `List`).
+    if (child.name === 'BulletList' || child.name === 'OrderedList') {
+      nested.push({ from: child.from, to: child.to })
+    }
+  }
+  for (let l = first; ; ) {
+    if (l.to >= item.to || l.to >= doc.length) break
+    const next = doc.lineAt(l.to + 1)
+    if (!nested.some((r) => next.from < r.to && next.to > r.from)) {
+      push(next, next.from, Math.min(next.to, item.to))
+    }
+    l = next
+  }
+  return spans
+}
+
 export function enterTaskMarker(node: SyntaxNodeRef, ctx: BuildCtx): boolean {
   // 5A: the checkbox replaces the bullet — kill the CSS marker on this line
   // (Typora semantics: task items show a checkbox, never a dot).
-  const lineFrom = ctx.state.doc.lineAt(node.from).from
+  const line = ctx.state.doc.lineAt(node.from)
+  const text = nodeText(ctx.state, node)
+  const checked = isTaskDoneText(text)
+  // FE-06 ui_06 block C: completed items strike the line text through. The
+  // strike rides a mark over the item TEXT only (batch-J FE-06#5) — a whole-
+  // line class also struck the leading whitespace after the checkbox, leaving
+  // a ~6px overhang left of the first glyph. The line class stays task-item
+  // only so the marker suppression is independent of the done state.
   ctx.decos.push({
-    from: lineFrom,
-    to: lineFrom,
+    from: line.from,
+    to: line.from,
     value: Decoration.line({ class: 'cm-md-task-item' })
   })
+  if (checked) {
+    for (const span of taskDoneTextSpans(node, ctx.state.doc)) {
+      ctx.decos.push({
+        from: span.from,
+        to: span.to,
+        value: Decoration.mark({ class: 'cm-md-task-done' })
+      })
+    }
+  }
   if (!ctx.touched(node.from, node.to)) {
-    const text = nodeText(ctx.state, node)
     ctx.decos.push({
       from: node.from,
       to: node.to,
       value: Decoration.replace({
-        widget: new TaskWidget(node.from, text.includes('x'))
+        widget: new TaskWidget(node.from, checked)
       })
     })
   }

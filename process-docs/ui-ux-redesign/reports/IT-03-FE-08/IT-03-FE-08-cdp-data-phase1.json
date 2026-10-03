@@ -1,0 +1,460 @@
+{
+  "meta": {
+    "port": 9468,
+    "phase": "1",
+    "startedAt": "2026-09-30T04:27:32.068Z",
+    "fixturePath": "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it03-fe08-quote-fold-selftest.md",
+    "fixtureHashBefore": "4c25d106f611506948fe972c877d159193849f7847f0121bd8166b0c6266bf9c",
+    "fixtureMatchesDriverText": true,
+    "seams": {
+      "p12": true,
+      "p13": true,
+      "p18": true,
+      "p26": true,
+      "prefsGet": true,
+      "prefsSet": true
+    },
+    "finishedAt": "2026-09-30T04:27:38.923Z",
+    "passed": 37,
+    "total": 37
+  },
+  "scenarios": {
+    "s1": {
+      "carets": [],
+      "rows": [],
+      "docLen": 399
+    },
+    "s4Away": {
+      "fp": null,
+      "rows": 0
+    },
+    "s2": {
+      "rows": [
+        {
+          "key": "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+          "summary": "「这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便……」",
+          "tail": "6 行",
+          "restore": "▸ 展开还原",
+          "restoreTitle": "展开还原"
+        }
+      ],
+      "row": {
+        "key": "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+        "summary": "「这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便……」",
+        "tail": "6 行",
+        "restore": "▸ 展开还原",
+        "restoreTitle": "展开还原"
+      },
+      "toastAfterFold": null,
+      "hashAfterFold": "4c25d106f611506948fe972c877d159193849f7847f0121bd8166b0c6266bf9c"
+    },
+    "s3": {
+      "rowsAfterSummary": [],
+      "rowsAfterRestore": [],
+      "hashAfterExpand": "4c25d106f611506948fe972c877d159193849f7847f0121bd8166b0c6266bf9c"
+    },
+    "s4": {
+      "session1": {
+        "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it03-fe08-quote-fold-selftest.md": [
+          "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+          "q:1:标题下引用第一行"
+        ]
+      },
+      "entry": [
+        "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+        "q:1:标题下引用第一行"
+      ],
+      "rowsBoth": [
+        {
+          "key": "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+          "summary": "「这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便……」",
+          "tail": "6 行",
+          "restore": "▸ 展开还原",
+          "restoreTitle": "展开还原"
+        },
+        {
+          "key": "q:1:标题下引用第一行",
+          "summary": "「标题下引用第一行」",
+          "tail": "6 行",
+          "restore": "▸ 展开还原",
+          "restoreTitle": "展开还原"
+        }
+      ],
+      "away": {
+        "fp": null,
+        "rows": 0
+      },
+      "back": {
+        "fp": "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it03-fe08-quote-fold-selftest.md",
+        "rows": [
+          {
+            "key": "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+            "summary": "「这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便……」",
+            "tail": "6 行",
+            "restore": "▸ 展开还原",
+            "restoreTitle": "展开还原"
+          },
+          {
+            "key": "q:1:标题下引用第一行",
+            "summary": "「标题下引用第一行」",
+            "tail": "6 行",
+            "restore": "▸ 展开还原",
+            "restoreTitle": "展开还原"
+          }
+        ],
+        "doc": "# 长引用折叠自测\n\n## 5行引用\n\n> 五行引用第一行\n> 五行引用第二行\n> 五行引用第三行\n> 五行引用第四行\n> 五行引用第五行\n\n## 6行引用\n\n> 这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果\n> 六行引用第二行\n> 六行引用第三行\n> 六行引用第四行\n> 六行引用第五行\n> 六行引用第六行\n\n## 标题下的引用\n\n> 标题下引用第一行\n> 标题下引用第二行\n> 标题下引用第三行\n> 标题下引用第四行\n> 标题下引用第五行\n> 标题下引用第六行\n\n## Callout\n\n> [!NOTE]\n> callout 正文第一行\n> callout 正文第二行\n> callout 正文第三行\n> callout 正文第四行\n> callout 正文第五行\n> callout 正文第六行\n\n尾段落文本，用于中性点击落点。\n"
+      },
+      "session2": [
+        "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+        "q:1:标题下引用第一行"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "name": "S0 e2e 缝可达（P12/P13/P18/P26/__veloxPrefs）",
+      "ok": true,
+      "detail": {
+        "p12": true,
+        "p13": true,
+        "p18": true,
+        "p26": true,
+        "prefsGet": true,
+        "prefsSet": true
+      }
+    },
+    {
+      "name": "S0 fixture 装载后 getDoc() 与原文零字节差",
+      "ok": true,
+      "detail": {
+        "len": 399,
+        "expected": 399,
+        "equal": true
+      }
+    },
+    {
+      "name": "S1 折叠入口数 = 2（6行引用 + 标题下引用）",
+      "ok": true,
+      "detail": [
+        {
+          "key": "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+          "title": "折叠本节",
+          "text": "▾",
+          "cls": "cm-md-fold-caret cm-md-quote-caret"
+        },
+        {
+          "key": "q:1:标题下引用第一行",
+          "title": "折叠本节",
+          "text": "▾",
+          "cls": "cm-md-fold-caret cm-md-quote-caret"
+        }
+      ]
+    },
+    {
+      "name": "S1 6行引用有折叠入口",
+      "ok": true,
+      "detail": [
+        "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+        "q:1:标题下引用第一行"
+      ]
+    },
+    {
+      "name": "S1 标题下引用有折叠入口",
+      "ok": true,
+      "detail": [
+        "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+        "q:1:标题下引用第一行"
+      ]
+    },
+    {
+      "name": "S1 5 行引用无折叠入口（阈值 >5）",
+      "ok": true,
+      "detail": [
+        "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+        "q:1:标题下引用第一行"
+      ]
+    },
+    {
+      "name": "S1 callout 无折叠入口",
+      "ok": true,
+      "detail": [
+        "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+        "q:1:标题下引用第一行"
+      ]
+    },
+    {
+      "name": "S1 caret 带 data-testid=quote-fold-caret + data-quote-fold-key + title 折叠本节",
+      "ok": true,
+      "detail": [
+        {
+          "key": "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+          "title": "折叠本节",
+          "text": "▾",
+          "cls": "cm-md-fold-caret cm-md-quote-caret"
+        },
+        {
+          "key": "q:1:标题下引用第一行",
+          "title": "折叠本节",
+          "text": "▾",
+          "cls": "cm-md-fold-caret cm-md-quote-caret"
+        }
+      ]
+    },
+    {
+      "name": "S1 展开态无摘要行",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "S2 点击 6 行引用折叠入口",
+      "ok": true,
+      "detail": {
+        "x": 432,
+        "y": 554.47,
+        "key": "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果"
+      }
+    },
+    {
+      "name": "S2 折叠后出现摘要行（key 稳定）",
+      "ok": true,
+      "detail": [
+        {
+          "key": "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+          "summary": "「这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便……」",
+          "tail": "6 行",
+          "restore": "▸ 展开还原",
+          "restoreTitle": "展开还原"
+        }
+      ]
+    },
+    {
+      "name": "S2 摘要行 testid 齐备（summary / restore）",
+      "ok": true,
+      "detail": {
+        "key": "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+        "summary": "「这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便……」",
+        "tail": "6 行",
+        "restore": "▸ 展开还原",
+        "restoreTitle": "展开还原"
+      }
+    },
+    {
+      "name": "S2 摘要行首行截断（QUOTE_SUMMARY_MAX_CHARS=40 + ……）",
+      "ok": true,
+      "detail": "「这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便……」"
+    },
+    {
+      "name": "S2 摘要截断取自首行（去引用标记）",
+      "ok": true,
+      "detail": "「这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便……」"
+    },
+    {
+      "name": "S2 摘要尾「N 行」= 全块 6 行",
+      "ok": true,
+      "detail": "6 行"
+    },
+    {
+      "name": "S2 「展开还原」入口文案",
+      "ok": true,
+      "detail": "▸ 展开还原"
+    },
+    {
+      "name": "S2 5 行引用仍未折叠（无摘要行）",
+      "ok": true,
+      "detail": [
+        "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果"
+      ]
+    },
+    {
+      "name": "S2 折叠后仅剩标题下引用 caret（6 行引用 caret 收起）",
+      "ok": true,
+      "detail": [
+        {
+          "key": "q:1:标题下引用第一行",
+          "title": "折叠本节",
+          "text": "▾",
+          "cls": "cm-md-fold-caret cm-md-quote-caret"
+        }
+      ]
+    },
+    {
+      "name": "S2 折叠无 toast（PEND-15）",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "S2 折叠后 .md 零字节变化",
+      "ok": true,
+      "detail": {
+        "equal": true
+      }
+    },
+    {
+      "name": "S2 折叠后磁盘 .md hash 不变",
+      "ok": true,
+      "detail": {
+        "before": "4c25d106f611506948fe972c877d159193849f7847f0121bd8166b0c6266bf9c",
+        "after": "4c25d106f611506948fe972c877d159193849f7847f0121bd8166b0c6266bf9c"
+      }
+    },
+    {
+      "name": "S3 点摘要行展开（摘要行消失）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "S3 展开后 getDoc() === 原文（零字节差）",
+      "ok": true,
+      "detail": {
+        "equal": true
+      }
+    },
+    {
+      "name": "S3 再次折叠成功",
+      "ok": true,
+      "detail": [
+        {
+          "key": "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+          "summary": "「这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便……」",
+          "tail": "6 行",
+          "restore": "▸ 展开还原",
+          "restoreTitle": "展开还原"
+        }
+      ]
+    },
+    {
+      "name": "S3 点「展开还原」展开（摘要行消失）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "S3 两次展开还原后 getDoc() === 原文",
+      "ok": true,
+      "detail": {
+        "equal": true
+      }
+    },
+    {
+      "name": "S3 展开无 toast（PEND-15）",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "S3 展开后磁盘 .md hash 不变",
+      "ok": true,
+      "detail": {
+        "before": "4c25d106f611506948fe972c877d159193849f7847f0121bd8166b0c6266bf9c",
+        "after": "4c25d106f611506948fe972c877d159193849f7847f0121bd8166b0c6266bf9c"
+      }
+    },
+    {
+      "name": "S4 quoteFolds 写入 session（按 filePath）",
+      "ok": true,
+      "detail": {
+        "keys": [
+          "D:/code/typora/projects/.worktrees/typora/ui-ux-redesign/frontend/it03-fe08-quote-fold-selftest.md"
+        ],
+        "entry": [
+          "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+          "q:1:标题下引用第一行"
+        ]
+      }
+    },
+    {
+      "name": "S4 quoteFolds 含两个稳定块 id",
+      "ok": true,
+      "detail": [
+        "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+        "q:1:标题下引用第一行"
+      ]
+    },
+    {
+      "name": "S4 quoteFolds 无 5 行/callout 条目",
+      "ok": true,
+      "detail": [
+        "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+        "q:1:标题下引用第一行"
+      ]
+    },
+    {
+      "name": "S4 两态可辨：折叠态摘要行 ×2（UI-IXD-14）",
+      "ok": true,
+      "detail": [
+        {
+          "key": "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+          "summary": "「这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便……」",
+          "tail": "6 行",
+          "restore": "▸ 展开还原",
+          "restoreTitle": "展开还原"
+        },
+        {
+          "key": "q:1:标题下引用第一行",
+          "summary": "「标题下引用第一行」",
+          "tail": "6 行",
+          "restore": "▸ 展开还原",
+          "restoreTitle": "展开还原"
+        }
+      ]
+    },
+    {
+      "name": "S4 fixture 标签仍在标签栏",
+      "ok": true,
+      "detail": 1
+    },
+    {
+      "name": "S4 tab 切回后折叠仍在（AC-RULE-14）",
+      "ok": true,
+      "detail": [
+        {
+          "key": "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+          "summary": "「这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便……」",
+          "tail": "6 行",
+          "restore": "▸ 展开还原",
+          "restoreTitle": "展开还原"
+        },
+        {
+          "key": "q:1:标题下引用第一行",
+          "summary": "「标题下引用第一行」",
+          "tail": "6 行",
+          "restore": "▸ 展开还原",
+          "restoreTitle": "展开还原"
+        }
+      ]
+    },
+    {
+      "name": "S4 tab 切回后 getDoc() 仍 === 原文",
+      "ok": true,
+      "detail": {
+        "equal": true
+      }
+    },
+    {
+      "name": "S4 tab 切换未清空 session quoteFolds",
+      "ok": true,
+      "detail": [
+        "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+        "q:1:标题下引用第一行"
+      ]
+    },
+    {
+      "name": "S4 收尾：两块均处折叠态（供 S5 重启恢复）",
+      "ok": true,
+      "detail": [
+        {
+          "key": "q:1:这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便在界面上观察到省略号效果",
+          "summary": "「这是一段非常非常长的引用首行文本用于验证摘要行的截断规则它肯定超过四十个字符以便……」",
+          "tail": "6 行",
+          "restore": "▸ 展开还原",
+          "restoreTitle": "展开还原"
+        },
+        {
+          "key": "q:1:标题下引用第一行",
+          "summary": "「标题下引用第一行」",
+          "tail": "6 行",
+          "restore": "▸ 展开还原",
+          "restoreTitle": "展开还原"
+        }
+      ]
+    }
+  ]
+}

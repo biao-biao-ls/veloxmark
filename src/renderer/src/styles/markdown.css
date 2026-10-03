@@ -15,20 +15,21 @@
    margins on line decorations — see NOTE above). Top padding decreases down
    the ladder; total pre-block space is tighter than the old h1 0.67/0.7 mix.
    5C/D3: ladder tops tightened one notch (0.7/0.6/0.5em) — blank-line
-   occupancy plus the old tops stacked looser than Typora's rhythm. */
+   occupancy plus the old tops stacked looser than Typora's rhythm.
+   Replica-review batch B: no border-bottom on any heading (ui_01 doc-h1/h2 +
+   ui_06 md-h2/h3 all borderless); h1 = 28px @ 16px base = 1.75em (ui_01
+   .doc-h1). Batch K: h2 = 21px @ 16px base = 1.3125em (ui_01 .doc-h2 reads
+   21px; was 1.5em/24px — kept in lockstep with export/exportCss.ts). */
 .cm-md-h1 {
-  font-size: 2em;
+  font-size: 1.75em;
   padding-top: 0.7em !important;
-  padding-bottom: 0.4em !important; /* gap + room above the bottom border */
-  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.4em !important; /* gap below the heading */
 }
 
 .cm-md-h2 {
-  font-size: 1.5em;
+  font-size: 1.3125em;
   padding-top: 0.6em !important;
-  padding-bottom: 0.35em !important; /* room above the bottom border */
-  /* 5C/D1: h2 rule matches h1 (Typora's default theme rules h1+h2 only). */
-  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.35em !important; /* gap below the heading */
 }
 
 .cm-md-h3 {
@@ -88,86 +89,51 @@
   cursor: not-allowed;
 }
 
-/* P18 heading fold: gutter arrows, line-end placeholder, outline triangles */
-.cm-fold-gutter {
-  width: 18px;
-}
-
-/* F06: line numbers hug the content box. padR 0 + fold gutter to the LEFT
-   (setup.ts order) means number-right → prose-left equals --editor-gutter
-   exactly (16px, in the 12–20px professional band). Digits keep a small
-   left inset; ≥3-digit numbers widen the gutter automatically leftward. */
+/* P18/FE-07 heading fold: inline fold-caret + summary live in render-zone.css
+   (ui_06 block D). The old fold gutter is gone — the entry sits at the heading
+   text left. Outline triangles stay here. */
+/* F06: line numbers hug the content box — padR 0 means number-right →
+   prose-left equals --editor-gutter exactly (16px, in the 12–20px professional
+   band). Digits keep a small left inset; ≥3-digit numbers widen the gutter
+   automatically leftward. */
 .cm-gutter.cm-lineNumbers .cm-gutterElement {
   padding: 0 0 0 var(--space-2);
 }
 
-.cm-md-fold-gutter .cm-gutterElement {
-  padding: 0 2px;
-  cursor: default;
-  /* UX-P18 F2: gutter fold target ≥22px tall (was ~14px glyph box). */
-  min-width: 20px;
-  min-height: 22px;
-  display: flex;
-  align-items: center;
-}
-
-.cm-md-fold-arrow {
-  display: inline-block;
-  font-size: 10px;
-  line-height: 1;
-  color: var(--fg);
-  opacity: 0.55;
-  cursor: pointer;
-  visibility: hidden;
-  user-select: none;
-}
-
-.cm-md-fold-gutter .cm-gutterElement:hover .cm-md-fold-arrow,
-.cm-md-fold-arrow.is-folded {
-  visibility: visible;
-}
-
-.cm-md-fold-arrow:hover {
-  opacity: 1;
-}
-
-.cm-md-fold-placeholder {
-  /* UX-P18 F4: token, not GitHub-dark bare value (theme follows --fg-dim). */
-  color: var(--fg-dim);
-  font-size: 12px;
-  padding: 0 6px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.cm-md-fold-placeholder:hover {
-  color: var(--accent);
-}
-
 .outline-fold {
-  /* UX-P18 F2: 22×22 hit box (was 14×~14 glyph). */
+  /* FE-08#1-#4: 18px hit box / 10px solid ▾/▸ glyph / --fg-dim (ui_05
+     .outline-row .twisty). Row gap supplies the design margin-right. */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  margin-left: -18px;
-  margin-right: 2px;
-  font-size: 9px;
-  color: var(--fg);
-  opacity: 0.5;
+  flex: none;
+  width: var(--hit-box-sm);
+  height: var(--hit-box-sm);
+  font-size: var(--text-micro);
+  color: var(--fg-dim);
+  line-height: 1;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   user-select: none;
-  transform-origin: 45% 50%;
 }
 
 .outline-fold:hover {
-  opacity: 1;
+  color: var(--fg);
 }
 
 .outline-fold.is-folded {
-  opacity: 0.9;
-  transform: rotate(90deg);
+  /* FE-07 UI-IXD-06: glyph swaps ▾/▸ with the fold state — no rotation. */
+  color: var(--fg-dim);
+}
+
+/* FE-08#4 leaf rows + FE-09#2 empty sections: visible "·" placeholder (the
+   tree's .empty twin is visibility:hidden — outline keeps the glyph on). */
+.outline-fold.empty {
+  cursor: default;
+}
+
+.outline-fold.empty:hover {
+  color: var(--fg-dim);
 }
 
 /* P17: hover tooltip for rendered links (editor-level singleton) —
@@ -234,12 +200,28 @@
   content: none;
 }
 
-/* blockquote */
+/* blockquote — ui_06 .md-quote: 3px rule, --fg body text, upright (正体).
+   position:relative hosts the fold caret pinned at the block's top-right. */
 
 .cm-md-quote {
-  border-left: 4px solid var(--quote-border);
-  color: var(--fg-dim);
-  font-style: italic;
+  border-left: 3px solid var(--quote-border);
+  color: var(--fg);
+  font-style: normal;
+  position: relative;
+}
+
+/* ui_06 .md-quote vertical padding (4px top/bottom, r3 N2): CM6 line boxes
+   can't carry container padding, so the block's breathing room rides its
+   edge lines (border height = pure line boxes + 8px). Folded host lines skip
+   these marks — the summary row carries its own 4px (4+20.8+4 = 28.8px, no
+   double pad). Selector specificity (0,4,0) mirrors the callout rule above
+   the theme's .cm-line padding shorthand (0,2,0) must not win. */
+.cm-editor .cm-line.cm-md-quote.cm-md-quote-first {
+  padding-top: var(--space-1);
+}
+
+.cm-editor .cm-line.cm-md-quote.cm-md-quote-last {
+  padding-bottom: var(--space-1);
 }
 
 .cm-md-quote-d2 {
@@ -487,25 +469,27 @@
 .cm-md-math-error {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  margin-top: 8px;
-  padding: 6px 10px;
-  font-size: 12px;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  /* 6px pad-y / 10px pad-x are off the 4px spacing grid — --space-2 ∓
+     --space-half, same标定 pattern as code-chrome.css's 6px pad-y (收口批
+     #11 token pass, 数值等价零视觉变化). */
+  padding: calc(var(--space-2) - var(--space-half)) calc(var(--space-2) + var(--space-half));
+  font-size: var(--text-meta);
   line-height: 1.45;
-  /* amber palette: readable on both app backgrounds */
-  color: #b45309;
-  background: rgba(245, 158, 11, 0.14);
-  border-left: 3px solid #f59e0b;
-  border-radius: 0 4px 4px 0;
+  /* IT-03 FE-10 token pass: amber palette rides the --errbar-* theme-split
+     family (themes.css) — the old .theme-dark patch is gone (F08: theme
+     differences flip token values only). Values unchanged. */
+  color: var(--errbar-fg);
+  background: var(--errbar-bg);
+  /* 3px accent rail: the --border-width family has no 3px step (same value as
+     the quote/callout left rules) — keep the ×3 explicit, 数值等价. */
+  border-left: calc(var(--border-width) * 3) solid var(--errbar-border);
+  /* 4px corner is off the 3/8 radius scale — --space-1 keeps it bare-px free
+     at the exact same value (radius scale migration口径: 3→sm, 8→md only). */
+  border-radius: 0 var(--space-1) var(--space-1) 0;
   text-align: left;
   word-break: break-word;
-}
-
-.theme-dark .cm-md-mermaid-error,
-.theme-dark .cm-md-math-error {
-  color: #fcd34d;
-  background: rgba(245, 158, 11, 0.18);
-  border-left-color: #d97706;
 }
 
 /* 8C: math error bar shares the mermaid error-bar skin (selector-list share —
@@ -696,21 +680,51 @@
   gap: 4px;
   z-index: 20;
   opacity: 0;
-  transition: opacity 0.15s;
+  /* FE-10 AC-NF-04: debounce BOTH directions at --chrome-duration — the
+     0s duration + delay snap shows only after a ≥150ms dwell (no fade-in
+     half-materialize on rapid pass-over). Rest is also non-hit-testable
+     (AC-FN-23 zero chrome — no invisible ghost buttons). */
+  pointer-events: none;
+  transition: opacity 0s var(--chrome-duration);
   line-height: 1;
 }
 
 .cm-md-block-toolbar:hover,
 .cm-md-block-toolbar:focus-within {
   opacity: 1;
+  pointer-events: auto;
 }
 
-/* Parent-hover reveal: CSS can't select a parent, so each block type opts in. */
+/* Parent-hover reveal: CSS can't select a parent, so each block type opts in.
+   (Table is machine-timed instead — see .cm-md-chrome-on below.) */
 .cm-md-code-block:hover .cm-md-block-toolbar,
 .cm-md-mermaid:hover .cm-md-block-toolbar,
-.cm-md-math-block:hover .cm-md-block-toolbar,
-.cm-md-table-wrap:hover .cm-md-block-toolbar {
+.cm-md-math-block:hover .cm-md-block-toolbar {
   opacity: 1;
+  pointer-events: auto;
+}
+
+/* FE-10: table chrome 显隐收口到 the chromeState four-state machine —
+   toolbar timing comes from the module-level debounce (≥150ms), never from
+   CSS hover (no double delay on enter/leave). */
+.cm-md-table-wrap .cm-md-block-toolbar {
+  transition: none;
+}
+
+.cm-md-table-wrap.cm-md-chrome-on .cm-md-block-toolbar {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* FE-09 AC-FN-18 (pure-selection protection): while a text selection exists
+   (App's selection seam toggles .cm-md-selecting on the editor root) hover
+   reveal of the block toolbar stays down — drag-select across a decorated
+   block must not pop tool chrome mid-selection. Sits after the reveal rules
+   (equal specificity, later wins). */
+.cm-editor.cm-md-selecting .cm-md-block-toolbar {
+  opacity: 0;
+  transition: none;
+  pointer-events: none;
 }
 
 .cm-md-block-toolbar-btn {
@@ -741,6 +755,31 @@
   display: inline-block;
   max-width: 100%;
   line-height: 0;
+}
+
+/* IT-03 FE-04 {align=…} placement. Unattributed images stay inline-block
+   (browser default flow). An explicit align promotes the wrap to a
+   fit-content block so auto margins can place it — the three modifiers differ
+   only in the margin pair, matching export's inline-style mirror (AC-OP-18). */
+.cm-md-image-wrap.cm-md-image-align-left {
+  display: block;
+  width: fit-content;
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.cm-md-image-wrap.cm-md-image-align-center {
+  display: block;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cm-md-image-wrap.cm-md-image-align-right {
+  display: block;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: 0;
 }
 
 .cm-md-image {
@@ -774,9 +813,45 @@
   z-index: 30;
 }
 
+/* batch10 #6 (AC-ERR-14 判据 2): native range chrome skin. UA default painted
+   a near-white box (rgb(255,255,255)) on the dark toolbar surface in dark
+   theme. appearance:none + token track/thumb, same precedent as .cm-md-task
+   checkbox above — geometry local to this scene (140px track width is the
+   ui_06 zoom-slider constant). */
 .cm-md-image-toolbar input[type='range'] {
   width: 140px;
+  height: 20px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  color: var(--fg);
   accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.cm-md-image-toolbar input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.cm-md-image-toolbar input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -6px;
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.cm-md-image-toolbar input[type='range']:disabled {
+  cursor: default;
+  opacity: 0.5;
 }
 
 .cm-md-image-toolbar-pct {
@@ -830,37 +905,48 @@
   font-size: 16px;
 }
 
+/* Broken-image repair bar (FE-04 失败态可修复入口): the img itself is hidden
+   and replaced by the placeholder + error bar; the element stays in the DOM so
+   「重试」can re-fire its load listeners. The bar is in normal flow (stacked
+   under the placeholder) — it never covers the surrounding prose. */
+.cm-md-image-broken > .cm-md-image {
+  display: none;
+}
+
+.cm-md-image-error-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.cm-md-image-error-msg {
+  color: var(--fg-dim);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.cm-md-image-error-bar .cm-md-float-input {
+  min-width: 220px;
+}
+
 /* tables */
 
 .cm-md-table-wrap {
   position: relative;
-  /* 7G: negative-margin absorption — the handle slots stay CONSTANT in the
-     padding box (overflow-x:auto clips escaped children, so the slots must
-     remain scrollport geometry) but their LAYOUT effect is cancelled by
-     negative margins, so the table lands exactly on the prose column and the
-     28px top dead space is gone (baseline: table-default.png). Every box
-     value is state-independent → enter/exit editing shifts NOTHING (UX-P28 F3
-     zero-shift contract, now 0px by construction). */
-  margin: calc(-1 * var(--table-col-handle-gutter, 28px)) var(--editor-gutter) 0
-    calc(var(--editor-gutter) - var(--table-handle-gutter, 56px));
+  /* FE-03 (G-2 去把手): the 56px left handle gutter + 28px top col-handle
+     strip are gone (ADR Q2 删4留1). The wrap is a plain prose-column box —
+     table left edge == prose left edge (AC-FN-01 offset 0px), and every box
+     value is state-independent → enter/exit editing shifts NOTHING
+     (UX-P28 F3 zero-shift contract, 0px by construction). */
+  margin: 0 var(--editor-gutter);
   /* F05/5B: column width is owned by .cm-content (var(--editor-max-width)).
-     With margin-left above, the wrap's CONTENT box left edge = the .cm-line
-     prose left edge (--editor-gutter) and its width = the prose column →
-     table width:100% spans the prose column, right edge flush.
+     The wrap spans the prose column → table width:100% is flush right.
      Deliberately NO max-width here: a % would resolve against the content
      column and shrink tables below it once the soft cap applies. */
   overflow-x: auto;
   cursor: pointer;
-  /* UX-P28 F3: constant left gutter for in-cell absolute handles (row buttons
-     at right:100% + margin, ~53px left of the first column). 7G: the negative
-     margin-left makes this slot straddle the content/gutter boundary — see
-     .cm-md-table-handle-btn z-index for the fold-gutter coexistence note. */
-  padding-left: var(--table-handle-gutter, 56px);
-  /* diag-P28: constant TOP gutter for column handles (positioned above the
-     header row, OUTSIDE header cells — they must never overlap header text).
-     28px = 22px button + 4px gap + 2px clearance. 7G: the negative margin-top
-     parks this strip in the inter-block gap (transparent when idle). */
-  padding-top: var(--table-col-handle-gutter, 28px);
 }
 
 .cm-md-table {
@@ -908,6 +994,20 @@
   cursor: default;
 }
 
+/* ui_02 `table.gfm` edit-state container outline (批 A / CHANGE-13): the whole
+   table frame goes 1px --accent while editing and drops on exit.
+   r2 U1 / CHANGE-15: the frame is drawn on the WRAP as an inset outline. With
+   border-collapse the 1px th/td --border borders win the shared-edge conflict
+   against a table-level `border` (CSS 2.1: cell borders beat the table
+   border), so a `.cm-md-table { border: … }` never showed on multi-cell
+   tables. The wrap outline sits outside the collapse model and paints over
+   the cell-edge ring; outline never affects layout, so UX-P28 F3 zero-shift
+   stays intact. Scoped to the editing class — no frame once editing exits. */
+.cm-md-table-wrap.cm-md-table-editing {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
 /* UX-P28 F3: DELETED width:auto;min-width:100% — this was the root cause of
    the ~220px layout shift together with handle column injection. With pure
    table (no handle th/tr) and constant wrap padding, width stays 100% both
@@ -941,84 +1041,50 @@
    selectors hit the in-cell .cm-content AND .cm-line — the caret color is
    taken from the line element). The nested cell editor has no drawSelection
    of its own (no drawn cursor layer), so the NATIVE caret is the only caret;
-   restore it at higher specificity + !important. currentColor matches
-   nestedCellTheme (auto would go black-on-dark). */
+   restore it at higher specificity + !important. Design ui_02_table_edit.html
+   `.caret` paints the in-cell caret in --accent (auto would go
+   black-on-dark; currentColor is text-colored, not accent). */
 .cm-md-table-cell-editing .cm-editor .cm-content,
 .cm-md-table-cell-editing .cm-editor .cm-line {
-  caret-color: currentColor !important;
+  caret-color: var(--accent) !important;
 }
 
-/* UX-P28 F3: RETIRED cm-md-handle-cell / cm-md-handle-row — handle buttons
-   are now absolutely positioned inside content cells, not separate th/td.
-   The constant wrap padding-left reserves space for them without affecting
-   table geometry. */
-
-/* UX-P28 F3: cells hosting absolute-positioned handles need position context. */
-.cm-md-table-editing td[data-col="0"],
+/* FE-03 (G-2): row/col +/- handle button rules are removed with the handle
+   family. Header th keeps position context for the col-grip only. */
 .cm-md-table-editing th {
   position: relative;
 }
 
-/* Row handle buttons — absolutely positioned inside first-column cells,
-   out in the wrap's left gutter. diag-P28: side-by-side (was a vertical
-   stack at top:2/top:28 — the stack overflowed short last rows and the
-   wrap grew a vertical scrollbar). */
-.cm-md-table-btn-row-insert,
-.cm-md-table-btn-row-delete {
-  position: absolute;
-  top: 2px;
-  right: 100%;
-  pointer-events: auto;
-}
-.cm-md-table-btn-row-insert { margin-right: 30px; }
-.cm-md-table-btn-row-delete { margin-right: 4px; }
-
-/* Column handle buttons — above the header row, in the wrap's top gutter.
-   diag-P28: these used to sit INSIDE header cells (top:2/left:2), overlapping
-   header text and swallowing cell clicks. bottom:100% parks them outside the
-   table box entirely. */
-.cm-md-table-btn-col-insert,
-.cm-md-table-btn-col-delete {
-  position: absolute;
-  bottom: 100%;
-  margin-bottom: 4px;
-  pointer-events: auto;
-}
-.cm-md-table-btn-col-insert { left: 2px; }
-.cm-md-table-btn-col-delete { left: 28px; }
-
 .cm-md-table-handle-btn {
-  display: inline-block;
-  /* 7G: the row-handle slot now straddles the cm-content/gutter boundary
-     (negative-margin absorption). .cm-gutters is a flex sibling with
-     z-index: 200 and an opaque background — park the handles above it.
-     Function loss is nil: the gutter element beside the table widget has no
-     fold arrow (folding is heading-only) and line-number digits render at
-     the TOP of that tall element (the top band), vertically clear of the
-     row buttons at data-row heights. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Toolbar buttons share this skin (FE-03: the +/- handle family is gone).
+     z-index parks the bar above .cm-gutters (z-index 200, opaque) when the
+     bar paints over the inter-block gap. */
   z-index: 210;
-  /* UX-P10 F3: hit-area ≥22×22px (professional target — was 18×18). */
-  width: 22px;
-  height: 22px;
-  min-width: 22px;
-  min-height: 22px;
-  line-height: 20px;
-  margin: 0 1px;
+  /* ui_02 `.tbtn` 28×28 / 14px glyph (FE-04 量化证据, CHANGE-13). */
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  margin: 0;
   padding: 0;
-  font-size: 12px;
+  font-size: 14px;
+  line-height: 1;
   text-align: center;
-  color: var(--fg);
-  /* F02: table chrome tokens, not sidebar chrome. */
-  background: var(--table-header-bg);
-  border: 1px solid var(--border);
+  color: var(--fg-dim);
+  background: transparent;
+  border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  opacity: 0.65;
+  opacity: 1;
 }
 
 .cm-md-table-handle-btn:hover:not(:disabled) {
   opacity: 1;
-  background: var(--code-bg);
+  background: var(--bg-inset);
+  color: var(--fg);
 }
 
 .cm-md-table-handle-btn:disabled {
@@ -1037,6 +1103,24 @@
   height: 100%;
   cursor: col-resize;
   z-index: 2;
+  /* FE-10 AC-FN-23: rest = zero chrome — hidden AND non-hit-testable.
+     Reveal is chromeState-timed (module debounce ≥150ms → .cm-md-chrome-on). */
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* hover 微控件 (UI-ELEM-05): the token hint line — paints only after the
+   chromeState debounce lands (AC-NF-04) and goes away after the leave delay. */
+.cm-md-table-wrap.cm-md-chrome-on .cm-md-col-grip {
+  background: var(--accent, #4a9eed);
+  opacity: 0.5;
+  pointer-events: auto;
+}
+
+/* Editing mount: hit strip (FE-03 look — paint only on the grip's own hover).
+   Structural, never hover-debounced. */
+.cm-md-table-wrap.cm-md-table-editing .cm-md-col-grip {
+  pointer-events: auto;
 }
 
 .cm-md-col-grip:hover {
@@ -1044,45 +1128,102 @@
   opacity: 0.5;
 }
 
-/* ---- 7C: edit-state table toolbar (⊞ + align keys | ⋮ + 🗑) ----
-   Child of the gap outer (positioning scope), absolute just ABOVE the wrap —
-   NOT inside wrap (overflow-x:auto clips escaped children) and NOT in the
-   28px col-handle band (data-table-handle probes live there). The ~--space-1
-   overlap into the gap padding is paint-only: zero layout shift (UX-P28 F3).
-   7G: the col-handle strip rides the wrap's negative margin-top up into the
-   inter-block gap, so the toolbar is raised by exactly one strip height —
-   the toolbar → col-band → table stack stays pixel-identical relative to the
-   table. Edit chrome now PAINTS over the previous block's bottom (~46px)
-   instead of reserving layout space: the necessary corollary of the zero-shift
-   contract (same paint-only class as the original 7C overlap). */
+/* AC-FN-18: pure-selection — grips stay down even while a reveal is up. */
+.cm-editor.cm-md-selecting .cm-md-col-grip {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* FE-06 (UI-IXD-16): drag indicator line — vertical track following the
+   pointer while a column-boundary drag is in flight. Color/width come from
+   theme tokens so the light/dark flip needs no selector patch. */
+.cm-md-col-drag-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--border-width, 1px);
+  background: var(--drop-indicator, var(--accent, #4a9eed));
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* ---- 7C: edit-state table toolbar (⊞ ◧ ▣ ◨ ｜ ⋮ 🗑) ----
+   ui_02 `.table-toolbar` 复刻（批 A / CHANGE-13）：表格右上浮动紧凑 pill，
+   6 钮单组连续排列（⊞ ◧ ▣ ◨ + .tsep 1px×18px + ⋮ 🗑）。定位语义 =
+   `top:-40px right:0` 对表块：outer 顶缘在 wrap/表顶上方 var(--space-2)
+   （block-gap padding），故 top 取 calc(-40px + var(--space-2))；right 落
+   --editor-gutter 与 wrap 右缘（=表右缘）对齐。容器 chrome：--widget-surface
+   + 1px --border + --radius-md + --shadow-pop，条高 32px / 钮 28×28
+   （FE-04 量化）。仍为 gap-outer 子元素（wrap 的 overflow-x:auto 裁切外逸
+   子元素）；paint-only 叠前一块，零布局位移（UX-P28 F3）。 */
 .cm-md-table-outer {
   position: relative;
 }
 
 .cm-md-table-toolbar {
   position: absolute;
-  /* 7G: frame aligned to the table column (baseline: table-focus.png). */
-  left: var(--editor-gutter);
-  bottom: calc(100% + var(--table-col-handle-gutter, 28px) - var(--space-1));
+  top: calc(-40px + var(--space-2));
+  right: var(--editor-gutter);
   display: flex;
-  justify-content: space-between;
-  width: calc(100% - var(--editor-gutter) * 2);
+  align-items: center;
+  height: 32px;
+  padding: 0 var(--space-2);
+  background: var(--widget-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
   z-index: 3;
-  /* empty strip between the groups stays click-through (outer click-to-source) */
+  /* pill body is chrome; the group keeps the hit surface */
   pointer-events: none;
 }
 
 .cm-md-table-toolbar-group {
   display: flex;
-  gap: 1px;
+  align-items: center;
+  gap: var(--space-1);
   pointer-events: auto;
 }
 
-/* pressed = the column's current align (build-time projection of the colon row) */
-.cm-md-table-toolbar-btn.is-pressed {
+/* ui_02 .tsep — hairline before ⋮ inside the single cluster. */
+.cm-md-table-toolbar-sep {
+  flex: none;
+  width: 1px;
+  height: 18px;
+  margin: 0 var(--space-1);
+  background: var(--border);
+}
+
+/* pressed = the column's current align (build-time projection of the colon
+   row; '' = GFM default left, CHANGE-14). ui_02 `.tbtn.active`: accent-soft
+   translucent fill + accent glyph — NOT a solid accent chip (UI-IXD-04).
+   Bar-scoped (0,3,0) so the state survives the shared hover rule. */
+.cm-md-table-toolbar .cm-md-table-toolbar-btn.is-pressed {
+  opacity: 1;
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent);
+}
+
+/* ui_03 `.tool-btn.source` (FE-04#6): ⋮ lights accent-solid while the menu it
+   opened is up (class armed/disarmed from toolbar.ts). */
+.cm-md-table-toolbar .cm-md-table-toolbar-btn.is-source {
   opacity: 1;
   background: var(--accent);
-  border-color: var(--accent);
+  border-color: transparent;
+  color: var(--on-accent);
+}
+
+/* ui_02 `.tbtn.danger` (FE-01#3): 🗑 is a danger-red glyph at rest; hover goes
+   danger-filled (ui_03 `.tool-btn.danger:hover`). Red lives on delete-table
+   only. */
+.cm-md-table-toolbar-btn.is-danger {
+  color: var(--danger);
+}
+
+.cm-md-table-toolbar-btn.is-danger:hover:not(:disabled) {
+  background: var(--danger);
+  border-color: transparent;
+  color: var(--on-accent);
 }
 
 /* AC9: the hover copy bar is a sibling surface — hide it while editing so the
@@ -1097,10 +1238,30 @@
 
 /* tasks */
 
+/* ui_06 block C .task-box: custom-drawn 16×16 checkbox with the 1.5px
+   --fg-dim border (native input is 13×13 and UA-styled). Checkmark rides the
+   theme-split --task-check-img data URI (SVG backgrounds can't take
+   currentColor; themes.css flips stroke to --on-accent). */
 .cm-md-task {
-  margin-right: 6px;
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0 var(--space-2) 0 0;
   vertical-align: middle;
-  accent-color: var(--accent);
+  width: var(--task-box-size);
+  height: var(--task-box-size);
+  border: var(--border-thick) solid var(--fg-dim);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  cursor: pointer;
+}
+
+.cm-md-task:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  background-image: var(--task-check-img);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 70%;
 }
 
 /* katex color follows theme text (dark --fg is the old #d4d4d4; form kept so
