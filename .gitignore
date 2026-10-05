@@ -7,3 +7,9 @@ build/icon.iconset/
 .claude/
 temp
 /projects/
+
+# bcode 运行时噪声（权威簿记 .bcode/state/ 其余文件入库随版本走，双机串行换机连续性）
+**/.bcode/state/*.lock
+**/.bcode/state/debounce.json
+config-history.json
+process-docs/**/.cache/

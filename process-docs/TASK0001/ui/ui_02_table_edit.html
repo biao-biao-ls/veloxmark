@@ -1,0 +1,754 @@
+<!-- ui_02 table_edit -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VeloxMark UI 原型 · ui_02 表格编辑态</title>
+<style>
+  /* ============ Design Tokens ============ */
+  :root {
+    /* color · light */
+    --bg: #ffffff;
+    --bg-sidebar: #fafafa;
+    --border: #e5e5e5;
+    --accent: #0969da;
+    --danger: #d1242f;
+    --bg-inset: #f2f2f2;
+    --table-header-bg: #f0f0f0;
+    --table-stripe-bg: #f6f6f6;
+    --widget-surface: #fafafa;
+    --fg: #333333;
+    --fg-dim: #6b6b6b;
+    --fg-disabled: #b0b0b0;
+    /* derived helpers */
+    --accent-soft: rgba(9, 105, 218, 0.12);
+    --accent-soft-strong: rgba(9, 105, 218, 0.22);
+    --on-accent: #ffffff;
+    /* spacing */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    /* radius */
+    --radius-sm: 3px;
+    --radius-md: 8px;
+    /* shadow */
+    --shadow-pop: 0 4px 16px rgba(0, 0, 0, 0.18);
+    --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.28);
+    /* type */
+    --font-ui: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, sans-serif;
+  }
+
+  .theme-dark {
+    --bg: #1e1e1e;
+    --bg-sidebar: #252526;
+    --border: #333333;
+    --accent: #58a6ff;
+    --danger: #f85149;
+    --bg-inset: #2a2a2b;
+    --table-header-bg: #2d2d2e;
+    --table-stripe-bg: #252526;
+    --widget-surface: #252526;
+    --fg: #d4d4d4;
+    --fg-dim: #9a9a9a;
+    --fg-disabled: #6a6a6a;
+    --accent-soft: rgba(88, 166, 255, 0.14);
+    --accent-soft-strong: rgba(88, 166, 255, 0.26);
+    --on-accent: #0d1117;
+  }
+
+  /* ============ Base ============ */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font-ui);
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--fg);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* ============ Menu bar ============ */
+  .menubar {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    flex-shrink: 0;
+    padding-left: var(--space-3);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    margin-right: var(--space-4);
+    color: var(--fg);
+  }
+  .menu-item {
+    font-size: 13px;
+    line-height: 1;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    color: var(--fg);
+  }
+  .menu-item.is-hover { background: var(--bg-inset); }
+  .win-controls {
+    margin-left: auto;
+    display: flex;
+    height: 100%;
+  }
+  .win-btn {
+    width: 44px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--fg-dim);
+  }
+  .win-btn.close:hover, .win-btn.close.is-hover {
+    background: var(--danger);
+    color: var(--on-accent);
+  }
+
+  /* ============ Tab bar ============ */
+  .tabbar {
+    display: flex;
+    align-items: flex-end;
+    height: 36px;
+    flex-shrink: 0;
+    padding: 0 var(--space-2);
+    gap: var(--space-1);
+    background: var(--bg-sidebar);
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: 30px;
+    padding: 0 var(--space-3);
+    font-size: 13px;
+    color: var(--fg-dim);
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  }
+  .tab.active {
+    background: var(--bg);
+    color: var(--fg);
+    border-color: var(--border);
+    box-shadow: inset 0 2px 0 var(--accent);
+  }
+  .tab .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  .tab .tab-close {
+    font-size: 12px;
+    color: var(--fg-disabled);
+    margin-left: var(--space-1);
+  }
+
+  /* ============ Scene banner ============ */
+  .scene-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    flex-shrink: 0;
+    padding: var(--space-2) var(--space-4);
+    background: var(--bg-inset);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--fg-dim);
+  }
+  .scene-banner .scene-title b {
+    color: var(--fg);
+    font-weight: 600;
+  }
+  .scene-banner .scene-title .sep { color: var(--fg-disabled); margin: 0 var(--space-1); }
+  .scene-nav {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+  .scene-nav .nav-label {
+    font-size: 12px;
+    color: var(--fg-disabled);
+    margin-right: var(--space-1);
+  }
+  .scene-nav a {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--fg-dim);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+  }
+  .scene-nav a:hover { background: var(--bg); color: var(--fg); }
+  .scene-nav a.current {
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+  }
+
+  /* ============ Body shell ============ */
+  .body-row {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+  .sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    padding: var(--space-3) 0;
+    font-size: 13px;
+    line-height: 1.4;
+    overflow: auto;
+  }
+  .side-title {
+    padding: 0 var(--space-3) var(--space-2);
+    font-size: 12px;
+    color: var(--fg-disabled);
+    letter-spacing: 0.4px;
+  }
+  .tree-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: 28px;
+    padding: 0 var(--space-3);
+    color: var(--fg-dim);
+    border-radius: 0;
+  }
+  .tree-item .mark { width: 14px; text-align: center; color: var(--fg-disabled); flex-shrink: 0; }
+  .tree-item.depth-1 { padding-left: var(--space-5); }
+  .tree-item.depth-2 { padding-left: var(--space-7); }
+  .tree-item.folder { color: var(--fg); }
+  .tree-item.file.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+  .tree-item.file.active .mark { color: var(--accent); }
+
+  /* ============ Workspace / doc ============ */
+  .workspace {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    overflow: auto;
+  }
+  .gutter {
+    width: 52px;
+    flex-shrink: 0;
+    padding: var(--space-6) var(--space-3) var(--space-7) 0;
+    text-align: right;
+    font-size: 12px;
+    line-height: 26px;
+    color: var(--fg-disabled);
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+  }
+  .main-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    gap: var(--space-6);
+    padding: var(--space-6) var(--space-5) var(--space-7) 0;
+  }
+  .doc-col {
+    flex: 1;
+    min-width: 0;
+    max-width: 860px;
+  }
+  .side-col {
+    width: 320px;
+    flex-shrink: 0;
+    padding-top: var(--space-2);
+  }
+
+  .doc-col .intro {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--fg);
+  }
+  .doc-col .after {
+    margin-top: var(--space-5);
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--fg);
+  }
+  .doc-col blockquote {
+    margin-top: var(--space-4);
+    padding: var(--space-2) var(--space-4);
+    border-left: 3px solid var(--accent);
+    background: var(--bg-inset);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    color: var(--fg-dim);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ============ Table edit state ============ */
+  .table-block {
+    position: relative;
+    margin-top: var(--space-7);
+  }
+  /* no handle band: table left edge aligns with prose column at 0px */
+  table.gfm {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--accent); /* edit-state container outline */
+    background: var(--bg);
+    font-size: 15px;
+    line-height: 1.5;
+    table-layout: fixed;
+  }
+  table.gfm th, table.gfm td {
+    border: 1px solid var(--border);
+    padding: var(--space-2) var(--space-3);
+    height: 40px;
+    text-align: left;
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  table.gfm th {
+    background: var(--table-header-bg);
+    font-weight: 600;
+    color: var(--fg);
+  }
+  table.gfm th:nth-child(1) { width: 32%; }
+  table.gfm th:nth-child(2) { width: 16%; }
+  table.gfm th:nth-child(3) { width: 24%; }
+  table.gfm th:nth-child(4) { width: 28%; }
+  table.gfm tbody tr:nth-child(2n) { background: var(--table-stripe-bg); }
+  table.gfm td.active-cell {
+    background: var(--bg);
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    position: relative;
+  }
+  .caret {
+    display: inline-block;
+    width: 2px;
+    height: 18px;
+    margin-left: 1px;
+    background: var(--accent);
+    vertical-align: -3px;
+  }
+  .pill {
+    display: inline-block;
+    padding: 1px var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .pill.doing { background: var(--accent-soft); color: var(--accent); }
+  .pill.todo { background: var(--bg-inset); color: var(--fg-dim); }
+
+  /* ---- floating table edit toolbar (edit state only) ---- */
+  .table-toolbar {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    height: 32px;
+    padding: 0 var(--space-2);
+    background: var(--widget-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-pop);
+    z-index: 30;
+  }
+  .tbtn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+    color: var(--fg-dim);
+    background: transparent;
+    border-radius: var(--radius-sm);
+  }
+  .tbtn.chip {
+    background: var(--bg-inset);
+    color: var(--fg);
+  }
+  .tbtn.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .tbtn.is-hover {
+    background: var(--bg-inset);
+    color: var(--fg);
+  }
+  .tbtn.danger { color: var(--danger); }
+  .tsep {
+    width: 1px;
+    height: 18px;
+    margin: 0 var(--space-1);
+    background: var(--border);
+  }
+
+  /* ---- ⊞ grid selector popover ---- */
+  .grid-pop {
+    position: absolute;
+    top: 0;
+    right: var(--space-2);
+    padding: var(--space-2);
+    background: var(--widget-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-pop);
+    z-index: 40;
+  }
+  .grid-cells {
+    display: grid;
+    grid-template-columns: repeat(8, 22px);
+    gap: 2px;
+  }
+  .gcell {
+    width: 22px;
+    height: 22px;
+    background: var(--bg);
+    border: 1px solid var(--bg-inset);
+    border-radius: var(--radius-sm);
+  }
+  .gcell.sel {
+    background: var(--accent-soft-strong);
+    border-color: var(--accent);
+  }
+  .grid-pop-label {
+    margin-top: var(--space-2);
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--fg-dim);
+  }
+  .grid-pop-label b { color: var(--accent); font-weight: 600; }
+
+  /* ============ Shortcut card ============ */
+  .key-card {
+    background: var(--widget-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    font-size: 13px;
+  }
+  .key-card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg);
+    margin-bottom: var(--space-3);
+  }
+  .key-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
+    border-top: 1px solid var(--border);
+    color: var(--fg-dim);
+    line-height: 1.5;
+  }
+  .key-row .op { color: var(--fg); }
+  kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    background: var(--bg-inset);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--fg);
+    white-space: nowrap;
+  }
+  .key-note {
+    margin-top: var(--space-2);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--fg-dim);
+  }
+
+  /* ============ Design annotation panel ============ */
+  .design-notes {
+    position: fixed;
+    right: var(--space-5);
+    bottom: calc(26px + var(--space-5));
+    width: 292px;
+    padding: var(--space-4);
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-pop);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--fg-dim);
+    z-index: 50;
+  }
+  .design-notes h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg);
+    margin-bottom: var(--space-3);
+  }
+  .design-notes li {
+    list-style: none;
+    padding-left: var(--space-3);
+    position: relative;
+  }
+  .design-notes li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  /* ============ Status bar ============ */
+  .statusbar {
+    height: 26px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: 0 var(--space-3);
+    background: var(--bg-sidebar);
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    line-height: 1;
+    color: var(--fg-dim);
+  }
+  .statusbar .state {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--accent);
+  }
+  .statusbar .state .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .statusbar .right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 菜单栏 -->
+  <header class="menubar">
+    <div class="brand">VeloxMark</div>
+    <div class="menu-item">文件</div>
+    <div class="menu-item">编辑</div>
+    <div class="menu-item is-hover">视图</div>
+    <div class="menu-item">插入</div>
+    <div class="menu-item">帮助</div>
+    <div class="win-controls">
+      <div class="win-btn">–</div>
+      <div class="win-btn">☐</div>
+      <div class="win-btn close is-hover">✕</div>
+    </div>
+  </header>
+
+  <!-- 标签栏 -->
+  <nav class="tabbar">
+    <div class="tab">welcome.md<span class="tab-close">×</span></div>
+    <div class="tab active">review-table.md<span class="dot"></span><span class="tab-close">×</span></div>
+    <div class="tab">design-notes.md<span class="tab-close">×</span></div>
+  </nav>
+
+  <!-- 场景横幅 -->
+  <div class="scene-banner">
+    <div class="scene-title">
+      <b>场景 2/7 · 表格编辑态</b><span class="sep">——</span>表格评审改稿：四向插行列 + ⊞ 拖选缩放
+    </div>
+    <div class="scene-nav">
+      <span class="nav-label">页面</span>
+      <a href="ui_01_main_quiet.html">1</a>
+      <a href="ui_02_table_edit.html" class="current">2</a>
+      <a href="ui_03_table_menu.html">3</a>
+      <a href="ui_04_menubar.html">4</a>
+      <a href="ui_05_sidebar.html">5</a>
+      <a href="ui_06_render_zone.html">6</a>
+      <a href="ui_07_global.html">7</a>
+    </div>
+  </div>
+
+  <div class="body-row">
+
+    <!-- 左导航（文件树 240px） -->
+    <aside class="sidebar">
+      <div class="side-title">工作区 · velox-docs</div>
+      <div class="tree-item folder"><span class="mark">▾</span>docs</div>
+      <div class="tree-item folder depth-1"><span class="mark">▾</span>review</div>
+      <div class="tree-item file depth-2 active"><span class="mark">·</span>review-table.md</div>
+      <div class="tree-item file depth-2"><span class="mark">·</span>review-notes.md</div>
+      <div class="tree-item file depth-2"><span class="mark">·</span>spec-draft.md</div>
+      <div class="tree-item folder depth-1"><span class="mark">▸</span>exports</div>
+      <div class="tree-item file depth-1"><span class="mark">·</span>design-notes.md</div>
+      <div class="tree-item file depth-1"><span class="mark">·</span>welcome.md</div>
+    </aside>
+
+    <!-- 正文 -->
+    <div class="workspace">
+      <div class="gutter">
+        1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14<br>15<br>16<br>17
+      </div>
+      <div class="main-col">
+        <div class="doc-col">
+          <p class="intro">下表汇总本轮 UI/UX 重设计的表格交互改造项。评审意见要求：行列增删四向可达、快捷键可发现、表格左缘与正文文字列对齐——不再缩进、无增删把手带。</p>
+
+          <!-- 表格编辑态 -->
+          <div class="table-block">
+            <!-- 表格编辑工具栏（编辑态浮现） -->
+            <div class="table-toolbar">
+              <div class="tbtn chip">⊞</div>
+              <div class="tbtn active">◧</div>
+              <div class="tbtn is-hover">▣</div>
+              <div class="tbtn">◨</div>
+              <div class="tsep"></div>
+              <div class="tbtn">⋮</div>
+              <div class="tbtn danger">🗑</div>
+            </div>
+
+            <!-- ⊞ 网格选择器弹层（8×8，前 3 行 × 4 列选中） -->
+            <div class="grid-pop">
+              <div class="grid-cells">
+                <i class="gcell sel"></i><i class="gcell sel"></i><i class="gcell sel"></i><i class="gcell sel"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i>
+                <i class="gcell sel"></i><i class="gcell sel"></i><i class="gcell sel"></i><i class="gcell sel"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i>
+                <i class="gcell sel"></i><i class="gcell sel"></i><i class="gcell sel"></i><i class="gcell sel"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i>
+                <i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i>
+                <i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i>
+                <i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i>
+                <i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i>
+                <i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i><i class="gcell"></i>
+              </div>
+              <div class="grid-pop-label"><b>3 × 4</b> · 缩放整表</div>
+            </div>
+
+            <!-- GFM 表格：4 列（任务/负责人/状态/截止日），表头 + 3 数据行 -->
+            <table class="gfm">
+              <thead>
+                <tr>
+                  <th>任务</th>
+                  <th>负责人</th>
+                  <th>状态</th>
+                  <th>截止日</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>补齐表格快捷键双源</td>
+                  <td class="active-cell">陈屿<span class="caret"></span></td>
+                  <td><span class="pill doing">进行中</span></td>
+                  <td>09-30</td>
+                </tr>
+                <tr>
+                  <td>⋮ 菜单限高滚动验收</td>
+                  <td>林可</td>
+                  <td><span class="pill todo">待办</span></td>
+                  <td>10-02</td>
+                </tr>
+                <tr>
+                  <td>导出列宽一致性核对</td>
+                  <td>周叙</td>
+                  <td><span class="pill todo">待办</span></td>
+                  <td>10-08</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="after">结构操作在快捷键、表格工具栏、⋮ 菜单与单元格右键菜单四面同源——同 op、同 toast、同禁用规则；单事务生效，<kbd>Ctrl</kbd>+<kbd>Z</kbd> 一步还原到操作前状态，光标仍留在锚定单元格。</p>
+
+          <blockquote>评审结论：四向插行列键位通过；⊞ 拖选缩放与对齐三键按下一轮计划复验。</blockquote>
+        </div>
+
+        <!-- 表格右侧：快捷键卡片 -->
+        <div class="side-col">
+          <div class="key-card">
+            <h3>表格结构操作 · Shift 升档键位</h3>
+            <div class="key-row"><kbd>Ctrl</kbd>+<kbd>Enter</kbd><span class="op">在下方插入行</span></div>
+            <div class="key-row"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd><span class="op">在上方插入行</span></div>
+            <div class="key-row"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>→</kbd><span class="op">在右侧插入列</span></div>
+            <div class="key-row"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>←</kbd><span class="op">在左侧插入列</span></div>
+            <div class="key-row"><kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd><span class="op">移动行</span></div>
+            <div class="key-row"><kbd>Alt</kbd>+<kbd>←</kbd>/<kbd>→</kbd><span class="op">移动列</span></div>
+            <div class="key-note">备注：仅单元格激活态生效，不劫持全局输入；表头保护：首行上移/首列左移灰显。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 设计标注面板 -->
+  <aside class="design-notes">
+    <h4>设计标注 · 表格编辑态</h4>
+    <ul>
+      <li>零把手带（静息/编辑均无）</li>
+      <li>进出编辑零布局抖动（位移 0px）</li>
+      <li>⊞ 网格对比度达标可辨</li>
+      <li>缩放上限 20×12 钳制</li>
+      <li>列宽显示态不写 .md</li>
+    </ul>
+  </aside>
+
+  <!-- 状态栏 -->
+  <footer class="statusbar">
+    <div class="state"><span class="dot"></span>表格编辑态 · 单元格激活</div>
+    <div>已自动保存</div>
+    <div class="right">
+      <div>行 8, 列 5</div>
+      <div>4 行 × 4 列</div>
+      <div>空格: 2</div>
+      <div>UTF-8</div>
+      <div>LF</div>
+      <div>Markdown</div>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>

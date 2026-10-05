@@ -1,0 +1,30 @@
+{
+  "records": [
+    {
+      "record_id": "GR-1791213451693-78vowg",
+      "pkg_id": "",
+      "record_type": "来源声明",
+      "detail": {
+        "kind": "repo-init",
+        "root": "/Users/zhb/code/veloxmark",
+        "scanSummary": {
+          "modules": [
+            "."
+          ],
+          "languages": [
+            "JavaScript",
+            "SQL",
+            "TypeScript"
+          ],
+          "build": [
+            "npm"
+          ]
+        },
+        "initializedBy": "zhb",
+        "initializedAt": "2026-10-05T15:17:31.693Z",
+        "reused": true
+      },
+      "created_at": "2026-10-05T15:17:31.693Z"
+    }
+  ]
+}

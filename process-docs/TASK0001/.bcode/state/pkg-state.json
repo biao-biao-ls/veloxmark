@@ -1,0 +1,90 @@
+{
+  "pkg_state": {
+    "pkg_id": "PKG-ui-ux-redesign",
+    "req_no": "ui-ux-redesign",
+    "req_no_aliases": [],
+    "req_name": "VeloxMark UI/UX 全面交互重设计",
+    "status": "已冻结",
+    "change_history": [],
+    "draft_history": [],
+    "created_by": "zhb",
+    "created_at": "2026-10-05T15:38:02.812Z",
+    "updated_at": "2026-10-05T15:38:02.813Z",
+    "updated_by": "zhb",
+    "version": 2
+  },
+  "artifacts": [
+    {
+      "pkg_id": "PKG-ui-ux-redesign",
+      "artifact_id": "A-PRD",
+      "artifact_type": "PRD",
+      "path": "requirement/prd/PRD.md",
+      "status": "草稿",
+      "baseline_version": null,
+      "valid_flag": "有效",
+      "source_decl": {
+        "type": "既有交付包",
+        "declaredBy": "zhb",
+        "declaredAt": "2026-10-05T15:38:02.814Z",
+        "note": "起跑采纳产物"
+      },
+      "note": "起跑采纳产物（置位归 bcode_pkg_state）",
+      "updated_at": "2026-10-05T15:38:02.814Z",
+      "version": 1
+    },
+    {
+      "pkg_id": "PKG-ui-ux-redesign",
+      "artifact_id": "A-AC",
+      "artifact_type": "AC",
+      "path": "requirement/ac.md",
+      "status": "草稿",
+      "baseline_version": null,
+      "valid_flag": "有效",
+      "source_decl": {
+        "type": "既有交付包",
+        "declaredBy": "zhb",
+        "declaredAt": "2026-10-05T15:38:02.814Z",
+        "note": "无基线声明，一致性核验放行"
+      },
+      "note": "无基线声明，一致性核验放行",
+      "updated_at": "2026-10-05T15:38:02.815Z",
+      "version": 1
+    },
+    {
+      "pkg_id": "PKG-ui-ux-redesign",
+      "artifact_id": "A-功能树",
+      "artifact_type": "功能树",
+      "path": "requirement/prd/function-tree.md",
+      "status": "草稿",
+      "baseline_version": null,
+      "valid_flag": "有效",
+      "source_decl": {
+        "type": "既有交付包",
+        "declaredBy": "zhb",
+        "declaredAt": "2026-10-05T15:38:02.815Z",
+        "note": "无基线声明，一致性核验放行"
+      },
+      "note": "无基线声明，一致性核验放行",
+      "updated_at": "2026-10-05T15:38:02.815Z",
+      "version": 1
+    },
+    {
+      "pkg_id": "PKG-ui-ux-redesign",
+      "artifact_id": "A-菜单树",
+      "artifact_type": "菜单树",
+      "path": "requirement/prd/menu-tree.md",
+      "status": "草稿",
+      "baseline_version": null,
+      "valid_flag": "有效",
+      "source_decl": {
+        "type": "既有交付包",
+        "declaredBy": "zhb",
+        "declaredAt": "2026-10-05T15:38:02.816Z",
+        "note": "无基线声明，一致性核验放行"
+      },
+      "note": "无基线声明，一致性核验放行",
+      "updated_at": "2026-10-05T15:38:02.816Z",
+      "version": 1
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "records": [
+    {
+      "record_id": "GR-1791214682816-ugb56u",
+      "pkg_id": "PKG-ui-ux-redesign",
+      "record_type": "来源声明",
+      "detail": {
+        "来源": "起跑决策",
+        "阶段": "需求域",
+        "声明类型": "既有交付包",
+        "声明人": "zhb",
+        "声明时间": "2026-10-05T15:38:02.816Z",
+        "说明": "既有交付包（有效性核验）"
+      },
+      "created_at": "2026-10-05T15:38:02.816Z"
+    },
+    {
+      "record_id": "GR-1791214682818-fclchb",
+      "pkg_id": "PKG-ui-ux-redesign",
+      "record_type": "起跑决策",
+      "detail": {
+        "action": "anchor-write",
+        "stage": "UI设计域",
+        "updated_by": "zhb",
+        "artifacts": [
+          {
+            "type": "PRD",
+            "path": "requirement/prd/PRD.md",
+            "validity": "有效",
+            "note": ""
+          },
+          {
+            "type": "AC",
+            "path": "requirement/ac.md",
+            "validity": "有效",
+            "note": "无基线声明，一致性核验放行"
+          },
+          {
+            "type": "功能树",
+            "path": "requirement/prd/function-tree.md",
+            "validity": "有效",
+            "note": "无基线声明，一致性核验放行"
+          },
+          {
+            "type": "菜单树",
+            "path": "requirement/prd/menu-tree.md",
+            "validity": "有效",
+            "note": "无基线声明，一致性核验放行"
+          }
+        ],
+        "detectedArtifacts": [
+          {
+            "type": "PRD",
+            "path": "requirement/prd/PRD.md",
+            "validity": "有效",
+            "note": ""
+          },
+          {
+            "type": "AC",
+            "path": "requirement/ac.md",
+            "validity": "有效",
+            "note": "无基线声明，一致性核验放行"
+          },
+          {
+            "type": "功能树",
+            "path": "requirement/prd/function-tree.md",
+            "validity": "有效",
+            "note": "无基线声明，一致性核验放行"
+          },
+          {
+            "type": "菜单树",
+            "path": "requirement/prd/menu-tree.md",
+            "validity": "有效",
+            "note": "无基线声明，一致性核验放行"
+          }
+        ],
+        "judgement": "按 AC-RULE-25 产物丰富度顺序命中「需求交付包」形态，命中即定起点=UI设计域",
+        "stages": [
+          "UI设计域",
+          "设计域",
+          "任务域",
+          "开发域",
+          "测试域",
+          "交付归档"
+        ],
+        "entryForm": "需求交付包",
+        "startStage": "UI设计域",
+        "firstCommand": "/bcode:ui prototype",
+        "skippedStages": [
+          {
+            "stage": "需求域",
+            "sourceDecl": "既有交付包（有效性核验）",
+            "verified": true
+          }
+        ],
+        "pkgInit": {
+          "status": "已冻结",
+          "basis": "AC-RULE-21 外部导入边 [*]→已冻结（来源声明+有效性核验通过，写入方=编排引擎·起跑决策记录）"
+        },
+        "override": null,
+        "directEntry": null,
+        "hotfix": null,
+        "scale": null,
+        "profile": null,
+        "needsConfirm": false,
+        "fallback": false,
+        "foreignArtifacts": [],
+        "validityFailures": [],
+        "redoList": []
+      },
+      "created_at": "2026-10-05T15:38:02.818Z"
+    }
+  ]
+}
