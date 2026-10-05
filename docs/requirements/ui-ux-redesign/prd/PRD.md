@@ -10,7 +10,7 @@
 | 状态 | 正式（核心闭环契约已冻结，评审基线） |
 | 作者 | zhanghuanbiao + Claude |
 | 场景类型 | C（旧需求改造） |
-| 配套产物 | proposal.md / ac.md / prd/function-tree.md / prd/menu-tree.md / .cache/user-perspectives/ |
+| 配套产物 | proposal.md / ac.md / prd/function-tree.md / prd/menu-tree.md / process-docs/TASK0001/requirement/support/user-perspectives/ |
 
 ### 术语定义
 

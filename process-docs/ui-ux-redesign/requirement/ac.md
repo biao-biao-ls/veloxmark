@@ -8,7 +8,7 @@
 | 文档标题 | VeloxMark UI/UX 全面交互重设计验收标准（AC） |
 | 版本 | v1.4 |
 | 状态 | 正式（v1.3 基线上按 grill-rulings.md 全量转正 AC-PEND-01..16、[PENDING] 清零，完成 4 处措辞对齐与附录别名对账；冻结中文文案未改文案面；契约演进口径见 AC-RULE-17） |
-| 来源 | prd/PRD.md（v1.2）为主；proposal.md、.cache/user-perspectives/ 用于异常/边界覆盖增强 |
+| 来源 | prd/PRD.md（v1.2）为主；proposal.md、process-docs/TASK0001/requirement/support/user-perspectives/ 用于异常/边界覆盖增强 |
 | 提取方法 | zcode:extract-ac（逐功能域提取 → 统一编号合并 → 自检） |
 
 ### 编号规范

@@ -13,3 +13,4 @@ temp
 **/.bcode/state/debounce.json
 config-history.json
 process-docs/**/.cache/
+docs/**/.cache/

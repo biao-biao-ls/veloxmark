@@ -8,7 +8,7 @@ VeloxMark：类 Typora 的 Markdown 桌面阅读/编辑器。**Markdown 源码�
 
 - 仓库形态：单包（无 workspaces），双进程（Electron main + renderer）
 - 语言/构建：TypeScript 5.7（`strict`，双 tsconfig：`tsconfig.web.json`/`tsconfig.node.json`）、electron-vite 3 + Vite 6、React 19
-- 测试：Vitest 5（node 环境，只测纯函数）+ `scripts/cdp-*.mjs` CDP 冒烟/验收脚本
+- 测试：Vitest 5（node 环境，只测纯函数）
 - 质量门禁：`npm run typecheck`（两个 tsconfig 全过）+ `npm run test:unit`，改动后必跑
 
 ## 技术栈与最新实践规范（新代码必须遵循）
@@ -59,7 +59,7 @@ npm install        # Electron 二进制下载失败时: ELECTRON_MIRROR=https://
 npm run dev        # 开发热更新
 npm run typecheck  # 双 tsconfig 检查（必过）
 npm run test:unit  # Vitest 纯函数单测
-npm run test       # typecheck + unit + cdp 冒烟
+npm run test       # typecheck + unit
 npm run build      # 构建到 out/
 ```
 

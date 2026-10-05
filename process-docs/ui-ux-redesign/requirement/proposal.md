@@ -38,7 +38,7 @@ VeloxMark 功能面已基本齐备，但 UI/UX 是前期无设计规划、边开
 - 双锚点混搭：Notion 的内容优先观感 × Linear 的效率密度，适配写作工具（既不空旷也不压迫）。
 - 快捷键总表单源派生菜单提示——顺带治理 commands/main.ts 快捷键双源债与提示缺失。
 
-> 领域术语见 `.cache/glossary.md`（跨阶段共享术语表，拷问中即时维护）。
+> 领域术语见 `process-docs/TASK0001/requirement/support/glossary.md`（跨阶段共享术语表，拷问中即时维护）。
 
 ## Requirements Analysis
 
