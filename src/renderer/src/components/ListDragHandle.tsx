@@ -108,7 +108,14 @@ function startListDrag(anchor: HTMLElement, view: EditorView, fromLine: number, 
   const indicator = document.createElement('div')
   indicator.className = 'cm-md-drop-indicator'
   indicator.setAttribute('data-testid', 'list-drop-indicator')
-  document.body.append(ghost, indicator)
+  // UX-P17 F3 token-scope contract (linkNav precedent): theme tokens
+  // (--float-bg/--float-border/--fg/--drop-indicator) are declared ONLY on
+  // .app.theme-light/.theme-dark. A body mount sits outside that ancestry —
+  // var() resolves invalid and the drop line paints fully transparent (the
+  // "no drag positioning" report). Mount under .app when it exists
+  // (position:fixed stays viewport-relative — .app carries no transform).
+  const host = document.querySelector('.app') ?? document.body
+  host.append(ghost, indicator)
 
   let target: DropTarget = { toLine: fromLine, placement: 'after' }
   let finished = false
