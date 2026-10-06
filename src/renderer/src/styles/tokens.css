@@ -166,8 +166,7 @@
      (28px) — keep in sync with ROW_HEIGHT in components/FileTree.tsx.
      --tree-indent is the per-depth step (ui_05: 16px/级); tree rows pad
      `--tree-indent * (depth + 1)`, outline rows pad
-     `--tree-indent * (level - 1)`. --outline-lv-w is the .lv level-badge
-     column; --active-bar-* is the outline active-follow left bar
+     `--tree-indent * (level - 1)`. --active-bar-* is the outline active-follow left bar
      (3px wide, 3px top/bottom inset, 2px right radius — ui_05).
      --tree-accent-bar stays the 2px sidebar-tab underline (design underline
      is 2px; do not repurpose for the 3px active bar).
@@ -179,7 +178,6 @@
   --sidebar-width: 240px;
   --tree-row-h: 28px;
   --tree-indent: 16px;
-  --outline-lv-w: 22px;
   --active-bar-w: 3px;
   --active-bar-inset: 3px;
   --active-bar-radius: 2px;

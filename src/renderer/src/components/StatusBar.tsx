@@ -10,8 +10,8 @@
 import { t } from '../i18n'
 import { dialog } from './Dialog'
 import type { Preferences } from '../preferences/store'
-// P15: pure stats module so vitest (node) can test the word-count口径 without
-// pulling React/DOM. Re-exported here — App.tsx and e2e import from this path.
+// P15: pure stats module — word-count口径 with no React/DOM dependency.
+// Re-exported here — App.tsx and e2e import from this path.
 import { EMPTY_STATS, computeDocStats, type DocStats } from '../statusbar/stats'
 import type { FormatWarning } from '../editor/format'
 

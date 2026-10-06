@@ -1,3 +1,23 @@
+/* ---- shared fold chevron (UX 折叠箭头) ---------------------------------------
+   ONE `>` glyph (components/chevron.ts — React ChevronIcon + DOM chevronEl
+   share the path) for every fold/twisty affordance: outline, file tree,
+   heading fold, quote fold. Direction is rotation, never a second glyph:
+   collapsed = right (`>`), `.is-open` rotates 90° to point down (`v`). The
+   transition makes class-toggle state changes (React rows) animate; CM6
+   widget rebuilds just repaint. Per-context size overrides live next to
+   their affordance CSS (filetree/markdown/render-zone). */
+.velox-chevron {
+  display: block;
+  flex: none;
+  width: 13px;
+  height: 13px;
+  transition: transform var(--chrome-duration) ease;
+}
+
+.velox-chevron.is-open {
+  transform: rotate(90deg);
+}
+
 /* ---- titlebar -------------------------------------------------------------- */
 
 .titlebar {
@@ -524,6 +544,11 @@
   text-align: center;
 }
 
+.outline {
+  padding-top: var(--space-2);
+  padding-left: var(--space-4);
+}
+
 .outline-empty {
   padding: var(--space-2) var(--space-4);
   font-size: var(--text-ui);
@@ -594,17 +619,9 @@
   background: var(--bg-inset);
 }
 
-/* FE-07#3 .lv level badge (ui_05): Hn chip before the twisty. Row gap
-   supplies the design's margin-right spacing. */
-.outline-lv {
-  flex: none;
-  width: var(--outline-lv-w);
-  text-align: center;
-  color: var(--fg-disabled);
-  font-size: var(--text-micro);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
+/* FE-07#3 level badge (ui_05 .lv Hn chip) moved to the render-area heading
+   hover chrome (render-zone.css .cm-md-heading::after, UX 折叠三点 #1) — the
+   outline keeps title + fold affordance only. */
 
 .outline-title {
   min-width: 0;

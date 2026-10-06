@@ -495,8 +495,8 @@ export class TableWidget extends BlockWidget {
 // Test/debug hook for CDP scripts (scripts/cdp-p10.mjs) — same pattern as
 // window.__veloxEditor. DOM mousedown/contextmenu paths are exercised with
 // synthetic events; these helpers drive nav/ops deterministically.
-// P15: attached behind a window guard — vitest imports this module in a
-// DOM-less node environment for buildDecorations snapshot tests.
+// P15: attached behind a window guard — this module can load in a DOM-less
+// node environment where buildDecorations runs without a window.
 const tableTestHook = {
   get nested(): EditorView | null {
     return activeNestedView()

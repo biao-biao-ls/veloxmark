@@ -452,7 +452,7 @@ let session: SessionState = normalizeSession(readJson(SESSION_KEY))
 // ---- CSS variable injection (live appearance preview) -----------------------
 
 export function applyPreferencesCssVars(p: Preferences = preferences): void {
-  // P15: DOM-less vitest imports pull this module in — no document, no-op.
+  // P15: DOM-less imports can pull this module in — no document, no-op.
   if (typeof document === 'undefined') return
   const root = document.documentElement
   root.style.setProperty('--editor-font-family', p.editorFontFamily)
@@ -518,7 +518,7 @@ declare global {
     }
   }
 }
-// P15: guarded — vitest imports this module in a DOM-less node environment.
+// P15: guarded — this module may be imported in a DOM-less node environment.
 if (typeof window !== 'undefined') {
   window.__veloxPrefs = {
     getPreferences,

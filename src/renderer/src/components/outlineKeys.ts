@@ -7,11 +7,11 @@
  * Contract (NAV-sidebar.md 3.2):
  *   ↑/↓   move focus between outline nodes (never jumps the body)
  *   Enter activate = the row click path (nav-outline:jump, FE-07)
- *   ←     collapse the focused section (fold write — leaf/collapsed: no-op)
- *   →     expand the focused section (unfold write — leaf/expanded: no-op)
- * Disabled rules: leaf nodes ignore ←/→; an empty outline is a total no-op
- * (the caller also must not bind keys when there are no rows). Fold keys are
- * level:text (editor/livePreview/fold.ts foldKey) — Q10 reuses them.
+ *   ←     collapse the focused section (fold write — non-foldable/collapsed: no-op)
+ *   →     expand the focused section (unfold write — non-foldable/expanded: no-op)
+ * Disabled rules: non-foldable rows ignore ←/→; an empty outline is a total
+ * no-op (the caller also must not bind keys when there are no rows). Fold keys
+ * are level:text (editor/livePreview/fold.ts foldKey) — Q10 reuses them.
  */
 import type { OutlineItem } from '../outline/extract'
 import { foldKey } from '../editor/livePreview/fold'
@@ -24,13 +24,13 @@ export interface OutlineNode {
   text: string
   /** Effective expansion (inverse of the headingFolds membership). */
   expanded: boolean
-  /** True when the next heading is deeper — leaves ignore ←/→. */
-  hasChildren: boolean
   /**
-   * FE-08#4 + FE-09#2: fold triangle shows only on rows with children AND
-   * foldable body lines. Empty sections (heading with no body lines before the
-   * next heading — collectFoldSections skips them) render the leaf "·"
-   * placeholder instead; toggling them would be a no-op.
+   * Foldable = the section hides body lines when folded (collectFoldSections
+   * keys). Empty sections (heading with no body lines before the next heading —
+   * collectFoldSections skips them) render the leaf "·" placeholder instead;
+   * toggling them would be a no-op. This is the SAME 口径 as the render-area
+   * caret (UX 折叠三点 #2): body-only H2s fold from the outline too — sub-
+   * headings are not required.
    */
   foldable: boolean
 }
@@ -78,19 +78,19 @@ export function resolveKey(state: OutlineKeyState, key: string): OutlineKeyActio
     case 'ArrowLeft': {
       if (at < 0) return NONE(focusIndex)
       const node = nodes[at]
-      // Leaf / non-foldable empty section / already-collapsed: nothing to
-      // collapse — silent no-op (FE-08 异常场景). Non-foldable rows (empty
-      // section, "·" placeholder) must match the triangle click gate so ←
-      // never writes a ghost fold key.
-      if (!node.hasChildren || !node.foldable || !node.expanded) return NONE(focusIndex)
+      // Non-foldable empty section / already-collapsed: nothing to collapse —
+      // silent no-op (FE-08 异常场景). The foldable gate matches the triangle
+      // click gate exactly so ← never writes a ghost fold key; body-only
+      // leaves fold like any other foldable section (UX 折叠三点 #2).
+      if (!node.foldable || !node.expanded) return NONE(focusIndex)
       return { action: 'collapse', nextIndex: at }
     }
     case 'ArrowRight': {
       if (at < 0) return NONE(focusIndex)
       const node = nodes[at]
-      // Leaf / non-foldable empty section / already-expanded: nothing to
-      // expand — silent no-op (FE-08 异常场景). Same foldable gate as ←.
-      if (!node.hasChildren || !node.foldable || node.expanded) return NONE(focusIndex)
+      // Non-foldable empty section / already-expanded: nothing to expand —
+      // silent no-op (FE-08 异常场景). Same foldable gate as ←.
+      if (!node.foldable || node.expanded) return NONE(focusIndex)
       return { action: 'expand', nextIndex: at }
     }
     default:
@@ -100,35 +100,34 @@ export function resolveKey(state: OutlineKeyState, key: string): OutlineKeyActio
 
 /**
  * Map extracted outline items into the keyboard-node shape. `expanded` comes
- * from the headingFolds set; `hasChildren` from the next heading's level, so a
- * trailing leaf (or a leaf before a same/shallower heading) stays a leaf.
- * `foldableKeys` (collectFoldSections keys) marks empty sections non-foldable;
- * omitted = every node foldable (compat with older callers).
+ * from the headingFolds set. `foldableKeys` (collectFoldSections keys) marks
+ * empty sections non-foldable; omitted = every node foldable (compat with
+ * older callers).
  */
 export function toOutlineNodes(
   items: readonly OutlineItem[],
   foldedKeys: ReadonlySet<string>,
   foldableKeys?: ReadonlySet<string>
 ): OutlineNode[] {
-  return items.map((item, i) => {
+  return items.map((item) => {
     const id = foldKey(item.level, item.text)
-    const next = items[i + 1]
     return {
       id,
       level: item.level,
       text: item.text,
       expanded: !foldedKeys.has(id),
-      hasChildren: next !== undefined && next.level > item.level,
       foldable: foldableKeys?.has(id) ?? true
     }
   })
 }
 
 /**
- * FE-08#4 + FE-09#2 triangle rule: interactive ▾/▸ only on rows with children
- * that fold real body lines; leaves and empty sections get the "·" placeholder.
- * Direction (▾/▸) is the caller's foldedKeys concern, not visibility.
+ * Triangle rule (UX 折叠三点 #2): interactive fold chevron on every foldable
+ * section — body lines to hide, the same 口径 as the render-area caret,
+ * sub-headings not required — and the "·" placeholder on empty sections.
+ * Direction (the chevron's is-open rotation) is the caller's foldedKeys
+ * concern, not visibility.
  */
 export function showsFoldTriangle(node: OutlineNode): boolean {
-  return node.hasChildren && node.foldable
+  return node.foldable
 }

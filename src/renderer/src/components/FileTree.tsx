@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { DirNode } from '../../../../electron/shared/api'
-import { FileMdIcon, FolderIcon, FolderOpenIcon } from './Icons'
+import { ChevronIcon, FileMdIcon, FolderIcon, FolderOpenIcon } from './Icons'
 import { t } from '../i18n'
 import { ancestorDirPaths, flattenFiles, visibleRows, type FlatRow } from './filetreeRows'
 import { resolveKey, toVisibleRows, type VisibleRow } from './filetreeKeys'
@@ -562,7 +562,9 @@ export default function FileTree({
           title={node.path}
         >
           {indentGuides(depth)}
-          <span className="filetree-twisty">{open ? '▾' : '▸'}</span>
+          <span className="filetree-twisty">
+            <ChevronIcon className={open ? 'is-open' : undefined} />
+          </span>
           <span className="filetree-icon is-folder">
             {open ? <FolderOpenIcon size={13} /> : <FolderIcon size={13} />}
           </span>

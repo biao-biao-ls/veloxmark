@@ -1,7 +1,7 @@
 /**
  * P21 callout (提示块) parsing — GitHub/Obsidian `> [!TYPE]` marker syntax.
  *
- * Pure string logic, node-testable (vitest). Rendering decorations live in
+ * Pure string logic with no DOM deps (node-importable). Rendering decorations live in
  * handlers.ts (`enterCallout`) + calloutFold.ts; export mapping in
  * export/renderDoc/ (callout.ts helpers + block.ts assembly). The parser never touches i18n — display names come
  * from `calloutDefaultTitle`, which reads the active P14 language at call

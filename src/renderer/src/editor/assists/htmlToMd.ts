@@ -5,7 +5,7 @@ import { formatTable } from '../table/parse'
  *
  * Ships with a small self-contained HTML fragment parser instead of
  * DOMParser so the converter is one code path everywhere (renderer paste,
- * menu paste via IPC, and vitest in a DOM-less node environment).
+ * menu paste via IPC, and DOM-less node contexts).
  * Clipboard payloads from browsers are serialized, well-formed fragments —
  * the parser tolerates stray `<`, unclosed tags and entity references, and
  * anything unparseable throws so the paste pipeline can fall back to text.

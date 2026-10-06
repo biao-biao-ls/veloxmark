@@ -113,7 +113,8 @@ export default function App(): React.JSX.Element {
   const session = useSession()
   const [outline, setOutline] = useState<OutlineItem[]>([])
   // FE-08#4/FE-09#2: foldable section keys (collectFoldSections) — the outline
-  // renders ▾/▸ only where folding does real work; empty sections = leaf "·".
+  // renders the fold chevron only where folding does real work; empty
+  // sections = leaf "·".
   const [foldableKeys, setFoldableKeys] = useState<ReadonlySet<string>>(() => new Set())
   // P03: sidebar visibility/mode/width come from session memory; with no
   // memory yet, visibility falls back to the "sidebar open by default" pref.

@@ -2,10 +2,11 @@
  * Titlebar icon set — inline SVGs using currentColor so they inherit the
  * theme's foreground and hover states. Stroke-based, Lucide-style geometry.
  */
+import { CHEVRON_PATH } from './chevron'
 
-type IconProps = { size?: number }
+type IconProps = { size?: number; className?: string }
 
-function Svg({ size = 16, children }: IconProps & { children: React.ReactNode }) {
+function Svg({ size = 16, className, children }: IconProps & { children: React.ReactNode }) {
   return (
     <svg
       width={size}
@@ -17,6 +18,7 @@ function Svg({ size = 16, children }: IconProps & { children: React.ReactNode })
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
+      className={className}
     >
       {children}
     </svg>
@@ -84,18 +86,15 @@ export function CloseIcon({ size = 14, ...rest }: IconProps) {
   )
 }
 
-export function ChevronRightIcon({ size = 14, ...rest }: IconProps) {
+/**
+ * The one fold/twisty chevron (`>`, shared path with chevronEl in chevron.ts).
+ * Direction is rotation, not a second glyph: `is-open` rotates it 90° down
+ * (`.velox-chevron` in chrome.css). Collapsed = right, expanded = down.
+ */
+export function ChevronIcon({ size = 12, className, ...rest }: IconProps) {
   return (
-    <Svg size={size} {...rest}>
-      <path d="M9 6l6 6-6 6" />
-    </Svg>
-  )
-}
-
-export function ChevronDownIcon({ size = 14, ...rest }: IconProps) {
-  return (
-    <Svg size={size} {...rest}>
-      <path d="M6 9l6 6 6-6" />
+    <Svg size={size} className={`velox-chevron${className ? ` ${className}` : ''}`} {...rest}>
+      <path d={CHEVRON_PATH} />
     </Svg>
   )
 }

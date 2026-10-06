@@ -1,6 +1,6 @@
 /**
- * P14/P15 document statistics — pure module so vitest (node env) can import
- * it without React/DOM. StatusBar.tsx re-exports these for App/e2e use.
+ * P14/P15 document statistics — pure module, kept free of React/DOM so any
+ * node context can import it. StatusBar.tsx re-exports these for App/e2e use.
  *
  * Word口径 (Typora-aligned, recorded in P14 docs): CJK char = 1 word;
  * western tokens split on whitespace count 1 each (token must contain a

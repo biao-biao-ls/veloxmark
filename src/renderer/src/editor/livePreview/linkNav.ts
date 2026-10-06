@@ -16,7 +16,7 @@ import { getLivePreviewConfig } from './config'
  * (handlers.ts reads the same cache to pick cm-md-link-broken).
  *
  * Pure exports (extractLinkUrl / collectLinkHrefs / cache ops) are DOM-less
- * at call time so vitest can import this module in node.
+ * at call time so the module imports cleanly in node.
  */
 
 // ---- href extraction ---------------------------------------------------------

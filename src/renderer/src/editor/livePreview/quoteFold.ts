@@ -14,7 +14,7 @@
  * callout fold owns their chrome.
  *
  * `collectQuoteFoldBlocks` / `collectQuoteFoldRanges` are pure and DOM-less
- * at call time → vitest in node. Fold replace decorations must come from a
+ * at call time (node-importable). Fold replace decorations must come from a
  * StateField-provided set (CM6 rule) — livePreviewField reads quoteFoldField
  * on rebuild; no toast (PEND-15 lightweight ops).
  */
@@ -23,6 +23,7 @@ import { StateEffect, StateField, type EditorState } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 import type { SyntaxNodeRef } from '@lezer/common'
 import { getLang, t } from '../../i18n'
+import { chevronEl } from '../../components/chevron'
 import { parseCalloutMarker } from './callout'
 import type { PendingDeco } from './handlers-ctx'
 
@@ -204,9 +205,11 @@ export function getQuoteFoldedKeys(state: EditorState): ReadonlySet<string> {
 // ---- decorations -------------------------------------------------------------
 
 /**
- * Folded summary row: fold-caret ▸ + 「first line……」 + 「N 行」 tail +
- * ▸ 展开还原 entry (ui_06 block E / task page-elements). Click anywhere on
+ * Folded summary row: fold-caret `>` + 「first line……」 + 「N 行」 tail +
+ * `>` 展开还原 entry (ui_06 block E / task page-elements). Click anywhere on
  * the row expands (UI-IXD-14). Language is part of identity (P18-F6 rule).
+ * Carets are the shared chevron (components/chevron.ts) — folded = right, no
+ * rotation (UX 折叠箭头: one glyph, rotation carries direction).
  */
 export class QuoteSummaryWidget extends WidgetType {
   constructor(
@@ -236,7 +239,7 @@ export class QuoteSummaryWidget extends WidgetType {
     caret.className = 'cm-md-fold-caret'
     caret.dataset.testid = 'quote-fold-caret'
     caret.title = t('render.fold.restore')
-    caret.textContent = '▸'
+    caret.append(chevronEl(false))
     row.append(caret)
 
     const summary = document.createElement('span')
@@ -254,7 +257,7 @@ export class QuoteSummaryWidget extends WidgetType {
     restore.className = 'cm-md-quote-restore'
     restore.dataset.testid = 'quote-fold-restore'
     restore.title = t('render.fold.restore')
-    restore.textContent = `▸ ${t('render.fold.restore')}`
+    restore.append(chevronEl(false), document.createTextNode(t('render.fold.restore')))
     row.append(restore)
     return row
   }
@@ -263,7 +266,7 @@ export class QuoteSummaryWidget extends WidgetType {
   }
 }
 
-/** Expanded-state fold entry ▾ (title「折叠本节」) at the block's first line end. */
+/** Expanded-state fold entry `v` (title「折叠本节」) at the block's first line end. */
 export class QuoteFoldCaretWidget extends WidgetType {
   constructor(
     readonly key: string,
@@ -280,7 +283,7 @@ export class QuoteFoldCaretWidget extends WidgetType {
     el.dataset.testid = 'quote-fold-caret'
     el.dataset.quoteFoldKey = this.key
     el.title = t('render.fold.collapse')
-    el.textContent = '▾'
+    el.append(chevronEl(true))
     return el
   }
   ignoreEvent(): boolean {

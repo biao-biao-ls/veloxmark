@@ -3,18 +3,20 @@ import { StateEffect, StateField, type EditorState } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 import { extractOutline, type OutlineItem } from '../../outline/extract'
 import { getLang, t } from '../../i18n'
+import { chevronEl } from '../../components/chevron'
 import type { PendingDeco } from './handlers-ctx'
 
 /**
- * P18 heading folds (IT-03 FE-07 hardens the presentation: inline fold-caret
- * at the heading text left + standalone gray summary line, ui_06 block D).
+ * P18 heading folds (IT-03 FE-07 hardens the presentation: standalone gray
+ * summary line; the caret is hover chrome pinned at the content container's
+ * left edge — ui_06 block D + UX 折叠三点: zero flow impact, hover-only).
  *
  * UI-only state (never touches the markdown source — same contract as the
  * P10 tableEditField). Fold identity is `level:headingText` so edits that
  * shift positions do not orphan session-persisted folds.
  *
  * `collectFoldSections` / `collectFoldRanges` are pure and DOM-less at call
- * time → vitest in node. Fold replace decorations must come from a
+ * time (node-importable). Fold replace decorations must come from a
  * StateField-provided set (CM6 rule), which is why livePreviewField rebuilds
  * through buildDecorations → applyHeadingFoldDecos.
  */
@@ -211,8 +213,12 @@ export class FoldPlaceholder extends WidgetType {
 }
 
 /**
- * Inline fold entry at the heading text left (ui_06 fold-caret): expanded ▾
- * (title「折叠本节」) / folded ▸ (title「展开本节」) — UI-IXD-06 caret direction.
+ * Fold entry at the content container's left edge (ui_06 fold-caret, UX 折叠
+ * 三点): expanded `v` (title「折叠本节」) / folded `>` (title「展开本节」) —
+ * UI-IXD-06 caret direction. One chevron glyph (components/chevron.ts) whose
+ * is-open rotation carries the direction — never a second glyph (UX 折叠箭头).
+ * Absolute + hover-only in CSS (render-zone.css .cm-md-heading-fold-caret):
+ * never in flow, so empty sections need no alignment placeholder.
  */
 export class HeadingFoldCaretWidget extends WidgetType {
   constructor(
@@ -231,40 +237,11 @@ export class HeadingFoldCaretWidget extends WidgetType {
     el.dataset.testid = 'heading-fold-caret'
     el.dataset.foldKey = this.key
     el.title = t(this.folded ? 'render.fold.expand' : 'render.fold.collapse')
-    el.textContent = this.folded ? '▸' : '▾'
+    el.append(chevronEl(!this.folded))
     return el
   }
   ignoreEvent(): boolean {
     return false
-  }
-}
-
-/**
- * Equal-width inert slot for headings with no foldable body (empty sections).
- * Reserves the caret box + gap so every heading shares one text left edge —
- * without it the empty-section title drifts left by the caret width (18px +
- * 8px gap). `visibility: hidden` keeps the box; no fold key means no toggle.
- */
-export class HeadingFoldCaretPlaceholderWidget extends WidgetType {
-  constructor(
-    readonly key: string,
-    readonly lang: string
-  ) {
-    super()
-  }
-  eq(other: HeadingFoldCaretPlaceholderWidget): boolean {
-    return other.key === this.key && other.lang === this.lang
-  }
-  toDOM(): HTMLElement {
-    const el = document.createElement('span')
-    el.className = 'cm-md-fold-caret cm-md-heading-fold-caret cm-md-heading-fold-caret-phantom'
-    el.dataset.testid = 'heading-fold-caret-phantom'
-    el.setAttribute('aria-hidden', 'true')
-    el.textContent = '▾'
-    return el
-  }
-  ignoreEvent(): boolean {
-    return true
   }
 }
 
@@ -293,12 +270,11 @@ export const foldClickExtension = EditorView.domEventHandlers({
 
 /**
  * build.ts tail hook (after the tree + regex passes, after callout/quote
- * folds): foldable-section carets, equal-width placeholders on empty sections,
- * folded-range overlap filter, summary replaces. CM6 forbids overlapping
- * replace decorations — the P18/P21 pattern: filter inner decos first, then
- * push replaces. Carets of nested sections inside a folded parent ride that
- * replace and are dropped by the same filter; the folded section's own caret
- * stays (heading row is kept).
+ * folds): foldable-section carets, folded-range overlap filter, summary
+ * replaces. CM6 forbids overlapping replace decorations — the P18/P21
+ * pattern: filter inner decos first, then push replaces. Carets of nested
+ * sections inside a folded parent ride that replace and are dropped by the
+ * same filter; the folded section's own caret stays (heading row is kept).
  */
 export function applyHeadingFoldDecos(decos: PendingDeco[], state: EditorState): void {
   const lang = getLang()
@@ -310,17 +286,19 @@ export function applyHeadingFoldDecos(decos: PendingDeco[], state: EditorState):
   const foldableAt = new Map<number, FoldRange>()
   for (const s of sections) foldableAt.set(state.doc.lineAt(s.from).from, s)
 
-  // Every heading keeps the caret slot: interactive caret on foldable ones,
-  // hidden equal-width placeholder on empty ones — one shared text left edge.
+  // Interactive caret on every foldable heading; empty sections get none. The
+  // caret is absolute at the content container's left edge (hover-only), so
+  // it reserves no in-flow slot — no alignment placeholder is needed.
   for (const item of items) {
     const s = foldableAt.get(item.pos)
-    const widget = s
-      ? new HeadingFoldCaretWidget(s.key, foldedKeys.has(s.key), lang)
-      : new HeadingFoldCaretPlaceholderWidget(foldKey(item.level, item.text), lang)
+    if (!s) continue
     decos.push({
       from: item.pos,
       to: item.pos,
-      value: Decoration.widget({ widget, side: -1 })
+      value: Decoration.widget({
+        widget: new HeadingFoldCaretWidget(s.key, foldedKeys.has(s.key), lang),
+        side: -1
+      })
     })
   }
 

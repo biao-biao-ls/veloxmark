@@ -37,7 +37,12 @@ export function enterHeading(level: number, node: SyntaxNodeRef, ctx: BuildCtx):
   ctx.decos.push({
     from: line.from,
     to: line.from,
-    value: Decoration.line({ class: `cm-md-heading cm-md-h${level}` })
+    value: Decoration.line({
+      class: `cm-md-heading cm-md-h${level}`,
+      // Hover level-chip source of truth (render-zone.css .cm-md-heading::after
+      // content: attr(data-heading-level)) — one "H{level}" construction point.
+      attributes: { 'data-heading-level': `H${level}` }
+    })
   })
   return true
 }

@@ -49,9 +49,9 @@
   flex-shrink: 0;
 }
 
-/* FE-06#3 twisty column: 18px hit box / 10px solid glyph (▾/▸) / --fg-dim.
-   Childless rows keep the column via .empty (visibility: hidden) so names
-   never shift (FE-06#3). */
+/* FE-06#3 twisty column: 18px hit box / 13px chevron glyph (velox-chevron,
+   is-open rotation = direction) / --fg-dim. Childless rows keep the column
+   via .empty (visibility: hidden) so names never shift (FE-06#3). */
 .filetree-twisty {
   display: inline-flex;
   align-items: center;

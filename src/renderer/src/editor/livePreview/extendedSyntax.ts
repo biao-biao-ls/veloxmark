@@ -1,7 +1,7 @@
 /**
  * P11 extended syntax — pure parsers.
  *
- * No CodeMirror / DOM imports so P15 vitest can run these in node. The
+ * No CodeMirror / DOM imports — pure parsers, importable in plain node. The
  * decoration collector lives in livePreview/handlers-extended.ts (`collectExtendedDecos`,
  * alongside the math regex pass); widgets live in editor/widgets.ts.
  */

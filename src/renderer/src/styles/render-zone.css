@@ -17,7 +17,7 @@
    .cm-md-img-resize       image resize corner handle
    .cm-md-drag-handle      list row drag handle (accent block)
    .cm-md-drop-indicator   drag insert line
-   .cm-md-fold-caret       fold triangle (transition on color/bg/transform)
+   .cm-md-fold-caret       fold chevron (transition on color/bg/transform)
    .cm-md-fold-summary     heading-fold collapsed summary (gray)
    .cm-md-quote-fold       long-quote folded summary row
    .cm-md-quote-lines      summary tail line-count「N 行」
@@ -328,7 +328,8 @@
   text-decoration-color: var(--fg-disabled);
 }
 
-/* fold triangle (heading fold / quote fold) */
+/* fold chevron (heading fold / quote fold) — one velox-chevron glyph, is-open
+   rotation carries the direction (folded = right, expanded = down) */
 .cm-md-fold-caret {
   display: inline-flex;
   align-items: center;
@@ -353,41 +354,100 @@
    Absolute inside the quote line (position:relative on .cm-md-quote) so it
    leaves the text flow — zero heightmap impact, no line-end coupling.
    收口批 #2 (FE-08 caret 横向余量): right is aligned to the gutter edge (0)
-   so the ▾ box (~9px) sits fully inside the 16px --editor-gutter band right
-   of the text column. right: var(--space-2) pushed the box left edge to
-   ~17px — 1px past the text column end (16px) — leaving a long first line's
-   tail 0~2px of clearance. Zero wrap-width change (no first-line inset). */
+   so the chevron box (~11px) sits fully inside the 16px --editor-gutter band
+   right of the text column. right: var(--space-2) pushed the box left edge
+   to ~17px — 1px past the text column end (16px) — leaving a long first
+   line's tail 0~2px of clearance. Zero wrap-width change (no first-line
+   inset). */
 .cm-md-quote-caret {
   position: absolute;
   top: var(--space-1);
   right: 0;
 }
 
-/* heading fold-caret (ui_06 block D): geometry by heading level — h1/h2
-   18px/11px, h3–h6 14px/9px. Sits at the heading text left. */
+.cm-md-quote-caret .velox-chevron {
+  width: 11px;
+  height: 11px;
+}
+
+/* heading hover chrome (UX 折叠三点): fold caret + level chip. Both are out
+   of flow — .cm-md-heading is the positioning root (position:relative, no
+   heightmap impact). The caret sits at the content container's LEFT edge:
+   absolute in the 16px --editor-gutter band left of the text (left: 0), so it
+   never shifts the heading text (the old in-flow caret at the text left
+   pushed it right). Revealed on heading hover only. Geometry by heading level
+   — h1/h2 18px box/12px chevron, h3–h6 14px box/10px chevron; the centered
+   glyph stays inside the gutter band, clear of the text column. */
+.cm-md-heading {
+  position: relative;
+}
+
 .cm-md-heading-fold-caret {
-  margin-right: var(--space-2);
-  font-size: 11px;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
   width: 18px;
   height: 18px;
-  flex: none;
+  transition:
+    opacity var(--chrome-duration) ease,
+    color var(--chrome-duration) ease,
+    background-color var(--chrome-duration) ease;
+}
+
+.cm-md-heading-fold-caret .velox-chevron {
+  width: 12px;
+  height: 12px;
+}
+
+.cm-md-heading:hover .cm-md-heading-fold-caret {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .cm-md-h3 .cm-md-heading-fold-caret,
 .cm-md-h4 .cm-md-heading-fold-caret,
 .cm-md-h5 .cm-md-heading-fold-caret,
 .cm-md-h6 .cm-md-heading-fold-caret {
-  font-size: 9px;
   width: 14px;
   height: 14px;
 }
 
-/* empty-section placeholder: same caret box + gap, invisible and inert —
-   keeps every heading's text left edge on one column (no 18px+8px drift) */
-.cm-md-heading-fold-caret-phantom {
-  visibility: hidden;
-  cursor: default;
+.cm-md-h3 .cm-md-heading-fold-caret .velox-chevron,
+.cm-md-h4 .cm-md-heading-fold-caret .velox-chevron,
+.cm-md-h5 .cm-md-heading-fold-caret .velox-chevron,
+.cm-md-h6 .cm-md-heading-fold-caret .velox-chevron {
+  width: 10px;
+  height: 10px;
+}
+
+/* level chip (H1–H6) at the heading text's top-right (UX 折叠三点 #1 —
+   moved out of the outline panel). Zero-width inline-block: the text
+   overflows to the right of the text end without entering layout, and
+   vertical-align:text-top pins it to the heading font's ascent corner.
+   Source of truth for the label is the line's data-heading-level attribute
+   (handlers-tree enterHeading). Hover reveal only — never interactive. */
+.cm-md-heading::after {
+  content: attr(data-heading-level);
+  display: inline-block;
+  width: 0;
+  white-space: nowrap;
+  vertical-align: text-top;
+  text-indent: var(--space-half);
+  line-height: 1;
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--fg-disabled);
+  opacity: 0;
   pointer-events: none;
+  transition: opacity var(--chrome-duration) ease;
+}
+
+.cm-md-heading:hover::after {
+  opacity: 1;
 }
 
 /* heading-fold collapsed summary (ui_06 fold-collapsed-line: gray single line

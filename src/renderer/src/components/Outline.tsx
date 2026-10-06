@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { OutlineItem } from '../outline/extract'
 import { t } from '../i18n'
+import { ChevronIcon } from './Icons'
 import { resolveKey, showsFoldTriangle, toOutlineNodes } from './outlineKeys'
 
 /** nav-keyboard:outline key set (NAV-sidebar.md 3.2 — no Home/End here). */
@@ -131,8 +132,8 @@ export default function Outline({
       {items.map((item, i) => {
         const key = nodes[i].id
         const folded = foldedKeys?.has(key) === true
-        // FE-08#4 + FE-09#2: interactive ▾/▸ only on foldable rows with
-        // children; leaves and empty sections show the "·" placeholder.
+        // UX 折叠三点 #2: interactive chevron on every foldable section (body
+        // lines — same 口径 as the render caret); empty sections show "·".
         const triangle = showsFoldTriangle(nodes[i]) && onToggleFold !== undefined
         return (
           <button
@@ -150,7 +151,6 @@ export default function Outline({
             onClick={() => onSelect(item.pos)}
             title={item.text}
           >
-            <span className="outline-lv">H{item.level}</span>
             {triangle ? (
               <span
                 data-testid={`outline-fold-${i}`}
@@ -164,7 +164,7 @@ export default function Outline({
                   onToggleFold?.(item.pos, key)
                 }}
               >
-                {folded ? '▸' : '▾'}
+                <ChevronIcon className={folded ? undefined : 'is-open'} />
               </span>
             ) : (
               <span data-testid={`outline-fold-${i}`} className="outline-fold empty">

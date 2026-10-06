@@ -8,7 +8,7 @@ import { t } from '../i18n'
  * 9A: language chip's switcher — readable names (9.3) + common-first searchable
  * list + fence-info rewrite. Three layers, same file shape as table/gridPicker:
  *   - pure: `langDisplayName` / `buildLangItems` / `filterLangs` / `langPickKey`
- *     (unit-tested; hljs is plain JS so vitest node runs it without stubs);
+ *     (hljs is plain JS — imports cleanly without stubs);
  *   - `switchFenceLang` — event-time re-resolution (stale-instance discipline:
  *     `fenceFrom` is only a hint, the FencedCode node is re-resolved on use);
  *   - `openCodeLangPicker` — DOM singleton popover (ctxMenu/gridPicker pattern).

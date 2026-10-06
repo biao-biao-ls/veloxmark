@@ -89,9 +89,10 @@
   cursor: not-allowed;
 }
 
-/* P18/FE-07 heading fold: inline fold-caret + summary live in render-zone.css
-   (ui_06 block D). The old fold gutter is gone — the entry sits at the heading
-   text left. Outline triangles stay here. */
+/* P18/FE-07 heading fold: caret + summary live in render-zone.css (ui_06
+   block D). The old fold gutter is gone — the caret is hover chrome pinned at
+   the content container's left edge (UX 折叠三点). Outline triangles stay
+   here. */
 /* F06: line numbers hug the content box — padR 0 means number-right →
    prose-left equals --editor-gutter exactly (16px, in the 12–20px professional
    band). Digits keep a small left inset; ≥3-digit numbers widen the gutter
@@ -101,8 +102,9 @@
 }
 
 .outline-fold {
-  /* FE-08#1-#4: 18px hit box / 10px solid ▾/▸ glyph / --fg-dim (ui_05
-     .outline-row .twisty). Row gap supplies the design margin-right. */
+  /* FE-08#1-#4: 18px hit box / 13px chevron glyph (velox-chevron, is-open
+     rotation = direction) / --fg-dim (ui_05 .outline-row .twisty). Row gap
+     supplies the design margin-right. */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -122,7 +124,8 @@
 }
 
 .outline-fold.is-folded {
-  /* FE-07 UI-IXD-06: glyph swaps ▾/▸ with the fold state — no rotation. */
+  /* FE-07 UI-IXD-06: direction is the chevron's is-open rotation (folded =
+     right, expanded = down) — one glyph, never a swap. */
   color: var(--fg-dim);
 }
 
