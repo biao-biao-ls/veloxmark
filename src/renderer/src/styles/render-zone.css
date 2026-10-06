@@ -372,25 +372,36 @@
 
 /* heading hover chrome (UX 折叠三点): fold caret + level chip. Both are out
    of flow — .cm-md-heading is the positioning root (position:relative, no
-   heightmap impact). The caret sits at the content container's LEFT edge:
-   absolute in the 16px --editor-gutter band left of the text (left: 0), so it
-   never shifts the heading text (the old in-flow caret at the text left
-   pushed it right). Revealed on heading hover only. Geometry by heading level
-   — h1/h2 18px box/12px chevron, h3–h6 14px box/10px chevron; the centered
-   glyph stays inside the gutter band, clear of the text column. */
+   heightmap impact). Geometry:
+   - horizontal: the chip's right edge parks 5px left of the text column
+     (icon→text gap), so the hover box never crowds/overlaps the heading
+     text and never eats the text column's first pixels on click. left is
+     measured from the line's padding-box edge (= text start −
+     --editor-gutter), so the box overhangs the number band a few px on
+     h1/h2 instead of intruding on the text.
+   - vertical: top/bottom pin to the heading's padding ladder
+     (--heading-pad-top/bottom, markdown.css) and auto margins center the
+     box on the TEXT line box. Plain top:50% centers on the padded line —
+     above the text midline by (pad-top − pad-bottom)/2 (3–5px per level).
+   Revealed on heading hover only. Geometry by heading level — h1/h2 18px
+   box/12px chevron, h3–h6 14px box/10px chevron (level overrides only
+   --fold-caret-box; width/height/left follow). */
 .cm-md-heading {
   position: relative;
 }
 
 .cm-md-heading-fold-caret {
+  --fold-caret-box: 18px;
   position: absolute;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
+  top: var(--heading-pad-top, 0em);
+  bottom: var(--heading-pad-bottom, 0em);
+  margin-top: auto;
+  margin-bottom: auto;
+  left: calc(var(--editor-gutter) - 5px - var(--fold-caret-box));
   opacity: 0;
   pointer-events: none;
-  width: 18px;
-  height: 18px;
+  width: var(--fold-caret-box);
+  height: var(--fold-caret-box);
   transition:
     opacity var(--chrome-duration) ease,
     color var(--chrome-duration) ease,
@@ -411,8 +422,7 @@
 .cm-md-h4 .cm-md-heading-fold-caret,
 .cm-md-h5 .cm-md-heading-fold-caret,
 .cm-md-h6 .cm-md-heading-fold-caret {
-  width: 14px;
-  height: 14px;
+  --fold-caret-box: 14px;
 }
 
 .cm-md-h3 .cm-md-heading-fold-caret .velox-chevron,

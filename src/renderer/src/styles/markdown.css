@@ -19,38 +19,60 @@
    Replica-review batch B: no border-bottom on any heading (ui_01 doc-h1/h2 +
    ui_06 md-h2/h3 all borderless); h1 = 28px @ 16px base = 1.75em (ui_01
    .doc-h1). Batch K: h2 = 21px @ 16px base = 1.3125em (ui_01 .doc-h2 reads
-   21px; was 1.5em/24px — kept in lockstep with export/exportCss.ts). */
+   21px; was 1.5em/24px — kept in lockstep with export/exportCss.ts).
+   Ladder values live in --heading-pad-top/bottom so the fold caret
+   (render-zone.css .cm-md-heading-fold-caret) can center on the TEXT line
+   box: 50% of the padded line lands above the text midline by
+   (pad-top − pad-bottom)/2, and the caret reads the same vars (em resolves
+   against the inherited heading font-size on both sides). Tune the ladder
+   here only — the caret follows automatically. */
 .cm-md-h1 {
+  --heading-pad-top: 0.7em;
+  --heading-pad-bottom: 0.4em;
   font-size: 1.75em;
-  padding-top: 0.7em !important;
-  padding-bottom: 0.4em !important; /* gap below the heading */
+  padding-top: var(--heading-pad-top) !important;
+  padding-bottom: var(--heading-pad-bottom) !important; /* gap below the heading */
 }
 
 .cm-md-h2 {
+  --heading-pad-top: 0.6em;
+  --heading-pad-bottom: 0.35em;
   font-size: 1.3125em;
-  padding-top: 0.6em !important;
-  padding-bottom: 0.35em !important; /* gap below the heading */
+  padding-top: var(--heading-pad-top) !important;
+  padding-bottom: var(--heading-pad-bottom) !important; /* gap below the heading */
 }
 
 .cm-md-h3 {
+  --heading-pad-top: 0.5em;
+  --heading-pad-bottom: 0em;
   font-size: 1.25em;
-  padding-top: 0.5em !important;
+  padding-top: var(--heading-pad-top) !important;
+  padding-bottom: var(--heading-pad-bottom) !important;
 }
 
 .cm-md-h4 {
+  --heading-pad-top: 0.5em;
+  --heading-pad-bottom: 0em;
   font-size: 1.1em;
-  padding-top: 0.5em !important;
+  padding-top: var(--heading-pad-top) !important;
+  padding-bottom: var(--heading-pad-bottom) !important;
 }
 
 .cm-md-h5 {
+  --heading-pad-top: 0.45em;
+  --heading-pad-bottom: 0em;
   font-size: 1em;
-  padding-top: 0.45em !important;
+  padding-top: var(--heading-pad-top) !important;
+  padding-bottom: var(--heading-pad-bottom) !important;
 }
 
 .cm-md-h6 {
+  --heading-pad-top: 0.4em;
+  --heading-pad-bottom: 0em;
   font-size: 0.9em;
   color: var(--fg-dim);
-  padding-top: 0.4em !important;
+  padding-top: var(--heading-pad-top) !important;
+  padding-bottom: var(--heading-pad-bottom) !important;
 }
 
 .cm-md-strong {
