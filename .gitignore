@@ -7,5 +7,3 @@ build/icon.iconset/
 .claude/
 temp
 /projects/
-
-docs/**/.cache/

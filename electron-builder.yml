@@ -41,7 +41,7 @@ win:
     - target: nsis
       arch:
         - x64
-  # 签名接入后填写（见 docs/windows-release-guide.md 第 3、4 节）
+  # 签名接入后填写
   # signtoolOptions:
   #   ...
 

@@ -42,10 +42,10 @@ React 19 + CodeMirror 6 的编辑器 UI 全部。入口 `index.html` → `src/ma
 
 ## 已知债务与互斥模式（新代码用哪边）
 
-- **App.tsx 仍是业务装配中枢**（~1700 行）：e2e 类型/seam 已外移 `e2e/`（1A）；新功能逻辑放 `hooks/` 或独立模块，App 只接线；业务回调再下沉按 [docs/refactor-tasks.md](../../docs/refactor-tasks.md) 走 SDD 流程
+- **App.tsx 仍是业务装配中枢**（~1700 行）：e2e 类型/seam 已外移 `e2e/`（1A）；新功能逻辑放 `hooks/` 或独立模块，App 只接线；业务回调再下沉按 SDD 流程推进
 - **主题色单源是 `export/palette.ts`**（1C 已收敛）：改色改 palette → 跑 `export/palette.test.ts` → 同步被点名的 `styles/` 行（手工对照 + 测试守护）；hljs 色在上游 `highlight.js/styles/github*.css`（scope 注入），不走 palette
 - **commands 双源快捷键** + command id 字面量被 cdp 探针扫描，id 不可改
-- **大文件只做局部小改**：`editor/widgets.ts`（1445）、`editor/table/widget.ts`（1142）、`hooks/useFileOps.ts`（1018）——结构性拆分按 docs/refactor-tasks.md 走 SDD 流程
+- **大文件只做局部小改**：`editor/widgets.ts`（1445）、`editor/table/widget.ts`（1142）、`hooks/useFileOps.ts`（1018）——结构性拆分按 SDD 流程推进
 - **handlers 1D 已拆**（`handlers-ctx/tree/code/math/extended` + barrel）；`build → handlers → table/widget` 循环依赖已解（`setNestedPreviewField` 注入缝，`npx madge --circular` 守护 0 cycles），新增 import 勿绕开 barrel/缝重建环
 - `useFileOps` 的 dirty 三轨（dirtyRef/tab.dirty/setDirty state）与 savedContent 双写勿扩散到新代码，新状态单一真源
 - `table/widget.ts` 的 `pendingHandoff`（destroy→remount 未提交文本交接）correctness-critical，动它先读文件头设计注释
