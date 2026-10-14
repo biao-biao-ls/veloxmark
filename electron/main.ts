@@ -104,9 +104,13 @@ function createWindow(): void {
     if (geometry.maximized) mainWindow?.maximize()
     mainWindow?.show()
   })
-  // Crash diagnostics (e2e + field): never silent-kill the renderer.
+  // Crash diagnostics (e2e + field): never silent-kill the renderer. Also
+  // mark it gone — the close intercept below needs a live renderer to answer
+  // appQueryClose, and must not hang the app into an unkillable zombie when
+  // the renderer is already dead (SIGTERM to the tree used to reproduce that).
   mainWindow.webContents.on('render-process-gone', (_e, details) => {
     console.error('[veloxmark] render-process-gone', details.reason, details.exitCode)
+    rendererLoaded = false
   })
   attachWindowStatePersistence(mainWindow)
 
@@ -132,6 +136,9 @@ function createWindow(): void {
   // them fire the window 'close' event first.
   mainWindow.on('close', (e) => {
     if (closeApproved) return
+    // No live renderer → nobody can answer appQueryClose; allow the close.
+    // (Otherwise SIGTERM/quit hangs forever after a renderer crash.)
+    if (!rendererLoaded) return
     e.preventDefault()
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send(IpcChannels.appQueryClose)
