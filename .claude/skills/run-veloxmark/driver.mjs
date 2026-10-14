@@ -164,16 +164,34 @@ end tell`))
       console.log('no pid file — no instance started by this driver')
     }
     // Killing the npm group does NOT take the Electron main process down —
-    // it detaches and keeps the window alive (observed repeatedly). Sweep any
-    // leftover veloxmark Electron processes explicitly.
-    const leftovers = execSync('pgrep -f "veloxmark/node_modules/electron/dist" || true', {
-      encoding: 'utf8'
-    }).split('\n').filter(Boolean)
-    if (leftovers.length === 0) return console.log('no leftover Electron processes')
-    for (const p of leftovers) {
-      try { process.kill(Number(p), 'SIGTERM') } catch { /* already gone */ }
+    // it detaches, keeps the window alive and respawns crash helpers. Sweep
+    // the WHOLE veloxmark node_modules tree (electron-vite parent, esbuild,
+    // Electron main + helpers), escalating to SIGKILL. SIGTERM alone is not
+    // enough: with a dead renderer the close handshake can stall the main
+    // process into a zombie that ignores SIGTERM (fixed in main.ts, but an
+    // older build may still be running).
+    const sweep = (sig) => {
+      const pids = execSync('pgrep -f "veloxmark/node_modules" || true', {
+        encoding: 'utf8'
+      }).split('\n').filter(Boolean)
+      for (const p of pids) {
+        try { process.kill(Number(p), sig) } catch { /* already gone */ }
+      }
+      return pids
     }
-    console.log(`swept leftover Electron pids: ${leftovers.join(', ')}`)
+    const term = sweep('SIGTERM')
+    if (term.length > 0) {
+      console.log(`swept (SIGTERM) pids: ${term.join(', ')}`)
+      execSync('sleep 2')
+    }
+    const kill = sweep('SIGKILL')
+    if (kill.length > 0) console.log(`swept (SIGKILL) pids: ${kill.join(', ')}`)
+    const remain = sweep('SIGKILL')
+    console.log(
+      remain.length === 0
+        ? 'clean: no veloxmark processes remain'
+        : `WARNING: still alive after SIGKILL: ${remain.join(', ')}`
+    )
   },
 
   help() {

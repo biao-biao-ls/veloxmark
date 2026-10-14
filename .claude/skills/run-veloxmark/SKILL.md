@@ -55,8 +55,15 @@ Opens a window on the desktop. Ctrl-C to stop (see Gotcha about orphans).
   anything overlapping the app lands in the shot. Always use
   `screencapture -l<windowid>` (what `ss` does). Find the id via `win`.
 - **Killing `electron-vite` leaves an orphaned Electron main process** with the
-  window still alive. `quit` kills the npm process group AND sweeps leftover
-  `veloxmark/node_modules/electron/dist` pids — use it instead of `pkill`.
+  window still alive — it also respawns crash helpers after its renderer dies.
+  `quit` kills the npm process group, sweeps the whole `veloxmark/node_modules`
+  tree (electron-vite, esbuild, Electron main + helpers) and escalates
+  SIGTERM → SIGKILL with a final verification — use it instead of `pkill`.
+- **A SIGTERM can turn the app into an unkillable zombie** (pre-fix builds):
+  the P12 close intercept waits for a renderer `appQueryClose` answer that a
+  dead renderer can never give. Fixed in `electron/main.ts` (close passes
+  through when `render-process-gone` fired). If you meet a zombie on an old
+  build: `kill -9`.
 - **JXA (`osascript -l JavaScript`) can't enumerate CGWindowList** —
   `ObjC.deepUnwrap` chokes on the CFArray (`TypeError: {} is not iterable`).
   Use the clang helper.
