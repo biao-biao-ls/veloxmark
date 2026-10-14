@@ -4,6 +4,8 @@ dist/
 build/icon.iconset/
 *.log
 .DS_Store
-.claude/
+# Claude Code local config stays out; project skills are shared tooling.
+.claude/*
+!.claude/skills/
 temp
 /projects/
