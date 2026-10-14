@@ -30,16 +30,18 @@ import {
   updateShowLineNumbers
 } from '../editor/setup'
 import { readEditingAssistsConfig } from '../editor/assists'
-import { WELCOME_MD } from '../content'
+import { getWelcomeMd } from '../content'
 import { getPreferences, patchSession } from '../preferences/store'
-import { baseDirOf } from '../pathUtil'
+import { baseDirOf, baseNameOf } from '../pathUtil'
 import { resolveThemeMode } from './useAppTheme'
-import type { DocTab, DocTabInfo } from './docTabs'
+import { displayTabName, type DocTab, type DocTabInfo } from './docTabs'
 import { resolveTabCloseDirty } from './tabClosePolicy'
 
 export interface AddTabInput {
   path: string | null
   name: string
+  /** Built-in welcome document (display name comes from t('tabs.welcome')). */
+  isWelcome?: boolean
   untitledNo: number | null
   state: EditorState | null
   savedContent: string
@@ -76,7 +78,9 @@ export interface TabStore {
   getActiveTab: () => DocTab | undefined
   addTab: (input: AddTabInput) => DocTab
   nextUntitledNo: () => number
-  popClosedStack: () => { path: string | null; content: string; name: string } | undefined
+  popClosedStack: () =>
+    | { path: string | null; content: string; name: string; isWelcome: boolean }
+    | undefined
   // CRUD
   initTabs: (extensions: Extension[], initialContent: string) => void
   activateTab: (id: string) => boolean
@@ -110,7 +114,7 @@ export function useTabStore({
   notifySaveFailed: (path: string | null, err: unknown) => void
 }): TabStore {
   const filePathRef = useRef<string | null>(null)
-  const savedContentRef = useRef<string>(WELCOME_MD)
+  const savedContentRef = useRef<string>(getWelcomeMd())
   const dirtyRef = useRef(false)
   /** True only while loadContent/tab swaps are replacing the document. */
   const suppressDirtyRef = useRef(false)
@@ -123,7 +127,7 @@ export function useTabStore({
   const untitledSeqRef = useRef(0)
   const tabSeqRef = useRef(0)
   const extensionsRef = useRef<Extension[] | null>(null)
-  const closedStackRef = useRef<Array<{ path: string | null; content: string; name: string }>>([])
+  const closedStackRef = useRef<Array<{ path: string | null; content: string; name: string; isWelcome: boolean }>>([])
   const [tabInfos, setTabInfos] = useState<DocTabInfo[]>([])
 
   // ---- dirty/savedContent single source (3.1) -------------------------------
@@ -154,7 +158,11 @@ export function useTabStore({
 
   const syncAppState = useCallback((path: string | null, isDirty: boolean) => {
     filePathRef.current = path
-    void window.api.setAppState({ filePath: path, dirty: isDirty })
+    // tabsRef/activeIdRef are declared above — read the active tab directly
+    // (getActiveTab is declared later and would TDZ here).
+    const active = tabsRef.current.get(activeIdRef.current)
+    const name = active ? displayTabName(active) : path ? baseNameOf(path) : 'Untitled'
+    void window.api.setAppState({ filePath: path, dirty: isDirty, name })
   }, [])
 
   /** Point relative image resolution at the directory of `path`. */
@@ -180,6 +188,7 @@ export function useTabStore({
         id: tab.id,
         path: tab.path,
         name: tab.name,
+        isWelcome: tab.isWelcome,
         dirty: isTabDirty(tab),
         active: tab.id === activeId
       })
@@ -222,7 +231,7 @@ export function useTabStore({
   const getActiveTab = useCallback(() => tabsRef.current.get(activeIdRef.current), [])
   const nextUntitledNo = useCallback((): number => ++untitledSeqRef.current, [])
   const addTab = useCallback((input: AddTabInput): DocTab => {
-    const tab: DocTab = { id: `tab-${++tabSeqRef.current}`, ...input }
+    const tab: DocTab = { id: `tab-${++tabSeqRef.current}`, ...input, isWelcome: input.isWelcome ?? false }
     tabsRef.current.set(tab.id, tab)
     return tab
   }, [])
@@ -273,12 +282,15 @@ export function useTabStore({
   const initTabs = useCallback(
     (extensions: Extension[], initialContent: string) => {
       extensionsRef.current = extensions
-      const no = nextUntitledNo()
       tabsRef.current.clear()
+      // The welcome tab is not an untitled draft — it never consumes the
+      // untitled sequence (first New File is untitled-1 in dev and prod) and
+      // displays via displayTabName as t('tabs.welcome').
       const tab = addTab({
         path: null,
-        name: `untitled-${no}`,
-        untitledNo: no,
+        name: 'welcome',
+        isWelcome: true,
+        untitledNo: null,
         state: null,
         savedContent: initialContent,
         scroll: 0,
@@ -292,7 +304,7 @@ export function useTabStore({
       syncAppState(null, false)
       refreshTabs()
     },
-    [nextUntitledNo, addTab, projectActiveMirrors, syncAppState, refreshTabs]
+    [addTab, projectActiveMirrors, syncAppState, refreshTabs]
   )
 
   /**
@@ -301,10 +313,8 @@ export function useTabStore({
    * boot support and the e2e hygiene seam (__veloxP26.resetWelcome).
    */
   const resetToWelcome = useCallback(() => {
-    const view = viewRef.current
-    const content = view ? view.state.doc.toString() : WELCOME_MD
-    initTabs(extensionsRef.current ?? [], content === '' ? WELCOME_MD : WELCOME_MD)
-  }, [initTabs, viewRef])
+    initTabs(extensionsRef.current ?? [], getWelcomeMd())
+  }, [initTabs])
 
   const newFile = useCallback(async () => {
     // P26: New opens its own tab — the current document stays open, so no
@@ -370,7 +380,8 @@ export function useTabStore({
         path: tab.path,
         content:
           isActive && view ? view.state.doc.toString() : (tab.state?.doc.toString() ?? tab.savedContent),
-        name: tab.name
+        name: tab.name,
+        isWelcome: tab.isWelcome
       })
       if (closedStackRef.current.length > 10) closedStackRef.current.shift()
 

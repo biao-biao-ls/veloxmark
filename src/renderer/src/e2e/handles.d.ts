@@ -222,7 +222,7 @@ declare global {
       getDoc: () => string
       loadDoc: (text: string, path: string | null) => void
       openPath: (path: string) => Promise<boolean>
-      tabs: () => Array<{ id: string; path: string | null; name: string; dirty: boolean; active: boolean }>
+      tabs: () => Array<{ id: string; path: string | null; name: string; isWelcome?: boolean; dirty: boolean; active: boolean }>
       activeIndex: () => number
       activate: (id: string) => void
       activateIndex: (i: number) => void

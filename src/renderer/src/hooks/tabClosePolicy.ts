@@ -8,7 +8,7 @@ import { dialog } from '../components/Dialog'
 import { t } from '../i18n'
 import { showSaveDialog } from '../export/e2eSaveDialog'
 import { baseNameOf } from '../pathUtil'
-import type { DocTab } from './docTabs'
+import { displayTabName, type DocTab } from './docTabs'
 
 export interface SaveAllResult {
   ok: boolean
@@ -32,7 +32,7 @@ export async function resolveTabCloseDirty(
 ): Promise<boolean> {
   const choice = await dialog.choose({
     title: t('dialog.unsavedTitle'),
-    message: t('tabs.closeDirty', { name: tab.name }),
+    message: t('tabs.closeDirty', { name: displayTabName(tab) }),
     confirmLabel: t('dialog.save'),
     discardLabel: t('dialog.dontSave'),
     cancelLabel: t('dialog.cancel')
@@ -61,6 +61,7 @@ export async function resolveTabCloseDirty(
       }
       tab.path = target
       tab.name = baseNameOf(target)
+      tab.isWelcome = false
       void window.api.draftDiscard(null)
     } else {
       await window.api.draftWrite(null, content)
@@ -117,10 +118,10 @@ export async function queryClose(deps: {
   // a generic "Save changes before closing?" identifies nothing.
   let message =
     dirtyTabs.length === 1
-      ? t('dialog.unsavedCloseNamed', { name: dirtyTabs[0].name })
+      ? t('dialog.unsavedCloseNamed', { name: displayTabName(dirtyTabs[0]) })
       : t('dialog.unsavedClose')
   if (dirtyTabs.length > 1) {
-    const names = dirtyTabs.slice(0, 8).map((tb) => `· ${tb.name}`)
+    const names = dirtyTabs.slice(0, 8).map((tb) => `· ${displayTabName(tb)}`)
     const more = dirtyTabs.length > 8 ? `\n… +${dirtyTabs.length - 8}` : ''
     message = `${t('dialog.unsavedCloseMulti', { n: dirtyTabs.length })}\n${names.join('\n')}${more}`
   }

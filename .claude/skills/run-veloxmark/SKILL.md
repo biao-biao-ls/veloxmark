@@ -62,8 +62,8 @@ Opens a window on the desktop. Ctrl-C to stop (see Gotcha about orphans).
   Use the clang helper.
 - **AppleScript: a `&` concatenation in `return` must stay on one line** —
   line-wrapping it is a syntax error (`expected end tell, found &`).
-- **Three different titles exist for the same untitled doc** — OS window title
-  `Untitled - VeloxMark` (`electron/ipc/app.ts`), in-app titlebar
-  `untitled-2 — VeloxMark`, tab name `untitled-2`. The `-2` comes from React
-  StrictMode double-invoking the mount effect in dev (counter reaches 2; prod
-  shows `untitled-1`). Don't grep for one name expecting the others to match.
+- **The welcome tab's display name is localized** — tab, in-app titlebar and
+  OS window title all show `Welcome`/`欢迎` (`t('tabs.welcome')`) and flip live
+  on language switches. Its mechanical `name` is `'welcome'`; the untitled
+  counter starts at 1 for real New File tabs. Driver window selection keys on
+  the `VeloxMark` title suffix, which is unchanged.

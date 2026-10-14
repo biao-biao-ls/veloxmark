@@ -60,6 +60,7 @@ import { extractOutline, findHeadingBySlug, type OutlineItem } from './outline/e
 import { MERMAID_TEMPLATES, isCursorInMermaidFence } from './editor/mermaidTemplates'
 import { CALLOUT_TYPES } from './editor/livePreview/callout'
 import { getWelcomeMd, WELCOME_MD_EN, WELCOME_MD_ZH } from './content'
+import { displayTabName } from './hooks/docTabs'
 import { getLang, resolveLang, setLang, t, useTranslation } from './i18n'
 import StatusBar, { EMPTY_STATS, computeDocStats, type DocStats } from './components/StatusBar'
 import { useFileOps } from './hooks/useFileOps'
@@ -681,6 +682,13 @@ export default function App(): React.JSX.Element {
     const next = getWelcomeMd(lang)
     if (doc === next) return
     fileOps.loadContent(next, null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang])
+
+  // Re-push the OS window title on language flips — display names are
+  // localized at push time and main caches the last title.
+  useEffect(() => {
+    fileOps.syncAppState(fileOps.filePathRef.current, fileOps.dirtyRef.current)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang])
 
@@ -1372,7 +1380,7 @@ export default function App(): React.JSX.Element {
   }, [])
 
   const activeTab = fileOps.tabInfos.find((x) => x.active)
-  const fileName = activeTab ? activeTab.name : filePath ? baseNameOf(filePath) : 'Untitled'
+  const fileName = activeTab ? displayTabName(activeTab) : filePath ? baseNameOf(filePath) : 'Untitled'
   const folderName = workspace.folderPath
     ? baseNameOf(workspace.folderPath) || workspace.folderPath
     : null

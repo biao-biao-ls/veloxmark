@@ -54,7 +54,7 @@ export function registerAppIpc(getWindow: GetWindow, deps: AppIpcDeps): void {
   ipcMain.handle(IpcChannels.appSetState, (_e, state: AppWindowState) => {
     const win = getWindow()
     if (win) {
-      const name = state.filePath ? basename(state.filePath) : 'Untitled'
+      const name = state.filePath ? basename(state.filePath) : (state.name || 'Untitled')
       win.setTitle(`${state.dirty ? '• ' : ''}${name} - VeloxMark`)
     }
   })

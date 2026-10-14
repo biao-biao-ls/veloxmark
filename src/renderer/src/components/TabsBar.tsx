@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { DocTabInfo } from '../hooks/useFileOps'
+import { displayTabName } from '../hooks/docTabs'
 import { t } from '../i18n'
 
 export interface TabsBarProps {
@@ -82,7 +83,7 @@ export function TabsBar({
           className={`tab-item${tab.active ? ' is-active' : ''}${
             draggingId === tab.id ? ' is-dragging' : ''
           }${dropTargetId === tab.id && draggingId !== tab.id ? ' is-drop-target' : ''}`}
-          title={tab.path ?? tab.name}
+          title={tab.path ?? displayTabName(tab)}
           draggable
           onDragStart={(e) => {
             dragIdRef.current = tab.id
@@ -136,7 +137,7 @@ export function TabsBar({
           }}
         >
           {tab.dirty && <span className="tab-dirty-dot" aria-label="dirty" />}
-          <span className="tab-name">{tab.name}</span>
+          <span className="tab-name">{displayTabName(tab)}</span>
           <button
             type="button"
             className="tab-close"

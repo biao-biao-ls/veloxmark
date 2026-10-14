@@ -24,6 +24,8 @@ export interface OpenFileResult {
 export interface AppWindowState {
   filePath: string | null
   dirty: boolean
+  /** Display name (already localized by the renderer). */
+  name: string
 }
 
 export interface FileFilter {

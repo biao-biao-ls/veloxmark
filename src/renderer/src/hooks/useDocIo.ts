@@ -276,6 +276,7 @@ export function useDocIo({
       if (tab && path) {
         tab.path = path
         tab.name = baseNameOf(path)
+        tab.isWelcome = false
         tab.baseDir = baseDirOf(path)
       }
       setSavedBaseline(content)
@@ -434,10 +435,18 @@ export function useDocIo({
     } else {
       const state = makeState(entry.content)
       if (!state) return
-      const no = nextUntitledNo()
+      // A reopened welcome tab keeps its identity (display name + no untitled
+      // number); a reopened draft resumes the untitled sequence.
+      let name = 'welcome'
+      let no: number | null = null
+      if (!entry.isWelcome) {
+        no = nextUntitledNo()
+        name = `untitled-${no}`
+      }
       const tab = addTab({
         path: null,
-        name: `untitled-${no}`,
+        name,
+        isWelcome: entry.isWelcome,
         untitledNo: no,
         state,
         savedContent: entry.content,
