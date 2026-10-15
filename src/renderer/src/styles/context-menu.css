@@ -25,6 +25,7 @@
 .editor-context-menu::-webkit-scrollbar,
 .velox-ctx-menu::-webkit-scrollbar {
   width: 5px;
+  height: 5px;
 }
 
 .editor-context-menu::-webkit-scrollbar-track,
@@ -38,6 +39,7 @@
 .velox-ctx-menu::-webkit-scrollbar-thumb {
   background: var(--fg-disabled);
   border-radius: 2px;
+  border: 0; /* 抵消 scrollbars.css 全局 thumb 的透明边内缩 */
 }
 .velox-ctx-row {
   position: relative;
@@ -140,6 +142,7 @@
 
 .velox-ctx-sub::-webkit-scrollbar {
   width: 5px;
+  height: 5px;
 }
 
 .velox-ctx-sub::-webkit-scrollbar-track {
@@ -151,5 +154,6 @@
 .velox-ctx-sub::-webkit-scrollbar-thumb {
   background: var(--fg-disabled);
   border-radius: 2px;
+  border: 0; /* 抵消 scrollbars.css 全局 thumb 的透明边内缩 */
 }
 

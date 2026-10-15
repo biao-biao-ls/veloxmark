@@ -2,6 +2,7 @@
    Import order below = original file order = cascade order; keep it stable. */
 @import './styles/tokens.css';
 @import './styles/themes.css';
+@import './styles/scrollbars.css';
 @import './styles/chrome.css';
 @import './styles/filetree.css';
 @import './styles/context-menu.css';

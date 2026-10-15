@@ -19,6 +19,9 @@
   /* Inset chip/readout surface (table-insert sniff badge, lightbox zoom
      readout). One step off --bg; opaque solid so contrast math stays honest. */
   --bg-inset: #f2f2f2;
+  /* 非 macOS 滚动条拇指（scrollbars.css）：半透明 pill，hover 加深。 */
+  --scroll-thumb: rgba(0, 0, 0, 0.3);
+  --scroll-thumb-hover: rgba(0, 0, 0, 0.5);
   /* color: content surface */
   --quote-border: #d0d7de;
   --code-bg: rgba(175, 184, 193, 0.2);
@@ -115,6 +118,9 @@
   --focus-ring: 0 0 0 1px var(--accent);
   /* See light theme — inset chip/readout surface. */
   --bg-inset: #2a2a2b;
+  /* See light theme — 非 macOS 滚动条拇指（scrollbars.css）。 */
+  --scroll-thumb: rgba(255, 255, 255, 0.3);
+  --scroll-thumb-hover: rgba(255, 255, 255, 0.5);
   /* color: content surface */
   --quote-border: #444444;
   --code-bg: rgba(110, 118, 129, 0.25);

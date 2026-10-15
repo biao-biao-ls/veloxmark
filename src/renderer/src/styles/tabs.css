@@ -8,9 +8,15 @@
   border-bottom: 1px solid var(--border);
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: thin;
   user-select: none;
   position: relative;
+}
+
+/* macOS 维持标准 thin（零回归）；非 macOS 不得声明标准滚动条属性（批 A 教训，
+   会令 Chromium 忽略 ::-webkit-scrollbar），.tabs-bar 只走 scrollbars.css 的
+   webkit 通道。 */
+.platform-mac .tabs-bar {
+  scrollbar-width: thin;
 }
 
 /* P26 F1: sticky edge fades while the tab strip is scroll-overflowed

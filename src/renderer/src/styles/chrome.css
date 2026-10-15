@@ -197,6 +197,7 @@
 .menu-dropdown::-webkit-scrollbar-thumb {
   background: var(--fg-disabled);
   border-radius: 999px;
+  border: 0; /* 抵消 scrollbars.css 全局 thumb 的透明边内缩 */
 }
 
 .menu-dropdown::-webkit-scrollbar-button:single-button {

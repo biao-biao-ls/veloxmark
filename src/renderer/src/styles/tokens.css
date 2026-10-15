@@ -21,7 +21,7 @@
 :root {
   /* ---- color: chrome ---------------------------------------------------- */
   /* Theme-split — declared in .theme-light/.theme-dark: --bg, --bg-sidebar,
-     --border, --accent, --danger. */
+     --border, --accent, --danger, --scroll-thumb, --scroll-thumb-hover. */
   /* r2 FE-03/FE-05 (CHANGE-16): --accent also carries a :root base
      declaration. :root-level tokens reference it (--focus-ring below) and
      CSS custom-property substitution happens at the declaring element's

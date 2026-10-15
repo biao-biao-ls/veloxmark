@@ -1,0 +1,62 @@
+/* ---- 非 macOS 系统滚动条 → macOS overlay 近似（纯 CSS） ----------------------
+   Windows/Linux 经典滚动条（~17px + 箭头钮）收敛为 8px 槽 + 6px 浮动圆角半透明
+   pill：轨道透明、无箭头钮、半透明拇指 hover 加深，窗口失焦回常态。视觉近似
+   macOS overlay 观感（用户口径：视觉接近即可，不做自动隐藏/JS 库）。
+
+   门禁语义（main.tsx 写入 html[data-platform]）：darwin 一律不命中，系统
+   overlay 滚动条零改动；属性缺省同样不命中（fail-safe，回落系统原生）。
+
+   批 A 教训（chrome.css / context-menu.css 同款）：元素上声明标准
+   scrollbar-width/color 后 Chromium 忽略 ::-webkit-scrollbar（实测 gutter
+   11px/17px）——本文件只走 webkit 伪元素通道，任何消费方不得补标准滚动条属性。
+
+   特异性纪律：门禁收进 :where()（0 贡献），全局规则 (0,0,1)/(0,1,1) 低于组件
+   配方（.menu-dropdown 4px、.editor-context-menu/.velox-ctx-* 5px 原样保留）。
+   styles.css 中本文件排 chrome.css 之前：同特异冲突（全局 thumb:hover vs 组件
+   thumb）源序也判组件配方胜，mini 拇指维持现状、不做 hover 变色。 */
+
+:where(html[data-platform]:not([data-platform='darwin'])) ::-webkit-scrollbar,
+:where(html[data-platform]:not([data-platform='darwin']))::-webkit-scrollbar {
+  /* 8px 槽 + thumb 1px 透明边 + content-box 内缩 = 6px 浮动 pill */
+  width: 8px;
+  height: 8px;
+}
+
+:where(html[data-platform]:not([data-platform='darwin'])) ::-webkit-scrollbar-track,
+:where(html[data-platform]:not([data-platform='darwin']))::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:where(html[data-platform]:not([data-platform='darwin'])) ::-webkit-scrollbar-thumb,
+:where(html[data-platform]:not([data-platform='darwin']))::-webkit-scrollbar-thumb {
+  background-color: var(--scroll-thumb);
+  border: 1px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+
+:where(html[data-platform]:not([data-platform='darwin'])) ::-webkit-scrollbar-thumb:hover,
+:where(html[data-platform]:not([data-platform='darwin']))::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scroll-thumb-hover);
+}
+
+/* 窗口失焦撤回 hover 加深（源序在 :hover 之后，同特异时胜出）。 */
+:where(html[data-platform]:not([data-platform='darwin'])) ::-webkit-scrollbar-thumb:window-inactive,
+:where(html[data-platform]:not([data-platform='darwin']))::-webkit-scrollbar-thumb:window-inactive {
+  background-color: var(--scroll-thumb);
+}
+
+/* 箭头钮：bare 选择器覆盖 :single-button/:double-button 全部形态（chrome.css
+   仅 :single-button，此处取超集）。 */
+:where(html[data-platform]:not([data-platform='darwin'])) ::-webkit-scrollbar-button,
+:where(html[data-platform]:not([data-platform='darwin']))::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+/* 双轴容器（.cm-scroller / .table-grid-picker-cells）右下角补角透明。 */
+:where(html[data-platform]:not([data-platform='darwin'])) ::-webkit-scrollbar-corner,
+:where(html[data-platform]:not([data-platform='darwin']))::-webkit-scrollbar-corner {
+  background: transparent;
+}
