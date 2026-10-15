@@ -433,27 +433,6 @@
   text-overflow: ellipsis;
 }
 
-.sidebar-back {
-  background: transparent;
-  border: none;
-  color: var(--fg-dim);
-  font-size: var(--text-caption);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: var(--space-half) var(--sidebar-back-bleed);
-  /* bleeds one back-chip step left so the hover hit area reaches the panel
-     edge while the label stays aligned to the header text */
-  margin-left: calc(var(--sidebar-back-bleed) * -1);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.sidebar-back:hover {
-  color: var(--accent);
-  background: var(--code-bg);
-}
-
 .sidebar-title {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -526,10 +505,6 @@
   bottom: calc(var(--tree-accent-bar) * -1);
   height: var(--tree-accent-bar);
   background: var(--accent);
-}
-
-.sidebar-tabs .sidebar-action {
-  margin-left: auto;
 }
 
 /* 6A: files-tab empty state (no folder open) */

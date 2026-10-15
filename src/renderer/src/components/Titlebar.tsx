@@ -1,5 +1,5 @@
 import MenuBar, { type MenuDef } from './MenuBar'
-import { CloseIcon, MaximizeIcon, MinimizeIcon, MoonIcon, PanelIcon, SearchIcon, SunIcon } from './Icons'
+import { CloseIcon, MaximizeIcon, MinimizeIcon, MoonIcon, PanelIcon, SunIcon } from './Icons'
 import type { ThemeName } from '../editor/theme'
 import { t } from '../i18n'
 
@@ -16,8 +16,6 @@ interface Props {
   autoSaveError?: string | null
   /** UX-P12: dirty + autosave off — suppress the stale saved slot. */
   hideSavedAt?: boolean
-  /** P13: open the sidebar folder-search view (Ctrl+Shift+F). */
-  openSearch?: () => void
 }
 
 /**
@@ -34,8 +32,7 @@ export default function Titlebar({
   toggleTheme,
   autoSaveAt,
   autoSaveError,
-  hideSavedAt,
-  openSearch
+  hideSavedAt
 }: Props): React.JSX.Element {
   const autoSaveLabel =
     autoSaveError != null
@@ -69,13 +66,6 @@ export default function Titlebar({
         )}
       </span>
       <span className="tb-spacer" />
-      <button
-        className="tb-btn"
-        onClick={openSearch}
-        title={t('app.searchInFolder')}
-      >
-        <SearchIcon />
-      </button>
       <button className="tb-btn" onClick={toggleOutline} title={t('tb.outline')}>
         <PanelIcon />
       </button>

@@ -184,10 +184,6 @@ export const EN: Record<string, string> = {
   'tree.noMarkdown': 'No markdown files',
 
   // ---- search panel ----------------------------------------------------------
-  'search.backFiles': '‹ Files',
-  'search.backOutline': '‹ Outline',
-  'search.modeFiles': 'Files',
-  'search.title': 'Search',
   'search.placeholder': 'Search in folder…',
   'search.replacePlaceholder': 'Replace…',
   'search.replaceAll': 'Replace All',
@@ -208,6 +204,11 @@ export const EN: Record<string, string> = {
   'search.replaceOne': 'Replace this match',
   'search.replaceFile': 'Replace all matches in this file',
 
+  'search.truncated': '+{n} not shown (capped)',
+  'search.replacedToast': 'Replaced {n} match(es)',
+  'search.replaceStale': 'Match changed on disk — results refreshed',
+  'search.dirtyBadge': 'Unsaved',
+  'search.dirtyBadgeTip': 'Results read from disk — this file has unsaved changes',
   // ---- quick open ------------------------------------------------------------
   'quick.title': 'Quick Open',
   'quick.placeholder': 'Search files by name…',
@@ -417,10 +418,10 @@ export const EN: Record<string, string> = {
   'sidebar.tabs': 'Sidebar tabs',
   'sidebar.tab.files': 'Files',
   'sidebar.tab.outline': 'Outline',
+  'sidebar.tab.search': 'Search',
   'sidebar.filesEmptyUntitled': 'The current document is not saved to disk — open a folder to browse its markdown files',
   'ops.bar': 'File action bar',
   'ops.title': 'Actions',
-  'ops.search': 'Search',
   'ops.reveal': 'Reveal in Folder',
   'ops.refresh': 'Refresh',
   'ops.toggleView': 'Toggle list/tree view',
@@ -436,7 +437,6 @@ export const EN: Record<string, string> = {
   'ops.recents.remove': 'Remove',
   'ops.recents.current': 'Current folder',
   'app.newFile': 'New file',
-  'app.searchInFolder': 'Search in folder (Ctrl+Shift+F)',
 
   // ---- titlebar --------------------------------------------------------------
   'tb.outline': 'Toggle outline',

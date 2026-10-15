@@ -180,10 +180,6 @@ export const ZH: Record<string, string> = {
   'tree.noMarkdown': '没有 Markdown 文件',
 
   // ---- search panel ----------------------------------------------------------
-  'search.backFiles': '‹ 文件',
-  'search.backOutline': '‹ 大纲',
-  'search.modeFiles': '文件',
-  'search.title': '搜索',
   'search.placeholder': '在文件夹中搜索…',
   'search.replacePlaceholder': '替换…',
   'search.replaceAll': '全部替换',
@@ -203,6 +199,11 @@ export const ZH: Record<string, string> = {
   'search.replaceOne': '替换此匹配',
   'search.replaceFile': '替换此文件中全部匹配',
 
+  'search.truncated': '+{n} 处未列出（已达上限）',
+  'search.replacedToast': '已替换 {n} 处',
+  'search.replaceStale': '匹配已在磁盘上变更 — 已刷新结果',
+  'search.dirtyBadge': '未保存',
+  'search.dirtyBadgeTip': '结果读自磁盘 — 该文件有未保存更改',
   // ---- quick open ------------------------------------------------------------
   'quick.title': '快速打开',
   'quick.placeholder': '按文件名搜索…',
@@ -410,10 +411,10 @@ export const ZH: Record<string, string> = {
   'sidebar.tabs': '侧栏标签',
   'sidebar.tab.files': '文件',
   'sidebar.tab.outline': '大纲',
+  'sidebar.tab.search': '搜索',
   'sidebar.filesEmptyUntitled': '当前文档未落盘，打开文件夹以浏览其中的 Markdown 文件',
   'ops.bar': '文件操作栏',
   'ops.title': '操作',
-  'ops.search': '搜索',
   'ops.reveal': '在资源管理器中显示',
   'ops.refresh': '刷新',
   'ops.toggleView': '切换列表/树视图',
@@ -429,7 +430,6 @@ export const ZH: Record<string, string> = {
   'ops.recents.remove': '移除',
   'ops.recents.current': '当前目录',
   'app.newFile': '新建文件',
-  'app.searchInFolder': '搜索文件夹（Ctrl+Shift+F）',
 
   // ---- titlebar --------------------------------------------------------------
   'tb.outline': '切换大纲',

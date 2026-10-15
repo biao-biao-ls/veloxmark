@@ -9,7 +9,6 @@
    Intentionally NOT in the btn family (different control families — merging
    them would be a visual/contract regression; see
    docs/specs/4B-button-primitives/spec.md):
-   - `.sidebar-mode-seg button`  segmented control (current-state semantics)
    - `.sb-stat-btn`              ghost + --focus-ring / 22px hit-target contract
    - `.mermaid-preview-bar button` chip + `.is-on` / focus-visible contract
    - `.tab-context-menu button`  menu item

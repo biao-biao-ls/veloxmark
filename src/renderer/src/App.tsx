@@ -50,7 +50,7 @@ import './components/LinkHoverFloat'
 import './components/ListDragHandle'
 import SidebarOpsPanel from './components/SidebarOpsPanel'
 import { openSidebarOps } from './components/sidebarOpsBus'
-import { ListIcon, MoreVerticalIcon, SearchIcon, TreeIcon } from './components/Icons'
+import { ListIcon, MoreVerticalIcon, TreeIcon } from './components/Icons'
 import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch, bumpLinkEpoch, bumpI18nEpoch, updateLivePreviewConfig } from './editor/setup'
 import { syncPureSelectionChrome } from './editor/clickSemantics'
 import { invalidateImageCache } from './editor/image-widget'
@@ -731,12 +731,9 @@ export default function App(): React.JSX.Element {
   scheduleDocStatsRef.current = scheduleDocStats
 
   // ---- P13 folder-wide search ------------------------------------------------
-  // P13-F3: remember the non-search mode so SearchPanel's single back button
-  // returns to wherever the user came from (files/outline), not always files.
-  const sidebarBackModeRef = useRef<SidebarMode>('files')
+  // SC: single sidebar-mode entry for the tab row / openGlobalSearch; the old
+  // P13-F3 back-tracking ref died with the SearchPanel back button.
   const switchSidebarMode = useCallback((mode: SidebarMode) => {
-    const cur = sidebarModeRef.current
-    if (mode === 'search' && cur !== 'search') sidebarBackModeRef.current = cur
     setSidebarMode(mode)
   }, [])
 
@@ -1411,12 +1408,43 @@ export default function App(): React.JSX.Element {
         autoSaveAt={autoSave.lastAutoSaveAt}
         autoSaveError={autoSave.lastAutoSaveError}
         hideSavedAt={dirty && prefs.autoSaveMode === 'off'}
-        openSearch={openGlobalSearch}
       />
 
       <div className="main">
         {showOutline && (
           <aside className="sidebar" style={{ width: sidebarWidth }}>
+            {/* SC: persistent 3-tab IA — Files/Outline/Search all live on one
+                tab row (deliberate reversal of the old 6A "search 不占 tab"
+                ruling; the seg/back chrome that made search special is gone). */}
+            <div className="sidebar-tabs" role="tablist" aria-label={t('sidebar.tabs')}>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={sidebarMode === 'files'}
+                className={`sidebar-tab${sidebarMode === 'files' ? ' is-active' : ''}`}
+                onClick={() => switchSidebarMode('files')}
+              >
+                {t('sidebar.tab.files')}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={sidebarMode === 'outline'}
+                className={`sidebar-tab${sidebarMode === 'outline' ? ' is-active' : ''}`}
+                onClick={() => switchSidebarMode('outline')}
+              >
+                {t('sidebar.tab.outline')}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={sidebarMode === 'search'}
+                className={`sidebar-tab${sidebarMode === 'search' ? ' is-active' : ''}`}
+                onClick={openGlobalSearch}
+              >
+                {t('sidebar.tab.search')}
+              </button>
+            </div>
             {sidebarMode === 'search' ? (
               <SearchPanel
                 folderPath={workspace.folderPath}
@@ -1425,187 +1453,150 @@ export default function App(): React.JSX.Element {
                 focusToken={searchFocusToken}
                 onOpenAt={openSearchResult}
                 onReloadIfOpen={reloadOpenFile}
-                onSwitchMode={switchSidebarMode}
-                backMode={sidebarBackModeRef.current}
               />
-            ) : (
-              <>
-                {/* 6A: dual-tab IA — Files/Outline stay addressable without
-                    navigating away; search entry lives on the tab row for both. */}
-                <div className="sidebar-tabs" role="tablist" aria-label={t('sidebar.tabs')}>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={sidebarMode === 'files'}
-                    className={`sidebar-tab${sidebarMode === 'files' ? ' is-active' : ''}`}
-                    onClick={() => setSidebarMode('files')}
-                  >
-                    {t('sidebar.tab.files')}
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={sidebarMode === 'outline'}
-                    className={`sidebar-tab${sidebarMode === 'outline' ? ' is-active' : ''}`}
-                    onClick={() => setSidebarMode('outline')}
-                  >
-                    {t('sidebar.tab.outline')}
-                  </button>
-                  {workspace.folderPath && (
+            ) : sidebarMode === 'files' ? (
+              workspace.folderPath ? (
+                <>
+                  <div className="sidebar-header" title={workspace.folderPath}>
+                    <span className="sidebar-title">{folderName}</span>
                     <button
                       className="sidebar-action"
-                      onClick={openGlobalSearch}
-                      title={t('app.searchInFolder')}
+                      onClick={() => void workspace.treeNewFileAt()}
+                      title={t('app.newFile')}
                     >
-                      <SearchIcon size={13} />
+                      +
                     </button>
-                  )}
-                </div>
-                {sidebarMode === 'files' ? (
-                  workspace.folderPath ? (
-                    <>
-                      <div className="sidebar-header" title={workspace.folderPath}>
-                        <span className="sidebar-title">{folderName}</span>
-                        <button
-                          className="sidebar-action"
-                          onClick={() => void workspace.treeNewFileAt()}
-                          title={t('app.newFile')}
-                        >
-                          +
-                        </button>
-                      </div>
-                      {/* 6C AC1: root change remounts the tree → expansion
-                          state resets (new root starts default-collapsed). */}
-                      <FileTree
-                        key={workspace.folderPath}
-                        nodes={workspace.folderTree}
-                        activePath={filePath}
-                        renamingPath={workspace.renamingPath}
-                        selectedPath={workspace.selection?.path ?? null}
-                        onSelect={workspace.selectNode}
-                        onOpen={(path) => void workspace.openFileFromTree(path)}
-                        onContextMenu={workspace.setTreeMenu}
-                        onMove={(src, dest) => void workspace.treeMove(src, dest)}
-                        onRenameCommit={(node, name) => void workspace.finishInlineRename(node, name)}
-                        onRenameCancel={workspace.cancelInlineRename}
-                        pendingCreate={workspace.pendingCreate}
-                        onCreateCommit={(name) => void workspace.commitTreeCreate(name)}
-                        onCreateCancel={workspace.cancelTreeCreate}
-                      />
-                      {/* P07: right-click on the empty area under the tree → root menu
-                          (rows stopPropagation, so only bare clicks land here). */}
-                      <div
-                        className="filetree-blank"
-                        onContextMenu={(e) => {
-                          e.preventDefault()
-                          workspace.setTreeMenu({
-                            x: e.clientX,
-                            y: e.clientY,
-                            node: null
-                          })
-                        }}
-                      />
-                      {/* 6D: sticky bottom action bar (typora-2.png) — new file /
-                          dir name / ops / list-tree toggle. Files tab with a
-                          root only (AC8: the unfiled empty state keeps its card). */}
-                      <div className="filetree-bottombar" role="toolbar" aria-label={t('ops.bar')}>
-                        <button
-                          type="button"
-                          className="filetree-bar-btn"
-                          data-op="sidebar.ops.newFile"
-                          title={t('app.newFile')}
-                          onClick={() => void workspace.treeNewFileAt()}
-                        >
-                          +
-                        </button>
-                        {/* One control: dir name + ⋮ share shell, hover and
-                            panel anchor (mousedown guard keys on the unit). */}
-                        <div
-                          className="filetree-bar-unit"
-                          data-op="sidebar.ops.open"
-                          onClick={openOpsPanel}
-                        >
-                          <button
-                            type="button"
-                            className="filetree-bar-dir"
-                            title={workspace.folderPath}
-                          >
-                            {folderName}
-                          </button>
-                          <button
-                            type="button"
-                            className="filetree-bar-btn"
-                            title={t('ops.title')}
-                          >
-                            <MoreVerticalIcon size={14} />
-                          </button>
-                        </div>
-                        <button
-                          type="button"
-                          className="filetree-bar-btn"
-                          data-op="sidebar.ops.toggleView"
-                          title={t('ops.toggleView')}
-                          aria-pressed={prefs.fileTreeView === 'list'}
-                          onClick={() =>
-                            setPreferences({
-                              fileTreeView: prefs.fileTreeView === 'list' ? 'tree' : 'list'
-                            })
-                          }
-                        >
-                          {prefs.fileTreeView === 'list' ? <ListIcon size={14} /> : <TreeIcon size={14} />}
-                        </button>
-                      </div>
-                      <SidebarOpsPanel
-                        onNewFile={() => void workspace.treeNewFileAt()}
-                        onSearch={() => setShowQuickOpen(true)}
-                        onReveal={() => {
-                          if (workspace.folderPath) {
-                            window.api.showItemInFolder(workspace.folderPath)
-                          }
-                        }}
-                        onOpenFolder={() => void workspace.openFolder()}
-                        onRefresh={() => void workspace.refreshTree()}
-                        onOpenRecent={(path) => void workspace.loadFolder(path)}
-                        currentRoot={workspace.folderPath}
-                      />
-                      {workspace.treeMenu && (
-                        <TreeMenu
-                          x={workspace.treeMenu.x}
-                          y={workspace.treeMenu.y}
-                          items={workspace.treeMenuItems}
-                          onClose={() => workspace.setTreeMenu(null)}
-                        />
-                      )}
-                    </>
-                  ) : (
-                    /* 6A: files tab without a root — guide to open one
-                       instead of silently falling back to the outline.
-                       6.4a: the no-root case is an unfiled document (or no
-                       document), so the hint says so explicitly. */
-                    <div className="sidebar-empty">
-                      <p>{t('sidebar.filesEmptyUntitled')}</p>
-                      <button
-                        type="button"
-                        className="btn"
-                        onClick={() => void workspace.openFolder()}
-                      >
-                        {t('cmd.openFolder')}
-                      </button>
-                    </div>
-                  )
-                ) : (
-                  <Outline
-                    items={outline}
-                    activePos={activePos}
-                    onSelect={goToHeading}
-                    foldedKeys={foldedKeys}
-                    foldableKeys={foldableKeys}
-                    onToggleFold={(_pos, key) => {
-                      viewRef.current?.dispatch({ effects: toggleFold.of(key) })
+                  </div>
+                  {/* 6C AC1: root change remounts the tree → expansion
+                      state resets (new root starts default-collapsed). */}
+                  <FileTree
+                    key={workspace.folderPath}
+                    nodes={workspace.folderTree}
+                    activePath={filePath}
+                    renamingPath={workspace.renamingPath}
+                    selectedPath={workspace.selection?.path ?? null}
+                    onSelect={workspace.selectNode}
+                    onOpen={(path) => void workspace.openFileFromTree(path)}
+                    onContextMenu={workspace.setTreeMenu}
+                    onMove={(src, dest) => void workspace.treeMove(src, dest)}
+                    onRenameCommit={(node, name) => void workspace.finishInlineRename(node, name)}
+                    onRenameCancel={workspace.cancelInlineRename}
+                    pendingCreate={workspace.pendingCreate}
+                    onCreateCommit={(name) => void workspace.commitTreeCreate(name)}
+                    onCreateCancel={workspace.cancelTreeCreate}
+                  />
+                  {/* P07: right-click on the empty area under the tree → root menu
+                      (rows stopPropagation, so only bare clicks land here). */}
+                  <div
+                    className="filetree-blank"
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      workspace.setTreeMenu({
+                        x: e.clientX,
+                        y: e.clientY,
+                        node: null
+                      })
                     }}
                   />
-                )}
-              </>
+                  {/* 6D: sticky bottom action bar (typora-2.png) — new file /
+                      dir name / ops / list-tree toggle. Files tab with a
+                      root only (AC8: the unfiled empty state keeps its card). */}
+                  <div className="filetree-bottombar" role="toolbar" aria-label={t('ops.bar')}>
+                    <button
+                      type="button"
+                      className="filetree-bar-btn"
+                      data-op="sidebar.ops.newFile"
+                      title={t('app.newFile')}
+                      onClick={() => void workspace.treeNewFileAt()}
+                    >
+                      +
+                    </button>
+                    {/* One control: dir name + ⋮ share shell, hover and
+                        panel anchor (mousedown guard keys on the unit). */}
+                    <div
+                      className="filetree-bar-unit"
+                      data-op="sidebar.ops.open"
+                      onClick={openOpsPanel}
+                    >
+                      <button
+                        type="button"
+                        className="filetree-bar-dir"
+                        title={workspace.folderPath}
+                      >
+                        {folderName}
+                      </button>
+                      <button
+                        type="button"
+                        className="filetree-bar-btn"
+                        title={t('ops.title')}
+                      >
+                        <MoreVerticalIcon size={14} />
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      className="filetree-bar-btn"
+                      data-op="sidebar.ops.toggleView"
+                      title={t('ops.toggleView')}
+                      aria-pressed={prefs.fileTreeView === 'list'}
+                      onClick={() =>
+                        setPreferences({
+                          fileTreeView: prefs.fileTreeView === 'list' ? 'tree' : 'list'
+                        })
+                      }
+                    >
+                      {prefs.fileTreeView === 'list' ? <ListIcon size={14} /> : <TreeIcon size={14} />}
+                    </button>
+                  </div>
+                  <SidebarOpsPanel
+                    onNewFile={() => void workspace.treeNewFileAt()}
+                    onSearch={() => setShowQuickOpen(true)}
+                    onReveal={() => {
+                      if (workspace.folderPath) {
+                        window.api.showItemInFolder(workspace.folderPath)
+                      }
+                    }}
+                    onOpenFolder={() => void workspace.openFolder()}
+                    onRefresh={() => void workspace.refreshTree()}
+                    onOpenRecent={(path) => void workspace.loadFolder(path)}
+                    currentRoot={workspace.folderPath}
+                  />
+                  {workspace.treeMenu && (
+                    <TreeMenu
+                      x={workspace.treeMenu.x}
+                      y={workspace.treeMenu.y}
+                      items={workspace.treeMenuItems}
+                      onClose={() => workspace.setTreeMenu(null)}
+                    />
+                  )}
+                </>
+              ) : (
+                /* 6A: files tab without a root — guide to open one
+                   instead of silently falling back to the outline.
+                   6.4a: the no-root case is an unfiled document (or no
+                   document), so the hint says so explicitly. */
+                <div className="sidebar-empty">
+                  <p>{t('sidebar.filesEmptyUntitled')}</p>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => void workspace.openFolder()}
+                  >
+                    {t('cmd.openFolder')}
+                  </button>
+                </div>
+              )
+            ) : (
+              <Outline
+                items={outline}
+                activePos={activePos}
+                onSelect={goToHeading}
+                foldedKeys={foldedKeys}
+                foldableKeys={foldableKeys}
+                onToggleFold={(_pos, key) => {
+                  viewRef.current?.dispatch({ effects: toggleFold.of(key) })
+                }}
+              />
             )}
           </aside>
         )}

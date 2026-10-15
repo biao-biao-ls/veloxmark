@@ -88,7 +88,9 @@ export default function SidebarOpsPanel(actions: SidebarOpsActions): React.JSX.E
   // Label keys reuse exact-copy entries where they exist (i18n 纪律：不造重复 key).
   const items: Array<{ op: string; labelKey: string; run: () => void }> = [
     { op: 'sidebar.ops.newFile', labelKey: 'app.newFile', run: actions.onNewFile },
-    { op: 'sidebar.ops.search', labelKey: 'ops.search', run: actions.onSearch },
+    // SC: this op opens QuickOpen (file picker), not folder search — label
+    // rides the existing cmd.quickOpen copy instead of a misleading "搜索".
+    { op: 'sidebar.ops.search', labelKey: 'cmd.quickOpen', run: actions.onSearch },
     { op: 'sidebar.ops.reveal', labelKey: 'ops.reveal', run: actions.onReveal },
     { op: 'sidebar.ops.openFolder', labelKey: 'cmd.openFolder', run: actions.onOpenFolder },
     { op: 'sidebar.ops.refresh', labelKey: 'ops.refresh', run: actions.onRefresh }

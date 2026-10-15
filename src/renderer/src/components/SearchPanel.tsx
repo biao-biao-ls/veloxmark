@@ -6,7 +6,6 @@ import type {
   SearchRunPayload
 } from '../../../../electron/shared/api'
 import { folderScanOptions } from '../hooks/useWorkspaceTree'
-import type { SidebarMode } from '../preferences/store'
 import { dialog } from './Dialog'
 import { t } from '../i18n'
 
@@ -33,9 +32,6 @@ interface Props {
   focusToken: number
   onOpenAt: (path: string, line: number, col: number) => Promise<void>
   onReloadIfOpen: (path: string) => Promise<void>
-  onSwitchMode: (mode: SidebarMode) => void
-  /** Sidebar mode to return to via the single back button (P13-F3). */
-  backMode?: SidebarMode
 }
 
 export default function SearchPanel({
@@ -44,9 +40,7 @@ export default function SearchPanel({
   dirty,
   focusToken,
   onOpenAt,
-  onReloadIfOpen,
-  onSwitchMode,
-  backMode = 'files'
+  onReloadIfOpen
 }: Props): React.JSX.Element {
   const [query, setQuery] = useState('')
   const [replaceText, setReplaceText] = useState('')
@@ -265,40 +259,6 @@ export default function SearchPanel({
 
   return (
     <div className="search-panel" onKeyDown={onPanelKeyDown}>
-      <div className="sidebar-header">
-        {/* P13-F3: single back (to previous mode) + segmented mode identity */}
-        <button
-          className="sidebar-back"
-          onClick={() => onSwitchMode(backMode)}
-          title={backMode === 'outline' ? t('search.backOutline') : t('search.backFiles')}
-        >
-          {backMode === 'outline' ? t('search.backOutline') : t('search.backFiles')}
-        </button>
-        <span>{t('search.title')}</span>
-        <div className="sidebar-mode-seg" role="tablist" aria-label={t('search.title')}>
-          <button
-            type="button"
-            role="tab"
-            aria-selected="false"
-            onClick={() => onSwitchMode('files')}
-            title={t('search.modeFiles')}
-          >
-            {t('search.modeFiles')}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected="false"
-            onClick={() => onSwitchMode('outline')}
-            title={t('outline.title')}
-          >
-            {t('outline.title')}
-          </button>
-          <button type="button" role="tab" aria-selected="true" aria-current="page" className="seg-current">
-            {t('search.title')}
-          </button>
-        </div>
-      </div>
       <div className="search-bar">
         <input
           ref={inputRef}
