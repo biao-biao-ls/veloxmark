@@ -235,6 +235,7 @@ export const ZH: Record<string, string> = {
   'prefs.title': '偏好设置',
   'prefs.appearance': '外观',
   'prefs.theme': '主题',
+  'prefs.zoom': '界面缩放',
   'prefs.light': '浅色',
   'prefs.dark': '深色',
   'prefs.system': '跟随系统',

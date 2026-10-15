@@ -7,6 +7,7 @@ import { stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { registerAllIpc, type AppIpcDeps } from './ipc'
+import { zoomLevelToFactor } from './shared/zoom'
 import { stopFolderWatcher } from './ipc/folder'
 import { attachWindowStatePersistence, loadWindowState } from './ipc/window-state'
 import { initDarwinMenu, installApplicationMenu, setMenuCheckedIds, setRecentFiles, setUiLanguage } from './menu/darwin'
@@ -96,7 +97,11 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: false,
+      // UI zoom restore: the page loads at the saved scale from the first paint
+      // (setZoomLevel after load would flash 100% first, and Chromium zoom is
+      // per-origin so a pre-load setZoomLevel can be lost on commit).
+      zoomFactor: zoomLevelToFactor(geometry.zoomLevel)
     }
   })
 

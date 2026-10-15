@@ -248,6 +248,8 @@ export const IpcChannels = {
   windowClose: 'window:close',
   windowToggleDevTools: 'window:toggleDevTools',
   windowZoom: 'window:zoom',
+  windowGetZoomPercent: 'window:getZoomPercent',
+  windowSetZoomPercent: 'window:setZoomPercent',
   // app:
   appSetState: 'app:setState',
   appSetRecentFiles: 'app:setRecentFiles',
@@ -262,7 +264,9 @@ export const IpcChannels = {
   /** push */
   appOpenFolder: 'app:openFolder',
   /** push */
-  appFullScreen: 'app:fullScreen'
+  appFullScreen: 'app:fullScreen',
+  /** push */
+  appZoomPercent: 'app:zoomPercent'
 } as const
 
 /** Menu dispatch channel for a command id or fixed menu id: `menu:<id>`. */
@@ -337,6 +341,9 @@ export interface RendererApi {
   windowClose(): void
   windowToggleDevTools(): void
   windowZoom(action: 'in' | 'out' | 'reset'): void
+  /** UI zoom as integer percent (100 = default). Main owns the canonical zoomLevel. */
+  windowGetZoomPercent(): Promise<number>
+  windowSetZoomPercent(percent: number): void
   /** P12: renderer → main close-query verdict (true = allow the close). */
   closeResponse(allow: boolean): void
   /** P12: main → renderer close request (traffic light / Cmd+Q / window ×). */
@@ -371,6 +378,8 @@ export interface RendererApi {
   onOpenPath(callback: (filePath: string) => void): () => void
   onOpenFolder(callback: (folderPath: string) => void): () => void
   onFullScreen(callback: (fullScreen: boolean) => void): () => void
+  /** Push of the current UI zoom percent after any zoom change (menu/shortcut/prefs). */
+  onZoomPercent(callback: (percent: number) => void): () => void
   /** Menu dispatch for a command id or fixed menu id (subscribes to `menu:<id>`
    *  via menuChannel); payload args are channel-specific (e.g. openRecent path). */
   onMenu(id: string, callback: (...args: string[]) => void): () => void

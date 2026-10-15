@@ -102,6 +102,10 @@ const api: RendererApi = {
   windowToggleDevTools: (): void => ipcRenderer.send(IpcChannels.windowToggleDevTools),
   windowZoom: (action: 'in' | 'out' | 'reset'): void =>
     ipcRenderer.send(IpcChannels.windowZoom, action),
+  windowGetZoomPercent: (): Promise<number> =>
+    ipcRenderer.invoke(IpcChannels.windowGetZoomPercent),
+  windowSetZoomPercent: (percent: number): void =>
+    ipcRenderer.send(IpcChannels.windowSetZoomPercent, percent),
   // P12 close intercept: verdict back to main's close handler.
   closeResponse: (allow: boolean): void => ipcRenderer.send(IpcChannels.appCloseResponse, allow),
   onQueryClose: (callback: () => void): (() => void) => {
@@ -158,6 +162,11 @@ const api: RendererApi = {
     const listener = (_e: unknown, fullScreen: boolean): void => callback(fullScreen)
     ipcRenderer.on(IpcChannels.appFullScreen, listener)
     return () => ipcRenderer.removeListener(IpcChannels.appFullScreen, listener)
+  },
+  onZoomPercent: (callback: (percent: number) => void): (() => void) => {
+    const listener = (_e: unknown, percent: number): void => callback(percent)
+    ipcRenderer.on(IpcChannels.appZoomPercent, listener)
+    return () => ipcRenderer.removeListener(IpcChannels.appZoomPercent, listener)
   },
   onMenu: (id: string, callback: (...args: string[]) => void): (() => void) => {
     const channel = menuChannel(id)

@@ -49,6 +49,9 @@ export default function Preferences({ open, onClose }: Props): React.JSX.Element
   // in-progress trailing newline out of the store (sanitize drops empty
   // entries, which would yank the cursor mid-edit).
   const [ignoreDraft, setIgnoreDraft] = useState(() => prefs.folderIgnoreNames.join('\n'))
+  // UI zoom is main-owned window state (not the prefs store); this mirror keeps
+  // the input in sync with menu/shortcut changes while the dialog is open.
+  const [zoomPct, setZoomPct] = useState(100)
 
   // UX-P03: capture the trigger element on open and restore it on close —
   // same settle-focus contract as Dialog.tsx (UX-P02-F1 root).
@@ -77,6 +80,13 @@ export default function Preferences({ open, onClose }: Props): React.JSX.Element
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  // Pull the current zoom on open and follow pushes (menu/shortcut while open).
+  useEffect(() => {
+    if (!open) return
+    void window.api.windowGetZoomPercent().then(setZoomPct).catch(() => {})
+    return window.api.onZoomPercent(setZoomPct)
   }, [open])
 
   if (!open) return null
@@ -158,6 +168,16 @@ export default function Preferences({ open, onClose }: Props): React.JSX.Element
           <option value="dark">{t('prefs.dark')}</option>
           <option value="system">{t('prefs.system')}</option>
         </select>
+      </label>
+      <label className="prefs-row">
+        <span className="prefs-label">{t('prefs.zoom')}</span>
+        {num(zoomPct, (v) => {
+          // Optimistic update: the controlled input must not wait for the
+          // echo push round-trip while the user types.
+          setZoomPct(v)
+          window.api.windowSetZoomPercent(v)
+        }, 50, 200, 10)}
+        <span className="prefs-unit">%</span>
       </label>
       <label className="prefs-row">
         <span className="prefs-label">{t('prefs.editorFont')}</span>

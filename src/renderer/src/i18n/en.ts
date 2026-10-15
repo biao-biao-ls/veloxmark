@@ -240,6 +240,7 @@ export const EN: Record<string, string> = {
   'prefs.title': 'Preferences',
   'prefs.appearance': 'Appearance',
   'prefs.theme': 'Theme',
+  'prefs.zoom': 'Interface zoom',
   'prefs.light': 'Light',
   'prefs.dark': 'Dark',
   'prefs.system': 'System',
