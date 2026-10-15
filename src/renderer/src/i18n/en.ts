@@ -402,7 +402,6 @@ export const EN: Record<string, string> = {
   'prefs.resetDefaults': 'Restore Defaults',
   'prefs.resetDefaultsMessage':
     'Reset all settings to their defaults? Session state (recent files, open tabs, fold positions) is kept.',
-  'prefs.close': 'Close',
   'prefs.language': 'Language',
   'prefs.langSystem': 'System (follow OS)',
   'prefs.langZh': '中文',

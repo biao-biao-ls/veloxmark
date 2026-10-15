@@ -395,7 +395,6 @@ export const ZH: Record<string, string> = {
   'prefs.clearRecent': '清除最近文件',
   'prefs.resetDefaults': '恢复默认',
   'prefs.resetDefaultsMessage': '将所有设置恢复为默认值？会话状态（最近文件、打开标签、折叠位置）将保留。',
-  'prefs.close': '关闭',
   'prefs.language': '语言',
   'prefs.langSystem': '跟随系统',
   'prefs.langZh': '中文',

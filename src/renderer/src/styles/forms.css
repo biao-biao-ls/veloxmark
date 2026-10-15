@@ -34,30 +34,61 @@
   line-height: 1.4;
 }
 
-.prefs-header {
+/* F08: 设置窗口专属修饰（不改共用 .prefs-dialog —— Export/TableInsert 共享）。 */
+.prefs-settings-dialog {
+  width: 720px;
+  max-width: min(720px, 92vw);
+  padding: 0;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 4px;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.prefs-header .dialog-title {
-  margin-bottom: 0;
+.prefs-settings-dialog .dialog-titlebar {
+  margin: 0;
+}
+
+.prefs-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.prefs-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--fg-dim);
+  font-size: 13px;
+  font-family: inherit;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.prefs-tab:hover {
+  background: var(--code-bg);
+}
+
+.prefs-tab.is-active {
+  color: var(--fg);
+  border-bottom-color: var(--accent);
+}
+
+.prefs-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-4) var(--space-3);
+}
+
+.prefs-body .prefs-section {
+  margin-top: 0;
 }
 
 .prefs-section {
   margin-top: 14px;
-}
-
-.prefs-section-title {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--fg-dim);
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 4px;
-  margin-bottom: 8px;
 }
 
 .prefs-row {
