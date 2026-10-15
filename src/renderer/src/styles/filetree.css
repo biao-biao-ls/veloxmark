@@ -147,7 +147,7 @@
 
 /* ---- 6D bottom action bar &「操作」panel (typora-2/4.png) ---------------------- */
 
-/* Sticky footer inside the sidebar scroller: + / dir name / ops / view toggle.
+/* Sticky footer inside the sidebar scroller: + / dir·ops unit / view toggle.
    Sticky (not a flex footer) so long trees scroll under it; the scroll parent
    stays .sidebar so 6C virtualization/reveal math is untouched. */
 .filetree-bottombar {
@@ -184,6 +184,27 @@
   background: var(--code-bg);
 }
 
+/* Dir name + ⋮ are ONE control: one shell, one hover state, one panel
+   anchor. Both halves bubble their clicks to the wrapper (`.filetree-bar-unit`
+   carries `data-op="sidebar.ops.open"` and the handler). */
+.filetree-bar-unit {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+}
+
+.filetree-bar-unit:hover {
+  background: var(--code-bg);
+}
+
+.filetree-bar-unit:hover .filetree-bar-dir,
+.filetree-bar-unit:hover .filetree-bar-btn {
+  color: var(--accent);
+  background: transparent;
+}
+
 .filetree-bar-dir {
   flex: 1;
   min-width: 0;
@@ -197,11 +218,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.filetree-bar-dir:hover {
-  color: var(--accent);
-  background: var(--code-bg);
 }
 
 /* 6D D3: controlled row selection (new-file target) is a functional marker

@@ -1385,8 +1385,11 @@ export default function App(): React.JSX.Element {
     ? baseNameOf(workspace.folderPath) || workspace.folderPath
     : null
 
-  // 6D: both bottom-bar triggers open the ops panel singleton (AC3). Closing
-  // any tree context menu first keeps the one-popup-at-a-time rule.
+  // 6D: the bottom-bar dir/more unit opens the ops panel singleton (AC3).
+  // Closing any tree context menu first keeps the one-popup-at-a-time rule.
+  // The unit is one control (dir name + ⋮ share shell/hover/anchor): clicks
+  // bubble from either half to the wrapper, so the panel anchors to the whole
+  // unit no matter which half was pressed.
   const openOpsPanel = (e: React.MouseEvent<HTMLElement>): void => {
     workspace.setTreeMenu(null)
     openSidebarOps(e.currentTarget.getBoundingClientRect())
@@ -1515,24 +1518,28 @@ export default function App(): React.JSX.Element {
                         >
                           +
                         </button>
-                        <button
-                          type="button"
-                          className="filetree-bar-dir"
+                        {/* One control: dir name + ⋮ share shell, hover and
+                            panel anchor (mousedown guard keys on the unit). */}
+                        <div
+                          className="filetree-bar-unit"
                           data-op="sidebar.ops.open"
-                          title={workspace.folderPath}
                           onClick={openOpsPanel}
                         >
-                          {folderName}
-                        </button>
-                        <button
-                          type="button"
-                          className="filetree-bar-btn"
-                          data-op="sidebar.ops.open"
-                          title={t('ops.title')}
-                          onClick={openOpsPanel}
-                        >
-                          <MoreVerticalIcon size={14} />
-                        </button>
+                          <button
+                            type="button"
+                            className="filetree-bar-dir"
+                            title={workspace.folderPath}
+                          >
+                            {folderName}
+                          </button>
+                          <button
+                            type="button"
+                            className="filetree-bar-btn"
+                            title={t('ops.title')}
+                          >
+                            <MoreVerticalIcon size={14} />
+                          </button>
+                        </div>
                         <button
                           type="button"
                           className="filetree-bar-btn"
