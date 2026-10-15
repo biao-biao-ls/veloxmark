@@ -7,6 +7,7 @@ import type {
 } from '../../../../electron/shared/api'
 import { folderScanOptions } from '../hooks/useWorkspaceTree'
 import { dialog } from './Dialog'
+import { toast as showToast } from '../hooks/useToast'
 import { t } from '../i18n'
 
 /**
@@ -16,6 +17,22 @@ import { t } from '../i18n'
  * (electron/ipc/search.ts) with results streamed on `search:results`. Batches
  * for a stale searchId are dropped so rapid typing never shows old results.
  */
+
+/** SC-B5: mirror compile() in electron/ipc/search.ts — regex mode is the only
+ *  path that can throw; surface the failure inline without an IPC roundtrip. */
+function localRegexError(
+  pattern: string,
+  opts: { caseSensitive: boolean; wholeWord: boolean; regex: boolean }
+): string | null {
+  if (!opts.regex || !pattern) return null
+  const body = opts.wholeWord ? `\b(?:${pattern})\b` : pattern
+  try {
+    new RegExp(body, opts.caseSensitive ? 'g' : 'gi')
+    return null
+  } catch (err) {
+    return err instanceof Error ? err.message : 'Invalid regular expression'
+  }
+}
 
 const VISIBLE_PER_FILE = 10
 const DEBOUNCE_MS = 200
@@ -52,6 +69,12 @@ export default function SearchPanel({
   const [searching, setSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  // SC-B2: previous results stay visible (dimmed) until the new run's first
+  // batch lands — no empty-flash per keystroke.
+  const [staleResults, setStaleResults] = useState(false)
+
+  // SC-B5: pure derivation — local compile preview, no state roundtrip.
+  const regexError = localRegexError(query, { caseSensitive, wholeWord, regex })
 
   const inputRef = useRef<HTMLInputElement | null>(null)
   const resultsRef = useRef<HTMLDivElement | null>(null)
@@ -59,6 +82,10 @@ export default function SearchPanel({
   const searchStartRef = useRef(0)
   // Latest-run closure for the debounce timer and replace re-runs.
   const runRef = useRef<() => Promise<void>>(async () => {})
+  // SC-B2: first batch of the current run replaces wholesale (see stream handler).
+  const firstBatchRef = useRef(true)
+  // SC-B5: pending debounce timer — Enter cancels it and searches immediately.
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   /** Clear `searching` no earlier than MIN_SEARCHING_MS after this run began;
    *  a newer run (searchId bump) supersedes any pending clear. */
@@ -130,14 +157,22 @@ export default function SearchPanel({
       setTotalMatches(0)
       setSearching(false)
       setError(null)
+      setStaleResults(false)
+      return
+    }
+    // SC-B5: never ship a query the engine would reject (Enter bypasses the
+    // debounce guard). The inline error is already showing.
+    if (localRegexError(query, { caseSensitive, wholeWord, regex })) {
+      setSearching(false)
       return
     }
     setSearching(true)
     searchStartRef.current = Date.now()
     setError(null)
-    setFiles([])
-    setTotalMatches(0)
-    setExpanded(new Set())
+    // SC-B2: keep the old list on screen (dimmed) until fresh batches arrive;
+    // `expanded` is likewise kept so replace re-runs don't collapse open groups.
+    setStaleResults(true)
+    firstBatchRef.current = true
     const options: SearchOptions = {
       caseSensitive,
       wholeWord,
@@ -163,13 +198,28 @@ export default function SearchPanel({
         return
       }
       if (payload.files.length > 0) {
-        setFiles((prev) => {
-          const byPath = new Map(prev.map((f) => [f.path, f]))
-          for (const f of payload.files) byPath.set(f.path, f)
-          return [...byPath.values()]
-        })
+        if (firstBatchRef.current) {
+          // SC-B2: first batch of this run replaces wholesale — a byPath merge
+          // would strand paths left over from the previous query.
+          firstBatchRef.current = false
+          setFiles(payload.files)
+          setStaleResults(false)
+        } else {
+          setFiles((prev) => {
+            const byPath = new Map(prev.map((f) => [f.path, f]))
+            for (const f of payload.files) byPath.set(f.path, f)
+            return [...byPath.values()]
+          })
+        }
       }
       if (payload.done) {
+        if (firstBatchRef.current) {
+          // SC-B2: zero-batch run — drop the stale list only now that we know
+          // the new query matched nothing.
+          firstBatchRef.current = false
+          setFiles([])
+        }
+        setStaleResults(false)
         settleSearching(payload.searchId)
         if (payload.totalMatches != null) setTotalMatches(payload.totalMatches)
       }
@@ -183,12 +233,20 @@ export default function SearchPanel({
       setTotalMatches(0)
       setSearching(false)
       setError(null)
+      setStaleResults(false)
       return
     }
+    // SC-B5: invalid regex — the inline error is showing; don't schedule a run.
+    if (localRegexError(query, { caseSensitive, wholeWord, regex })) return
     const timer = setTimeout(() => {
+      timerRef.current = null
       void runRef.current()
     }, DEBOUNCE_MS)
-    return () => clearTimeout(timer)
+    timerRef.current = timer
+    return () => {
+      clearTimeout(timer)
+      if (timerRef.current === timer) timerRef.current = null
+    }
   }, [query, caseSensitive, wholeWord, regex, folderPath])
 
   useEffect(() => {
@@ -232,7 +290,50 @@ export default function SearchPanel({
       if (currentFilePath && !dirty && res.written.includes(currentFilePath)) {
         await onReloadIfOpen(currentFilePath)
       }
-      void runRef.current()
+      if (scope !== 'one') {
+        // SC-B4: report the engine's true replaced count — the on-screen list
+        // can be capped at 200/file so its totals may undercount.
+        showToast(t('search.replacedToast', { n: res.replaced }))
+        void runRef.current()
+        return
+      }
+      // SC-B3: single replace — patch the result list in place instead of
+      // rescanning the whole folder per click.
+      if (res.replaced === 0) {
+        // Engine skipped quietly (content moved under us) — resync. No count
+        // toast here: it would flash "0 replaced" before this notice.
+        showToast(t('search.replaceStale'))
+        void runRef.current()
+        return
+      }
+      showToast(t('search.replacedToast', { n: res.replaced }))
+      if (!path || !match) {
+        void runRef.current()
+        return
+      }
+      // Sibling matches on the same line shift columns after the in-line
+      // replacement — correctness over cleverness, fall back to a rescan.
+      const hasSibling = files.some(
+        (f) =>
+          f.path === path &&
+          f.matches.some((m) => m.line === match.line && m.col !== match.col)
+      )
+      if (hasSibling) {
+        void runRef.current()
+        return
+      }
+      setFiles((prev) =>
+        prev
+          .map((f) => {
+            if (f.path !== path) return f
+            const matches = f.matches.filter(
+              (m) => !(m.line === match.line && m.col === match.col)
+            )
+            return { ...f, matches, matchCount: f.matchCount - 1 }
+          })
+          .filter((f) => f.matchCount > 0)
+      )
+      setTotalMatches((n) => Math.max(0, n - 1))
     },
     [
       folderPath,
@@ -244,7 +345,7 @@ export default function SearchPanel({
       dirty,
       currentFilePath,
       totalMatches,
-      files.length,
+      files,
       onReloadIfOpen
     ]
   )
@@ -266,6 +367,22 @@ export default function SearchPanel({
           placeholder={t('search.placeholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter') return
+            e.preventDefault()
+            // SC-B5: Enter jumps to the first hit when the list is current,
+            // otherwise cancels the pending debounce and searches immediately.
+            if (localRegexError(query, { caseSensitive, wholeWord, regex })) return
+            if (!searching && !staleResults && files.length > 0) {
+              focusMatchAt(0)
+              return
+            }
+            if (timerRef.current != null) {
+              clearTimeout(timerRef.current)
+              timerRef.current = null
+            }
+            void runRef.current()
+          }}
           spellCheck={false}
         />
         <div className="search-toggles">
@@ -309,8 +426,8 @@ export default function SearchPanel({
         </button>
       </div>
       <div className="search-status">
-        {error ? (
-          <div className="search-error">{error}</div>
+        {regexError ?? error ? (
+          <div className="search-error">{regexError ?? error}</div>
         ) : !folderPath ? (
           <div className="search-empty">{t('search.emptyFolder')}</div>
         ) : searching ? (
@@ -323,7 +440,7 @@ export default function SearchPanel({
           </div>
         ) : null}
       </div>
-      <div className="search-results" ref={resultsRef}>
+      <div className={`search-results${staleResults ? ' is-stale' : ''}`} ref={resultsRef}>
         {files.map((f) => {
           const isOpen = expanded.has(f.path)
           const shown = isOpen ? f.matches : f.matches.slice(0, VISIBLE_PER_FILE)
@@ -334,6 +451,12 @@ export default function SearchPanel({
                   {f.relPath}
                 </span>
                 <span className="search-file-count">{f.matchCount}</span>
+                {/* SC-B6: results read from disk; the open dirty buffer may diverge. */}
+                {dirty && currentFilePath === f.path && (
+                  <span className="search-dirty-badge" title={t('search.dirtyBadgeTip')}>
+                    {t('search.dirtyBadge')}
+                  </span>
+                )}
                 {/* P13-F2: unified icon replace entry — title + aria-label carry the copy */}
                 <button
                   className="search-file-replace"
@@ -378,6 +501,12 @@ export default function SearchPanel({
                 <button className="search-more" onClick={() => toggleExpanded(f.path)}>
                   {isOpen ? t('search.showLess') : t('search.more', { n: f.matches.length - VISIBLE_PER_FILE })}
                 </button>
+              )}
+              {/* SC-B4: matchCount is the true total, the list is capped — say so. */}
+              {f.matchCount > f.matches.length && (
+                <div className="search-truncated">
+                  {t('search.truncated', { n: f.matchCount - f.matches.length })}
+                </div>
               )}
             </div>
           )

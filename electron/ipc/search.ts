@@ -29,6 +29,9 @@ const PER_FILE_HARD_CAP = 200
 const PATHOLOGICAL_LINE_CAP = 5000
 
 let searchCounter = 0
+// SC-B1: newest issued searchId — a superseded scan stops at the next file
+// instead of walking the whole tree for results nobody will read.
+let latestSearchId = 0
 
 function extList(options: SearchOptions | undefined): string[] {
   const exts = options?.exts?.filter((e) => typeof e === 'string' && e.trim() !== '')
@@ -131,6 +134,7 @@ export function registerSearchIpc(): void {
       options: SearchOptions
     ): { searchId: number; error?: string } => {
       const searchId = ++searchCounter
+      latestSearchId = searchId
       if (options?.scanOptions) applyFolderScanOptions(options.scanOptions)
       const safeOptions: SearchOptions = options ?? { caseSensitive: false, wholeWord: false, regex: false }
       const compiled = compile(pattern, safeOptions)
@@ -155,6 +159,11 @@ export function registerSearchIpc(): void {
           if (!sender.isDestroyed()) sender.send(IpcChannels.searchResults, payload)
         }
         for (const file of files) {
+          // SC-B1: superseded run or dead renderer — stop scanning; the
+          // renderer drops our batches by searchId anyway. (collectFiles is
+          // deliberately not aborted — one full walk is bounded and cheap
+          // compared to per-file reads.)
+          if (searchId !== latestSearchId || sender.isDestroyed()) return
           let content: string
           try {
             content = await readFile(file, 'utf8')
