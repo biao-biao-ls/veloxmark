@@ -133,6 +133,7 @@ export const ZH: Record<string, string> = {
   'dialog.save': '保存',
   'dialog.dontSave': '不保存',
   'dialog.dialog': '对话框',
+  'dialog.close': '关闭',
   'dialog.unsavedTitle': '未保存的更改',
   'dialog.unsavedSwitch': '继续前要保存更改吗？',
   'dialog.unsavedClose': '关闭前要保存更改吗？',

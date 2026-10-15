@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { t, useTranslation } from '../i18n'
 import { hushLayers, setModalProbe } from '../hooks/useHushLayer'
+import DialogTitleBar from './DialogTitleBar'
 
 /**
  * In-app modal dialogs replacing the native alert/confirm/prompt.
@@ -541,7 +542,8 @@ function Dialog({ req }: Props): React.JSX.Element {
         aria-modal="true"
         aria-label={title ?? t('dialog.dialog')}
       >
-        {title && <div className="dialog-title">{title}</div>}
+        {/* F08 仿系统 chrome：标题栏恒在（空标题也保留窗形）；红点/× = 取消。 */}
+        <DialogTitleBar title={title ?? ''} onClose={cancel} lights="close-only" />
         {message && <div className="dialog-message">{message}</div>}
         {req.kind === 'prompt' && (
           <input

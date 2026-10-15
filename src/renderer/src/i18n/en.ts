@@ -136,6 +136,7 @@ export const EN: Record<string, string> = {
   'dialog.save': 'Save',
   'dialog.dontSave': "Don't Save",
   'dialog.dialog': 'Dialog',
+  'dialog.close': 'Close',
   'dialog.unsavedTitle': 'Unsaved Changes',
   'dialog.unsavedSwitch': 'Save changes before continuing?',
   'dialog.unsavedClose': 'Save changes before closing?',

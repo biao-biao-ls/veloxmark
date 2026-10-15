@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { t } from '../i18n'
+import DialogTitleBar from './DialogTitleBar'
 import {
   buildTableMarkdown,
   convertSelectionToTable,
@@ -149,9 +150,11 @@ export function TableInsertDialog({ open, form, selectionText, onClose, onFormCh
         onClick={(e) => e.stopPropagation()}
         onKeyDown={onKey}
       >
-        <div className="dialog-title">
-          {t(open === 'insert' ? 'tableInsert.insertTitle' : 'tableInsert.convertTitle')}
-        </div>
+        <DialogTitleBar
+          title={t(open === 'insert' ? 'tableInsert.insertTitle' : 'tableInsert.convertTitle')}
+          onClose={onClose}
+          lights="full"
+        />
 
         {open === 'insert' ? (
           <>

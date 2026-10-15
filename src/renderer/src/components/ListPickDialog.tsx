@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { t } from '../i18n'
+import DialogTitleBar from './DialogTitleBar'
 
 /**
  * P16: keyboard-first single-choice list dialog (Mermaid template picker).
@@ -69,7 +70,7 @@ export default function ListPickDialog({
         aria-label={title}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="dialog-title">{title}</div>
+        <DialogTitleBar title={title} onClose={onClose} lights="close-only" />
         <div className="list-pick-list" ref={listRef} tabIndex={0}>
           {items.map((item, i) => (
             <button

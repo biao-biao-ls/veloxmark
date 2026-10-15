@@ -24,10 +24,99 @@
   padding: var(--space-4) var(--space-4) var(--space-3);
 }
 
-.dialog-title {
-  font-size: 14px;
+/* ---- dialog title bar (F08 仿系统 chrome) -------------------------------- */
+/* mac: 红绿灯三点（红=关闭，黄/绿装饰）+ 标题居中；Win: 标题居左 + .wc-btn ×。 */
+
+.dialog-titlebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 32px;
+  user-select: none;
+  /* full-bleed past the card's 16px padding (F03 rhythm). */
+  margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) var(--space-3);
+  padding: 0 14px;
+}
+
+.dialog-titlebar .dt-title {
+  font-size: 13px;
   font-weight: 600;
-  margin-bottom: 8px;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* mac 标题窗口居中；Win 标题居左给 caption 按钮让位。 */
+.dialog-titlebar-mac .dt-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 60%;
+}
+
+.dialog-titlebar-win .dt-title {
+  position: static;
+  max-width: calc(100% - 46px);
+}
+
+.dialog-titlebar-win {
+  padding-right: 0;
+}
+
+.dt-lights {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dt-light {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+/* macOS 系统灯色 —— 同 chrome.css #e81123 的硬编码先例。 */
+.dt-light-close {
+  background: #ff5f57;
+  cursor: pointer;
+}
+
+.dt-light-close:hover {
+  filter: brightness(0.92);
+}
+
+.dt-light-close:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* 黄/绿纯装饰（弹框无最小化/全屏语义）——置灰且 span 不进 Tab 环。 */
+.dt-light-min {
+  background: #febc2e;
+  opacity: 0.55;
+}
+
+.dt-light-zoom {
+  background: #28c840;
+  opacity: 0.55;
+}
+
+.dialog-titlebar-mac {
+  padding-left: 14px;
+}
+
+/* caption 按钮贴卡片右上角（.wc-btn/.wc-close 皮肤来自 chrome.css）。 */
+.dialog-titlebar .wc-btn {
+  height: 100%;
+}
+
+.dialog-titlebar-win .dt-caption-close {
+  border-radius: 0 var(--radius-md) 0 0;
+  margin-left: auto;
 }
 
 .dialog-message {

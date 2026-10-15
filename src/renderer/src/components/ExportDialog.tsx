@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ExportFormat, ExportOptions, ExportThemeOption } from '../hooks/useExport'
 import { t } from '../i18n'
+import DialogTitleBar from './DialogTitleBar'
 
 /**
  * Export options dialog (P04). Reuses the P02 dialog CSS classes like the
@@ -62,7 +63,12 @@ export default function ExportDialog({
         aria-label={isPdf ? t('export.pdfTitle') : t('export.htmlTitle')}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="dialog-title">{isPdf ? t('export.pdfTitle') : t('export.htmlTitle')}</div>
+        <DialogTitleBar
+          title={isPdf ? t('export.pdfTitle') : t('export.htmlTitle')}
+          onClose={onClose}
+          lights="full"
+          closeDisabled={exporting}
+        />
 
         <label className="prefs-row">
           <span className="prefs-label">{t('export.theme')}</span>
