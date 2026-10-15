@@ -64,9 +64,13 @@
      P03 preferences store (applyPreferencesCssVars) additionally writes an
      inline value on documentElement at runtime — that inline write is the
      sanctioned preference channel exception, not a second declaration.
-     5B: this default is the auto-fit soft cap (prefs value 0). Keep the
-     expression in sync with the 0-branch in applyPreferencesCssVars. */
-  --editor-max-width: min(90%, 1200px);
+     5B: this default is the auto-fit band (prefs value 0). Three bands:
+     560px floor (line length never collapses), 72% mid-band (the column
+     tracks window width), 1400px ceiling (tables/code/diagrams breathe on
+     large screens while prose keeps side margins); the outer min(100%)
+     keeps the floor from overflowing a narrow editor area.
+     Keep the expression in sync with the 0-branch in applyPreferencesCssVars. */
+  --editor-max-width: min(100%, clamp(560px, 72%, 1400px));
   /* F01/F03/F06: single source for editor side gutter. theme.ts .cm-line
      and block-level insets (table/code/callout) all consume this variable,
      so prose and blocks stay aligned by construction. F06 finalized the

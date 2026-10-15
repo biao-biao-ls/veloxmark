@@ -39,7 +39,7 @@ export interface Preferences {
   /** px */
   editorFontSize: number
   editorLineHeight: number
-  /** px; 0 = unlimited (full-width editor) */
+  /** px; 0 = auto-fit band (min(100%, clamp(560px, 72%, 1400px))). */
   editorMaxWidth: number
   typingAssistsEnabled: boolean
   wrapBareUrlOnPaste: boolean
@@ -153,10 +153,11 @@ export const DEFAULT_PREFERENCES: Preferences = {
   editorFontFamily: DEFAULT_FONT_STACK,
   editorFontSize: 16,
   editorLineHeight: 1.6,
-  // F05/5B: new installs get a readable 800px content column. Stored 0
-  // means the auto-fit soft cap (min(90%, 1200px)) — sanitizePreferences
-  // spreads raw over these defaults, so an explicit value in storage wins.
-  editorMaxWidth: 800,
+  // F05/5B: new installs get the auto-fit band (min(100%, clamp(560px, 72%, 1400px)))
+  // — floor 560 / mid 72% / ceiling 1400, so the column suits every window
+  // from the 640px minimum to a 5K fullscreen. Stored explicit values win
+  // (sanitizePreferences spreads raw over these defaults).
+  editorMaxWidth: 0,
   typingAssistsEnabled: true,
   wrapBareUrlOnPaste: true,
   pasteHtmlToMd: true,
@@ -460,9 +461,10 @@ export function applyPreferencesCssVars(p: Preferences = preferences): void {
   root.style.setProperty('--editor-line-height', String(p.editorLineHeight))
   root.style.setProperty(
     '--editor-max-width',
-    // 5B: 0 = auto-fit soft cap. Keep the expression in sync with the
-    // --editor-max-width default in styles/tokens.css (pre-injection value).
-    p.editorMaxWidth > 0 ? `${p.editorMaxWidth}px` : 'min(90%, 1200px)'
+    // 5B: 0 = auto-fit band (floor / window-tracked mid / ceiling). Keep the
+    // expression in sync with the --editor-max-width default in
+    // styles/tokens.css (pre-injection value).
+    p.editorMaxWidth > 0 ? `${p.editorMaxWidth}px` : 'min(100%, clamp(560px, 72%, 1400px))'
   )
 }
 

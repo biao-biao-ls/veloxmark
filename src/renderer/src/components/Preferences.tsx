@@ -109,7 +109,9 @@ export default function Preferences({ open, onClose }: Props): React.JSX.Element
     min: number,
     max: number,
     step = 1,
-    disabled = false
+    disabled = false,
+    // Overrides the language-neutral `${min}–${max}` hint (e.g. magic 0).
+    hint?: string
   ) => (
     <input
       className="prefs-input prefs-input-num"
@@ -119,8 +121,8 @@ export default function Preferences({ open, onClose }: Props): React.JSX.Element
       max={max}
       step={step}
       disabled={disabled}
-      placeholder={`${min}–${max}`}
-      title={`${min}–${max}`}
+      placeholder={hint ?? `${min}–${max}`}
+      title={hint ?? `${min}–${max}`}
       onChange={(e) => {
         const v = Number(e.target.value)
         if (Number.isFinite(v)) onChange(Math.min(max, Math.max(min, v)))
@@ -223,7 +225,9 @@ export default function Preferences({ open, onClose }: Props): React.JSX.Element
           (v) => setPreferences({ editorMaxWidth: v }),
           0,
           4000,
-          20
+          20,
+          false,
+          t('prefs.widthAutoHint')
         )}
         <span className="prefs-unit">{t('prefs.widthUnit')}</span>
       </label>
