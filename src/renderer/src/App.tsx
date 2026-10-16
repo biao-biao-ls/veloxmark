@@ -119,7 +119,7 @@ export default function App(): React.JSX.Element {
   const [foldableKeys, setFoldableKeys] = useState<ReadonlySet<string>>(() => new Set())
   // P03: sidebar visibility/mode/width come from session memory; with no
   // memory yet, visibility falls back to the "sidebar open by default" pref.
-  const [showOutline, setShowOutline] = useState(
+  const [showSidebar, setShowSidebar] = useState(
     () => getSession().sidebarVisible ?? getPreferences().sidebarDefaultOpen
   )
   const [isFullScreen, setIsFullScreen] = useState(false)
@@ -212,7 +212,7 @@ export default function App(): React.JSX.Element {
     setFilePath: fileOps.setFilePath,
     syncAppState,
     setSidebarMode,
-    setShowOutline
+    setShowSidebar
   })
 
   // ---- P03: session persistence (useSessionPersist — task 4.4 = 1.3) --------
@@ -221,7 +221,7 @@ export default function App(): React.JSX.Element {
   // menu subscription effect below stays here (task 4.5 double-dispatch locus).
   const { recentItems } = useSessionPersist({
     sessionSynced,
-    showOutline,
+    showSidebar,
     sidebarMode,
     sidebarWidth,
     persistTabsSession: fileOps.persistTabsSession,
@@ -637,7 +637,7 @@ export default function App(): React.JSX.Element {
   // FE-07: one-line forward into useOutlineNav — zero jump logic in App.tsx.
   const goToHeading = jumpToHeading
 
-  const toggleOutline = useCallback(() => setShowOutline((v) => !v), [])
+  const toggleSidebar = useCallback(() => setShowSidebar((v) => !v), [])
 
   // ---- P14: language pref → i18n runtime + macOS native menu ------------------
   useEffect(() => {
@@ -739,7 +739,7 @@ export default function App(): React.JSX.Element {
   }, [])
 
   const openGlobalSearch = useCallback(() => {
-    setShowOutline(true)
+    setShowSidebar(true)
     switchSidebarMode('search')
     setSearchFocusToken((t) => t + 1)
   }, [switchSidebarMode])
@@ -1283,7 +1283,7 @@ export default function App(): React.JSX.Element {
     saveFileAs: () => fileOps.saveFileAs(),
     toggleTheme,
     loadContent: fileOps.loadContent,
-    toggleOutline,
+    toggleSidebar,
     openGlobalSearch,
     openPreferences: () => setShowPreferences(true),
     openRecentFile: fileOps.openRecentFile,
@@ -1409,7 +1409,7 @@ export default function App(): React.JSX.Element {
       />
 
       <div className="main">
-        {showOutline && (
+        {showSidebar && (
           <aside className="sidebar" style={{ width: sidebarWidth }}>
             {/* SC: persistent 3-tab IA — Files/Outline/Search all live on one
                 tab row (deliberate reversal of the old 6A "search 不占 tab"
@@ -1442,11 +1442,11 @@ export default function App(): React.JSX.Element {
               >
                 {t('sidebar.tab.search')}
               </button>
-              {/* 标题栏不再放侧栏开关：关闭走这里，打开走 Ctrl+B / 视图菜单。 */}
+              {/* 标题栏不再放侧栏开关：关闭走这里，打开走 Ctrl+Shift+B / 视图菜单。 */}
               <button
                 type="button"
                 className="sidebar-tabs-close"
-                onClick={toggleOutline}
+                onClick={toggleSidebar}
                 title={t('sidebar.close')}
                 aria-label={t('sidebar.close')}
               >
@@ -1608,7 +1608,7 @@ export default function App(): React.JSX.Element {
             )}
           </aside>
         )}
-        {showOutline && (
+        {showSidebar && (
           <div
             className={`sidebar-resizer${sidebarResizing ? ' resizing' : ''}`}
             onMouseDown={startSidebarResize}

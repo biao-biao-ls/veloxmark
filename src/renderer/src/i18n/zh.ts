@@ -22,7 +22,7 @@ export const ZH: Record<string, string> = {
   'cmd.paste': '粘贴',
   'cmd.selectAll': '全选',
   'cmd.find': '查找',
-  'cmd.toggleOutline': '切换大纲',
+  'cmd.toggleSidebar': '切换侧栏',
   'cmd.globalSearch': '文件夹内搜索…',
   'cmd.toggleFocusMode': '专注模式',
   'cmd.toggleTypewriterMode': '打字机模式',

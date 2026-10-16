@@ -23,7 +23,7 @@ interface Args {
   setFilePath: (path: string | null) => void
   syncAppState: (path: string | null, dirty: boolean) => void
   setSidebarMode: (mode: SidebarMode) => void
-  setShowOutline: (visible: boolean) => void
+  setShowSidebar: (visible: boolean) => void
 }
 
 /** Current P07 scan options, pushed to main with every watchFolder. */
@@ -87,7 +87,7 @@ export function useWorkspaceTree({
   setFilePath,
   syncAppState,
   setSidebarMode,
-  setShowOutline
+  setShowSidebar
 }: Args) {
   // 6B tree root: `folderPath` is the *resolved* root (explicit pin → active
   // doc dir → empty; 6.4a dropped the recent-root fallback), no longer "the
@@ -134,10 +134,10 @@ export function useWorkspaceTree({
   const loadFolder = useCallback(
     async (dirPath: string) => {
       setSidebarMode('files')
-      setShowOutline(true)
+      setShowSidebar(true)
       await setExplicitRoot(dirPath)
     },
-    [setExplicitRoot, setSidebarMode, setShowOutline]
+    [setExplicitRoot, setSidebarMode, setShowSidebar]
   )
 
   const openFolder = useCallback(async () => {

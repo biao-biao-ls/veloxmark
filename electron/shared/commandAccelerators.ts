@@ -9,7 +9,7 @@
  * 与 renderer `Command.shortcut` 是双源——派生规则与例外由该测试守护；
  * 行为约定：bold/italic/inlineCode 故意无加速键（CM6 keymap 拥有 Mod-B/I/E，
  * 原生加速键会与之抢注）；toggleTheme 故意无加速键（Q6：Ctrl+Shift+T 唯一
- * 归属 reopenClosedTab，切换主题仅 Titlebar 按钮 + 菜单入口）。
+ * 归属 reopenClosedTab，切换主题仅菜单入口）。
  */
 export const DARWIN_COMMAND_ACCELERATORS: Record<string, string> = {
   newFile: 'Cmd+N',
@@ -34,6 +34,9 @@ export const DARWIN_COMMAND_ACCELERATORS: Record<string, string> = {
   toggleDevTools: 'Cmd+Alt+I',
   // P13 folder-wide search.
   globalSearch: 'Cmd+Shift+F',
+  // Sidebar toggle — NOT Cmd+B: Mod-b is the editor bold chord (FORMAT_CHORDS);
+  // renderer registry keeps the mirror entry in viewCmds (shortcut: 'Ctrl+Shift+B').
+  toggleSidebar: 'Cmd+Shift+B',
   // P20 rich-text clipboard (no conflicting registered accelerator).
   copyRichText: 'CmdOrCtrl+Shift+C',
   // P23 format document — same chord as VS Code.

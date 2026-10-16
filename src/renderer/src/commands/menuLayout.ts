@@ -69,7 +69,7 @@ export const MENU_LAYOUT: LayoutMenu[] = [
   {
     menu: 'view',
     groups: [
-      { labelKey: 'menu.grp.sidebarSearch', items: ['toggleOutline', 'globalSearch'] },
+      { labelKey: 'menu.grp.sidebarSearch', items: ['toggleSidebar', 'globalSearch'] },
       { labelKey: 'menu.grp.fold', items: ['foldAll', 'unfoldAll'] },
       {
         labelKey: 'menu.grp.mode',

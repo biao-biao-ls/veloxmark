@@ -77,7 +77,7 @@ export interface TabsCmdOps {
 export interface ViewCmdOps {
   viewRef: RefObject<EditorView | null>
   toggleTheme: () => void
-  toggleOutline: () => void
+  toggleSidebar: () => void
   /** P13: open the sidebar Search view and focus its query box. */
   openGlobalSearch: () => void
 }

@@ -24,7 +24,7 @@ export const EN: Record<string, string> = {
   'cmd.paste': 'Paste',
   'cmd.selectAll': 'Select All',
   'cmd.find': 'Find',
-  'cmd.toggleOutline': 'Toggle Outline',
+  'cmd.toggleSidebar': 'Toggle Sidebar',
   'cmd.globalSearch': 'Search in Folder…',
   'cmd.toggleFocusMode': 'Focus Mode',
   'cmd.toggleTypewriterMode': 'Typewriter Mode',

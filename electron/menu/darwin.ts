@@ -273,7 +273,7 @@ function viewMenu(S: MenuStrings): Electron.MenuItemConstructorOptions {
     label: S.view,
     submenu: [
       groupHeader(S['menu.grp.sidebarSearch']),
-      commandItem('toggleOutline', S.toggleOutline),
+      commandItem('toggleSidebar', S.toggleSidebar),
       commandItem('globalSearch', S.globalSearch),
       { type: 'separator' },
       groupHeader(S['menu.grp.mode']),

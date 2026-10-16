@@ -27,7 +27,7 @@ export interface UseSessionPersistArgs {
    * the restored values are written back and later edits keep persisting.
    */
   sessionSynced: boolean
-  showOutline: boolean
+  showSidebar: boolean
   sidebarMode: SidebarMode
   sidebarWidth: number
   persistTabsSession: () => void
@@ -37,7 +37,7 @@ export interface UseSessionPersistArgs {
 
 export function useSessionPersist({
   sessionSynced,
-  showOutline,
+  showSidebar,
   sidebarMode,
   sidebarWidth,
   persistTabsSession,
@@ -58,8 +58,8 @@ export function useSessionPersist({
 
   useEffect(() => {
     if (!sessionSynced) return
-    patchSession({ sidebarVisible: showOutline })
-  }, [sessionSynced, showOutline])
+    patchSession({ sidebarVisible: showSidebar })
+  }, [sessionSynced, showSidebar])
   useEffect(() => {
     if (!sessionSynced) return
     patchSession({ sidebarMode })

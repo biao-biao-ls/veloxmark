@@ -491,7 +491,7 @@
   background: var(--accent);
 }
 
-/* 标题栏去掉侧栏开关后，关闭钮收进 tab 行右端（开启走 Ctrl+B / 视图菜单）。
+/* 标题栏去掉侧栏开关后，关闭钮收进 tab 行右端（开启走 Ctrl+Shift+B / 视图菜单）。
    与 .sidebar-action 同一 icon-button 语言。 */
 .sidebar-tabs-close {
   margin-left: auto;

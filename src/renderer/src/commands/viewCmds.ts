@@ -18,14 +18,15 @@ export function buildViewCmds(ops: ViewCmdOps): Command[] {
   const view = (): EditorView | null => ops.viewRef.current
   return [
     // ---- View --------------------------------------------------------------
-    // 侧栏开合（历史命名 toggleOutline）。Ctrl+B 与 VS Code 侧栏键位一致；
-    // 标题栏已无按钮，快捷键 + 视图菜单是全部入口，侧栏 tab 行右端有关闭钮。
+    // 侧栏开合。键位不能用 Ctrl+B —— Mod-b 归编辑器加粗（assists/keymap
+    // FORMAT_CHORDS，formatCmds.bold 回显同键），故取 Ctrl+Shift+B 保留 B 助记。
+    // 标题栏已无按钮：本快捷键 + 视图菜单是开启入口，关闭另可点侧栏 tab 行 ×。
     {
-      id: 'toggleOutline',
-      label: 'cmd.toggleOutline',
-      shortcut: 'Ctrl+B',
+      id: 'toggleSidebar',
+      label: 'cmd.toggleSidebar',
+      shortcut: 'Ctrl+Shift+B',
       bindGlobal: true,
-      run: () => ops.toggleOutline()
+      run: () => ops.toggleSidebar()
     },
     // UX-P18 F1: fold-all / unfold-all — View menu + context-menu heading delta.
     {

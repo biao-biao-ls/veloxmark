@@ -20,7 +20,7 @@ interface Props {
  * window controls are hidden there via CSS.
  *
  * Theme and sidebar carry no quick toggles here — theme follows the system
- * (adjusted in Preferences → Appearance); the sidebar opens with Ctrl+B or
+ * (adjusted in Preferences → Appearance); the sidebar opens with Ctrl+Shift+B or
  * View menu and closes from its own tab row.
  */
 export default function Titlebar({
