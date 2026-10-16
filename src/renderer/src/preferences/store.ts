@@ -149,7 +149,9 @@ const DEFAULT_FONT_STACK =
 
 export const DEFAULT_PREFERENCES: Preferences = {
   version: PREFERENCES_VERSION,
-  theme: 'light',
+  // Theme follows the OS out of the box; users pin light/dark in
+  // Preferences → Appearance (there is no titlebar quick toggle).
+  theme: 'system',
   editorFontFamily: DEFAULT_FONT_STACK,
   editorFontSize: 16,
   editorLineHeight: 1.6,
@@ -272,7 +274,7 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
     typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback
   return {
     version: PREFERENCES_VERSION,
-    theme: p.theme === 'dark' || p.theme === 'system' ? p.theme : 'light',
+    theme: p.theme === 'light' || p.theme === 'dark' ? p.theme : 'system',
     editorFontFamily: typeof p.editorFontFamily === 'string' && p.editorFontFamily.trim()
       ? p.editorFontFamily
       : DEFAULT_PREFERENCES.editorFontFamily,

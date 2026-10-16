@@ -1,15 +1,11 @@
 import MenuBar, { type MenuDef } from './MenuBar'
-import { CloseIcon, MaximizeIcon, MinimizeIcon, MoonIcon, PanelIcon, SunIcon } from './Icons'
-import type { ThemeName } from '../editor/theme'
+import { CloseIcon, MaximizeIcon, MinimizeIcon } from './Icons'
 import { t } from '../i18n'
 
 interface Props {
   menus: MenuDef[]
   fileName: string
   dirty: boolean
-  theme: ThemeName
-  toggleOutline: () => void
-  toggleTheme: () => void
   /** P12: ms timestamp of the last autosave/draft-save; null = none yet. */
   autoSaveAt?: number | null
   /** UX-P12 F3: sticky "Auto-save failed HH:MM" label; overrides the saved slot. */
@@ -19,17 +15,18 @@ interface Props {
 }
 
 /**
- * Custom frameless titlebar: logo, in-app menu, document title, sidebar/theme
- * toggles and (Windows/Linux) window controls. macOS keeps native traffic
- * lights — the window controls are hidden there via CSS.
+ * Custom frameless titlebar: logo, in-app menu, document title and
+ * (Windows/Linux) window controls. macOS keeps native traffic lights — the
+ * window controls are hidden there via CSS.
+ *
+ * Theme and sidebar carry no quick toggles here — theme follows the system
+ * (adjusted in Preferences → Appearance); the sidebar opens with Ctrl+B or
+ * View menu and closes from its own tab row.
  */
 export default function Titlebar({
   menus,
   fileName,
   dirty,
-  theme,
-  toggleOutline,
-  toggleTheme,
   autoSaveAt,
   autoSaveError,
   hideSavedAt
@@ -66,16 +63,6 @@ export default function Titlebar({
         )}
       </span>
       <span className="tb-spacer" />
-      <button className="tb-btn" onClick={toggleOutline} title={t('tb.outline')}>
-        <PanelIcon />
-      </button>
-      <button
-        className="tb-btn"
-        onClick={toggleTheme}
-        title={t('tb.theme')}
-      >
-        {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-      </button>
       <div className="window-controls">
         <button className="wc-btn" onClick={() => window.api.windowMinimize()} title={t('tb.minimize')}>
           <MinimizeIcon />

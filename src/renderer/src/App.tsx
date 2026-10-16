@@ -50,7 +50,7 @@ import './components/LinkHoverFloat'
 import './components/ListDragHandle'
 import SidebarOpsPanel from './components/SidebarOpsPanel'
 import { openSidebarOps } from './components/sidebarOpsBus'
-import { ListIcon, MoreVerticalIcon, TreeIcon } from './components/Icons'
+import { CloseIcon, ListIcon, MoreVerticalIcon, TreeIcon } from './components/Icons'
 import { createExtensions, updateEditingAssists, updateShowLineNumbers, bumpImageEpoch, bumpLinkEpoch, bumpI18nEpoch, updateLivePreviewConfig } from './editor/setup'
 import { syncPureSelectionChrome } from './editor/clickSemantics'
 import { invalidateImageCache } from './editor/image-widget'
@@ -67,7 +67,7 @@ import { useFileOps } from './hooks/useFileOps'
 import { baseNameOf } from './pathUtil'
 import { useAutoSave } from './hooks/useAutoSave'
 import { useWorkspaceTree } from './hooks/useWorkspaceTree'
-import { useAppTheme } from './hooks/useAppTheme'
+import { useAppTheme, resolveThemeMode } from './hooks/useAppTheme'
 import { useExport } from './hooks/useExport'
 import { useMenus } from './hooks/useMenus'
 import { useFoldSync } from './hooks/useFoldSync'
@@ -575,7 +575,8 @@ export default function App(): React.JSX.Element {
           // Read from the store, not the closure: this effect runs once ([]),
           // so a `theme` captured here would be the mount-time value and a
           // theme chosen before the editor mounts would never reach it.
-          getPreferences().theme === 'dark' ? 'dark' : 'light',
+          // resolveThemeMode turns the 'system' default into the real OS mode.
+          resolveThemeMode(getPreferences().theme),
           readEditingAssistsConfig(),
           getPreferences().showLineNumbers
     )
@@ -1402,9 +1403,6 @@ export default function App(): React.JSX.Element {
         menus={menus}
         fileName={fileName}
         dirty={dirty}
-        theme={theme}
-        toggleOutline={toggleOutline}
-        toggleTheme={toggleTheme}
         autoSaveAt={autoSave.lastAutoSaveAt}
         autoSaveError={autoSave.lastAutoSaveError}
         hideSavedAt={dirty && prefs.autoSaveMode === 'off'}
@@ -1443,6 +1441,16 @@ export default function App(): React.JSX.Element {
                 onClick={openGlobalSearch}
               >
                 {t('sidebar.tab.search')}
+              </button>
+              {/* 标题栏不再放侧栏开关：关闭走这里，打开走 Ctrl+B / 视图菜单。 */}
+              <button
+                type="button"
+                className="sidebar-tabs-close"
+                onClick={toggleOutline}
+                title={t('sidebar.close')}
+                aria-label={t('sidebar.close')}
+              >
+                <CloseIcon size={14} />
               </button>
             </div>
             {sidebarMode === 'search' ? (
@@ -1627,7 +1635,7 @@ export default function App(): React.JSX.Element {
           {mpFence && (
             <MermaidPreviewPanel
               code={mpFence.code}
-              theme={prefs.theme === 'dark' ? 'dark' : 'light'}
+              theme={theme}
               pin={mpPin}
               collapsing={mpCollapsing}
               height={prefs.mermaidPreviewHeight}

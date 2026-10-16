@@ -412,6 +412,7 @@ export const ZH: Record<string, string> = {
   'sidebar.tab.files': '文件',
   'sidebar.tab.outline': '大纲',
   'sidebar.tab.search': '搜索',
+  'sidebar.close': '关闭侧栏',
   'sidebar.filesEmptyUntitled': '当前文档未落盘，打开文件夹以浏览其中的 Markdown 文件',
   'ops.bar': '文件操作栏',
   'ops.title': '操作',
@@ -432,8 +433,6 @@ export const ZH: Record<string, string> = {
   'app.newFile': '新建文件',
 
   // ---- titlebar --------------------------------------------------------------
-  'tb.outline': '切换大纲',
-  'tb.theme': '切换主题',
   'tb.minimize': '最小化',
   'tb.maximize': '最大化 / 还原',
   'tb.close': '关闭',

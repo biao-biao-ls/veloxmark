@@ -54,22 +54,6 @@
   user-select: none;
 }
 
-.tb-btn {
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--fg);
-  border-radius: 4px;
-  padding: 4px 8px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.tb-btn:hover {
-  background: var(--code-bg);
-}
-
 .tb-title {
   font-size: 13px;
   color: var(--fg-dim);
@@ -505,6 +489,28 @@
   bottom: calc(var(--tree-accent-bar) * -1);
   height: var(--tree-accent-bar);
   background: var(--accent);
+}
+
+/* 标题栏去掉侧栏开关后，关闭钮收进 tab 行右端（开启走 Ctrl+B / 视图菜单）。
+   与 .sidebar-action 同一 icon-button 语言。 */
+.sidebar-tabs-close {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--fg-dim);
+  width: var(--hit-box-md);
+  height: var(--hit-box-md);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.sidebar-tabs-close:hover {
+  color: var(--fg);
+  background: var(--code-bg);
 }
 
 /* 6A: files-tab empty state (no folder open) */

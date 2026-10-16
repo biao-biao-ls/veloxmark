@@ -419,6 +419,7 @@ export const EN: Record<string, string> = {
   'sidebar.tab.files': 'Files',
   'sidebar.tab.outline': 'Outline',
   'sidebar.tab.search': 'Search',
+  'sidebar.close': 'Close sidebar',
   'sidebar.filesEmptyUntitled': 'The current document is not saved to disk — open a folder to browse its markdown files',
   'ops.bar': 'File action bar',
   'ops.title': 'Actions',
@@ -439,8 +440,6 @@ export const EN: Record<string, string> = {
   'app.newFile': 'New file',
 
   // ---- titlebar --------------------------------------------------------------
-  'tb.outline': 'Toggle outline',
-  'tb.theme': 'Toggle theme',
   'tb.minimize': 'Minimize',
   'tb.maximize': 'Maximize / Restore',
   'tb.close': 'Close',

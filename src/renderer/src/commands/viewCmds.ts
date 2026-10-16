@@ -18,7 +18,15 @@ export function buildViewCmds(ops: ViewCmdOps): Command[] {
   const view = (): EditorView | null => ops.viewRef.current
   return [
     // ---- View --------------------------------------------------------------
-    { id: 'toggleOutline', label: 'cmd.toggleOutline', run: () => ops.toggleOutline() },
+    // 侧栏开合（历史命名 toggleOutline）。Ctrl+B 与 VS Code 侧栏键位一致；
+    // 标题栏已无按钮，快捷键 + 视图菜单是全部入口，侧栏 tab 行右端有关闭钮。
+    {
+      id: 'toggleOutline',
+      label: 'cmd.toggleOutline',
+      shortcut: 'Ctrl+B',
+      bindGlobal: true,
+      run: () => ops.toggleOutline()
+    },
     // UX-P18 F1: fold-all / unfold-all — View menu + context-menu heading delta.
     {
       id: 'foldAll',
