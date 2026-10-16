@@ -21,6 +21,10 @@
 /* ---- titlebar -------------------------------------------------------------- */
 
 .titlebar {
+  position: relative; /* .tb-title 绝对居中的包含块 */
+  /* 侧翼避让量：标题真居中（窗口中线）后以此钳制 max-width，防止压住
+     Win/Linux 的品牌+菜单（左，较宽故取之）或 macOS 红绿灯。 */
+  --tb-chrome-reserve: 420px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -55,9 +59,15 @@
 }
 
 .tb-title {
+  /* 真居中（Safari 式）：钉在窗口几何中线，与左右侧翼宽度无关。超长标题
+     对称截断——max-width 的 max() 兜底防止窄窗 calc 出负值后反噬（负的
+     max-width 会按 invalid-at-computed-value 回到 none，反而全长溢出）。 */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: max(120px, calc(100% - 2 * var(--tb-chrome-reserve)));
   font-size: 13px;
   color: var(--fg-dim);
-  margin-left: 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -377,11 +387,13 @@
 
 .platform-mac .titlebar {
   padding-left: 84px;
+  --tb-chrome-reserve: 84px; /* 红绿灯避让，与 padding-left 同量 */
 }
 
 /* Fullscreen: traffic lights auto-hide, so don't reserve their space. */
 .platform-mac.is-fullscreen .titlebar {
   padding-left: 8px;
+  --tb-chrome-reserve: 8px;
 }
 
 /* ---- layout ---------------------------------------------------------------- */
