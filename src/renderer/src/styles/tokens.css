@@ -4,6 +4,14 @@
   box-sizing: border-box;
 }
 
+/* The hidden attribute must win over any component `display` rule —
+   `.cm-md-mermaid-error { display: flex }` otherwise paints the error bar
+   as an empty strip when there is no error (author styles beat the UA
+   `[hidden] { display: none }`). */
+[hidden] {
+  display: none !important;
+}
+
 /* ===========================================================================
    Design-token vocabulary (F08 layering)
    ---------------------------------------------------------------------------
