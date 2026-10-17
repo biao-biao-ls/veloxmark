@@ -129,15 +129,10 @@ const PALETTES: Record<ColorTheme, Record<TokenKey, TokenColor>> = {
   dark: DARK
 }
 
-/** Widget/export interior (`.hljs` base) — VSCode editor background/text. */
+/** Widget/export interior (`.hljs` base) — text color only. */
 const BASE: Record<ColorTheme, TokenColor> = {
   light: { color: '#333333' },
   dark: { color: '#d4d4d4' }
-}
-
-const BASE_BG: Record<ColorTheme, string> = {
-  light: '#ffffff',
-  dark: '#1e1e1e'
 }
 
 /**
@@ -204,9 +199,11 @@ function decl(c: TokenColor): string {
  */
 export function hljsCss(theme: ColorTheme): string {
   const p = PALETTES[theme]
-  const lines: string[] = [
-    `.hljs { ${decl(BASE[theme])}; background: ${BASE_BG[theme]} }`
-  ]
+  // No background on `.hljs` — the SURFACE owns it (.cm-md-code-block /
+  // .export-code containers). A painted .hljs bg (0,2,0 once scoped) beats
+  // the container's `code { background: transparent }` (0,1,1) and leaked a
+  // white inner box over --widget-surface (dual-state bg mismatch).
+  const lines: string[] = [`.hljs { ${decl(BASE[theme])} }`]
   // emphasis/strong are font-style/weight only (VSCode maps them to plain text)
   lines.push('.hljs-emphasis { font-style: italic }')
   lines.push('.hljs-strong { font-weight: bold }')

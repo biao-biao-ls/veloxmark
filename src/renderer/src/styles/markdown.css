@@ -408,14 +408,20 @@
 
 .cm-md-code-block pre {
   margin: 0;
-  padding: 12px 16px;
+  /* dual-state same-shell: padding matches the focused panel's cap padding
+     (code-chrome.css .cm-md-code-src-first/-last, --space-1 / left --space-4)
+     so the box doesn't jump entering/leaving edit state. */
+  padding: var(--space-1) var(--space-4);
   overflow-x: auto;
 }
 
 .cm-md-code-block code {
   font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
-  font-size: 13.5px;
-  line-height: 1.55;
+  /* Font metrics ride the editor tokens — same values the focused panel
+     inherits (.cm-content --editor-font-size / --editor-line-height). The
+     old 13.5px/1.55 made the rendered block visibly smaller than editing. */
+  font-size: var(--editor-font-size);
+  line-height: var(--editor-line-height);
   background: transparent;
   display: block;
   white-space: pre;

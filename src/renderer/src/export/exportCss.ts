@@ -86,7 +86,8 @@ export const EXPORT_DOC_CSS = `
 
 .export-doc pre {
   margin: 0.5em 0;
-  padding: 12px 16px;
+  /* WYSIWYG mirror of .cm-md-code-block (4px 16px cap padding). */
+  padding: 4px 16px;
   overflow-x: auto;
   border-radius: 6px;
   border: 1px solid var(--border);
@@ -94,8 +95,11 @@ export const EXPORT_DOC_CSS = `
 }
 
 .export-doc pre code {
-  font-size: 13.5px;
-  line-height: 1.55;
+  /* WYSIWYG mirror: ride the .export-doc base (16px/1.6 = the editor's
+     --editor-font-size/--editor-line-height defaults) like the in-app
+     widget now does — was 13.5px/1.55. */
+  font-size: inherit;
+  line-height: inherit;
   background: transparent;
   padding: 0;
   display: block;
