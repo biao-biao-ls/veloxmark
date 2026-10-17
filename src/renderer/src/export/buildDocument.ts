@@ -1,6 +1,4 @@
 import katexCssRaw from 'katex/dist/katex.min.css?raw'
-import hljsLightCss from 'highlight.js/styles/github.css?raw'
-import hljsDarkCss from 'highlight.js/styles/github-dark.css?raw'
 // 20 woff2 faces (~296 KB raw → ~400 KB base64). Vite's `?inline` turns each
 // into a base64 data URL at build time, so the exported document carries them
 // and needs no network. woff/ttf fallbacks in katex.min.css are stripped
@@ -26,6 +24,7 @@ import fontSize3 from 'katex/dist/fonts/KaTeX_Size3-Regular.woff2?inline'
 import fontSize4 from 'katex/dist/fonts/KaTeX_Size4-Regular.woff2?inline'
 import fontTypewriter from 'katex/dist/fonts/KaTeX_Typewriter-Regular.woff2?inline'
 import type { ThemeName } from '../editor/theme'
+import { hljsCss } from '../editor/syntaxColors'
 import { EXPORT_DOC_CSS } from './exportCss'
 import { renderDoc, type ImageMode } from './renderDoc'
 
@@ -82,10 +81,12 @@ function inlineKatexCss(): string {
   return css
 }
 
-/** Highlight.js theme scoped under the export theme class (parity with widgets.ts). */
+/** Syntax theme scoped under the export theme class (parity with widgets.ts).
+    Values come from editor/syntaxColors.ts — same map the editor widgets and
+    the HighlightStyle use, so export colors match the in-app dual states. */
 function scopedHljsCss(theme: ThemeName): string {
   const scope = theme === 'dark' ? '.export-theme-dark' : '.export-theme-light'
-  return (theme === 'dark' ? hljsDarkCss : hljsLightCss).replaceAll('.hljs', `${scope} .hljs`)
+  return hljsCss(theme).replaceAll('.hljs', `${scope} .hljs`)
 }
 
 function escapeHtmlText(text: string): string {

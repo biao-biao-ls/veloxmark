@@ -14,10 +14,10 @@
  * Theme class correspondence: export root `.export-theme-light` /
  * `.export-theme-dark` pair with the app's `.theme-light` / `.theme-dark`.
  *
- * hljs token colors are NOT here: they come from upstream
- * `highlight.js/styles/github[-dark].css`, scoped under the theme class by
+ * hljs token colors are NOT here: they come from
+ * `editor/syntaxColors.ts` (single source), scoped under the theme class by
  * `editor/widgets.ts` (editor) and `export/buildDocument.ts` (export) — see
- * `editor/livePreview/hljsTokens.ts` for the class-vocabulary contract.
+ * `editor/syntaxColors.ts` for the class-vocabulary + color contract.
  */
 
 export type PaletteToken =

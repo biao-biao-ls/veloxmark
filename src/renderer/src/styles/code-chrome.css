@@ -133,3 +133,9 @@
   display: none;
 }
 
+
+/* ---- step ②: fence indent guides (codeIndentGuides.ts) ---- */
+/* One mark per indent-step head char; border-left draws the guide. */
+.cm-md-indent-guide {
+  border-left: 1px solid var(--cm-indent-guide);
+}

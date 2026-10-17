@@ -1,6 +1,5 @@
-import githubCss from 'highlight.js/styles/github.css?raw'
-import githubDarkCss from 'highlight.js/styles/github-dark.css?raw'
 import { EditorView, WidgetType } from '@codemirror/view'
+import { hljsCss, texCss } from './syntaxColors'
 import { t } from '../i18n'
 import { langDisplayName, openCodeLangPicker, switchFenceLang } from './codeLangPicker'
 import { toggleCodeBlockFold } from './livePreview/codeBlockUi'
@@ -33,8 +32,11 @@ let scopedCssInjected = false
 export function ensureScopedCss(): void {
   if (scopedCssInjected) return
   scopedCssInjected = true
-  injectScopedCss(githubCss, '.theme-light')
-  injectScopedCss(githubDarkCss, '.theme-dark')
+  // syntaxColors.ts is the single source of the token hexes (VSCode palette) —
+  // same values feed the HighlightStyle in theme.ts so dual-state colors match.
+  // texCss covers the focused math panel's .cm-md-tex-* classes (step ④).
+  injectScopedCss(hljsCss('light') + '\n' + texCss('light'), '.theme-light')
+  injectScopedCss(hljsCss('dark') + '\n' + texCss('dark'), '.theme-dark')
 }
 
 /** P24: UI options threaded from LivePreviewConfig into the code-block widget. */

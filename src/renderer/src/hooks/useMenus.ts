@@ -46,6 +46,9 @@ export function useMenus({ isMac, recentItems, ...ops }: Args): {
   // Win/Linux). Only `bindGlobal` commands participate.
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
+      // Consumed keymaps (e.g. Mod-/ fence guard in setup.ts) win — without
+      // this the window listener races CM and one chord runs two commands.
+      if (e.defaultPrevented) return
       const cmd = matchGlobalShortcut(e, commandsRef.current)
       if (!cmd) return
       e.preventDefault()

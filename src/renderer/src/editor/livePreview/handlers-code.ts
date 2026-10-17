@@ -7,7 +7,6 @@ import { previewBelow } from './dualPane'
 import { TableWidget } from '../table/widget'
 import { getTableEdit } from '../table/state'
 import { codeBlockKey, getCodeBlockExpanded } from './codeBlockUi'
-import { tokenRanges } from './hljsTokens'
 
 /**
  * Table + fenced-code/mermaid handlers (split from handlers.ts, task 1D).
@@ -187,21 +186,8 @@ function buildFocusedCodePanel(
     })
   }
 
-  // P29: hljs token marks over the content lines only — same palette as the
-  // rendered widget (scoped github/github-dark CSS). Ranges never reach the
-  // fence/chip replace spans above. Unknown/empty lang or >cap → no marks.
-  const contentFrom = Math.min(first.to + 1, node.to)
-  const contentTo = closeMark ? doc.lineAt(closeMark.from).from : node.to
-  if (contentTo > contentFrom) {
-    const code = doc.sliceString(contentFrom, contentTo)
-    for (const r of tokenRanges(code, lang)) {
-      ctx.decos.push({
-        from: contentFrom + r.from,
-        to: contentFrom + r.to,
-        // Token classes only — never the bare `hljs` base class (scoped CSS
-        // would paint `.hljs` background boxes on every token span).
-        value: Decoration.mark({ class: r.className })
-      })
-    }
-  }
+  // step ③: P29 hljs token marks retired — the focused panel's code colors
+  // now come from the Lezer mixed parse (markdown `codeLanguages`) painted by
+  // the theme HighlightStyle (syntaxColors.ts values — same palette the
+  // widget/export hljs CSS is generated from).
 }

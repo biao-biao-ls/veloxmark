@@ -4,6 +4,7 @@ import { BlockWidget } from './blockWidget'
 import { exitMathEdit } from './mathEdit'
 import { findMathBlockAt } from './livePreview/mathScan'
 import { renderKatexChecked, renderKatexHtml } from './render-helpers'
+import { ensureScopedCss } from './codeBlock-widget'
 
 // ---- math widgets (P04) -----------------------------------------------------
 // (2.6: MathBlockWidget and InlineMathWidget moved verbatim from
@@ -128,6 +129,9 @@ export class MathEditChip extends WidgetType {
   }
 
   toDOM(view: EditorView): HTMLElement {
+    // step ④: pull in the scoped CSS — the focused panel's .cm-md-tex-*
+    // token marks need colors from the first frame (CodeLangChip precedent).
+    ensureScopedCss()
     const el = document.createElement('span')
     el.className = 'cm-md-math-edit-chip'
     el.textContent = `${t('math.chipLabel')} ✓`

@@ -1,6 +1,7 @@
 import { EditorView } from '@codemirror/view'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { tags as t } from '@lezer/highlight'
+import { codeTagStyles } from './syntaxColors'
 
 export type ThemeName = 'light' | 'dark'
 
@@ -58,8 +59,11 @@ const darkEditorTheme = EditorView.theme(
   { dark: true }
 )
 
-// Syntax highlighting for markdown source mode (delimiters, urls, etc.)
-const lightHighlightStyle = HighlightStyle.define([
+// Syntax highlighting: markdown prose tags here; code-token colors come from
+// syntaxColors.ts (codeTagStyles) — the same map the hljs widget/export CSS is
+// generated from, so dual-state colors never jump. Comment colors are part of
+// the code palette (they win over any prose entry for t.comment).
+const proseTags = (link: string): Parameters<typeof HighlightStyle.define>[0] => [
   { tag: t.heading1, fontWeight: 'bold' },
   { tag: t.heading2, fontWeight: 'bold' },
   { tag: t.heading3, fontWeight: 'bold' },
@@ -67,22 +71,18 @@ const lightHighlightStyle = HighlightStyle.define([
   { tag: t.emphasis, fontStyle: 'italic' },
   { tag: t.strikethrough, textDecoration: 'line-through' },
   { tag: t.monospace, fontFamily: "'JetBrains Mono', Consolas, monospace" },
-  { tag: t.link, color: '#0969da' },
-  { tag: t.url, color: '#8b949e' },
-  { tag: t.comment, color: '#8b949e' }
+  { tag: t.link, color: link },
+  { tag: t.url, color: '#8b949e' }
+]
+
+const lightHighlightStyle = HighlightStyle.define([
+  ...proseTags('#0969da'),
+  ...codeTagStyles('light')
 ])
 
 const darkHighlightStyle = HighlightStyle.define([
-  { tag: t.heading1, fontWeight: 'bold' },
-  { tag: t.heading2, fontWeight: 'bold' },
-  { tag: t.heading3, fontWeight: 'bold' },
-  { tag: t.strong, fontWeight: 'bold' },
-  { tag: t.emphasis, fontStyle: 'italic' },
-  { tag: t.strikethrough, textDecoration: 'line-through' },
-  { tag: t.monospace, fontFamily: "'JetBrains Mono', Consolas, monospace" },
-  { tag: t.link, color: '#58a6ff' },
-  { tag: t.url, color: '#8b949e' },
-  { tag: t.comment, color: '#8b949e' }
+  ...proseTags('#58a6ff'),
+  ...codeTagStyles('dark')
 ])
 
 export const lightTheme = [lightEditorTheme, syntaxHighlighting(lightHighlightStyle)]

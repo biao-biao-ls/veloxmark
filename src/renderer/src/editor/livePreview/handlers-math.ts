@@ -5,6 +5,7 @@ import { type BuildCtx } from './handlers-ctx'
 import { InlineMathWidget, MathBlockWidget, MathEditChip, MathPreviewWidget } from '../widgets-math'
 import { scanMath, type MathMatch } from './mathScan'
 import { previewBelow } from './dualPane'
+import { texTokenRanges } from '../math/texStream'
 
 /**
  * Math regex pass (split from handlers.ts, task 1D). @lezer/markdown has no
@@ -114,6 +115,21 @@ function buildFocusedMathPanel(
       (isLast ? ' cm-md-math-src-last' : '')
     ctx.decos.push({ from: line.from, to: line.from, value: Decoration.line({ class: cls }) })
     if (isLast) break
+  }
+
+  // step ④: TeX token colors over the block source (texStream tokenizer,
+  // P29-pattern decoration pass — `$$…$$` is regex-scan, no codeLanguages
+  // hook). Marks stay inside [first.from, last.to] — they never reach the
+  // chip (zero-length at first.from) or the trailing preview widget.
+  const blockFrom = first.from
+  const blockTo = last.to
+  const src = ctx.state.sliceDoc(blockFrom, blockTo)
+  for (const r of texTokenRanges(src)) {
+    ctx.decos.push({
+      from: blockFrom + r.from,
+      to: blockFrom + r.to,
+      value: Decoration.mark({ class: r.className })
+    })
   }
 
   const epoch = ctx.config.i18nEpoch ?? 0

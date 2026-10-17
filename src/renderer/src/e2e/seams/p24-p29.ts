@@ -1,5 +1,6 @@
 /**
- * P24 + P28 + P29 e2e seams — code-block display, focused code-block panel,
+ * P24 + P28 + P29 e2e seams — code-block display, focused code-block panel
+ * (step ③: Lezer mixed-parse highlighting via computed colors),
  * and focused syntax-highlight handles (task 1A split).
  *
  * All three share ONE effect in App.tsx (same viewRef/fileOps deps; one
@@ -180,22 +181,23 @@ export function useP24P29Seam(deps: P24P29Deps): void {
         return view ? undo(view) : false
       },
       tokenInfo: () => {
+        // step ③ contract: panel colors come from the Lezer mixed parse
+        // (HighlightStyle class names are style-mod-generated — never assert
+        // on them). Probes read COMPUTED colors; the dual-state assertion is
+        // panelSpanColor('const') === widgetKeywordColor (one palette feeds
+        // both surfaces via editor/syntaxColors.ts).
         const panelLines = document.querySelectorAll('.cm-line.cm-md-code-src')
-        const tokenEls = document.querySelectorAll(
-          '.cm-line.cm-md-code-src [class*="hljs-"]'
-        )
-        const classes = new Set<string>()
-        const keywordTexts: string[] = []
-        let panelKeywordColor: string | null = null
-        tokenEls.forEach((el) => {
-          el.classList.forEach((c) => {
-            if (c.startsWith('hljs-')) classes.add(c)
-          })
-          if (el.classList.contains('hljs-keyword')) {
-            keywordTexts.push(el.textContent ?? '')
-            if (!panelKeywordColor) panelKeywordColor = getComputedStyle(el).color
+        const spans = Array.from(
+          document.querySelectorAll('.cm-line.cm-md-code-src span')
+        ).filter((el) => el.childElementCount === 0)
+        const distinct = new Set<string>()
+        spans.forEach((el) => distinct.add(getComputedStyle(el).color))
+        const panelSpanColor = (text: string): string | null => {
+          for (const el of spans) {
+            if ((el.textContent ?? '') === text) return getComputedStyle(el).color
           }
-        })
+          return null
+        }
         const chip = document.querySelector('.cm-md-code-src-chip')
         let fenceTextVisible = false
         panelLines.forEach((el) => {
@@ -207,10 +209,8 @@ export function useP24P29Seam(deps: P24P29Deps): void {
           chipText: chip?.textContent ?? null,
           fenceTextVisible,
           widgetCount: document.querySelectorAll('.cm-md-code-block').length,
-          spanCount: tokenEls.length,
-          classes: Array.from(classes),
-          keywordTexts,
-          panelKeywordColor,
+          panelSpanColor,
+          distinctColors: Array.from(distinct).sort(),
           widgetKeywordColor: widgetKw ? getComputedStyle(widgetKw).color : null
         }
       },

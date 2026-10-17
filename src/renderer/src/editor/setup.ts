@@ -1,10 +1,11 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
-import { syntaxTree } from '@codemirror/language'
+import { bracketMatching, indentOnInput, syntaxTree } from '@codemirror/language'
+import { toggleComment } from '@codemirror/commands'
 import { GFM } from '@lezer/markdown'
 import { search, searchKeymap } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
-import { closeBrackets } from '@codemirror/autocomplete'
+import { autocompletion, closeBrackets } from '@codemirror/autocomplete'
 import { EditorView, highlightActiveLine, keymap, lineNumbers, drawSelection } from '@codemirror/view'
 import {
   editingAssistsCompartment,
@@ -31,7 +32,7 @@ import { linkNavExtension } from './livePreview/linkNav'
 import { hoverZonesExtension } from './livePreview/hoverZones'
 import { modeClassesExtension, typewriterExtension } from './modes'
 import { undoWithAck } from '../hooks/useToast'
-import { getPreferences } from '../preferences/store'
+import { getPreferences, setPreferences } from '../preferences/store'
 import {
   getLivePreviewConfig,
   livePreviewConfigCompartment,
@@ -51,6 +52,10 @@ import {
 import { tableEditLifecycle } from './table/lifecycle'
 import { setNestedPreviewField, tableStructBindings, tableMenuBindings } from './table/widget'
 import { mathEditExitBindings } from './mathEdit'
+import { codeEditExitBindings, findFenceBlockAt } from './codeEdit'
+import { indentGuides } from './codeIndentGuides'
+import { codeLanguageList } from './codeLangs'
+import { katexCompletionSource } from './math/katexCompletion'
 import { getCtxRuntime, handleEditorContextMenu } from './contextMenu/registry'
 import { compartmentThemes, ThemeName } from './theme'
 
@@ -89,7 +94,12 @@ function markdownSupport(assists: EditingAssistsConfig): Extension {
     // paste-URL-as-link so behavior reverts to plain CM6.
     addKeymap: assists.enabled,
     // Selection+URL paste is handled by our own transformPaste (gated).
-    pasteURLAsLink: false
+    pasteURLAsLink: false,
+    // step ③: fenced code bodies parse with their language's Lezer grammar
+    // (overlay on CodeText) — tree-based highlighting replaces the retired
+    // P29 hljs marks, and the language features (bracket matching awareness,
+    // commentTokens for the Mod-/ guard) come along.
+    codeLanguages: codeLanguageList
   })
 }
 
@@ -127,6 +137,9 @@ export function createExtensions(
     highlightActiveLine(),
     search({ top: true }),
     markdownCompartment.of(markdownSupport(assists)),
+    // step ④: KaTeX command completion — aggregated with language sources via
+    // languageDataAt; self-gated to $$…$$ blocks (katexCompletionSource).
+    EditorState.languageData.of(() => [{ autocomplete: katexCompletionSource }]),
     EditorState.allowMultipleSelections.of(true),
     EditorView.lineWrapping,
     livePreviewField,
@@ -170,6 +183,8 @@ export function createExtensions(
     linkNavExtension,
     // FE-03: render-zone hover hit zones → useHoverDiscipline show/hide base.
     hoverZonesExtension,
+    // step ②: VSCode-style indent guides on fence body lines.
+    indentGuides(),
     // Image paste/drop is core behavior — always on (Prec.high inside).
     imageInputExtension(callbacks.ensureSaved),
     themeCompartment.of(compartmentThemes[theme]),
@@ -177,6 +192,15 @@ export function createExtensions(
     // @codemirror/autocomplete exposes closeBrackets() with no args — bracket
     // lists are steered through language data when narrowing becomes necessary;
     // the engine itself skips closing before word chars (apostrophe-safe).
+    // step ② editor feel: bracket pairing + indent-on-input. Language-aware
+    // once the Lezer mixed parse (codeLanguages) is in — string/comment safe.
+    bracketMatching(),
+    indentOnInput(),
+    // step ④: completion engine (was inert — closeBrackets only). Lights up
+    // nested-language sources + lang-markdown completeHTMLTags; Escape closes
+    // the tooltip BEFORE the math/code Escape-exit bindings (completionKeymap
+    // sits at Prec.highest) — correct priority.
+    autocompletion(),
     closeBrackets(),
     // 7B: table structure shortcuts FIRST — tryStructCmd returns false outside
     // table edit, so keys fall through to the defaults (no global hijack).
@@ -187,6 +211,9 @@ export function createExtensions(
       ...tableMenuBindings,
       ...searchKeymap,
       ...mathEditExitBindings,
+      // step ② parity: Escape also exits a focused fence panel (returns false
+      // outside a fence so later bindings keep their fall-through).
+      ...codeEditExitBindings,
       // FE-07/glb-undo:triple-entry — Mod-z is the keymap face of the same
       // one-step undo as the edit-menu command and the toast button, and it
       // posts the same「已撤销」receipt (AC-OP-12 / AC-ERR-04).
@@ -195,6 +222,30 @@ export function createExtensions(
         run: undoWithAck
       },
       ...historyKeymap,
+      // step ②: Mod-/ disambiguation (chord collision with the documented
+      // Ctrl+/ = 源码模式 global command — shortcutMatch reads Ctrl as Cmd on
+      // mac, and the window listener was racing defaultKeymap's toggleComment).
+      // In a fence: toggle the nested language's comments (VSCode parity),
+      // swallow when the language has none (never wrap code in <!-- -->).
+      // Outside a fence: flip source mode — the product chord. Always consume
+      // so useMenus' defaultPrevented guard keeps one chord = one command.
+      {
+        key: 'Mod-/',
+        run: (v) => {
+          const sel = v.state.selection.main
+          const text = v.state.sliceDoc(0, v.state.doc.length)
+          if (!findFenceBlockAt(text, sel.from)) {
+            setPreferences({ sourceMode: !getPreferences().sourceMode })
+            return true
+          }
+          const [tokens] = v.state.languageDataAt<{ open: string; close?: string }>(
+            'commentTokens',
+            sel.from
+          )
+          if (!tokens || tokens.open === '<!--') return true // fence: swallow
+          return toggleComment(v) // nested language owns its comment syntax
+        }
+      },
       ...defaultKeymap,
       indentWithTab
     ]),

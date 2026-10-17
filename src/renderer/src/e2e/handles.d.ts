@@ -299,13 +299,14 @@ declare global {
         chipText: string | null
         fenceTextVisible: boolean
         widgetCount: number
-        /** DOM count of [class*="hljs-"] spans inside panel lines. */
-        spanCount: number
-        classes: string[]
-        keywordTexts: string[]
-        /** Computed color of the first .hljs-keyword in panel lines. */
-        panelKeywordColor: string | null
-        /** Computed color of .hljs-keyword inside the rendered widget (null while focused). */
+        /** Computed color of the first panel span whose text === `text`
+            (Lezer mixed-parse highlighting — style-mod class names are
+            generated, so probes assert computed colors only). */
+        panelSpanColor: (text: string) => string | null
+        /** Sorted unique computed colors among panel spans. */
+        distinctColors: string[]
+        /** Computed color of .hljs-keyword inside the rendered widget (null while focused).
+            Dual-state contract: panelSpanColor('const') === widgetKeywordColor. */
         widgetKeywordColor: string | null
       } | null
       themeToken: (name: string) => string

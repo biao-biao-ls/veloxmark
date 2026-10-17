@@ -1,4 +1,4 @@
-import type { EditorView } from '@codemirror/view'
+import type { EditorView, KeyBinding } from '@codemirror/view'
 
 /**
  * 8B/P28 code edit-session exit (mathEdit 同构，FE-09 P1) — the focused
@@ -6,10 +6,12 @@ import type { EditorView } from '@codemirror/view'
  * cursor outside the fence span; the next decoration rebuild returns the
  * pure rendered widget (CodeBlockWidget / MermaidWidget).
  *
- * Unlike math there is NO Escape keymap on this side (in-editor Esc keeps
- * its existing fall-through) — the only caller is the hush collapse face
- * (`useHushLayer` blockEdit.close): when a float (MenuBar/⋮/⊞…) collapses
- * while the caret is parked inside a fence, the panel/chip must not linger.
+ * Escape exit now mirrors math (codeEditExitBindings, step ② parity) — it is
+ * wired after mathEditExitBindings and returns false outside a fence so the
+ * rest of the keymap keeps its fall-through. The hush collapse face
+ * (`useHushLayer` blockEdit.close) remains the non-keyboard caller: when a
+ * float (MenuBar/⋮/⊞…) collapses while the caret is parked inside a fence,
+ * the panel/chip must not linger.
  *
  * Fence shapes live in pure functions below (unit-tested) so this module
  * stays DOM-free importable — same split as mathScan → mathEdit.
@@ -104,3 +106,20 @@ export function exitCodeEdit(view: EditorView): void {
     userEvent: 'select.code.exit'
   })
 }
+
+/**
+ * Escape exits a focused fence panel (math-edit parity, step ②). Returns
+ * false outside a fence so Escape falls through to the rest of the keymap
+ * (search panel close etc. stay ahead of us in setup order).
+ */
+export const codeEditExitBindings: KeyBinding[] = [
+  {
+    key: 'Escape',
+    run: (v) => {
+      const text = v.state.sliceDoc(0, v.state.doc.length)
+      if (!findFenceBlockAt(text, v.state.selection.main.from)) return false
+      exitCodeEdit(v)
+      return true
+    }
+  }
+]
