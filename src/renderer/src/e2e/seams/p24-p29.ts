@@ -134,10 +134,6 @@ export function useP24P29Seam(deps: P24P29Deps): void {
           mermaidWidgetCount: document.querySelectorAll('.cm-md-mermaid').length,
           focusModeOn: !!document.querySelector('.cm-editor.cm-focus-mode'),
           activeLineCount: document.querySelectorAll('.cm-line.cm-focus-active').length,
-          previewPanelVisible: (() => {
-            const p = document.querySelector('.mermaid-preview-panel')
-            return !!p && (p as HTMLElement).offsetParent !== null
-          })(),
           panelLeft: firstLine?.getBoundingClientRect().left ?? null,
           styles: firstLine
             ? (() => {

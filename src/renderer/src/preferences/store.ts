@@ -105,7 +105,6 @@ export interface Preferences {
   codeBlockWrap: boolean
   // ---- P25 mermaid live preview ---------------------------------------------
   /** Height (px) of the mermaid source-preview panel split. */
-  mermaidPreviewHeight: number
 }
 
 export interface SessionState {
@@ -135,7 +134,6 @@ export interface SessionState {
   /** 7F: table column widths (px per tableFrom) per file path. */
   tableColWidths: Record<string, Record<string, number[]>>
   /** P25: mermaid preview panel pinned (session-only). */
-  mermaidPreviewPin: boolean
   /** P26: open document tabs (file paths, tab order). */
   openTabs: string[]
   /** P26: active tab path at session end (null = untitled). */
@@ -191,7 +189,6 @@ export const DEFAULT_PREFERENCES: Preferences = {
   codeBlockCollapseLines: 20,
   codeBlockShowLineNumbers: false,
   codeBlockWrap: true,
-  mermaidPreviewHeight: 240
 }
 
 const DEFAULT_SESSION: SessionState = {
@@ -205,7 +202,6 @@ const DEFAULT_SESSION: SessionState = {
   headingFolds: {},
   quoteFolds: {},
   tableColWidths: {},
-  mermaidPreviewPin: false,
   openTabs: [],
   activePath: null
 }
@@ -332,10 +328,6 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
         : 20,
     codeBlockShowLineNumbers: p.codeBlockShowLineNumbers === true,
     codeBlockWrap: p.codeBlockWrap !== false,
-    mermaidPreviewHeight:
-      typeof p.mermaidPreviewHeight === 'number' && Number.isFinite(p.mermaidPreviewHeight)
-        ? Math.min(800, Math.max(120, p.mermaidPreviewHeight))
-        : 240,
     typewriterMode: p.typewriterMode === true,
     sourceMode: p.sourceMode === true,
     autoSaveMode:
@@ -439,7 +431,6 @@ export function normalizeSession(raw: unknown): SessionState {
       typeof r.lastCursor === 'number' && Number.isFinite(r.lastCursor) && r.lastCursor >= 0
         ? r.lastCursor
         : null,
-    mermaidPreviewPin: r.mermaidPreviewPin === true,
     openTabs: Array.isArray(r.openTabs)
       ? r.openTabs.filter((p): p is string => typeof p === 'string')
       : [],

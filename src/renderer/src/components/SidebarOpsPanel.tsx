@@ -134,7 +134,7 @@ export default function SidebarOpsPanel(actions: SidebarOpsActions): React.JSX.E
           type="button"
           className="sidebar-ops-close"
           data-op="sidebar.ops.close"
-          aria-label={t('mermaidPreview.close')}
+          aria-label={t('dialog.close')}
           onClick={() => setAnchor(null)}
         >
           <CloseIcon size={12} />

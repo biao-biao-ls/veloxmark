@@ -10,7 +10,7 @@
    them would be a visual/contract regression; see
    docs/specs/4B-button-primitives/spec.md):
    - `.sb-stat-btn`              ghost + --focus-ring / 22px hit-target contract
-   - `.mermaid-preview-bar button` chip + `.is-on` / focus-visible contract
+   - (`.mermaid-preview-bar button` chip contract retired with the P25 drawer)
    - `.tab-context-menu button`  menu item
    ---------------------------------------------------------------------------- */
 

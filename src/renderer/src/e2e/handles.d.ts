@@ -195,28 +195,6 @@ declare global {
       clickFold: () => boolean
       clearExpanded: () => void
     } | null
-    /** P25 e2e handle: mermaid source live-preview panel seams. */
-    __veloxP25: {
-      getDoc: () => string
-      loadDoc: (text: string, path: string | null) => void
-      setCursor: (pos: number) => void
-      insertText: (pos: number, text: string) => void
-      undo: () => boolean
-      panel: () => {
-        visible: boolean
-        hasSvg?: boolean
-        errorText?: string | null
-        pinOn?: boolean
-        editableCount?: number
-        svgText?: string
-        height?: number
-      }
-      clickPin: () => boolean
-      setPrefs: (patch: Record<string, unknown>) => void
-      getPrefs: () => { mermaidPreviewHeight: number }
-      getPinSession: () => boolean
-      probeNow: () => void
-    } | null
     /** P26 e2e handle: multi-document tab seams. */
     __veloxP26: {
       getDoc: () => string
@@ -273,7 +251,6 @@ declare global {
         mermaidWidgetCount: number
         focusModeOn: boolean
         activeLineCount: number
-        previewPanelVisible: boolean
         panelLeft: number | null
         styles: {
           bg: string

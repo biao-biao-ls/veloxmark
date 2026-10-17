@@ -29,7 +29,6 @@ import { useP21Seam, type P21Deps } from './p21'
 import { useP22Seam, type P22Deps } from './p22'
 import { useP23Seam, type P23Deps } from './p23'
 import { useP24P29Seam, type P24P29Deps } from './p24-p29'
-import { useP25Seam, type P25Deps } from './p25'
 import { useP26Seam, type P26Deps } from './p26'
 
 window.__veloxEditor = null
@@ -46,7 +45,6 @@ window.__veloxP21 = null
 window.__veloxP22 = null
 window.__veloxP23 = null
 window.__veloxP24 = null
-window.__veloxP25 = null
 window.__veloxP26 = null
 window.__veloxP28 = null
 window.__veloxP29 = null
@@ -63,7 +61,6 @@ export interface E2eSeamDeps
     P22Deps,
     P23Deps,
     P24P29Deps,
-    P25Deps,
     P26Deps {}
 
 /** Install the P13–P29 probe handles (see file header for P12/P15 notes). */
@@ -76,7 +73,6 @@ export function useE2eSeams(deps: E2eSeamDeps): void {
   useP22Seam(deps)
   useP23Seam(deps)
   useP24P29Seam(deps)
-  useP25Seam(deps)
   useP26Seam(deps)
   useP17Seam(deps)
   useP18Seam(deps)

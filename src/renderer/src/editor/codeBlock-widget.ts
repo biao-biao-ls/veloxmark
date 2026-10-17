@@ -3,7 +3,7 @@ import { hljsCss, texCss } from './syntaxColors'
 import { t } from '../i18n'
 import { langDisplayName, openCodeLangPicker, switchFenceLang } from './codeLangPicker'
 import { toggleCodeBlockFold } from './livePreview/codeBlockUi'
-import { BlockWidget, type BlockToolbarItem } from './blockWidget'
+import { BlockWidget } from './blockWidget'
 import { highlightCodeHtml, splitHighlightedLines } from './render-helpers'
 
 // ---- highlight.js themes + code block widgets (P04/P24/P28/P29) -------------
@@ -129,24 +129,8 @@ export class CodeBlockWidget extends BlockWidget {
     pre.appendChild(codeEl)
     wrap.appendChild(pre)
 
-    const items: BlockToolbarItem[] = []
-    // P24: Fold re-collapses an expanded long block (memory key cleared).
-    if (!collapsed && threshold > 0 && lines.length > threshold && this.ui) {
-      const ui = this.ui
-      items.push({
-        label: t('codeBlock.fold'),
-        title: t('codeBlock.fold'),
-        onClick: () => {
-          view.dispatch({ effects: toggleCodeBlockFold.of({ key: ui.key, expanded: false }) })
-        }
-      })
-    }
-    items.push({
-      label: t('toolbar.copy'),
-      title: t('codeBlock.copyTitle'),
-      onClick: (btn) => void this.copyWithFeedback(this.code, btn, t('toast.copiedCode'))
-    })
-    this.attachBlockToolbar(wrap, items)
+    // Hover action toolbar removed — copy lives in the context menu
+    // (code.copyCode) and re-collapse is the context menu's code.foldBlock.
 
     // P24: expander chip — revealed lines on click. stopPropagation keeps the
     // press away from wrapWithGap's click-to-source listener.

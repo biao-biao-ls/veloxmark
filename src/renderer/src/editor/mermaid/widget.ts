@@ -4,7 +4,6 @@ import { openMermaidLightbox } from '../../components/mermaidLightboxBus'
 import { BlockWidget } from '../blockWidget'
 import { judgeClickSemantics } from '../clickSemantics'
 import type { ThemeName } from '../theme'
-import { copyPngImage, exportPng, exportSvg } from './exportIo'
 import { mountMermaidRender } from './renderHost'
 
 export class MermaidWidget extends BlockWidget {
@@ -41,34 +40,17 @@ export class MermaidWidget extends BlockWidget {
       view
     })
 
+    // Hover toolbar: fullscreen viewer only — copy/export actions live in the
+    // context menu (mermaid.copySource / copyAsImage / saveSvg / savePng).
+    // The lightbox embeds the live SVG and zooms it via transform scale, so
+    // the diagram stays sharp at any magnification (vector, not raster).
     this.attachBlockToolbar(wrap, [
       {
-        label: t('toolbar.copy'),
-        title: t('mermaid.copySource'),
-        onClick: (btn) => void this.copyWithFeedback(this.code, btn, t('toast.copiedMarkdown'))
-      },
-      {
-        label: t('mermaid.svgLabel'),
-        title: t('mermaid.svgTitle'),
+        label: t('mermaid.fullscreen'),
+        title: t('mermaid.fullscreenTitle'),
         onClick: () => {
           const svgEl = svgHost.querySelector('svg')
-          if (svgEl) void exportSvg(svgEl)
-        }
-      },
-      {
-        label: t('mermaid.png'),
-        title: t('mermaid.pngTitle'),
-        onClick: () => {
-          const svgEl = svgHost.querySelector('svg')
-          if (svgEl) void exportPng(svgEl)
-        }
-      },
-      {
-        label: t('mermaid.copyImage'),
-        title: t('mermaid.copyImageTitle'),
-        onClick: () => {
-          const svgEl = svgHost.querySelector('svg')
-          if (svgEl) void copyPngImage(svgEl)
+          if (svgEl) openMermaidLightbox(svgEl.outerHTML)
         }
       }
     ])

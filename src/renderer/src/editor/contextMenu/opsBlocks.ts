@@ -10,6 +10,8 @@
  */
 import { t } from '../../i18n'
 import { copyPngImage, exportPng, exportSvg } from '../mermaid'
+import { codeBlockKey, getCodeBlockExpanded, toggleCodeBlockFold } from '../livePreview/codeBlockUi'
+import { getLivePreviewConfig } from '../livePreview'
 import {
   expandFolds,
   foldKey,
@@ -181,6 +183,26 @@ registerContextMenuOps('code-block', (view, hit, rt) => {
         rt.toast(t('toast.copied'))
       }
     },
+    ...(() => {
+      // P24 re-collapse (the hover toolbar's Fold button is gone) — only
+      // meaningful while the block is expanded and over the collapse threshold.
+      const code = fenceBody(view, range)
+      const key = codeBlockKey(code)
+      const threshold = getLivePreviewConfig(view.state).codeBlockCollapseLines ?? 20
+      const foldable =
+        threshold > 0 && code.split('\n').length > threshold && getCodeBlockExpanded(view.state).has(key)
+      return foldable
+        ? [
+            {
+              id: 'code.foldBlock',
+              label: t('codeBlock.fold'),
+              run: () => {
+                view.dispatch({ effects: toggleCodeBlockFold.of({ key, expanded: false }) })
+              }
+            }
+          ]
+        : []
+    })(),
     {
       id: 'code.indentBlock',
       label: t('ctx.indentBlock'),

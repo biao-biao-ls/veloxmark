@@ -46,6 +46,10 @@ export abstract class BlockWidget extends WidgetType {
   protected mountClickToSource(el: HTMLElement, view: EditorView, hitTarget: HitTarget): void {
     el.addEventListener('mousedown', (e) => {
       if (e.target instanceof Element && e.target.closest('.cm-md-block-toolbar')) return
+      // Right/middle-click: context menu (or OS default) only — never jump to
+      // source. A right-click that moved the caret in would flip the block to
+      // its edit panel before the menu even opened.
+      if (e.button !== 0) return
       e.preventDefault()
       const verdict = judgeClickSemantics({ hitTarget, selectionEmpty: true })
       if (verdict.kind !== 'edit') return

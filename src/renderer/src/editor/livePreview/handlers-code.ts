@@ -128,11 +128,10 @@ function fenceBody(state: BuildCtx['state'], node: SyntaxNodeRef): string {
  * 1. Line classes per fence line: base chrome on every line, `-first`/`-last`
  *    caps (a single-line unclosed fence gets both — CSS rules compose).
  * 2. Opening fence `[CodeMark.from, CodeInfo.to]` (CodeMark alone when no
- *    info string): hidden while untouched; cursor on the line reveals raw
- *    ```lang (markTouched, P09 contract). (9A: the language chip moved to the
- *    closing fence.)
- * 3. Closing fence CodeMark: replaced by the interactive CodeLangChip while
- *    untouched (bottom-right of the panel, 9A), same reveal contract.
+ *    info string): hidden ALWAYS — the fence marks never render, even with
+ *    the caret on those lines (P09 reveal-on-touch retired).
+ * 3. Closing fence CodeMark: permanently replaced by the interactive
+ *    CodeLangChip (bottom-right of the panel, 9A).
  */
 function buildFocusedCodePanel(
   node: SyntaxNodeRef,
@@ -168,15 +167,14 @@ function buildFocusedCodePanel(
     if (isLast) break
   }
 
+  // Fence marks NEVER show (was P09 reveal-on-touch) — the ```/```lang lines
+  // stay hidden at all times, even with the caret parked on them. The closing
+  // mark is permanently the interactive CodeLangChip (9A slot).
   if (openMark) {
     const openTo = infoNode ? infoNode.to : openMark.to
-    if (!ctx.markTouched(openMark.from, openTo)) {
-      // 9A: the opening fence hides plain — the language chip moved to the
-      // closing fence (bottom-right, interactive switcher).
-      ctx.decos.push({ from: openMark.from, to: openTo, value: hide })
-    }
+    ctx.decos.push({ from: openMark.from, to: openTo, value: hide })
   }
-  if (closeMark && !ctx.markTouched(closeMark.from, closeMark.to)) {
+  if (closeMark) {
     ctx.decos.push({
       from: closeMark.from,
       to: closeMark.to,

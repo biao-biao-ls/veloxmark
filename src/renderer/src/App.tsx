@@ -30,12 +30,6 @@ import {
 } from './components/TableInsertDialog'
 import { insertTableAtCursor, convertSelectionAtCursor, buildTableMarkdown } from './editor/table/insert'
 import { sniffDelimiter } from './editor/table/ops'
-import {
-  mermaidFenceAt,
-  resolvePinnedFence,
-  type MermaidFence
-} from './editor/mermaidPreview'
-import { MermaidPreviewPanel } from './components/MermaidPreviewPanel'
 import { TabsBar } from './components/TabsBar'
 import MermaidLightbox from './components/MermaidLightbox'
 import { DialogHost, dialog } from './components/Dialog'
@@ -531,8 +525,6 @@ export default function App(): React.JSX.Element {
               // P14 status bar: cursor immediate + full stats debounced.
               updateCursorStatsRef.current()
               scheduleDocStatsRef.current()
-              // P25: mermaid preview follows doc edits under the cursor/pin.
-              mpProbeRef.current(view.state)
             },
             onSelectionChanged: () => {
               // FE-09: 纯选中保护接线（判定在 editor/clickSemantics，零逻辑堆入）。
@@ -545,8 +537,6 @@ export default function App(): React.JSX.Element {
               const head = view.state.selection.main.head
               clearTimeout(cursorPersistTimer)
               cursorPersistTimer = setTimeout(() => patchSession({ lastCursor: head }), 500)
-              // P25: fence-entry/exit detection is selection-driven.
-              mpProbeRef.current(view.state)
             },
             onTreeChanged: () => {
               updateOutline()
@@ -962,92 +952,6 @@ export default function App(): React.JSX.Element {
     })
   }, [])
 
-  // ---- P25: mermaid source live preview (route B) ----------------------------
-  const mpPinRef = useRef(false)
-  const mpFenceRef = useRef<MermaidFence | null>(null)
-  const mpPinnedFenceRef = useRef<MermaidFence | null>(null)
-  const mpHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const mpCollapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const mpProbeRef = useRef<(state: EditorState) => void>(() => {})
-  const [mpFence, setMpFence] = useState<MermaidFence | null>(null)
-  const [mpPin, setMpPin] = useState(false)
-  // wave⑥-7 F2: two-phase collapse — 2s grace, then a short CSS transition
-  // class before unmount so the panel visibly shrinks instead of vanishing.
-  const [mpCollapsing, setMpCollapsing] = useState(false)
-
-  const setMpFenceBoth = useCallback((f: MermaidFence | null) => {
-    mpFenceRef.current = f
-    setMpFence(f)
-  }, [])
-
-  const toggleMpPin = useCallback(() => {
-    const next = !mpPinRef.current
-    mpPinRef.current = next
-    setMpPin(next)
-    patchSession({ mermaidPreviewPin: next })
-    if (next) {
-      mpPinnedFenceRef.current = mpFenceRef.current
-    } else {
-      mpPinnedFenceRef.current = null
-      const view = viewRef.current
-      if (view) mpProbeRef.current(view.state)
-    }
-  }, [])
-
-  // Probe body lives in an effect so createExtensions callbacks (registered
-  // once at editor mount) always run the latest closure through the ref.
-  useEffect(() => {
-    mpProbeRef.current = (state: EditorState) => {
-      if (mpPinRef.current) {
-        const resolved = resolvePinnedFence(state, mpPinnedFenceRef.current)
-        mpPinnedFenceRef.current = resolved
-        setMpFenceBoth(resolved)
-        return
-      }
-      const head = state.selection.main.head
-      const inFence = mermaidFenceAt(state, head)
-      if (inFence) {
-        if (mpHideTimerRef.current) {
-          clearTimeout(mpHideTimerRef.current)
-          mpHideTimerRef.current = null
-        }
-        if (mpCollapseTimerRef.current) {
-          clearTimeout(mpCollapseTimerRef.current)
-          mpCollapseTimerRef.current = null
-        }
-        setMpCollapsing(false)
-        setMpFenceBoth(inFence)
-        return
-      }
-      // Leaving a fence: collapse after 2s; re-entering cancels the timer.
-      if (mpFenceRef.current && !mpHideTimerRef.current) {
-        mpHideTimerRef.current = setTimeout(() => {
-          mpHideTimerRef.current = null
-          const view = viewRef.current
-          if (!view) return
-          if (mpPinRef.current) return
-          if (mermaidFenceAt(view.state, view.state.selection.main.head)) return
-          // Phase 2: play the shrink transition, then unmount.
-          setMpCollapsing(true)
-          mpCollapseTimerRef.current = setTimeout(() => {
-            mpCollapseTimerRef.current = null
-            setMpCollapsing(false)
-            const v = viewRef.current
-            if (mpPinRef.current) return
-            if (v && mermaidFenceAt(v.state, v.state.selection.main.head)) return
-            setMpFenceBoth(null)
-          }, 220)
-        }, 2000)
-      }
-    }
-  }, [setMpFenceBoth])
-
-  // Session pin restore (P03) — mount-time only.
-  useEffect(() => {
-    const pin = getSession().mermaidPreviewPin === true
-    mpPinRef.current = pin
-    setMpPin(pin)
-  }, [])
 
   // ---- P17: link navigation ---------------------------------------------------
   // openExternal goes through a seam so e2e can capture URLs instead of
@@ -1264,8 +1168,6 @@ export default function App(): React.JSX.Element {
     showFormatWarnings,
     lastFormatRef,
     formatWarningsRef,
-    // P25
-    mpProbeRef,
     // shared (P13/P18/P19/P24–P26)
     viewRef,
     fileOps,
@@ -1632,31 +1534,6 @@ export default function App(): React.JSX.Element {
             />
           )}
           <div className="editor-host" ref={hostRef} />
-          {mpFence && (
-            <MermaidPreviewPanel
-              code={mpFence.code}
-              theme={theme}
-              pin={mpPin}
-              collapsing={mpCollapsing}
-              height={prefs.mermaidPreviewHeight}
-              onTogglePin={toggleMpPin}
-              onHeightChange={(h) => setPreferences({ mermaidPreviewHeight: h })}
-              onClose={() => {
-                // Manual close acts like an unpinned hide; pin flag untouched
-                // only when the user unpins explicitly via the pin button.
-                if (mpHideTimerRef.current) {
-                  clearTimeout(mpHideTimerRef.current)
-                  mpHideTimerRef.current = null
-                }
-                if (mpCollapseTimerRef.current) {
-                  clearTimeout(mpCollapseTimerRef.current)
-                  mpCollapseTimerRef.current = null
-                }
-                setMpCollapsing(false)
-                setMpFenceBoth(null)
-              }}
-            />
-          )}
         </div>
       </div>
       {prefs.showStatusBar !== false && (

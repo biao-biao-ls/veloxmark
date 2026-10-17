@@ -65,21 +65,13 @@ export class MathBlockWidget extends BlockWidget {
     }
     // 8A hover hint chip: signals "click to edit source"; the click bubbles to
     // wrapWithGap's click-to-source (same semantics as clicking anywhere on the
-    // block). 11A-N2 (A1 fix): docked into the toolbar row as the rightmost
-    // (corner) item — a second absolute at the toolbar's top:4/right:6 anchor
-    // left the opaque action buttons covering the chip on hover.
+    // block). The hover action toolbar is gone (actions live in the context
+    // menu) — the chip is now the sole corner element, absolute top-right.
     const chip = document.createElement('span')
     chip.className = 'cm-md-math-hover-chip'
     chip.textContent = `${t('math.chipLabel')} </>`
     chip.title = t('math.chipEnterTitle')
-    const bar = this.attachBlockToolbar(el, [
-      {
-        label: t('toolbar.copy'),
-        title: t('math.copyTitle'),
-        onClick: (btn) => void this.copyWithFeedback(this.tex, btn, t('toast.copiedTex'))
-      }
-    ])
-    bar.appendChild(chip)
+    el.appendChild(chip)
     return this.wrapWithGap(el, view, 'math')
   }
 }
