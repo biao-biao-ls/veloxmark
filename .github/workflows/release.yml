@@ -1,0 +1,150 @@
+name: Release
+
+# Pushing a v* tag triggers a release: dual-arch builds on all three platforms
+# -> upload assets to a draft release -> promote (draft -> published).
+# Architecture matrix and artifact formats follow marktext (see docs/release-distribution.md).
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate tag is semver and matches package.json
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag '$tag' is not a valid semver (vX.Y.Z or vX.Y.Z-prerelease)"
+            exit 1
+          fi
+          pkg="$(node -p "require('./package.json').version")"
+          if [[ "$tag" != "v$pkg" ]]; then
+            echo "::error::Tag '$tag' does not match package.json version '$pkg'"
+            exit 1
+          fi
+
+  build:
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: mac
+            os: macos-15
+          - name: win
+            os: windows-latest
+          - name: linux
+            os: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Linux packaging tools
+        if: matrix.name == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y icnsutils graphicsmagick xz-utils rpm squashfs-tools
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (electron-vite)
+        run: npm run build
+
+      - name: Package macOS (dmg/zip x arm64+x64)
+        if: matrix.name == 'mac'
+        run: npx electron-builder --mac --publish never
+
+      - name: Package Windows (nsis/zip x x64+arm64)
+        if: matrix.name == 'win'
+        run: npx electron-builder --win --publish never
+
+      - name: Package Linux (AppImage/deb/rpm/tar.gz x x64+arm64, snap x x64)
+        if: matrix.name == 'linux'
+        run: npx electron-builder --linux --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: veloxmark-${{ matrix.name }}
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            dist/*.exe
+            dist/*.zip
+            dist/*.dmg
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+            dist/*.snap
+            dist/*.tar.gz
+            dist/*.blockmap
+            dist/*.yml
+
+  release:
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Generate SHA256SUMS.txt
+        run: |
+          cd dist
+          ls | LC_ALL=C sort | xargs sha256sum > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Compose release notes
+        run: |
+          cat > release_body.md <<'EOF'
+          ## Downloads
+
+          | Platform | Installer | Portable |
+          |---|---|---|
+          | macOS | `VeloxMark-Mac-*-*.dmg` | `VeloxMark-Mac-*-*.zip` |
+          | Windows | `VeloxMark-Setup-*-*.exe` | `VeloxMark-Win-*-*.zip` |
+          | Linux | `VeloxMark-Linux-*-*.AppImage` / `.deb` / `.rpm` / `.snap` | `VeloxMark-Linux-*-*.tar.gz` |
+
+          ## Notes
+
+          - **macOS**: builds are unsigned (no Developer ID). If Gatekeeper says the app "cannot be opened because the developer cannot be verified":
+            ```sh
+            xattr -d com.apple.quarantine /Applications/VeloxMark.app
+            ```
+          - **Windows**: SmartScreen may warn about an unknown publisher — choose "More info" → "Run anyway".
+          - **Linux**: AppImage supports in-app updates; `.deb`/`.rpm`/`.snap`/`.tar.gz` update via your package manager or by re-downloading here.
+
+          ## Checksums
+
+          All artifacts are listed in `SHA256SUMS.txt`:
+          ```sh
+          sha256sum -c SHA256SUMS.txt
+          ```
+          EOF
+
+      - name: Create draft release with assets
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: dist/*
+          fail_on_unmatched_files: true
+          body_path: release_body.md
+
+      - name: Publish release (draft -> published)
+        run: gh release edit "${GITHUB_REF_NAME}" --draft=false --repo "${GITHUB_REPOSITORY}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

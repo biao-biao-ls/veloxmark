@@ -1,0 +1,107 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+:root {
+  --accent: #0969da;
+
+
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --radius-sm: 3px;
+  --radius-md: 8px;
+
+  --editor-font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system,
+    sans-serif;
+  --editor-font-size: 16px;
+  --editor-line-height: 1.6;
+  --editor-max-width: min(100%, clamp(560px, 72%, 1400px));
+  --editor-gutter: 16px;
+
+  --shadow-pop: 0 4px 16px rgba(0, 0, 0, 0.18);
+  --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.28);
+  --focus-ring: 0 0 0 1px var(--accent);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: -2px;
+
+  --chrome-duration: 150ms;
+  --border-width: 1px;
+  --border-thick: 1.5px;
+  --text-ui: 13px;
+  --text-body: 16px;
+  --z-float: 2000;
+
+  --grid-cell-size: 22px;
+  --grid-cell-gap: 2px;
+
+  --img-resize-size: 14px;
+  --img-resize-hang: 5px;
+  --img-resize-grip: 8px;
+  --img-resize-grip-short: 5px;
+
+  --link-pop-url-width: 232px;
+  --link-pop-btn-width: 44px;
+  --link-pop-btn-gap: 1px;
+  --link-pop-url-size: 11px;
+  --link-pop-label-size: 10px;
+  --link-pop-icon-size: 14px;
+
+  --handle-width: 18px;
+  --handle-height: 22px;
+  --handle-gap: 4px;
+  --handle-hover-bar: 2px;
+  --handle-tracking: -1px;
+
+  --task-box-size: 16px;
+  --img-tb-btn-size: 26px;
+  --img-tb-gap: 4px;
+
+  --sidebar-width: 240px;
+  --tree-row-h: 28px;
+  --tree-indent: 16px;
+  --active-bar-w: 3px;
+  --active-bar-inset: 3px;
+  --active-bar-radius: 2px;
+  --tree-accent-bar: 2px;
+  --dot-size: 6px;
+  --ops-menu-min-w: 180px;
+  --ops-menu-max-h: 520px;
+  --tree-menu-min-w: 140px;
+  --tree-menu-item-pad-y: 5px;
+  --tree-menu-item-pad-x: 10px;
+  --hit-box-sm: 18px;
+  --hit-box-md: 20px;
+  --hit-box-lg: 22px;
+  --hit-box-xl: 24px;
+  --statusbar-height: 24px;
+  --space-half: 2px;
+  --space-hairline: 1px;
+  --text-glyph: 9px;
+  --text-micro: 10px;
+  --text-caption: 11px;
+  --text-meta: 12px;
+  --text-icon: 14px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, sans-serif;
+}

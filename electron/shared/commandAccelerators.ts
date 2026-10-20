@@ -1,0 +1,20 @@
+export const DARWIN_COMMAND_ACCELERATORS: Record<string, string> = {
+  newFile: 'Cmd+N',
+  openFile: 'Cmd+O',
+  openFolder: 'Cmd+Shift+O',
+  quickOpen: 'Cmd+P',
+  saveFile: 'Cmd+S',
+  saveFileAs: 'Cmd+Shift+S',
+  openPreferences: 'Cmd+,',
+  toggleFocusMode: 'F8',
+  toggleTypewriterMode: 'F9',
+  toggleSourceMode: 'Cmd+/',
+  zoomIn: 'Cmd+Plus',
+  zoomOut: 'Cmd+-',
+  zoomReset: 'Cmd+0',
+  toggleDevTools: 'Cmd+Alt+I',
+  globalSearch: 'Cmd+Shift+F',
+  toggleSidebar: 'Cmd+Shift+B',
+  copyRichText: 'CmdOrCtrl+Shift+C',
+  formatDocument: 'Shift+Alt+F'
+}

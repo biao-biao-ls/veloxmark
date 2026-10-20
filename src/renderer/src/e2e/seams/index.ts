@@ -1,0 +1,61 @@
+import { useP13Seam, type P13Deps } from './p13'
+import { useP14Seam, type P14Deps } from './p14'
+import { useP15Seam } from './p15'
+import { useP16Seam, type P16Deps } from './p16'
+import { useP17Seam, type P17Deps } from './p17'
+import { useP18Seam, type P18Deps } from './p18'
+import { useP19Seam, type P19Deps } from './p19'
+import { useP20Seam, type P20Deps } from './p20'
+import { useP21Seam, type P21Deps } from './p21'
+import { useP22Seam, type P22Deps } from './p22'
+import { useP23Seam, type P23Deps } from './p23'
+import { useP24P29Seam, type P24P29Deps } from './p24-p29'
+import { useP26Seam, type P26Deps } from './p26'
+
+window.__veloxEditor = null
+window.__veloxP12 = null
+window.__veloxP13 = null
+window.__veloxP14 = null
+window.__veloxP15 = null
+window.__veloxP16 = null
+window.__veloxP17 = null
+window.__veloxP18 = null
+window.__veloxP19 = null
+window.__veloxP20 = null
+window.__veloxP21 = null
+window.__veloxP22 = null
+window.__veloxP23 = null
+window.__veloxP24 = null
+window.__veloxP26 = null
+window.__veloxP28 = null
+window.__veloxP29 = null
+
+export interface E2eSeamDeps
+  extends P13Deps,
+    P14Deps,
+    P16Deps,
+    P17Deps,
+    P18Deps,
+    P19Deps,
+    P20Deps,
+    P21Deps,
+    P22Deps,
+    P23Deps,
+    P24P29Deps,
+    P26Deps {}
+
+export function useE2eSeams(deps: E2eSeamDeps): void {
+  useP14Seam(deps)
+  useP15Seam()
+  useP13Seam(deps)
+  useP16Seam(deps)
+  useP21Seam(deps)
+  useP22Seam(deps)
+  useP23Seam(deps)
+  useP24P29Seam(deps)
+  useP26Seam(deps)
+  useP17Seam(deps)
+  useP18Seam(deps)
+  useP19Seam(deps)
+  useP20Seam(deps)
+}

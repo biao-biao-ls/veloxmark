@@ -1,0 +1,41 @@
+
+:where(html[data-platform]:not([data-platform='darwin'])) ::-webkit-scrollbar,
+:where(html[data-platform]:not([data-platform='darwin']))::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+:where(html[data-platform]:not([data-platform='darwin'])) ::-webkit-scrollbar-track,
+:where(html[data-platform]:not([data-platform='darwin']))::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:where(html[data-platform]:not([data-platform='darwin'])) ::-webkit-scrollbar-thumb,
+:where(html[data-platform]:not([data-platform='darwin']))::-webkit-scrollbar-thumb {
+  background-color: var(--scroll-thumb);
+  border: 1px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+
+:where(html[data-platform]:not([data-platform='darwin'])) ::-webkit-scrollbar-thumb:hover,
+:where(html[data-platform]:not([data-platform='darwin']))::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scroll-thumb-hover);
+}
+
+:where(html[data-platform]:not([data-platform='darwin'])) ::-webkit-scrollbar-thumb:window-inactive,
+:where(html[data-platform]:not([data-platform='darwin']))::-webkit-scrollbar-thumb:window-inactive {
+  background-color: var(--scroll-thumb);
+}
+
+:where(html[data-platform]:not([data-platform='darwin'])) ::-webkit-scrollbar-button,
+:where(html[data-platform]:not([data-platform='darwin']))::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+:where(html[data-platform]:not([data-platform='darwin'])) ::-webkit-scrollbar-corner,
+:where(html[data-platform]:not([data-platform='darwin']))::-webkit-scrollbar-corner {
+  background: transparent;
+}

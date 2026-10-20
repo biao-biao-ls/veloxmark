@@ -1,0 +1,70 @@
+
+.btn,
+.dialog-btn,
+.cm-search .cm-button {
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn:hover,
+.dialog-btn:hover,
+.cm-search .cm-button:hover {
+  background: var(--code-bg);
+}
+
+.btn:active:not(:disabled),
+.dialog-btn:active:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.btn:disabled,
+.dialog-btn:disabled,
+.cm-search .cm-button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.dialog-btn {
+  min-width: 72px;
+  padding: 5px 14px;
+  font-size: 13px;
+}
+
+.cm-search .cm-button {
+  margin: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.cm-search .cm-button:active {
+  background: color-mix(in srgb, var(--code-bg) 70%, var(--fg) 10%);
+}
+
+.btn-primary,
+.dialog-btn-primary {
+  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.theme-dark .btn-primary,
+.theme-dark .dialog-btn-primary {
+  color: #1e1e1e;
+}
+
+.btn-primary:hover,
+.dialog-btn-primary:hover {
+  background: var(--accent);
+  filter: brightness(1.1);
+}
+
+.btn-danger,
+.dialog-btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+}

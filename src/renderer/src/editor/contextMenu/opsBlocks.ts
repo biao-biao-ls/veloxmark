@@ -1,0 +1,341 @@
+import { t } from '../../i18n'
+import { copyPngImage, exportPng, exportSvg } from '../mermaid'
+import { codeBlockKey, getCodeBlockExpanded, toggleCodeBlockFold } from '../livePreview/codeBlockUi'
+import { getLivePreviewConfig } from '../livePreview'
+import {
+  expandFolds,
+  foldKey,
+  getFoldedKeys,
+  headingAtPos,
+  toggleFold
+} from '../livePreview/fold'
+import { extractOutline } from '../../outline/extract'
+import { parseCalloutMarker } from '../livePreview/callout'
+import {
+  confirmDanger,
+  deleteRange,
+  enclosingNode,
+  fenceBody,
+  indentFenceBody,
+  indentSelectedLines,
+  mathRange,
+  mermaidSvgAt
+} from './blockHelpers'
+import { registerContextMenuOps } from './registry'
+import type { CtxMenuItem } from './types'
+
+
+registerContextMenuOps('image', (view, hit, rt) => {
+  const href = hit.href ?? ''
+  const node = enclosingNode(view, hit.pos, ['Image'])
+  const src = node ? view.state.sliceDoc(node.from, node.to) : href
+  const items: CtxMenuItem[] = [
+    {
+      id: 'image.copyPath',
+      label: t('ctx.copyPath'),
+      run: () => {
+        void rt.clipboardWrite(href)
+        rt.toast(t('toast.copied'))
+      }
+    },
+    {
+      id: 'image.copyMarkdown',
+      label: t('ctx.copyImageMarkdown'),
+      run: () => {
+        void rt.clipboardWrite(src)
+        rt.toast(t('toast.copied'))
+      }
+    }
+  ]
+  if (href) {
+    items.push({
+      id: 'image.reveal',
+      label: t('ctx.revealInFolder'),
+      run: () => {
+        const baseDir = rt.getBaseDir?.() ?? ''
+        void window.api.resolveImageSrc(baseDir, href).then((resolved) => {
+          if (resolved?.absPath) window.api.showItemInFolder(resolved.absPath)
+          else rt.toast(t('image.notFound'))
+        })
+      }
+    })
+    items.push({
+      id: 'image.deleteFile',
+      label: t('ctx.deleteImageFile'),
+      danger: true,
+      run: () => {
+        void confirmDanger(rt, t('ctx.deleteImageConfirm')).then(async (ok) => {
+          if (!ok) return
+          const baseDir = rt.getBaseDir?.() ?? ''
+          const resolved = await window.api.resolveImageSrc(baseDir, href)
+          if (resolved?.absPath) await window.api.deletePath(resolved.absPath)
+          if (node) {
+            view.dispatch({
+              changes: { from: node.from, to: node.to, insert: '' },
+              userEvent: 'delete.image'
+            })
+          }
+          rt.toast(t('ctx.deletedImage'))
+        })
+      }
+    })
+  }
+  return items
+})
+
+
+registerContextMenuOps('mermaid', (view, hit, rt) => {
+  const fence = enclosingNode(view, hit.pos, ['FencedCode', 'CodeBlock'])
+  const range = fence ?? { from: hit.lineFrom, to: hit.lineTo }
+  return [
+    {
+      id: 'mermaid.editSource',
+      label: t('ctx.mermaidEditSource'),
+      run: () => {
+        const state = view.state
+        const first = state.doc.lineAt(range.from)
+        const bodyStart = first.to + 1
+        view.dispatch({ selection: { anchor: Math.min(bodyStart, state.doc.length) } })
+        view.focus()
+      }
+    },
+    {
+      id: 'mermaid.copySource',
+      label: t('ctx.mermaidCopySource'),
+      run: () => {
+        void rt.clipboardWrite(fenceBody(view, range))
+        rt.toast(t('toast.copied'))
+      }
+    },
+    {
+      id: 'mermaid.copyAsImage',
+      label: t('ctx.copyAsImage'),
+      run: () => {
+        const svg = mermaidSvgAt(view, hit.pos)
+        if (!svg) {
+          rt.toast(t('toast.exportFailed'))
+          return
+        }
+        void copyPngImage(svg)
+      }
+    },
+    {
+      id: 'mermaid.saveSvg',
+      label: t('ctx.saveAsSvg'),
+      run: () => {
+        const svg = mermaidSvgAt(view, hit.pos)
+        if (!svg) {
+          rt.toast(t('toast.exportFailed'))
+          return
+        }
+        void exportSvg(svg)
+      }
+    },
+    {
+      id: 'mermaid.savePng',
+      label: t('ctx.saveAsPng'),
+      run: () => {
+        const svg = mermaidSvgAt(view, hit.pos)
+        if (!svg) {
+          rt.toast(t('toast.exportFailed'))
+          return
+        }
+        void exportPng(svg)
+      }
+    },
+    {
+      id: 'mermaid.deleteBlock',
+      label: t('ctx.deleteBlock'),
+      danger: true,
+      run: () => {
+        void confirmDanger(rt, t('ctx.deleteBlockConfirm')).then((ok) => {
+          if (ok) deleteRange(view, range, 'delete.mermaid')
+        })
+      }
+    }
+  ]
+})
+
+
+registerContextMenuOps('code-block', (view, hit, rt) => {
+  const fence = enclosingNode(view, hit.pos, ['FencedCode', 'CodeBlock'])
+  const range = fence ?? { from: hit.lineFrom, to: hit.lineTo }
+  return [
+    {
+      id: 'code.copyCode',
+      label: t('ctx.copyCode'),
+      run: () => {
+        void rt.clipboardWrite(fenceBody(view, range))
+        rt.toast(t('toast.copied'))
+      }
+    },
+    ...(() => {
+      const code = fenceBody(view, range)
+      const key = codeBlockKey(code)
+      const threshold = getLivePreviewConfig(view.state).codeBlockCollapseLines ?? 20
+      const foldable =
+        threshold > 0 && code.split('\n').length > threshold && getCodeBlockExpanded(view.state).has(key)
+      return foldable
+        ? [
+            {
+              id: 'code.foldBlock',
+              label: t('codeBlock.fold'),
+              run: () => {
+                view.dispatch({ effects: toggleCodeBlockFold.of({ key, expanded: false }) })
+              }
+            }
+          ]
+        : []
+    })(),
+    {
+      id: 'code.indentBlock',
+      label: t('ctx.indentBlock'),
+      run: () => indentFenceBody(view, range)
+    },
+    {
+      id: 'code.indentSelection',
+      label: t('ctx.indentSelection'),
+      run: () => indentSelectedLines(view, range)
+    },
+    {
+      id: 'code.deleteBlock',
+      label: t('ctx.deleteBlock'),
+      danger: true,
+      run: () => {
+        void confirmDanger(rt, t('ctx.deleteBlockConfirm')).then((ok) => {
+          if (ok) deleteRange(view, range, 'delete.code')
+        })
+      }
+    }
+  ]
+})
+
+
+registerContextMenuOps('math-block', (view, hit, rt) => {
+  return [
+    {
+      id: 'math.copyTex',
+      label: t('ctx.copyTex'),
+      run: () => {
+        const range = mathRange(view, hit.pos)
+        const raw = range ? view.state.sliceDoc(range.from, range.to) : ''
+        const tex = raw.replace(/^\s*\$\$/, '').replace(/\$\$\s*$/, '').trim()
+        void rt.clipboardWrite(tex)
+        rt.toast(t('toast.copied'))
+      }
+    },
+    {
+      id: 'math.deleteBlock',
+      label: t('ctx.deleteBlock'),
+      danger: true,
+      run: () => {
+        void confirmDanger(rt, t('ctx.deleteBlockConfirm')).then((ok) => {
+          const range = mathRange(view, hit.pos)
+          if (ok && range) deleteRange(view, range, 'delete.math')
+        })
+      }
+    }
+  ]
+})
+
+
+const CALLOUT_TYPES = ['note', 'tip', 'important', 'warning', 'caution'] as const
+
+registerContextMenuOps('callout', (view, hit, rt) => {
+  const bq = enclosingNode(view, hit.pos, ['Blockquote'])
+  if (!bq) return []
+  const first = view.state.doc.lineAt(bq.from)
+  const marker = parseCalloutMarker(first.text)
+  if (!marker) return []
+  return [
+    {
+      id: 'callout.type',
+      label: t('ctx.calloutType'),
+      submenu: CALLOUT_TYPES.map((type) => ({
+        id: `callout.type.${type}`,
+        label: t(`callout.${type}`),
+        checked: marker.rawType.toLowerCase() === type,
+        run: () => {
+          const next = first.text.replace(/^(\s*>\s*)\[![^\]]*\]/, `$1[!${type}]`)
+          if (next !== first.text) {
+            view.dispatch({
+              changes: { from: first.from, to: first.to, insert: next },
+              userEvent: 'callout.type'
+            })
+          }
+        }
+      }))
+    },
+    {
+      id: 'callout.deleteBlock',
+      label: t('ctx.deleteBlock'),
+      danger: true,
+      run: () => {
+        void confirmDanger(rt, t('ctx.deleteBlockConfirm')).then((ok) => {
+          if (ok) deleteRange(view, bq, 'delete.callout')
+        })
+      }
+    }
+  ]
+})
+
+
+registerContextMenuOps('heading', (view, hit, rt) => {
+  return [
+    {
+      id: 'heading.foldSection',
+      label: t('ctx.foldSection'),
+      run: () => {
+        const heading = headingAtPos(view.state, hit.pos)
+        if (!heading) return
+        view.dispatch({ effects: toggleFold.of(foldKey(heading.level, heading.text)) })
+      }
+    },
+    {
+      id: 'heading.foldAll',
+      label: t('cmd.foldAll'),
+      run: () => {
+        const folded = getFoldedKeys(view.state)
+        const missing = extractOutline(view.state)
+          .map((i) => foldKey(i.level, i.text))
+          .filter((k) => !folded.has(k))
+        if (missing.length) view.dispatch({ effects: missing.map((k) => toggleFold.of(k)) })
+      }
+    },
+    {
+      id: 'heading.unfoldAll',
+      label: t('cmd.unfoldAll'),
+      run: () => {
+        const folded = getFoldedKeys(view.state)
+        if (folded.size) view.dispatch({ effects: expandFolds.of([...folded]) })
+      }
+    }
+  ]
+})
+
+
+registerContextMenuOps('front-matter', (view, hit) => {
+  return [
+    {
+      id: 'fm.edit',
+      label: t('ctx.editFrontMatter'),
+      run: () => {
+        let target = enclosingNode(view, hit.pos, ['Frontmatter'])
+        if (!target && /^---\s*$/.test(view.state.doc.lineAt(1).text)) {
+          let line = 2
+          while (line <= view.state.doc.lines) {
+            const l = view.state.doc.line(line)
+            if (/^---\s*$/.test(l.text) || /^\.\.\.\s*$/.test(l.text)) {
+              target = { from: 1, to: l.to, name: 'Frontmatter' }
+              break
+            }
+            line++
+          }
+        }
+        if (!target) return
+        view.dispatch({ selection: { anchor: target.from, head: target.to } })
+        view.focus()
+      }
+    }
+  ]
+})
