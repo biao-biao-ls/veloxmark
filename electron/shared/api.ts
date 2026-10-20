@@ -1,4 +1,8 @@
 
+import type { UiLang } from './lang'
+
+export type { UiLang }
+
 export interface DirNode {
   name: string
   path: string
@@ -241,7 +245,7 @@ export interface RendererApi {
   writeFileBase64(filePath: string, base64: string): Promise<boolean>
   setAppState(state: AppWindowState): Promise<void>
   setRecentFiles(files: RecentFileItem[]): Promise<void>
-  setUiLanguage(lang: 'zh' | 'en'): Promise<void>
+  setUiLanguage(lang: UiLang): Promise<void>
   setMenuCheckedIds(ids: string[]): Promise<void>
   resolveImageSrc(dir: string, src: string): Promise<ResolvedImageSrc>
   saveClipboardImage(

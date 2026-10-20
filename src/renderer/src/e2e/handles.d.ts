@@ -8,7 +8,8 @@ import type {
   LinkResolveResult,
   SearchOptions,
   SearchReplaceRequest,
-  SearchReplaceResult
+  SearchReplaceResult,
+  UiLang
 } from '../../../../electron/shared/api'
 
 declare global {
@@ -45,7 +46,7 @@ declare global {
       getFilePath: () => string | null
     } | null
     __veloxP14: {
-      setLanguage: (pref: 'system' | 'zh' | 'en') => void
+      setLanguage: (pref: 'system' | UiLang) => void
       getLang: () => string
       getStats: () => DocStats
       t: (key: string, params?: Record<string, string | number>) => string

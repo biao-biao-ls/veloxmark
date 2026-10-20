@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import { basename } from 'node:path'
 import { IpcChannels, type AppWindowState, type RecentFileItem } from '../shared/api'
+import { isUiLang, type UiLang } from '../shared/lang'
 import type { GetWindow } from './getWindow'
 
 export interface AppIpcDeps {
@@ -8,7 +9,7 @@ export interface AppIpcDeps {
   approveClose(): void
   setRecentFiles(files: RecentFileItem[]): void
   setMenuCheckedIds(ids: string[]): void
-  setUiLanguage(lang: 'zh' | 'en'): void
+  setUiLanguage(lang: UiLang): void
 }
 
 export function registerAppIpc(getWindow: GetWindow, deps: AppIpcDeps): void {
@@ -23,7 +24,7 @@ export function registerAppIpc(getWindow: GetWindow, deps: AppIpcDeps): void {
   })
 
   ipcMain.handle(IpcChannels.appSetLanguage, (_e, lang: string) => {
-    deps.setUiLanguage(lang === 'zh' ? 'zh' : 'en')
+    deps.setUiLanguage(isUiLang(lang) ? lang : 'en')
     return true
   })
 

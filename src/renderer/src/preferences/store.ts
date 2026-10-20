@@ -1,4 +1,5 @@
 
+import { isUiLang, type UiLang } from '../../../../electron/shared/lang'
 import { DEFAULT_TREE_SORT, type TreeSortOptions } from '../filetree/sort'
 import { visibleRecents, type RecentFolder } from '../filetree/recents'
 import { MIN_COL_WIDTH } from '../editor/table/colWidth'
@@ -10,7 +11,7 @@ export type SidebarMode = 'outline' | 'files' | 'search'
 export type FileTreeView = 'tree' | 'list'
 export type ImageRenameMode = 'timestamp' | 'keep'
 export type AutoSaveMode = 'off' | 'debounce' | 'interval'
-export type LanguagePref = 'system' | 'zh' | 'en'
+export type LanguagePref = 'system' | UiLang
 
 export interface Preferences {
   version: number
@@ -244,7 +245,7 @@ function sanitizePreferences(raw: Partial<Preferences> | null): Preferences {
     autoSaveDelaySec: num(p.autoSaveDelaySec, 3, 1, 60),
     autoSaveIntervalMin: num(p.autoSaveIntervalMin, 5, 1, 60),
     crashRecoveryEnabled: p.crashRecoveryEnabled !== false,
-    language: p.language === 'zh' || p.language === 'en' ? p.language : 'system',
+    language: isUiLang(p.language) ? p.language : 'system',
     showStatusBar: p.showStatusBar !== false,
     externalLinkConfirm: p.externalLinkConfirm !== false
   }

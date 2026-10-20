@@ -52,7 +52,7 @@ import { formatMarkdown, type FormatWarning } from './editor/format'
 import { extractOutline, findHeadingBySlug, type OutlineItem } from './outline/extract'
 import { getMermaidTemplates, isCursorInMermaidFence } from './editor/mermaidTemplates'
 import { CALLOUT_TYPES } from './editor/livePreview/callout'
-import { getWelcomeMd, WELCOME_MD_EN, WELCOME_MD_ZH } from './content'
+import { getWelcomeMd, isWelcomeMd } from './content'
 import { displayTabName } from './hooks/docTabs'
 import { getLang, resolveLang, setLang, t, useTranslation } from './i18n'
 import StatusBar, { EMPTY_STATS, computeDocStats, type DocStats } from './components/StatusBar'
@@ -546,7 +546,7 @@ export default function App(): React.JSX.Element {
     if (!view) return
     if (filePathRef.current != null) return
     const doc = view.state.doc.toString()
-    if (doc !== WELCOME_MD_EN && doc !== WELCOME_MD_ZH) return
+    if (!isWelcomeMd(doc)) return
     const next = getWelcomeMd(lang)
     if (doc === next) return
     fileOps.loadContent(next, null)

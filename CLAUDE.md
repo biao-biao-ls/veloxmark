@@ -10,11 +10,12 @@ VeloxMark — a Typora-style Markdown desktop reader/editor with live preview. E
 
 - Git commit messages: English only (conventional-commit style, e.g. `fix(titlebar): ...`).
 - Code comments, docs, README, CI/build-config comments: English only.
-- Chinese (and other translations) belong ONLY in the localization packs:
-  - `src/renderer/src/i18n/zh.ts` — UI dictionary (plus the `'prefs.langZh': '中文'` language self-name in `en.ts`)
-  - `electron/shared/menuStrings.ts` — the `zh` section of native menu strings
-  - `src/renderer/src/content.ts` — the `*_ZH` welcome/help document constants
-  - `src/renderer/src/editor/mermaidTemplates.ts` — the `zh` template bodies
+- Chinese (and other translations) belong ONLY in the localization packs — one pack file per language:
+  - `src/renderer/src/i18n/<lang>.ts` — UI dictionary (including the `prefs.lang*` language self-names, which stay in each language's native script)
+  - `electron/shared/menuStrings/<lang>.ts` — native menu strings
+  - `src/renderer/src/content/<lang>.ts` — welcome/help document constants
+  - `src/renderer/src/editor/mermaidTemplates/<lang>.ts` — Mermaid template bodies
+- Supported UI languages (source of truth: `electron/shared/lang.ts`): `en`, `zh`, `ja`, `ko`, `es`, `pt`, `fr`, `de`, `ru`. Dictionary key parity is enforced with `Dict = typeof EN` / `MenuStrings = typeof MENU_EN` / `MermaidBodies` — a new language must ship all four packs to pass `npm run typecheck`.
 - No other file in the repo may contain CJK text. Write CJK character classes as `\u` escapes (see `src/renderer/src/statusbar/stats.ts`).
 
 ## Commands
@@ -33,12 +34,12 @@ There is no unit-test suite. Verification is `npm run typecheck` + `npm run buil
 
 Big-picture invariant: **Markdown source text is the only data source.** Saving writes plain `.md` with zero round-trip loss; everything rich is an ephemeral decoration. Decorations must never mutate the document — content edits go through transactions back into the source range the widget owns.
 
-- `electron/` — main process: windows, file dialogs, the `mdres://` image protocol, native menus (`menu/darwin.ts`, labels from `shared/menuStrings.ts`), and `updater.ts` (auto-update routing).
+- `electron/` — main process: windows, file dialogs, the `mdres://` image protocol, native menus (`menu/darwin.ts`, labels from `shared/menuStrings/`), and `updater.ts` (auto-update routing).
 - `electron/preload.ts` + `electron/shared/api.ts` — the contextBridge-safe IPC contract; extend `api.ts` when adding IPC.
 - `src/renderer/src/editor/livePreview/` — the live-preview engine: a CodeMirror 6 StateField rebuilds Decorations on every document/selection change. Syntax markers are hidden with replace decorations; code/math/mermaid/image blocks are swapped for widgets; the caret line stays in source form.
 - `src/renderer/src/editor/table/` — table widget with nested CodeMirror cell editors. The commit/handoff protocol (`nestedSession.ts`, `parse.ts`, `widget.ts`) exists to prevent microtask commit death loops on widget rebuilds — read the comments there before touching cell editing or column resize.
 - `src/renderer/src/editor/mermaid/` and `editor/math/` — block widgets that render in place and switch to source editing on click.
-- `src/renderer/src/i18n/` — `t(key)` / `useTranslation()` dictionaries (en/zh). `getLang()` drives locale-dependent content (`content.ts`, `mermaidTemplates.ts`); locale-specific sample text must be selected through these functions, never hardcoded.
+- `src/renderer/src/i18n/` — `t(key)` / `useTranslation()` dictionaries, one per UI language. `getLang()` drives locale-dependent content (`content/`, `mermaidTemplates/`); locale-specific sample text must be selected through these functions, never hardcoded.
 - `src/renderer/src/export/` — PDF/HTML export renders the document from source (via `export/renderDoc/`), not from the editor DOM.
 
 ## Release process

@@ -1,7 +1,7 @@
 
 const UNDO_SUFFIX = ' (Ctrl+Z to undo)'
 
-export const EN: Record<string, string> = {
+export const EN = {
   'cmd.newFile': 'New',
   'cmd.openFile': 'Open…',
   'cmd.openFolder': 'Open Folder…',
@@ -375,8 +375,15 @@ export const EN: Record<string, string> = {
     'Reset all settings to their defaults? Session state (recent files, open tabs, fold positions) is kept.',
   'prefs.language': 'Language',
   'prefs.langSystem': 'System (follow OS)',
-  'prefs.langZh': '中文',
   'prefs.langEn': 'English',
+  'prefs.langZh': '中文',
+  'prefs.langJa': '日本語',
+  'prefs.langKo': '한국어',
+  'prefs.langEs': 'Español',
+  'prefs.langPt': 'Português',
+  'prefs.langFr': 'Français',
+  'prefs.langDe': 'Deutsch',
+  'prefs.langRu': 'Русский',
   'prefs.showStatusBar': 'Show status bar',
   'prefs.externalLinkConfirm': 'Confirm before opening external links',
 
@@ -568,3 +575,6 @@ export const EN: Record<string, string> = {
   'update.errorTitle': 'Update failed',
   'update.errorMessage': 'Automatic update failed. Open the download page to update manually?'
 }
+
+/** All locale packs must match these keys exactly (enforced by the Dict annotation). */
+export type Dict = typeof EN

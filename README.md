@@ -17,7 +17,7 @@ A Markdown desktop reader/editor with live preview, inspired by [Typora](https:/
 - **Task lists**: `- [ ]` renders as a clickable checkbox
 - **Images**: absolute paths, relative paths (relative to the current `.md` file) and remote images
 - **Auto-update**: installers check GitHub Releases and update in place (Windows NSIS and Linux AppImage)
-- **Localization**: English and Chinese UI (including native menus and sample documents)
+- **Localization**: English, Chinese, Japanese, Korean, Spanish, Portuguese, French, German and Russian UI (including native menus and sample documents)
 
 ## Development
 
@@ -52,7 +52,7 @@ src/renderer/src/
   editor/setup.ts       CodeMirror extension assembly, keybindings
   editor/theme.ts       light/dark themes (CM6 theme + CSS variables)
   outline/extract.ts    heading outline extraction from the syntax tree
-  i18n/                 UI dictionaries (en/zh)
+  i18n/                 UI dictionaries (en/zh/ja/ko/es/pt/fr/de/ru)
 ```
 
 Key design: Markdown text is always the only data source (saving writes plain `.md`, zero round-trip loss). The decoration engine rebuilds Decorations on every document/selection change: syntax markers are hidden with replace decorations, and code/math/diagram blocks are swapped for widgets. When the cursor enters a range, decorations for that range are skipped and the source form comes back.
@@ -64,7 +64,7 @@ The release runbook (process, artifacts, signing status, troubleshooting) lives 
 ## Contributing
 
 - **Commit messages and code comments must be written in English.**
-- **Chinese (and other translations) belong only in the localization packs** — `src/renderer/src/i18n/`, `electron/shared/menuStrings.ts`, the `_EN`/`_ZH` content pairs in `src/renderer/src/content.ts`, and the localized Mermaid template bodies in `src/renderer/src/editor/mermaidTemplates.ts`. Everything else in the repository stays English-only.
+- **Chinese (and other translations) belong only in the localization packs** — one pack file per language: `src/renderer/src/i18n/<lang>.ts` (UI dictionary + language self-names), `electron/shared/menuStrings/<lang>.ts` (native menus), `src/renderer/src/content/<lang>.ts` (welcome/help documents), and `src/renderer/src/editor/mermaidTemplates/<lang>.ts` (Mermaid template bodies). Everything else in the repository stays English-only.
 
 ## License
 

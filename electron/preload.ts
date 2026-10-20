@@ -17,6 +17,7 @@ import type {
   SearchReplaceRequest,
   SearchReplaceResult,
   SearchRunPayload,
+  UiLang,
   UpdaterStatus
 } from './shared/api'
 import { IpcChannels, menuChannel } from './shared/api'
@@ -67,7 +68,7 @@ const api: RendererApi = {
     ipcRenderer.invoke(IpcChannels.appSetState, state),
   setRecentFiles: (files: RecentFileItem[]): Promise<void> =>
     ipcRenderer.invoke(IpcChannels.appSetRecentFiles, files),
-  setUiLanguage: (lang: 'zh' | 'en'): Promise<void> =>
+  setUiLanguage: (lang: UiLang): Promise<void> =>
     ipcRenderer.invoke(IpcChannels.appSetLanguage, lang),
   setMenuCheckedIds: (ids: string[]): Promise<void> =>
     ipcRenderer.invoke(IpcChannels.appSetMenuCheckedIds, ids),

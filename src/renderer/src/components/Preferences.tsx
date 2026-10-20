@@ -428,8 +428,15 @@ export default function Preferences({ open, onClose }: Props): React.JSX.Element
           onChange={(e) => setPreferences({ language: e.target.value as LanguagePref })}
         >
           <option value="system">{t('prefs.langSystem')}</option>
-          <option value="zh">{t('prefs.langZh')}</option>
           <option value="en">{t('prefs.langEn')}</option>
+          <option value="zh">{t('prefs.langZh')}</option>
+          <option value="ja">{t('prefs.langJa')}</option>
+          <option value="ko">{t('prefs.langKo')}</option>
+          <option value="es">{t('prefs.langEs')}</option>
+          <option value="pt">{t('prefs.langPt')}</option>
+          <option value="fr">{t('prefs.langFr')}</option>
+          <option value="de">{t('prefs.langDe')}</option>
+          <option value="ru">{t('prefs.langRu')}</option>
         </select>
       </label>
       <label className="prefs-row prefs-check">

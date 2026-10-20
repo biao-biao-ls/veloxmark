@@ -5,6 +5,7 @@ import type { GetWindow } from '../ipc/getWindow'
 import { zoomBy } from '../ipc/window'
 import { menuChannel, type RecentFileItem } from '../shared/api'
 import { DARWIN_COMMAND_ACCELERATORS } from '../shared/commandAccelerators'
+import { isUiLang, localeToUiLang, type UiLang } from '../shared/lang'
 import { NATIVE_MENU_STRINGS } from '../shared/menuStrings'
 
 
@@ -28,8 +29,6 @@ export function setMenuCheckedIds(ids: string[]): void {
   rebuildDarwinMenu()
 }
 
-type UiLang = 'zh' | 'en'
-
 function uiLanguagePath(): string {
   return join(app.getPath('userData'), 'ui-language.json')
 }
@@ -37,7 +36,7 @@ function uiLanguagePath(): string {
 function readStoredUiLang(): UiLang | null {
   try {
     const raw = JSON.parse(readFileSync(uiLanguagePath(), 'utf8')) as { lang?: unknown }
-    return raw.lang === 'zh' || raw.lang === 'en' ? raw.lang : null
+    return isUiLang(raw.lang) ? raw.lang : null
   } catch {
     return null
   }
@@ -50,7 +49,7 @@ function initUiLang(): void {
   if (stored) {
     uiLang = stored
   } else {
-    uiLang = app.getLocale().toLowerCase().startsWith('zh') ? 'zh' : 'en'
+    uiLang = localeToUiLang(app.getLocale())
   }
 }
 

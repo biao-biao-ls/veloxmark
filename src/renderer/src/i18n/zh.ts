@@ -1,7 +1,9 @@
 
+import type { Dict } from './en'
+
 const UNDO_SUFFIX = '（Ctrl+Z 可撤销）'
 
-export const ZH: Record<string, string> = {
+export const ZH: Dict = {
   'cmd.newFile': '新建',
   'cmd.openFile': '打开…',
   'cmd.openFolder': '打开文件夹…',
@@ -371,8 +373,15 @@ export const ZH: Record<string, string> = {
   'prefs.resetDefaultsMessage': '将所有设置恢复为默认值？会话状态（最近文件、打开标签、折叠位置）将保留。',
   'prefs.language': '语言',
   'prefs.langSystem': '跟随系统',
-  'prefs.langZh': '中文',
   'prefs.langEn': 'English',
+  'prefs.langZh': '中文',
+  'prefs.langJa': '日本語',
+  'prefs.langKo': '한국어',
+  'prefs.langEs': 'Español',
+  'prefs.langPt': 'Português',
+  'prefs.langFr': 'Français',
+  'prefs.langDe': 'Deutsch',
+  'prefs.langRu': 'Русский',
   'prefs.showStatusBar': '显示状态栏',
   'prefs.externalLinkConfirm': '打开外部链接前确认',
 
