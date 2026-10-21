@@ -11,6 +11,25 @@
 }
 
 
+/* Windows/Linux use frameless windows, which lose the native edge line and
+   fade into matching desktop backgrounds. Draw the border ourselves; native
+   windows show no edge when maximized or fullscreen, so hide it there. macOS
+   keeps its native frame via hiddenInset and opts out entirely. */
+.app:not(.platform-mac)::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  border: 1px solid var(--window-border);
+  pointer-events: none;
+  z-index: 10000;
+}
+
+.app.is-maximized::after,
+.app.is-fullscreen::after {
+  display: none;
+}
+
+
 .titlebar {
   position: relative;
   --tb-chrome-reserve: 420px;

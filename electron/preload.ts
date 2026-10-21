@@ -157,6 +157,11 @@ const api: RendererApi = {
     ipcRenderer.on(IpcChannels.appFullScreen, listener)
     return () => ipcRenderer.removeListener(IpcChannels.appFullScreen, listener)
   },
+  onMaximized: (callback: (maximized: boolean) => void): (() => void) => {
+    const listener = (_e: unknown, maximized: boolean): void => callback(maximized)
+    ipcRenderer.on(IpcChannels.appMaximized, listener)
+    return () => ipcRenderer.removeListener(IpcChannels.appMaximized, listener)
+  },
   onZoomPercent: (callback: (percent: number) => void): (() => void) => {
     const listener = (_e: unknown, percent: number): void => callback(percent)
     ipcRenderer.on(IpcChannels.appZoomPercent, listener)

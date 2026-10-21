@@ -122,6 +122,15 @@ function createWindow(): void {
   mainWindow.on('enter-full-screen', notifyFullScreen)
   mainWindow.on('leave-full-screen', notifyFullScreen)
 
+  const notifyMaximized = (): void => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(IpcChannels.appMaximized, mainWindow.isMaximized())
+    }
+  }
+  mainWindow.on('maximize', notifyMaximized)
+  mainWindow.on('unmaximize', notifyMaximized)
+  mainWindow.on('restore', notifyMaximized)
+
   if (!app.isPackaged) {
     mainWindow.webContents.on('console-message', (_e, level, message) => {
       console.log(`[renderer:${level}] ${message}`)
@@ -148,6 +157,7 @@ app.whenReady().then(() => {
       rendererLoaded = true
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send(IpcChannels.appFullScreen, mainWindow.isFullScreen())
+        mainWindow.webContents.send(IpcChannels.appMaximized, mainWindow.isMaximized())
       }
       for (const { path, isDir } of queuedOpens.splice(0)) {
         mainWindow?.webContents.send(isDir ? IpcChannels.appOpenFolder : IpcChannels.appOpenPath, path)

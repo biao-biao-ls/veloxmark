@@ -103,6 +103,7 @@ export default function App(): React.JSX.Element {
     () => getSession().sidebarVisible ?? getPreferences().sidebarDefaultOpen
   )
   const [isFullScreen, setIsFullScreen] = useState(false)
+  const [isMaximized, setIsMaximized] = useState(false)
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>(
     () => getSession().sidebarMode ?? 'outline'
   )
@@ -1086,6 +1087,10 @@ export default function App(): React.JSX.Element {
     return window.api.onFullScreen((full) => setIsFullScreen(full))
   }, [])
 
+  useEffect(() => {
+    return window.api.onMaximized((maximized) => setIsMaximized(maximized))
+  }, [])
+
   const activeTab = fileOps.tabInfos.find((x) => x.active)
   const fileName = activeTab ? displayTabName(activeTab) : filePath ? baseNameOf(filePath) : 'Untitled'
   const folderName = workspace.folderPath
@@ -1101,7 +1106,7 @@ export default function App(): React.JSX.Element {
     <div
       className={`app theme-${theme}${isMac ? ' platform-mac' : ''}${
         isFullScreen ? ' is-fullscreen' : ''
-      }`}
+      }${isMaximized ? ' is-maximized' : ''}`}
     >
       <Titlebar
         menus={menus}

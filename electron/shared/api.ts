@@ -209,6 +209,7 @@ export const IpcChannels = {
   appOpenPath: 'app:openPath',
   appOpenFolder: 'app:openFolder',
   appFullScreen: 'app:fullScreen',
+  appMaximized: 'app:maximized',
   appZoomPercent: 'app:zoomPercent',
   appGetVersion: 'app:getVersion',
   updaterCheck: 'updater:check',
@@ -289,6 +290,7 @@ export interface RendererApi {
   onOpenPath(callback: (filePath: string) => void): () => void
   onOpenFolder(callback: (folderPath: string) => void): () => void
   onFullScreen(callback: (fullScreen: boolean) => void): () => void
+  onMaximized(callback: (maximized: boolean) => void): () => void
   onZoomPercent(callback: (percent: number) => void): () => void
   onMenu(id: string, callback: (...args: string[]) => void): () => void
   getAppVersion(): Promise<string>

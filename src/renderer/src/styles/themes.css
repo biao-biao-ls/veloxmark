@@ -43,6 +43,7 @@
   --errbar-fg: #b45309;
   --errbar-bg: rgba(245, 158, 11, 0.14);
   --errbar-border: #f59e0b;
+  --window-border: rgba(15, 18, 22, 0.32);
 }
 
 .theme-dark {
@@ -89,6 +90,7 @@
   --errbar-fg: #fcd34d;
   --errbar-bg: rgba(245, 158, 11, 0.18);
   --errbar-border: #d97706;
+  --window-border: rgba(255, 255, 255, 0.18);
 }
 
 .app {
