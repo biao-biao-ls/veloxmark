@@ -8,8 +8,8 @@ with a `SHA256SUMS.txt` checksum manifest alongside them.
   <div class="platform-card">
     <h3>macOS</h3>
     <ul class="formats">
-      <li><code>VeloxMark-&lt;ver&gt;-mac.dmg</code> — Apple Silicon &amp; Intel</li>
-      <li><code>VeloxMark-&lt;ver&gt;-mac.zip</code> — auto-update vehicle</li>
+      <li><code>VeloxMark-Mac-&lt;arch&gt;-&lt;ver&gt;.dmg</code> — Apple Silicon &amp; Intel</li>
+      <li><code>VeloxMark-Mac-&lt;arch&gt;-&lt;ver&gt;.zip</code> — auto-update vehicle</li>
     </ul>
     <p class="notes">Unsigned builds — after installing, run <code>xattr -d com.apple.quarantine</code> on the app if macOS blocks it.</p>
   </div>
@@ -25,10 +25,10 @@ with a `SHA256SUMS.txt` checksum manifest alongside them.
   <div class="platform-card">
     <h3>Linux</h3>
     <ul class="formats">
-      <li><code>AppImage</code> — auto-update</li>
-      <li><code>deb</code> / <code>rpm</code></li>
-      <li><code>tar.gz</code></li>
-      <li><code>snap</code> — x64 only</li>
+      <li><code>VeloxMark-Linux-x86_64-&lt;ver&gt;.AppImage</code> — auto-update</li>
+      <li><code>.deb</code> / <code>.rpm</code></li>
+      <li><code>.tar.gz</code></li>
+      <li><code>.snap</code> — x64 only</li>
     </ul>
     <p class="notes">x86_64 &amp; aarch64 (snap is x64 only).</p>
   </div>
