@@ -44,8 +44,6 @@ export default defineConfig({
     logo: '/logo.png',
     siteTitle: 'VeloxMark',
     nav: [
-      { text: 'Features', link: '/#preview' },
-      { text: 'Markdown', link: '/#extensions' },
       { text: 'Docs', link: '/docs/' },
       { text: 'Download', link: '/download' }
     ],
@@ -66,33 +64,33 @@ export default defineConfig({
     sidebar: {
       '/docs/': [
         {
-          text: 'Quick start',
+          text: 'Getting started',
           items: [
             { text: 'Introduction', link: '/docs/' },
             { text: 'Installation', link: '/docs/installation' },
-            { text: 'Basics', link: '/docs/basics' },
+            { text: 'Basics', link: '/docs/basics' }
+          ]
+        },
+        {
+          text: 'Writing',
+          items: [
             { text: 'Editing in depth', link: '/docs/editing' },
-            { text: 'Markdown syntax', link: '/docs/markdown-syntax' }
-          ]
-        },
-        {
-          text: 'Configuration',
-          items: [
-            { text: 'Preferences', link: '/docs/preferences' },
-            { text: 'Key bindings', link: '/docs/key-bindings' },
-            { text: 'Language & localization', link: '/docs/language' }
-          ]
-        },
-        {
-          text: 'Export & themes',
-          items: [
-            { text: 'Export a document', link: '/docs/export' },
-            { text: 'Themes', link: '/docs/themes' },
+            { text: 'Markdown syntax', link: '/docs/markdown-syntax' },
             { text: 'Images', link: '/docs/images' }
           ]
         },
         {
-          text: 'More',
+          text: 'Reference',
+          items: [
+            { text: 'Preferences', link: '/docs/preferences' },
+            { text: 'Key bindings', link: '/docs/key-bindings' },
+            { text: 'Language & localization', link: '/docs/language' },
+            { text: 'Export a document', link: '/docs/export' },
+            { text: 'Themes', link: '/docs/themes' }
+          ]
+        },
+        {
+          text: 'Help',
           items: [
             { text: 'Auto-update', link: '/docs/updates' },
             { text: 'FAQ', link: '/docs/faq' }
