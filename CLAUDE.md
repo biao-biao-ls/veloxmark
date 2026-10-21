@@ -10,11 +10,13 @@ VeloxMark — a Typora-style Markdown desktop reader/editor with live preview. E
 
 - Git commit messages: English only (conventional-commit style, e.g. `fix(titlebar): ...`).
 - Code comments, docs, README, CI/build-config comments: English only.
-- Chinese (and other translations) belong ONLY in the localization packs — one pack file per language:
+- Chinese (and other translations) belong ONLY in the localization packs — one pack (file or directory) per language:
   - `src/renderer/src/i18n/<lang>.ts` — UI dictionary (including the `prefs.lang*` language self-names, which stay in each language's native script)
   - `electron/shared/menuStrings/<lang>.ts` — native menu strings
   - `src/renderer/src/content/<lang>.ts` — welcome/help document constants
   - `src/renderer/src/editor/mermaidTemplates/<lang>.ts` — Mermaid template bodies
+  - `website/docs/<lang>/` — website page content (localized site pages; English lives at the site root)
+  - `website/docs/.vitepress/locales/<lang>.ts` — website UI strings (nav, sidebar, footer, page titles)
 - Supported UI languages (source of truth: `electron/shared/lang.ts`): `en`, `zh`, `ja`, `ko`, `es`, `pt`, `fr`, `de`, `ru`. Dictionary key parity is enforced with `Dict = typeof EN` / `MenuStrings = typeof MENU_EN` / `MermaidBodies` — a new language must ship all four packs to pass `npm run typecheck`.
 - No other file in the repo may contain CJK text. Write CJK character classes as `\u` escapes (see `src/renderer/src/statusbar/stats.ts`).
 

@@ -1,6 +1,9 @@
-import { h } from 'vue'
+import { h, defineComponent } from 'vue'
 import DefaultTheme from 'vitepress/theme'
+import { useData } from 'vitepress'
 import type { Theme } from 'vitepress'
+import { EN } from '../locales/en'
+import { ZH } from '../locales/zh'
 import './custom.css'
 
 const CHECK_SVG = {
@@ -12,22 +15,26 @@ const CHECK_SVG = {
   'stroke-linejoin': 'round'
 }
 
-function TrustRow() {
-  return h(
-    'ul',
-    { class: 'vm-trust' },
-    [
-      ['macOS · Windows · Linux'],
-      ['Local-first, no account'],
-      ['MIT licensed, forever']
-    ].map(([text]) =>
-      h('li', [
-        h('svg', CHECK_SVG, [h('path', { d: 'M20 6 9 17l-5-5' })]),
-        text
-      ])
-    )
-  )
-}
+/** Trust ticks under the hero CTAs — localized via the website locale packs. */
+const TrustRow = defineComponent({
+  name: 'TrustRow',
+  setup() {
+    const { lang } = useData()
+    return () => {
+      const ticks = lang.value.startsWith('zh') ? ZH.trustTicks : EN.trustTicks
+      return h(
+        'ul',
+        { class: 'vm-trust' },
+        ticks.map((text) =>
+          h('li', [
+            h('svg', CHECK_SVG, [h('path', { d: 'M20 6 9 17l-5-5' })]),
+            text
+          ])
+        )
+      )
+    }
+  }
+})
 
 function setupReveal(): void {
   if (typeof window === 'undefined') return
