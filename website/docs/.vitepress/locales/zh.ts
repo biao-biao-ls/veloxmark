@@ -9,6 +9,7 @@ import type { WebsiteLocaleStrings } from './en'
 export const ZH: WebsiteLocaleStrings = {
   label: '简体中文',
   lang: 'zh-CN',
+  hreflang: 'zh-CN',
   link: '/zh/',
   ogLocale: 'zh_CN',
   titleTemplate: '实时预览的 Markdown 编辑器',

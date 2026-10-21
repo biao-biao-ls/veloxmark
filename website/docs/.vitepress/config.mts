@@ -3,6 +3,13 @@ import { writeFileSync, readFileSync, statSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { EN, type WebsiteLocaleStrings } from './locales/en'
 import { ZH } from './locales/zh'
+import { JA } from './locales/ja'
+import { KO } from './locales/ko'
+import { ES } from './locales/es'
+import { PT } from './locales/pt'
+import { FR } from './locales/fr'
+import { DE } from './locales/de'
+import { RU } from './locales/ru'
 
 const REPO = 'https://github.com/biao-biao-ls/veloxmark'
 const SITE_URL = 'https://veloxmark.knzn.net'
@@ -13,7 +20,14 @@ const VERSION = JSON.parse(
 /** All locales. `prefix` is the URL directory ('' for the root locale). */
 const LOCALES: Array<{ pack: WebsiteLocaleStrings; prefix: string }> = [
   { pack: EN, prefix: '' },
-  { pack: ZH, prefix: 'zh/' }
+  { pack: ZH, prefix: 'zh/' },
+  { pack: JA, prefix: 'ja/' },
+  { pack: KO, prefix: 'ko/' },
+  { pack: ES, prefix: 'es/' },
+  { pack: PT, prefix: 'pt/' },
+  { pack: FR, prefix: 'fr/' },
+  { pack: DE, prefix: 'de/' },
+  { pack: RU, prefix: 'ru/' }
 ]
 
 /** cleanUrls path for a markdown page relative to the content root. */
@@ -25,19 +39,24 @@ function pageUrl(relativePath: string): string {
 
 /** Path with any locale prefix stripped — the key shared across locales. */
 function logicalPath(relativePath: string): string {
-  return relativePath.replace(/^zh\//, '')
+  for (const { prefix } of LOCALES) {
+    if (prefix && relativePath.startsWith(prefix)) return relativePath.slice(prefix.length)
+  }
+  return relativePath
 }
 
 function localeOf(relativePath: string): { pack: WebsiteLocaleStrings; prefix: string } {
-  return relativePath.startsWith('zh/') ? LOCALES[1] : LOCALES[0]
+  return (
+    LOCALES.find(({ prefix }) => prefix && relativePath.startsWith(prefix)) ?? LOCALES[0]
+  )
 }
 
-/** hreflang alternates for a page: every locale's URL + x-default. */
+/** hreflang alternates for a page: every locale's URL + x-default (root locale). */
 function alternates(relativePath: string): Array<{ hreflang: string; href: string }> {
   const logical = logicalPath(relativePath)
   return [
     ...LOCALES.map((l) => ({
-      hreflang: l.pack.lang.split('-')[0] === 'zh' ? 'zh-CN' : 'en',
+      hreflang: l.pack.hreflang,
       href: pageUrl(l.prefix + logical)
     })),
     { hreflang: 'x-default', href: pageUrl(logical) }
@@ -92,7 +111,7 @@ function siteGraph(pack: WebsiteLocaleStrings): string {
       {
         '@type': 'WebSite',
         name: 'VeloxMark',
-        url: pack.lang === 'zh-CN' ? `${SITE_URL}/zh/` : `${SITE_URL}/`,
+        url: pageUrl(pack.prefix + 'index.md'),
         inLanguage: pack.lang,
         publisher: { '@id': `${SITE_URL}/#organization` }
       },
@@ -101,54 +120,40 @@ function siteGraph(pack: WebsiteLocaleStrings): string {
   })
 }
 
+/** Per-locale VitePress locale config derived from the packs. */
+const localeConfigs = Object.fromEntries(
+  LOCALES.map(({ pack, prefix }, i) => [
+    i === 0 ? 'root' : prefix.replace(/\/$/, ''),
+    {
+      label: pack.label,
+      lang: pack.lang,
+      link: pack.link,
+      title: 'VeloxMark',
+      description: pack.description,
+      themeConfig: {
+        nav: pack.nav,
+        editLink: {
+          pattern: `${REPO}/edit/main/website/docs/:path`,
+          text: pack.editLinkText
+        },
+        footer: {
+          message: pack.footerMessage,
+          copyright: 'Copyright © 2026 VeloxMark contributors'
+        },
+        outline: { level: [2, 3], label: pack.outlineLabel },
+        docFooter: { prev: pack.docPrev, next: pack.docNext },
+        sidebar: { [`/${prefix}docs/`]: pack.sidebar }
+      }
+    }
+  ])
+)
+
 export default defineConfig({
   title: 'VeloxMark',
   description: EN.description,
   lang: EN.lang,
   cleanUrls: true,
-  locales: {
-    root: {
-      label: EN.label,
-      lang: EN.lang,
-      title: 'VeloxMark',
-      description: EN.description,
-      themeConfig: {
-        nav: EN.nav,
-        editLink: {
-          pattern: `${REPO}/edit/main/website/docs/:path`,
-          text: EN.editLinkText
-        },
-        footer: {
-          message: EN.footerMessage,
-          copyright: 'Copyright © 2026 VeloxMark contributors'
-        },
-        outline: { level: [2, 3], label: EN.outlineLabel },
-        docFooter: { prev: EN.docPrev, next: EN.docNext },
-        sidebar: { '/docs/': EN.sidebar }
-      }
-    },
-    zh: {
-      label: ZH.label,
-      lang: ZH.lang,
-      link: ZH.link,
-      title: 'VeloxMark',
-      description: ZH.description,
-      themeConfig: {
-        nav: ZH.nav,
-        editLink: {
-          pattern: `${REPO}/edit/main/website/docs/:path`,
-          text: ZH.editLinkText
-        },
-        footer: {
-          message: ZH.footerMessage,
-          copyright: 'Copyright © 2026 VeloxMark contributors'
-        },
-        outline: { level: [2, 3], label: ZH.outlineLabel },
-        docFooter: { prev: ZH.docPrev, next: ZH.docNext },
-        sidebar: { '/zh/docs/': ZH.sidebar }
-      }
-    }
-  },
+  locales: localeConfigs,
   head: [
     ['link', { rel: 'icon', type: 'image/png', href: '/logo.png' }],
     ['meta', { name: 'theme-color', content: '#1c2f52' }],
@@ -225,8 +230,18 @@ export default defineConfig({
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',
           itemListElement: [
-            { '@type': 'ListItem', position: 1, name: pack.breadcrumbHome, item: pageUrl(pack.prefix + 'index.md') },
-            { '@type': 'ListItem', position: 2, name: pack.breadcrumbDocs, item: pageUrl(pack.prefix + 'docs/index.md') },
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: pack.breadcrumbHome,
+              item: pageUrl(pack.prefix + 'index.md')
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: pack.breadcrumbDocs,
+              item: pageUrl(pack.prefix + 'docs/index.md')
+            },
             { '@type': 'ListItem', position: 3, name: label, item: url }
           ]
         })
@@ -249,10 +264,10 @@ export default defineConfig({
           )
           .join('\n')
         const priority =
-          loc === `${SITE_URL}/` || loc === `${SITE_URL}/zh/`
-            ? '1.0'
-            : loc.endsWith('/docs/') || loc.endsWith('/docs')
-              ? '0.8'
+          loc.endsWith('/docs/') || loc.endsWith('/docs')
+            ? '0.8'
+            : loc === `${SITE_URL}/` || localeOf(p).prefix !== '' && logicalPath(p) === 'index.md'
+              ? '1.0'
               : '0.6'
         return `  <url>\n    <loc>${loc}</loc>\n${altLines}\n    <lastmod>${lastmod(srcDir, p)}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>`
       })
@@ -281,7 +296,9 @@ export default defineConfig({
       mkdirSync(fullDir, { recursive: true })
       writeFileSync(join(fullDir, 'llms-full.txt'), parts.join(''))
     }
-    console.log(`\n  ✓ sitemap.xml + llms.txt + llms-full.txt written (${pages.length} pages, ${LOCALES.length} locales)`)
+    console.log(
+      `\n  ✓ sitemap.xml + llms.txt + llms-full.txt written (${pages.length} pages, ${LOCALES.length} locales)`
+    )
   },
   themeConfig: {
     logo: '/logo.png',

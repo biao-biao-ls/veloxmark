@@ -7,6 +7,7 @@
 export const EN = {
   label: 'English',
   lang: 'en-US',
+  hreflang: 'en',
   link: undefined as string | undefined, // root locale lives at /
   ogLocale: 'en_US',
   titleTemplate: 'A Markdown editor with live preview',

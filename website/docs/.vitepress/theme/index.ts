@@ -4,6 +4,13 @@ import { useData } from 'vitepress'
 import type { Theme } from 'vitepress'
 import { EN } from '../locales/en'
 import { ZH } from '../locales/zh'
+import { JA } from '../locales/ja'
+import { KO } from '../locales/ko'
+import { ES } from '../locales/es'
+import { PT } from '../locales/pt'
+import { FR } from '../locales/fr'
+import { DE } from '../locales/de'
+import { RU } from '../locales/ru'
 import './custom.css'
 
 const CHECK_SVG = {
@@ -15,13 +22,28 @@ const CHECK_SVG = {
   'stroke-linejoin': 'round'
 }
 
+/** Trust ticks per language, keyed by BCP-47 primary subtag. */
+const TRUST_BY_LANG: Array<{ prefix: string; ticks: readonly string[] }> = [
+  { prefix: 'zh', ticks: ZH.trustTicks },
+  { prefix: 'ja', ticks: JA.trustTicks },
+  { prefix: 'ko', ticks: KO.trustTicks },
+  { prefix: 'es', ticks: ES.trustTicks },
+  { prefix: 'pt', ticks: PT.trustTicks },
+  { prefix: 'fr', ticks: FR.trustTicks },
+  { prefix: 'de', ticks: DE.trustTicks },
+  { prefix: 'ru', ticks: RU.trustTicks },
+  { prefix: 'en', ticks: EN.trustTicks }
+]
+
 /** Trust ticks under the hero CTAs — localized via the website locale packs. */
 const TrustRow = defineComponent({
   name: 'TrustRow',
   setup() {
     const { lang } = useData()
     return () => {
-      const ticks = lang.value.startsWith('zh') ? ZH.trustTicks : EN.trustTicks
+      const code = lang.value.slice(0, 2).toLowerCase()
+      const ticks =
+        TRUST_BY_LANG.find((e) => e.prefix === code)?.ticks ?? EN.trustTicks
       return h(
         'ul',
         { class: 'vm-trust' },
