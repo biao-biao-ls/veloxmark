@@ -1,31 +1,59 @@
-# VeloxMark
+<p align="center">
+  <img src="website/docs/public/logo.png" alt="VeloxMark logo" width="112">
+</p>
 
-A Markdown desktop reader/editor with live preview, inspired by [Typora](https://typora.io). Built on Electron + CodeMirror 6.
+<h1 align="center">VeloxMark</h1>
+
+<p align="center"><b>Write in Markdown — everything else is decoration.</b></p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="https://github.com/biao-biao-ls/veloxmark/releases/latest"><img src="https://img.shields.io/github/v/release/biao-biao-ls/veloxmark" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg" alt="Platform: macOS, Windows, Linux">
+</p>
+
+**English** | [简体中文](docs/readme/zh.md) | [日本語](docs/readme/ja.md) | [한국어](docs/readme/ko.md) | [Español](docs/readme/es.md) | [Português](docs/readme/pt.md) | [Français](docs/readme/fr.md) | [Deutsch](docs/readme/de.md) | [Русский](docs/readme/ru.md)
+
+VeloxMark is a free, open-source Markdown reader and editor for the desktop with live preview. It aims for the frictionless writing feel popularized by [Typora](https://typora.io) while keeping plain `.md` files fully portable — Markdown source is the only data source, so saving always writes clean Markdown with zero round-trip loss. Built on Electron and CodeMirror 6, for macOS, Windows and Linux.
+
+![VeloxMark light theme](website/docs/public/img/hero-light.png)
+
+- Website & documentation: https://veloxmark.knzn.net
+- Downloads: https://github.com/biao-biao-ls/veloxmark/releases
 
 ## Features
 
-- **Live preview (Typora-style)**: Markdown source is the single source of truth. When the cursor leaves a line, syntax markers such as `#`, `**` and `` ` `` hide and the line renders in its final style; the caret line stays in source form
-- **Block rendering**: code blocks (syntax highlighting), `$$` math (KaTeX) and ```mermaid diagrams — click any block to edit its source
-- **Tables**: native table editing with nested cell editors, insert/convert-to-table dialogs, column resize and alignment
+- **Live preview (Typora-style)**: syntax markers hide when the cursor leaves a line and it renders in its final style; the caret line always stays in source form
+- **Block rendering**: code blocks with syntax highlighting, KaTeX math and Mermaid diagrams — click any block to edit its source
+- **Extended syntax**: callouts, footnotes, `==highlights==`, superscript/subscript and front matter
+- **Tables**: native editing with nested cell editors, insert/convert dialogs, column resize and alignment
 - **Outline navigation**: heading tree in the sidebar with click-to-jump and current-position highlighting
-- **Multi-tab editing**: open several files at once, close/reopen tabs, unsaved changes marked with `•`
-- **Focus modes**: focus mode, typewriter mode and source mode
-- **Light/dark theme**: toggle with `Ctrl+Shift+T`, remembered across sessions; the custom frameless title bar and in-app menus (File/Edit/View/Help) follow the theme
-- **File operations**: open / save / save as; custom window controls (minimize/maximize/close)
+- **Multi-tab editing**: several files at once, close/reopen tabs, unsaved changes marked with `•`
+- **Focus modes**: focus mode, typewriter mode and raw source mode
+- **Light/dark theme**: switch from the View menu (Toggle Theme), remembered across sessions; the frameless title bar and in-app menus follow along
 - **Export**: PDF and HTML, including selection-only HTML export
 - **Typing assists**: wrap bare URLs on paste, convert pasted HTML to Markdown
 - **Task lists**: `- [ ]` renders as a clickable checkbox
-- **Images**: absolute paths, relative paths (relative to the current `.md` file) and remote images
+- **Images**: absolute, relative and remote paths, with `=WxH` sizing and align/flip attributes
 - **Auto-update**: installers check GitHub Releases and update in place (Windows NSIS and Linux AppImage)
 - **Localization**: English, Chinese, Japanese, Korean, Spanish, Portuguese, French, German and Russian UI (including native menus and sample documents)
+
+## Install
+
+Download the build for your platform from the [releases page](https://github.com/biao-biao-ls/veloxmark/releases/latest):
+
+- **Windows** — NSIS installer (with auto-update) or portable zip
+- **macOS** — dmg and zip (unsigned builds). On first launch, right-click → **Open**, or strip the quarantine flag: `xattr -d com.apple.quarantine /Applications/VeloxMark.app`
+- **Linux** — AppImage (with auto-update), deb, rpm, tar.gz or snap
 
 ## Development
 
 ```bash
 npm install
-npm run dev      # development mode (hot reload)
-npm run build    # build to out/
-npm run typecheck
+npm run dev          # development mode (hot reload)
+npm run build        # build to out/
+npm run typecheck    # tsc --noEmit, run before committing
+npm run build:win    # package — also build:mac, build:linux
 ```
 
 > If Electron binary downloads fail on restricted networks:
@@ -42,12 +70,12 @@ npm run typecheck
 ## Architecture
 
 ```
-electron/main.ts        main process: windows, native menus, file dialogs, mdres:// image protocol
+electron/               main process: windows, native menus, file dialogs,
+                        mdres:// image protocol, auto-update routing
 electron/preload.ts     contextBridge-safe IPC API
-electron/updater.ts     auto-update routing (electron-updater / manual check)
 src/renderer/src/
-  App.tsx               shell: title bar, sidebar outline, file/theme state
-  editor/livePreview.ts live-preview core (StateField decoration engine)
+  App.tsx               shell: title bar, sidebar, file/theme state
+  editor/livePreview/   live-preview core (StateField decoration engine)
   editor/widgets.ts     code/math/mermaid/image/task widgets
   editor/setup.ts       CodeMirror extension assembly, keybindings
   editor/theme.ts       light/dark themes (CM6 theme + CSS variables)
@@ -55,16 +83,24 @@ src/renderer/src/
   i18n/                 UI dictionaries (en/zh/ja/ko/es/pt/fr/de/ru)
 ```
 
-Key design: Markdown text is always the only data source (saving writes plain `.md`, zero round-trip loss). The decoration engine rebuilds Decorations on every document/selection change: syntax markers are hidden with replace decorations, and code/math/diagram blocks are swapped for widgets. When the cursor enters a range, decorations for that range are skipped and the source form comes back.
+The decoration engine rebuilds Decorations on every document and selection change: markers are hidden with replace decorations, rendered blocks are swapped for widgets, and entering a range skips its decorations so the source form returns. See [CLAUDE.md](CLAUDE.md) for the full architecture notes.
 
 ## Documentation
 
-The release runbook (process, artifacts, signing status, troubleshooting) lives in [CLAUDE.md](CLAUDE.md) under "Release process".
+Full user documentation lives on the [website](https://veloxmark.knzn.net/docs/). The release runbook (process, artifacts, signing status, troubleshooting) is in [CLAUDE.md](CLAUDE.md) under "Release process".
 
 ## Contributing
 
 - **Commit messages and code comments must be written in English.**
-- **Chinese (and other translations) belong only in the localization packs** — one pack file per language: `src/renderer/src/i18n/<lang>.ts` (UI dictionary + language self-names), `electron/shared/menuStrings/<lang>.ts` (native menus), `src/renderer/src/content/<lang>.ts` (welcome/help documents), and `src/renderer/src/editor/mermaidTemplates/<lang>.ts` (Mermaid template bodies). Everything else in the repository stays English-only.
+- **Translations belong only in the localization packs** — one pack (file or directory) per language:
+  - `src/renderer/src/i18n/<lang>.ts` — UI dictionary and language self-names
+  - `electron/shared/menuStrings/<lang>.ts` — native menu strings
+  - `src/renderer/src/content/<lang>.ts` — welcome/help documents
+  - `src/renderer/src/editor/mermaidTemplates/<lang>.ts` — Mermaid template bodies
+  - `docs/readme/<lang>.md` — translations of this README
+  - `website/docs/<lang>/` and `website/docs/.vitepress/locales/<lang>.ts` — website pages and website UI strings
+
+  Everything else in the repository stays English-only.
 
 ## License
 

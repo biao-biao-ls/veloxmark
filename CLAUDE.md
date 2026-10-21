@@ -15,6 +15,7 @@ VeloxMark — a Typora-style Markdown desktop reader/editor with live preview. E
   - `electron/shared/menuStrings/<lang>.ts` — native menu strings
   - `src/renderer/src/content/<lang>.ts` — welcome/help document constants
   - `src/renderer/src/editor/mermaidTemplates/<lang>.ts` — Mermaid template bodies
+  - `docs/readme/<lang>.md` — README translations (the root `README.md` stays English)
   - `website/docs/<lang>/` — website page content (localized site pages; English lives at the site root)
   - `website/docs/.vitepress/locales/<lang>.ts` — website UI strings (nav, sidebar, footer, page titles)
 - Supported UI languages (source of truth: `electron/shared/lang.ts`): `en`, `zh`, `ja`, `ko`, `es`, `pt`, `fr`, `de`, `ru`. Dictionary key parity is enforced with `Dict = typeof EN` / `MenuStrings = typeof MENU_EN` / `MermaidBodies` — a new language must ship all four packs to pass `npm run typecheck`.
