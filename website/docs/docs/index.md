@@ -1,3 +1,9 @@
+---
+title: Introduction
+description: Welcome to the VeloxMark user documentation — a free, open-source Markdown editor with live preview, built on Electron and CodeMirror 6.
+keywords: [VeloxMark documentation, Markdown editor guide, live preview editor, introduction]
+---
+
 # Introduction
 
 Welcome to the user documentation of VeloxMark — a free, open-source Markdown editor with

@@ -1,3 +1,9 @@
+---
+title: Export a document
+description: Export VeloxMark documents to PDF or HTML — page options, themes, image embedding, KaTeX fonts, selection-only HTML export and copy as rich text.
+keywords: [export Markdown to PDF, Markdown to HTML, PDF export options, selection export, rich text copy]
+---
+
 # Export a document
 
 VeloxMark exports from the **Markdown source** — not from the editor DOM — so the output

@@ -3,6 +3,8 @@ layout: home
 
 title: VeloxMark
 titleTemplate: A Markdown editor with live preview
+description: VeloxMark is a free, open-source Markdown editor with live preview for macOS, Windows and Linux. KaTeX math, Mermaid diagrams and native tables — all rendered live, all in plain .md files.
+keywords: [markdown editor, live preview, WYSIWYG markdown, open source editor, KaTeX, Mermaid diagrams, Typora alternative, Markdown editor macOS, Markdown editor Windows, Markdown editor Linux]
 
 hero:
   name: VeloxMark

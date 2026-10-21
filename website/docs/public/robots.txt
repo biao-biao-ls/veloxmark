@@ -1,0 +1,18 @@
+# robots.txt — https://veloxmark.knzn.net
+User-agent: *
+Allow: /
+
+# AI / LLM crawlers are welcome; the curated entry point is llms.txt
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://veloxmark.knzn.net/sitemap.xml

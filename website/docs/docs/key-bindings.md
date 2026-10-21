@@ -1,3 +1,9 @@
+---
+title: Key bindings
+description: Complete VeloxMark keyboard shortcut reference — file, edit, format, tabs, view modes, table editing and editor-level bindings for every platform.
+keywords: [VeloxMark shortcuts, Markdown editor key bindings, keyboard shortcuts, table editing shortcuts, focus mode shortcut]
+---
+
 # Key bindings
 
 VeloxMark is keyboard-first. On Windows and Linux shortcuts use `Ctrl`; on macOS the

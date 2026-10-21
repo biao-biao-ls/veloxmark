@@ -1,3 +1,9 @@
+---
+title: Preferences
+description: All VeloxMark settings with defaults — theme, editor fonts, typing assists, auto-save and crash recovery, images and attachments, language.
+keywords: [VeloxMark settings, editor preferences, auto-save, crash recovery, font size, attachment folder]
+---
+
 # Preferences
 
 Open preferences with `Ctrl+,` (`Cmd+,` on macOS) or via the in-app **File →

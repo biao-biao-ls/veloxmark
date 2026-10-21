@@ -1,3 +1,9 @@
+---
+title: Images
+description: Image support in VeloxMark — relative and absolute paths, remote URLs, display size with =WxH, alignment and flip attributes, attachments.
+keywords: [Markdown images, image size syntax, image alignment, attachment folder, remote images]
+---
+
 # Images
 
 VeloxMark resolves images the way a Markdown file on disk should — relative to the file

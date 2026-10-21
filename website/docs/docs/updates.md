@@ -1,3 +1,9 @@
+---
+title: Auto-update
+description: How VeloxMark updates itself per install form — full auto-update on Windows NSIS and Linux AppImage, notify-only elsewhere, manual fallback.
+keywords: [VeloxMark auto-update, electron-updater, AppImage update, NSIS update, update manually]
+---
+
 # Auto-update
 
 VeloxMark checks [GitHub Releases](https://github.com/biao-biao-ls/veloxmark/releases)

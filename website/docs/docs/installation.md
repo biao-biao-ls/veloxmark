@@ -1,3 +1,9 @@
+---
+title: Installation
+description: Install VeloxMark on macOS, Windows or Linux — installer formats, SHA256 checksum verification, build from source, updating and uninstall steps.
+keywords: [VeloxMark install, Markdown editor installer, AppImage, NSIS, dmg, deb, rpm, snap, checksum verification]
+---
+
 # Installation
 
 VeloxMark is free and open source. Pre-built binaries for macOS, Windows and Linux are

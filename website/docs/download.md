@@ -1,3 +1,9 @@
+---
+title: Download
+description: Download VeloxMark for macOS, Windows and Linux — free, open-source Markdown editor. Installers, SHA256 checksums, auto-update behavior and older versions.
+keywords: [download VeloxMark, Markdown editor download, macOS dmg, Windows installer, Linux AppImage, open source Markdown editor]
+---
+
 # Download
 
 VeloxMark is free and open source under the [MIT License](https://github.com/biao-biao-ls/veloxmark/blob/main/LICENSE).

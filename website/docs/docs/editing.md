@@ -1,3 +1,9 @@
+---
+title: Editing in depth
+description: How VeloxMark live preview behaves while you type — syntax markers, block widgets, native table editing, typing assists and multi-tab workflows.
+keywords: [live preview editing, Markdown table editing, block widgets, typing assists, paste HTML to Markdown]
+---
+
 # Editing in depth
 
 VeloxMark's editor is CodeMirror 6 with a decoration engine that rebuilds the rendered

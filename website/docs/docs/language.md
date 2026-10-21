@@ -1,3 +1,9 @@
+---
+title: Language & localization
+description: VeloxMark ships in nine UI languages including native menus and sample documents. How language selection works and how to contribute translations.
+keywords: [VeloxMark languages, Markdown editor localization, UI language, translation]
+---
+
 # Language & localization
 
 VeloxMark's UI ships in nine languages:

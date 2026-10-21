@@ -1,3 +1,9 @@
+---
+title: Markdown syntax
+description: Every Markdown construct VeloxMark renders — CommonMark and GFM plus KaTeX math, Mermaid diagrams, callouts, footnotes, highlights and front matter.
+keywords: [Markdown syntax, KaTeX math, Mermaid diagrams, callouts, footnotes, highlighted text, front matter, GFM]
+---
+
 # Markdown syntax
 
 VeloxMark renders [CommonMark](https://commonmark.org) and GitHub Flavored Markdown, plus

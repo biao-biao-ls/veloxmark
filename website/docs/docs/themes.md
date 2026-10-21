@@ -1,3 +1,9 @@
+---
+title: Themes
+description: VeloxMark light and dark themes — switching with one click, persistence across sessions, and how themes apply to code, math and diagram widgets.
+keywords: [Markdown editor dark mode, light theme, dark theme, editor themes, theme toggle]
+---
+
 # Themes
 
 VeloxMark ships two first-class themes — light and dark — tuned for long writing

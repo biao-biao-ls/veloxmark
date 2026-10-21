@@ -1,3 +1,9 @@
+---
+title: Basics
+description: The VeloxMark window at a glance — title bar, sidebar (files, outline, search), tabs, editor modes, opening and saving files.
+keywords: [VeloxMark basics, Markdown editor interface, outline panel, tabs, focus mode, typewriter mode, source mode]
+---
+
 # Basics
 
 VeloxMark opens on a welcome document that doubles as a feature tour. This page walks

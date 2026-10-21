@@ -1,0 +1,35 @@
+# VeloxMark
+
+> VeloxMark is a free, open-source (MIT) Markdown editor with live preview for macOS, Windows and Linux. Markdown source is the only data source: the editor renders headings, math, diagrams and tables in place while the file on disk stays plain Markdown with zero round-trip loss.
+
+VeloxMark is built on Electron and CodeMirror 6. Its live-preview engine hides syntax markers when the cursor leaves a line (Typora-style), and any rendered block — code, KaTeX math, Mermaid diagram, table, image — can be clicked to edit its raw Markdown source. It ships native table editing, focus and typewriter modes, light/dark themes, PDF/HTML export, nine UI languages, and auto-update on Windows (NSIS) and Linux (AppImage).
+
+Key facts: MIT licensed · no account, no telemetry · local-first · installs for macOS (dmg/zip), Windows (NSIS installer, portable zip), Linux (AppImage, deb, rpm, tar.gz, snap) · GitHub Releases with SHA256SUMS.txt checksums.
+
+## Documentation
+
+- [Introduction](https://veloxmark.knzn.net/docs/): What VeloxMark is, how live preview works, and the zero round-trip-loss guarantee
+- [Installation](https://veloxmark.knzn.net/docs/installation): Per-platform installers, checksum verification, build from source, uninstall
+- [Basics](https://veloxmark.knzn.net/docs/basics): Window anatomy, sidebar (files/outline/search), tabs, editor modes
+- [Editing in depth](https://veloxmark.knzn.net/docs/editing): Live preview behavior, block widgets, table editing, typing assists
+- [Markdown syntax](https://veloxmark.knzn.net/docs/markdown-syntax): Everything rendered specially — headings, KaTeX math, Mermaid, callouts, footnotes, highlights, front matter
+- [Images](https://veloxmark.knzn.net/docs/images): Path resolution, `=WxH` sizing, `{align=}`/`{flip=}` attributes, attachments
+- [Preferences](https://veloxmark.knzn.net/docs/preferences): All settings with defaults — appearance, editor, files, autosave, images
+- [Key bindings](https://veloxmark.knzn.net/docs/key-bindings): Full command/shortcut tables for every platform
+- [Language & localization](https://veloxmark.knzn.net/docs/language): Nine UI languages and how language selection works
+- [Export a document](https://veloxmark.knzn.net/docs/export): PDF and HTML export options, selection-only export
+- [Themes](https://veloxmark.knzn.net/docs/themes): Light and dark themes, switching, how themes apply to widgets
+- [Auto-update](https://veloxmark.knzn.net/docs/updates): Update behavior per install form (NSIS/AppImage full auto; others notify-only)
+- [FAQ](https://veloxmark.knzn.net/docs/faq): Supported platforms, licensing, troubleshooting, where data is stored
+
+## Download
+
+- [Download](https://veloxmark.knzn.net/download): All installers by platform with checksum verification and update behavior
+
+## Source
+
+- [GitHub repository](https://github.com/biao-biao-ls/veloxmark): Source code, issue tracker, releases (MIT license)
+
+## Optional
+
+- [Full documentation as plain text](https://veloxmark.knzn.net/llms-full.txt): Complete docs content concatenated for offline LLM use
