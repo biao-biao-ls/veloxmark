@@ -43,6 +43,17 @@
 
 .menubar-brand img {
   display: block;
+  /* The brand mark is a white tile that dissolves into light titlebars;
+     a hairline ring plus a soft ambient shadow keeps it defined without
+     a heavy halo. */
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(15, 18, 22, 0.16), 0 1px 2px rgba(15, 18, 22, 0.12);
+}
+
+.theme-dark .menubar-brand img {
+  /* Dark titlebars already contrast with the tile; only a faint light
+     hairline and a deeper ambient shadow are needed. */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14), 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
 .tb-title {
