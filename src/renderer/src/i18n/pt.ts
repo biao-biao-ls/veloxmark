@@ -134,6 +134,11 @@ export const PT: Dict = {
   'dialog.unsavedCloseNamed': 'Salvar as alterações de “{name}” antes de fechar?',
   'dialog.fileNotFound': 'Arquivo não encontrado',
   'dialog.fileGone': 'Não existe mais:\n{path}',
+  'dialog.fileChangedTitle': 'O arquivo foi alterado no disco',
+  'dialog.fileChangedDirty':
+    '“{name}” foi alterado no disco. Recarregá-lo e descartar as alterações não salvas?',
+  'dialog.fileChangedReload': 'Recarregar',
+  'dialog.fileChangedKeep': 'Continuar editando',
   'dialog.recoverTitle': 'Recuperar rascunho não salvo',
   'dialog.recoverUntitled':
     'Um rascunho sem título não salvo (salvo às {time}) foi encontrado — a sessão anterior pode ter falhado. Restaurá-lo?',

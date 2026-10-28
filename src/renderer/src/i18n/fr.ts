@@ -134,6 +134,11 @@ export const FR: Dict = {
   'dialog.unsavedCloseNamed': 'Enregistrer les modifications de « {name} » avant de fermer ?',
   'dialog.fileNotFound': 'Fichier introuvable',
   'dialog.fileGone': 'N’existe plus :\n{path}',
+  'dialog.fileChangedTitle': 'Le fichier a changé sur le disque',
+  'dialog.fileChangedDirty':
+    '« {name} » a changé sur le disque. Le recharger et abandonner vos modifications non enregistrées ?',
+  'dialog.fileChangedReload': 'Recharger',
+  'dialog.fileChangedKeep': 'Continuer à modifier',
   'dialog.recoverTitle': 'Récupérer un brouillon non enregistré',
   'dialog.recoverUntitled':
     'Un brouillon « Sans titre » non enregistré (enregistré à {time}) a été trouvé — la session précédente a peut-être planté. Le restaurer ?',

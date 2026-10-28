@@ -1,5 +1,6 @@
 import { useCallback, useEffect, type RefObject } from 'react'
 import { EditorView } from '@codemirror/view'
+import type { FileChangedPayload } from '../../../../electron/shared/api'
 import { dialog } from '../components/Dialog'
 import { addRecentFile, getPreferences, patchSession } from '../preferences/store'
 import { formatMarkdown } from '../editor/format'
@@ -471,6 +472,81 @@ export function useDocIo({
     },
     [findTabIdByPath, getActiveTabId, getTab, loadContent, makeState, refreshTabs]
   )
+
+  // Replace a tab's content with an externally-changed version, preserving the
+  // caret (clamped) and scroll position. Does not go through loadContent, which
+  // resets the selection to the document start.
+  const applyExternalReload = useCallback(
+    (id: string, content: string): void => {
+      const tab = getTab(id)
+      if (!tab) return
+      void window.api.draftDiscard(tab.path, tab.draftSlot)
+      const view = viewRef.current
+      if (id === getActiveTabId() && view) {
+        const scrollTop = view.scrollDOM.scrollTop
+        const anchor = Math.min(view.state.selection.main.head, content.length)
+        suppressDirtyRef.current = true
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: content },
+          selection: { anchor }
+        })
+        suppressDirtyRef.current = false
+        view.scrollDOM.scrollTop = scrollTop
+        setSavedBaseline(content)
+        setActiveDirty(false)
+        syncAppState(tab.path, false)
+        updateOutline()
+      } else {
+        tab.state = makeState(content)
+        tab.savedContent = content
+        tab.dirty = false
+      }
+      refreshTabs()
+    },
+    [
+      getTab,
+      getActiveTabId,
+      viewRef,
+      suppressDirtyRef,
+      setSavedBaseline,
+      setActiveDirty,
+      syncAppState,
+      updateOutline,
+      makeState,
+      refreshTabs
+    ]
+  )
+
+  // Sync the editor when an open file changes on disk (external editor, git, …).
+  // Clean tabs reload silently; a dirty active tab asks before discarding edits;
+  // dirty background tabs keep their edits untouched.
+  const handleExternalFileChange = useCallback(
+    async (payload: FileChangedPayload): Promise<void> => {
+      const id = findTabIdByPath(payload.path)
+      if (!id) return
+      const tab = getTab(id)
+      if (!tab) return
+      if (payload.content === tab.savedContent) return
+      if (isTabDirty(tab)) {
+        if (id !== getActiveTabId()) return
+        const reload = await dialog.confirm({
+          titleKey: 'dialog.fileChangedTitle',
+          messageKey: 'dialog.fileChangedDirty',
+          messageParams: { name: tab.name },
+          confirmLabelKey: 'dialog.fileChangedReload',
+          cancelLabelKey: 'dialog.fileChangedKeep',
+          danger: true
+        })
+        if (!reload) return
+      }
+      applyExternalReload(id, payload.content)
+    },
+    [findTabIdByPath, getTab, isTabDirty, getActiveTabId, applyExternalReload]
+  )
+
+  useEffect(() => {
+    return window.api.onFileChanged((payload) => void handleExternalFileChange(payload))
+  }, [handleExternalFileChange])
 
   return {
     openDocPath,

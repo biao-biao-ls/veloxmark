@@ -3,6 +3,7 @@ import { registerClipboardIpc } from './clipboard'
 import { registerDraftsIpc } from './drafts'
 import { registerExportIpc } from './export'
 import { registerFilesIpc } from './files'
+import { registerFileWatchIpc } from './fileWatch'
 import { registerFolderIpc } from './folder'
 import type { GetWindow } from './getWindow'
 import { registerImageIpc } from './image'
@@ -17,6 +18,7 @@ export type { AppIpcDeps } from './app'
 export function registerAllIpc(getWindow: GetWindow, appDeps: AppIpcDeps): void {
   registerWindowIpc(getWindow)
   registerFilesIpc(getWindow)
+  registerFileWatchIpc(getWindow)
   registerFolderIpc(getWindow)
   registerExportIpc()
   registerImageIpc()

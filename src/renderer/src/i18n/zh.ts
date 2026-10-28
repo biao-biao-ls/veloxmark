@@ -134,6 +134,10 @@ export const ZH: Dict = {
   'dialog.unsavedCloseNamed': '关闭前要保存“{name}”的更改吗？',
   'dialog.fileNotFound': '文件不存在',
   'dialog.fileGone': '文件已不存在：\n{path}',
+  'dialog.fileChangedTitle': '文件已在磁盘上被修改',
+  'dialog.fileChangedDirty': '“{name}”已在磁盘上被修改。重新加载并丢弃未保存的更改？',
+  'dialog.fileChangedReload': '重新加载',
+  'dialog.fileChangedKeep': '继续编辑',
   'dialog.recoverTitle': '恢复未保存的草稿',
   'dialog.recoverUntitled':
     '发现未保存的 Untitled 草稿（草稿时间 {time}，上次会话可能崩溃）。要恢复吗？',

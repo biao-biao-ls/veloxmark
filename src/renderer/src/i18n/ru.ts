@@ -133,6 +133,11 @@ export const RU: Dict = {
   'dialog.unsavedCloseNamed': 'Сохранить изменения в «{name}» перед закрытием?',
   'dialog.fileNotFound': 'Файл не найден',
   'dialog.fileGone': 'Больше не существует:\n{path}',
+  'dialog.fileChangedTitle': 'Файл изменён на диске',
+  'dialog.fileChangedDirty':
+    '«{name}» изменён на диске. Перезагрузить его и отменить несохранённые изменения?',
+  'dialog.fileChangedReload': 'Перезагрузить',
+  'dialog.fileChangedKeep': 'Продолжить редактирование',
   'dialog.recoverTitle': 'Восстановление несохраненного черновика',
   'dialog.recoverUntitled':
     'Обнаружен несохраненный черновик «Без имени» (сохранен в {time}) — возможно, предыдущая сессия завершилась аварийно. Восстановить его?',

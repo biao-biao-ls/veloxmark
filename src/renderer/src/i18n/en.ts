@@ -132,6 +132,11 @@ export const EN = {
   'dialog.unsavedCloseNamed': 'Save changes to “{name}” before closing?',
   'dialog.fileNotFound': 'File Not Found',
   'dialog.fileGone': 'No longer exists:\n{path}',
+  'dialog.fileChangedTitle': 'File Changed on Disk',
+  'dialog.fileChangedDirty':
+    '“{name}” changed on disk. Reload it and discard your unsaved changes?',
+  'dialog.fileChangedReload': 'Reload',
+  'dialog.fileChangedKeep': 'Keep Editing',
   'dialog.recoverTitle': 'Recover Unsaved Draft',
   'dialog.recoverUntitled':
     'An unsaved Untitled draft (saved at {time}) was found — the previous session may have crashed. Restore it?',

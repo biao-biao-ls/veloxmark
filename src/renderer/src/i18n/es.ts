@@ -134,6 +134,11 @@ export const ES: Dict = {
   'dialog.unsavedCloseNamed': '¿Guardar los cambios de «{name}» antes de cerrar?',
   'dialog.fileNotFound': 'Archivo no encontrado',
   'dialog.fileGone': 'Ya no existe:\n{path}',
+  'dialog.fileChangedTitle': 'El archivo cambió en disco',
+  'dialog.fileChangedDirty':
+    '“{name}” cambió en disco. ¿Recargarlo y descartar los cambios sin guardar?',
+  'dialog.fileChangedReload': 'Recargar',
+  'dialog.fileChangedKeep': 'Seguir editando',
   'dialog.recoverTitle': 'Recuperar borrador sin guardar',
   'dialog.recoverUntitled':
     'Se encontró un borrador sin título sin guardar (guardado a las {time}) — es posible que la sesión anterior haya fallado. ¿Quieres restaurarlo?',

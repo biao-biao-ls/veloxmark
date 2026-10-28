@@ -62,6 +62,11 @@ export interface PdfExportOptions {
   title: string
 }
 
+export interface FileChangedPayload {
+  path: string
+  content: string
+}
+
 export interface DraftRecord {
   path: string | null
   content: string
@@ -164,6 +169,8 @@ export const IpcChannels = {
   fileWrite: 'file:write',
   fileWriteBase64: 'file:writeBase64',
   fileResolveImageSrc: 'file:resolveImageSrc',
+  fileWatchSet: 'fileWatch:set',
+  fileChanged: 'fileWatch:changed',
   pathMove: 'path:move',
   linkResolve: 'link:resolve',
   folderList: 'folder:list',
@@ -256,6 +263,8 @@ export interface RendererApi {
   importLocalImage(baseDir: string, filePath: string, options: ImageSaveOptions): Promise<string>
   downloadRemoteImage(baseDir: string, url: string, options: ImageSaveOptions): Promise<string>
   onImageChanged(callback: (filePath: string) => void): () => void
+  setWatchedFiles(paths: string[]): Promise<boolean>
+  onFileChanged(callback: (payload: FileChangedPayload) => void): () => void
   showItemInFolder(filePath: string): void
   getPathForFile(file: File): string
   exportHtml(targetPath: string, html: string): Promise<boolean>

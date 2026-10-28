@@ -134,6 +134,11 @@ export const DE: Dict = {
   'dialog.unsavedCloseNamed': 'Änderungen an „{name}“ vor dem Schließen sichern?',
   'dialog.fileNotFound': 'Datei nicht gefunden',
   'dialog.fileGone': 'Nicht mehr vorhanden:\n{path}',
+  'dialog.fileChangedTitle': 'Datei auf dem Datenträger geändert',
+  'dialog.fileChangedDirty':
+    '„{name}“ wurde auf dem Datenträger geändert. Neu laden und ungespeicherte Änderungen verwerfen?',
+  'dialog.fileChangedReload': 'Neu laden',
+  'dialog.fileChangedKeep': 'Weiter bearbeiten',
   'dialog.recoverTitle': 'Ungesicherten Entwurf wiederherstellen',
   'dialog.recoverUntitled':
     'Ein ungesicherter Entwurf ohne Titel (gesichert um {time}) wurde gefunden — die vorherige Sitzung ist möglicherweise abgestürzt. Wiederherstellen?',

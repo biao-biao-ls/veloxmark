@@ -134,6 +134,11 @@ export const KO: Dict = {
   'dialog.unsavedCloseNamed': '닫기 전에 “{name}”의 변경 사항을 저장할까요?',
   'dialog.fileNotFound': '파일을 찾을 수 없음',
   'dialog.fileGone': '더 이상 존재하지 않습니다:\n{path}',
+  'dialog.fileChangedTitle': '파일이 변경됨',
+  'dialog.fileChangedDirty':
+    '“{name}” 파일이 디스크에서 변경되었습니다. 다시 불러와서 저장하지 않은 변경 사항을 버리시겠습니까?',
+  'dialog.fileChangedReload': '다시 불러오기',
+  'dialog.fileChangedKeep': '계속 편집',
   'dialog.recoverTitle': '저장하지 않은 초안 복구',
   'dialog.recoverUntitled':
     '저장하지 않은 “제목 없음” 초안({time}에 저장)이 발견되었습니다. 이전 세션이 중단되었을 수 있습니다. 복원할까요?',

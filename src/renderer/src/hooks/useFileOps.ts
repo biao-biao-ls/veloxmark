@@ -1,4 +1,4 @@
-import { useCallback, useRef, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, type RefObject } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { t } from '../i18n'
 import type { SidebarMode } from '../preferences/store'
@@ -36,6 +36,20 @@ export function useFileOps({
 
   const store = useTabStore({ viewRef, updateOutline, notifySaveFailed })
   const io = useDocIo({ viewRef, store, notifySaveFailed, onFormatOnSaveFailedRef, updateOutline })
+
+  // Keep the main-process file watcher in sync with the open tabs so external
+  // edits to any open document are detected.
+  const watchedKeyRef = useRef('')
+  useEffect(() => {
+    const paths = store.tabInfos
+      .map((info) => info.path)
+      .filter((p): p is string => p != null)
+      .sort()
+    const key = paths.join(' ')
+    if (key === watchedKeyRef.current) return
+    watchedKeyRef.current = key
+    void window.api.setWatchedFiles(paths)
+  }, [store.tabInfos])
 
   const confirmDiscard = useCallback(
     () =>

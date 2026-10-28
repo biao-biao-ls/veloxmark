@@ -133,6 +133,11 @@ export const JA: Dict = {
   'dialog.unsavedCloseNamed': '「{name}」の変更を保存してから閉じますか？',
   'dialog.fileNotFound': 'ファイルが見つかりません',
   'dialog.fileGone': '次のファイルは存在しません:\n{path}',
+  'dialog.fileChangedTitle': 'ファイルが変更されました',
+  'dialog.fileChangedDirty':
+    '「{name}」はディスク上で変更されました。再読み込みして未保存の変更を破棄しますか？',
+  'dialog.fileChangedReload': '再読み込み',
+  'dialog.fileChangedKeep': '編集を続ける',
   'dialog.recoverTitle': '未保存の下書きを復元',
   'dialog.recoverUntitled':
     '未保存の「無題」下書き(保存日時 {time})が見つかりました。前のセッションが異常終了した可能性があります。復元しますか？',

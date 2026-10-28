@@ -3,6 +3,7 @@ import type {
   AppWindowState,
   DirNode,
   DraftListItem,
+  FileChangedPayload,
   FileFilter,
   FolderScanOptions,
   ImageSaveOptions,
@@ -87,6 +88,13 @@ const api: RendererApi = {
     const listener = (_e: unknown, filePath: string): void => callback(filePath)
     ipcRenderer.on(IpcChannels.imageChanged, listener)
     return () => ipcRenderer.removeListener(IpcChannels.imageChanged, listener)
+  },
+  setWatchedFiles: (paths: string[]): Promise<boolean> =>
+    ipcRenderer.invoke(IpcChannels.fileWatchSet, paths),
+  onFileChanged: (callback: (payload: FileChangedPayload) => void): (() => void) => {
+    const listener = (_e: unknown, payload: FileChangedPayload): void => callback(payload)
+    ipcRenderer.on(IpcChannels.fileChanged, listener)
+    return () => ipcRenderer.removeListener(IpcChannels.fileChanged, listener)
   },
   showItemInFolder: (filePath: string): void => {
     void ipcRenderer.invoke(IpcChannels.shellShowItemInFolder, filePath)
