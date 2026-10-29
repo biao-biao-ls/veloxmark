@@ -1,6 +1,6 @@
 {
   "name": "veloxmark",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "VeloxMark — a fast Markdown reader/editor with live preview",
   "main": "./out/main/index.js",
   "author": {
