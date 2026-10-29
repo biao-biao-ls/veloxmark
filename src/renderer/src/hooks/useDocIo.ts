@@ -71,24 +71,34 @@ export function useDocIo({
   const openDocPath = useCallback(
     async (path: string, opts?: OpenDocPathOpts): Promise<boolean> => {
       const activate = opts?.activate !== false
-      for (const tab of allTabs()) {
-        if (tab.path === path) {
-          if (activate) {
-            activateTab(tab.id)
-            const view = viewRef.current
-            if (view && opts?.pos != null) {
-              const anchor = Math.min(Math.max(opts.pos, 0), view.state.doc.length)
-              view.dispatch({
-                selection: { anchor },
-                effects: EditorView.scrollIntoView(anchor, { y: 'center' }),
-                scrollIntoView: true
-              })
-              view.focus()
+      // Collapse this open onto an existing tab for the same path. Called both
+      // on entry and again after the file read: a concurrent open of the same
+      // path (cold-start session restore racing the system open queued from the
+      // launch argv) passes the entry check before either side reaches addTab,
+      // so the re-check after the last await is what actually keeps one tab per
+      // path — it and addTab run synchronously, no interleaving in between.
+      const foldIntoExisting = (): boolean => {
+        for (const tab of allTabs()) {
+          if (tab.path === path) {
+            if (activate) {
+              activateTab(tab.id)
+              const view = viewRef.current
+              if (view && opts?.pos != null) {
+                const anchor = Math.min(Math.max(opts.pos, 0), view.state.doc.length)
+                view.dispatch({
+                  selection: { anchor },
+                  effects: EditorView.scrollIntoView(anchor, { y: 'center' }),
+                  scrollIntoView: true
+                })
+                view.focus()
+              }
             }
+            return true
           }
-          return true
         }
+        return false
       }
+      if (foldIntoExisting()) return true
       if (!(await window.api.pathExists(path))) {
         await dialog.alert({
           title: t('dialog.fileNotFound'),
@@ -99,6 +109,7 @@ export function useDocIo({
       const content = await window.api.readFile(path)
       const state = makeState(content)
       if (!state) return false
+      if (foldIntoExisting()) return true
       const tab = addTab({
         path,
         name: baseNameOf(path),
