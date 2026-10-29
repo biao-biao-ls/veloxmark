@@ -104,7 +104,10 @@ jobs:
       - name: Generate SHA256SUMS.txt
         run: |
           cd dist
-          ls | LC_ALL=C sort | xargs sha256sum > SHA256SUMS.txt
+          # Exclude SHA256SUMS.txt itself: the `>` redirect truncates it before
+          # `ls` runs, so hashing it here would record the empty file's digest
+          # and `sha256sum -c` would report a bogus FAILED line for it.
+          ls | LC_ALL=C sort | grep -vx 'SHA256SUMS.txt' | xargs sha256sum > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: Compose release notes
