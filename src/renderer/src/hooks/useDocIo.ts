@@ -1,4 +1,4 @@
-import { useCallback, useEffect, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, type RefObject } from 'react'
 import { EditorView } from '@codemirror/view'
 import type { FileChangedPayload } from '../../../../electron/shared/api'
 import { dialog } from '../components/Dialog'
@@ -412,8 +412,13 @@ export function useDocIo({
     [openDocPath]
   )
 
+  // Chain system opens so multi-file launches (Explorer multi-select) open tabs
+  // in the order the user picked instead of racing their file reads.
+  const systemOpenChainRef = useRef<Promise<void>>(Promise.resolve())
   useEffect(() => {
-    return window.api.onOpenPath((path) => void openFromSystem(path))
+    return window.api.onOpenPath((path) => {
+      systemOpenChainRef.current = systemOpenChainRef.current.then(() => openFromSystem(path))
+    })
   }, [openFromSystem])
 
   const openFileByPath = useCallback(

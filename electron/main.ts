@@ -42,10 +42,65 @@ async function deliverOpenPath(filePath: string): Promise<void> {
   }
 }
 
+// Windows/Linux deliver Explorer "Open with" / file-association launches as CLI
+// arguments (macOS uses the open-file event instead). In dev, argv[1] is the
+// Electron app entry script (process.defaultApp), so real arguments start one
+// slot later. Flags (--inspect, …) and their values are skipped: an argument is
+// only handed to the renderer when it resolves to a filesystem entry and does
+// not follow a bare flag (whose value it would be). Awaited sequentially so
+// multi-file opens keep the order the user selected.
+async function deliverLaunchPaths(argv: string[]): Promise<void> {
+  const args = argv.slice(process.defaultApp ? 2 : 1)
+  let prevIsBareFlag = false
+  for (const arg of args) {
+    if (arg === '--') {
+      prevIsBareFlag = false
+      continue
+    }
+    if (arg.startsWith('-')) {
+      prevIsBareFlag = !arg.includes('=')
+      continue
+    }
+    if (prevIsBareFlag) {
+      prevIsBareFlag = false
+      continue
+    }
+    try {
+      await stat(arg)
+    } catch {
+      continue
+    }
+    await deliverOpenPath(arg)
+  }
+}
+
+// A second Explorer launch must land in the already-running instance instead of
+// spawning a duplicate process that fights over the session store. Dev runs stay
+// multi-instance so parallel probe sessions can coexist.
+const hasSingleInstanceLock = !app.isPackaged || app.requestSingleInstanceLock()
+if (!hasSingleInstanceLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (_event, argv) => {
+    const win = getWindow()
+    if (win && !win.isDestroyed()) {
+      if (win.isMinimized()) win.restore()
+      win.show()
+      win.focus()
+    }
+    void deliverLaunchPaths(argv)
+  })
+}
+
 app.on('open-file', (event, filePath) => {
   event.preventDefault()
   void deliverOpenPath(filePath)
 })
+
+// Cold-start document opens (Windows/Linux Explorer hand the file over as a CLI
+// argument instead of an open-file event). The lock-losing instance is on its
+// way out — the lock holder's second-instance handler receives these paths.
+if (hasSingleInstanceLock) void deliverLaunchPaths(process.argv)
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -150,6 +205,8 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  if (!hasSingleInstanceLock) return
+
   initDarwinMenu(getWindow)
 
   const appDeps: AppIpcDeps = {

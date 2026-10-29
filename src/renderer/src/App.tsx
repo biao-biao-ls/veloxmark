@@ -226,6 +226,19 @@ export default function App(): React.JSX.Element {
   ])
 
   const restoredRef = useRef(false)
+  // System opens (Explorer "Open with", CLI arguments, second-instance forwards)
+  // must end up focused; session restore only activates its saved tab when no
+  // system open has claimed focus. The flag flips synchronously when the open
+  // IPC lands and is checked with no awaits between check and activation, so an
+  // open arriving mid-restore always wins; a later one wins by activating after.
+  const systemOpenSeenRef = useRef(false)
+  useEffect(
+    () =>
+      window.api.onOpenPath(() => {
+        systemOpenSeenRef.current = true
+      }),
+    []
+  )
   useEffect(() => {
     if (restoredRef.current) return
     restoredRef.current = true
@@ -234,6 +247,11 @@ export default function App(): React.JSX.Element {
       return
     }
     const saved = getSession()
+    const activateRestored = (path: string): void => {
+      if (systemOpenSeenRef.current) return
+      const id = fileOps.findTabIdByPath(path)
+      if (id) fileOps.activateTab(id)
+    }
     void (async () => {
       try {
         const openTabs =
@@ -251,11 +269,13 @@ export default function App(): React.JSX.Element {
           }
         }
         if (saved.activePath && (await window.api.pathExists(saved.activePath))) {
-          await fileOps.openDocPath(saved.activePath)
+          await fileOps.openDocPath(saved.activePath, { activate: false })
+          activateRestored(saved.activePath)
         } else if (openTabs.length > 0) {
           for (const p of openTabs) {
             if (await window.api.pathExists(p)) {
-              await fileOps.openDocPath(p)
+              await fileOps.openDocPath(p, { activate: false })
+              activateRestored(p)
               break
             }
           }
@@ -265,7 +285,7 @@ export default function App(): React.JSX.Element {
           const overflow = missingNames.length > 3 ? ` +${missingNames.length - 3}` : ''
           showToast(t('tabs.missingRestoredList', { names: shown + overflow }))
         }
-        {
+        if (!systemOpenSeenRef.current) {
           const view = viewRef.current
           const cursor = saved.lastCursor
           if (view && cursor != null && cursor > 0 && cursor <= view.state.doc.length) {
